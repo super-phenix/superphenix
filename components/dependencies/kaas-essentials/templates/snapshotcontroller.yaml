@@ -1,3 +1,6 @@
+{{- $kubeMinor := substr 0 5 $.Values.cluster.kubeVersion }}
+{{- $csiVersions := index $.Values.kubevirtCsi.versions $kubeMinor }}
+
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -133,7 +136,7 @@ spec:
       serviceAccountName: snapshot-controller
       containers:
         - name: snapshot-controller
-          image: registry.k8s.io/sig-storage/snapshot-controller:{{ $.Values.kubevirtCsi.snapshotControllerVersion }}
+          image: registry.k8s.io/sig-storage/snapshot-controller:{{ $csiVersions.snapshotControllerVersion }}
           args:
             - "--v=5"
             - "--leader-election=true"

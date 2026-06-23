@@ -24,13 +24,15 @@ kubevirtCsi:
     #   tenantClass: default
     #   infraClass: default
   
-  kubevirtCsi:
+  versions:
     # https://github.com/kubernetes-csi/node-driver-registrar/releases
     # https://github.com/kubernetes-csi/livenessprobe/releases
+    # https://github.com/kubernetes-csi/external-snapshotter/releases
     # https://quay.io/repository/kubevirt/kubevirt-csi-driver?tab=tags
     v1.35:
       nodeDriverRegistrarVersion: v2.16.0
       csiLivenessprobeVersion: v2.18.0
+      snapshotControllerVersion: v8.5.0
       csiDriverVersion: latest
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

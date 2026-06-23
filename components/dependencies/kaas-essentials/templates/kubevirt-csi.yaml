@@ -1,5 +1,5 @@
 {{- $kubeMinor := substr 0 5 $.Values.cluster.kubeVersion }}
-{{- $csiVersions := index $.Values.kubevirtCsi $kubeMinor }}
+{{- $csiVersions := index $.Values.kubevirtCsi.versions $kubeMinor }}
 
 ---
 apiVersion: storage.k8s.io/v1
