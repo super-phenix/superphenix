@@ -43,7 +43,7 @@ data:
       --version {{ $cluster.kaasEssentials.chartVersion | default $.Chart.Version }} \
       --namespace kube-system \
       --kubeconfig /var/run/kubeconfig \
-      --set location={{ $cluster.location }} \
+      --set cluster.kubeVersion={{ $kubeVersion }} \
       --set controlPlane.fqdn={{ $fqdn | quote }} \
       --set controlPlane.network.apiServer.port={{ $controlPlaneDefaults.network.apiServer.port | quote }} \
       --set controlPlane.network.apiServer.proxyPort={{ $controlPlaneDefaults.network.apiServer.proxyPort | quote }} \
