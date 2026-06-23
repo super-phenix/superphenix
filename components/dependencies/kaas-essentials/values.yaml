@@ -1,6 +1,7 @@
-# -- AZ in which we're deploying this chart.
-# This parameter cannot be overriden by the user.
-location: ""
+# -- Specification of the target cluster
+# These parameters cannot be overriden by the user.
+cluster:
+  kubeVersion: ""
 
 controlPlane:
   fqdn: ""
@@ -23,10 +24,14 @@ kubevirtCsi:
     #   tenantClass: default
     #   infraClass: default
   
-  nodeDriverRegistrarVersion: v2.16.0 # https://github.com/kubernetes-csi/node-driver-registrar/releases
-  csiLivenessprobeVersion: v2.18.0    # https://github.com/kubernetes-csi/livenessprobe/releases
-  snapshotControllerVersion: v8.5.0   # https://github.com/kubernetes-csi/external-snapshotter/releases
-  csiDriverVersion: latest            # https://quay.io/repository/kubevirt/kubevirt-csi-driver?tab=tags
+  kubevirtCsi:
+    # https://github.com/kubernetes-csi/node-driver-registrar/releases
+    # https://github.com/kubernetes-csi/livenessprobe/releases
+    # https://quay.io/repository/kubevirt/kubevirt-csi-driver?tab=tags
+    v1.35:
+      nodeDriverRegistrarVersion: v2.16.0
+      csiLivenessprobeVersion: v2.18.0
+      csiDriverVersion: latest
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # %          Metrics server           %

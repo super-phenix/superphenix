@@ -1,3 +1,6 @@
+{{- $kubeMinor := substr 0 5 $.Values.cluster.kubeVersion }}
+{{- $csiVersions := index $.Values.kubevirtCsi $kubeMinor }}
+
 ---
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
@@ -214,7 +217,7 @@ spec:
             privileged: true
             allowPrivilegeEscalation: true
           imagePullPolicy: IfNotPresent
-          image: quay.io/kubevirt/kubevirt-csi-driver:{{ $.Values.kubevirtCsi.csiDriverVersion }}
+          image: quay.io/kubevirt/kubevirt-csi-driver:{{ $csiVersions.csiDriverVersion }}
           args:
             - "--endpoint=unix:/csi/csi.sock"
             - "--node-name=$(KUBE_NODE_NAME)"
@@ -253,7 +256,7 @@ spec:
               memory: 50Mi
               cpu: 10m
         - name: csi-node-driver-registrar
-          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:{{ $.Values.kubevirtCsi.nodeDriverRegistrarVersion }}
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:{{ $csiVersions.nodeDriverRegistrarVersion }}
           args:
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
@@ -277,7 +280,7 @@ spec:
               memory: 20Mi
               cpu: 5m
         - name: csi-liveness-probe
-          image: registry.k8s.io/sig-storage/livenessprobe:{{ $.Values.kubevirtCsi.csiLivenessprobeVersion }}
+          image: registry.k8s.io/sig-storage/livenessprobe:{{ $csiVersions.csiLivenessprobeVersion }}
           args:
             - "--csi-address=/csi/csi.sock"
             - "--probe-timeout=3s"
