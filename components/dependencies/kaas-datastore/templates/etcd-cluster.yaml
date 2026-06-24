@@ -1,46 +1,35 @@
 {{- range $dataStoreID, $dataStore := .Values.dataStores }}
 
-{{- $replicas := $.Values.dataStoreDefaults.replicas }}
-
 ---
-# EtcdCluster: https://github.com/aenix-io/etcd-operator/tree/main/examples/manifests
-apiVersion: etcd.aenix.io/v1alpha1
+# https://github.com/cozystack/etcd-operator/blob/main/charts/etcd-operator/crd-bases/etcd-operator.cozystack.io_etcdclusters.yaml
+apiVersion: etcd-operator.cozystack.io/v1alpha2
 kind: EtcdCluster
 metadata:
   name: {{ $dataStoreID }}
 spec:
-  replicas: {{ $replicas }}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: {{ $dataStoreID }}
+            topologyKey: kubernetes.io/hostname
+          weight: 1
+  replicas: {{ $.Values.dataStoreDefaults.replicas }}
   storage:
-    volumeClaimTemplate:
-      spec:
-        {{- if $dataStore.storageClassName }}
-        storageClassName: {{ $dataStore.storageClassName }}
-        {{- end }}
-        resources:
-          requests:
-            storage: {{ $dataStore.storage | default $.Values.dataStoreDefaults.storage }}
-  podTemplate:
-    spec:
-      containers:
-        - name: etcd
-          image: quay.io/coreos/etcd:{{ $dataStore.version | required "[dataStore].version can't be empty." }}
-          imagePullPolicy: IfNotPresent
-          resources: {}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/instance: {{ $dataStoreID }}
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-  security:
-    tls:
-      peerTrustedCASecret: etcd-ca-{{ $dataStoreID }}
-      peerSecret: etcd-peer-{{ $dataStoreID }}
-      serverSecret: etcd-server-{{ $dataStoreID }}
-      clientTrustedCASecret: etcd-ca-{{ $dataStoreID }}
-      clientSecret: etcd-client-{{ $dataStoreID }}
-
+    size: {{ $dataStore.storage | default $.Values.dataStoreDefaults.storage }}
+    {{- if $dataStore.storageClassName }}
+    storageClassName: {{ $dataStore.storageClassName }}
+    {{- end }}
+  tls:
+    client:
+      operatorClientSecretRef:
+        name: etcd-client-{{ $dataStoreID }}
+      serverSecretRef:
+        name: etcd-server-{{ $dataStoreID }}
+    peer:
+      secretRef:
+        name: etcd-peer-{{ $dataStoreID }}
+  version: {{ $dataStore.version | required "[dataStore].version can't be empty." }}
 {{- end }}
