@@ -6,17 +6,17 @@
 
 {{- $projectID := $.Values.projectID -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) }}
-{{- $dataStoreName := printf "etcd-%s" $clusterID }}
+{{- $dataStoreID := printf "etcd-%s" $clusterID }}
 {{- $dataStoreDefaults := $.Values.dataStoreDefaults -}}
 {{- $replicas := $dataStoreDefaults.replicas }}
 
 ---
-# EtcdCluster: https://github.com/aenix-io/etcd-operator/tree/main/examples/manifests
+# EtcdCluster: https://github.com/cozystack/etcd-operator/blob/main/charts/etcd-operator/crd-bases/etcd-operator.cozystack.io_etcdclusters.yaml
 # Kamaji certs: https://github.com/clastix/kamaji-etcd/tree/master/charts/kamaji-etcd/templates
-apiVersion: etcd.aenix.io/v1alpha1
+apiVersion: etcd-operator.cozystack.io/v1alpha2
 kind: EtcdCluster
 metadata:
-  name: {{ $dataStoreName }}
+  name: {{ $dataStoreID }}
   labels:
     {{- include "sfs-kaas.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
@@ -25,76 +25,53 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
 spec:
+  additionalMetadata:
+    annotations:
+      ovn.kubernetes.io/logical_router: ovn-cluster
+      ovn.kubernetes.io/logical_switch: ovn-default
+    labels:
+      # don't include selector labels as they conflict with those set by etcd-operator
+      superphenix.net/gitops: {{ $.Values.gitops | quote }}
+      superphenix.net/organizationID: spx-{{ $.Values.organizationID }}
+      superphenix.net/projectID: spx-{{ $.Values.projectID }}
+      {{- if $.Values.gitops }}
+      superphenix.net/organizationName: {{ $.Values.organizationName | quote }}
+      superphenix.net/projectName: {{ $.Values.projectName | quote }}
+      {{- end }}
+      superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
+      superphenix.net/resourceLocalID: {{ $preID | quote }}
+      superphenix.net/resourceName: {{ $preID | quote }}
+      superphenix.net/ignoreNetworkPolicies: "true"
+      superphenix.net/workloadClass: kaas-datastore
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/instance: {{ $dataStoreID }}
+            topologyKey: kubernetes.io/hostname
+          weight: 1
   replicas: {{ $replicas }}
   storage:
-    volumeClaimTemplate:
-      metadata:
-        labels:
-          # don't include selector labels as they conflict with those set by etcd-operator
-          superphenix.net/gitops: {{ $.Values.gitops | quote }}
-          superphenix.net/organizationID: spx-{{ $.Values.organizationID }}
-          superphenix.net/projectID: spx-{{ $.Values.projectID }}
-          {{- if $.Values.gitops }}
-          superphenix.net/organizationName: {{ $.Values.organizationName | quote }}
-          superphenix.net/projectName: {{ $.Values.projectName | quote }}
-          {{- end }}
-          superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
-          superphenix.net/resourceLocalID: {{ $preID | quote }}
-          superphenix.net/resourceName: {{ $preID | quote }}
-          superphenix.net/ignoreNetworkPolicies: "true"
-          superphenix.net/workloadClass: kaas-datastore
-      spec:
-        storageClassName: {{ get $.Values.storageClassMapping (required "Must provide a storage class for the dedicated datastore." $dataStore.storageClassName )}}
-        resources:
-          requests:
-            storage: {{ $dataStore.storage | default $dataStoreDefaults.storage }}
-  podTemplate:
-    metadata:
-      annotations:
-        ovn.kubernetes.io/logical_router: ovn-cluster
-        ovn.kubernetes.io/logical_switch: ovn-default
-      labels:
-        # don't include selector labels as they conflict with those set by etcd-operator
-        superphenix.net/gitops: {{ $.Values.gitops | quote }}
-        superphenix.net/organizationID: spx-{{ $.Values.organizationID }}
-        superphenix.net/projectID: spx-{{ $.Values.projectID }}
-        {{- if $.Values.gitops }}
-        superphenix.net/organizationName: {{ $.Values.organizationName | quote }}
-        superphenix.net/projectName: {{ $.Values.projectName | quote }}
-        {{- end }}
-        superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
-        superphenix.net/resourceLocalID: {{ $preID | quote }}
-        superphenix.net/resourceName: {{ $preID | quote }}
-        superphenix.net/ignoreNetworkPolicies: "true"
-        superphenix.net/workloadClass: kaas-datastore
-    spec:
-      containers:
-        - name: etcd
-          image: "quay.io/coreos/etcd:{{ $dataStore.version | default $dataStoreDefaults.version }}"
-          imagePullPolicy: IfNotPresent
-          resources: {}
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - podAffinityTerm:
-                labelSelector:
-                  matchLabels:
-                    app.kubernetes.io/instance: {{ $dataStoreName }}
-                topologyKey: kubernetes.io/hostname
-              weight: 1
-  security:
-    tls:
-      peerTrustedCASecret: etcd-ca-{{ $clusterID }}
-      peerSecret: etcd-peer-{{ $clusterID }}
-      serverSecret: etcd-server-{{ $clusterID }}
-      clientTrustedCASecret: etcd-ca-{{ $clusterID }}
-      clientSecret: etcd-client-{{ $clusterID }}
+    size: {{ $dataStore.storage | default $dataStoreDefaults.storage }}
+    storageClassName: {{ get $.Values.storageClassMapping (required "Must provide a storage class for the dedicated datastore." $dataStore.storageClassName )}}
+  tls:
+    client:
+      operatorClientSecretRef:
+        name: etcd-client-{{ $clusterID }}
+      serverSecretRef:
+        name: etcd-server-{{ $clusterID }}
+    peer:
+      secretRef:
+        name: etcd-peer-{{ $clusterID }}
+  version: {{ $dataStore.version | default $dataStoreDefaults.version }}
 
 ---
 apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:
-  name: {{ $dataStoreName }}
+  name: {{ $dataStoreID }}
   labels:
     {{- include "sfs-kaas.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
@@ -103,7 +80,7 @@ metadata:
 spec:
   driver: etcd
   endpoints:
-    - {{ printf "%s.%s.svc.%s:2379" $dataStoreName $.Release.Namespace $dataStoreDefaults.clusterDomain }}
+    - {{ printf "%s.%s.svc.%s:2379" $dataStoreID $.Release.Namespace $dataStoreDefaults.clusterDomain }}
   tlsConfig:
     certificateAuthority:
       certificate:
@@ -222,15 +199,10 @@ spec:
     - "signing"
     - "key encipherment"
   dnsNames:
-  {{- range $count := until (int $replicas) }}
-    - {{ printf "%s-%d" $dataStoreName $count }}
-    - {{ printf "%s-%d.%s-headless" $dataStoreName $count $dataStoreName }}
-    - {{ printf "%s-%d.%s-headless.%s.svc" $dataStoreName $count $dataStoreName $.Release.Namespace }}
-    - {{ printf "%s-%d.%s-headless.%s.svc.%s" $dataStoreName $count $dataStoreName $.Release.Namespace $dataStoreDefaults.clusterDomain }}
-  {{- end }}
-    - "{{ $dataStoreName }}.{{ $.Release.Namespace }}.svc.{{ $dataStoreDefaults.clusterDomain }}"
-    - "{{ $dataStoreName }}.{{ $.Release.Namespace }}.svc"
-    - "{{ $dataStoreName }}"
+    - "{{ printf "*.%s-headless.%s.svc" $dataStoreID $.Release.Namespace }}"
+    - "{{ printf "*.%s-headless.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
+    - "{{ printf "*.%s.%s.svc" $dataStoreID $.Release.Namespace }}"
+    - "{{ printf "*.%s.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
     - localhost
   ipAddresses:
     - 127.0.0.1
@@ -270,15 +242,10 @@ spec:
     - "signing"
     - "key encipherment"
   dnsNames:
-  {{- range $count := until (int $replicas) }}
-    - {{ printf "%s-%d" $dataStoreName $count }}
-    - {{ printf "%s-%d.%s-headless" $dataStoreName $count $dataStoreName }}
-    - {{ printf "%s-%d.%s-headless.%s.svc" $dataStoreName $count $dataStoreName $.Release.Namespace }}
-    - {{ printf "%s-%d.%s-headless.%s.svc.%s" $dataStoreName $count $dataStoreName $.Release.Namespace $dataStoreDefaults.clusterDomain }}
-  {{- end }}
-    - "{{ $dataStoreName }}.{{ $.Release.Namespace }}.svc.{{ $dataStoreDefaults.clusterDomain }}"
-    - "{{ $dataStoreName }}.{{ $.Release.Namespace }}.svc"
-    - "{{ $dataStoreName }}"
+    - "{{ printf "*.%s-headless.%s.svc" $dataStoreID $.Release.Namespace }}"
+    - "{{ printf "*.%s-headless.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
+    - "{{ printf "*.%s.%s.svc" $dataStoreID $.Release.Namespace }}"
+    - "{{ printf "*.%s.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
     - localhost
   ipAddresses:
     - 127.0.0.1
