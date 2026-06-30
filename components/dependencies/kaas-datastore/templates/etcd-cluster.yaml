@@ -17,6 +17,8 @@ spec:
             topologyKey: kubernetes.io/hostname
           weight: 1
   replicas: {{ $.Values.dataStoreDefaults.replicas }}
+  options:
+    quotaBackendBytes: {{ mul (atoi (trimSuffix "Gi" ($dataStore.storage | default $.Values.dataStoreDefaults.storage))) 1024 1024 1024 }}
   storage:
     size: {{ $dataStore.storage | default $.Values.dataStoreDefaults.storage }}
     {{- if $dataStore.storageClassName }}

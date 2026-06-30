@@ -9,6 +9,7 @@
 {{- $dataStoreID := printf "etcd-%s" $clusterID }}
 {{- $dataStoreDefaults := $.Values.dataStoreDefaults -}}
 {{- $replicas := $dataStoreDefaults.replicas }}
+{{- $clusterDomain := $dataStoreDefaults.clusterDomain }}
 
 ---
 # EtcdCluster: https://github.com/cozystack/etcd-operator/blob/main/charts/etcd-operator/crd-bases/etcd-operator.cozystack.io_etcdclusters.yaml
@@ -53,6 +54,8 @@ spec:
             topologyKey: kubernetes.io/hostname
           weight: 1
   replicas: {{ $replicas }}
+  options:
+    quotaBackendBytes: {{ mul (atoi (trimSuffix "Gi" ($dataStore.storage | default $.Values.dataStoreDefaults.storage))) 1024 1024 1024 }}
   storage:
     size: {{ $dataStore.storage | default $dataStoreDefaults.storage }}
     storageClassName: {{ get $.Values.storageClassMapping (required "Must provide a storage class for the dedicated datastore." $dataStore.storageClassName )}}
@@ -80,7 +83,7 @@ metadata:
 spec:
   driver: etcd
   endpoints:
-    - {{ printf "%s.%s.svc.%s:2379" $dataStoreID $.Release.Namespace $dataStoreDefaults.clusterDomain }}
+    - {{ printf "%s.%s.svc.%s:2379" $dataStoreID $.Release.Namespace $clusterDomain }}
   tlsConfig:
     certificateAuthority:
       certificate:
@@ -203,6 +206,8 @@ spec:
     - "{{ printf "*.%s-headless.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
     - "{{ printf "*.%s.%s.svc" $dataStoreID $.Release.Namespace }}"
     - "{{ printf "*.%s.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
+    - "{{ printf "%s.%s.svc" $dataStoreID $.Release.Namespace }}"
+    - "{{ printf "%s.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
     - localhost
   ipAddresses:
     - 127.0.0.1
@@ -246,6 +251,8 @@ spec:
     - "{{ printf "*.%s-headless.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
     - "{{ printf "*.%s.%s.svc" $dataStoreID $.Release.Namespace }}"
     - "{{ printf "*.%s.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
+    - "{{ printf "%s.%s.svc" $dataStoreID $.Release.Namespace }}"
+    - "{{ printf "%s.%s.svc.%s" $dataStoreID $.Release.Namespace $clusterDomain }}"
     - localhost
   ipAddresses:
     - 127.0.0.1

@@ -60,7 +60,7 @@ clusterDefaults:
 # @ignored
 dataStoreDefaults:
   replicas: 3
-  version: v3.6.7 # https://quay.io/repository/coreos/etcd?tab=tags
+  version: 3.6.7 # https://quay.io/repository/coreos/etcd?tab=tags
   storage: 8Gi
   clusterDomain: "cluster.local"
 
