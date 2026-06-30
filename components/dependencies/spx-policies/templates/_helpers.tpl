@@ -132,6 +132,13 @@ IaaS labels
 {{- end }}
 
 {{/*
+Nabok labels
+*/}}
+{{- define "policies.nabokLabel" -}}
+"plan-name"
+{{- end }}
+
+{{/*
 Regex for label values and other fields
 */}}
 {{- define "policies.regex" -}}
@@ -149,6 +156,8 @@ Regex for label values and other fields
 "^vmsnapshot-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-volume-spx-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
 {{- else if eq . "etcddisk" -}}
 "^data-(etcd-)?spx-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[0-9]$"
+{{- else if eq . "nabokMigration" -}}
+"^plan-migration-[a-zA-Z0-9/-]{0,48}$"
 {{- end }}
 {{- end }}
 

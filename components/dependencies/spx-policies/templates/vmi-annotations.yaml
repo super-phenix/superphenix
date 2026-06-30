@@ -27,6 +27,10 @@ spec:
     expression: r{{ include "policies.regex" "spxid" | replace "^" "" | replace  "$" "" }}
   - name: projectID
     expression: variables.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
+  - name: nabokPlanRegex
+    expression: r{{ include "policies.regex" "nabokMigration"}}
+  - name: nabokLabel
+    expression: r{{ include "policies.nabokLabel" ""}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -48,7 +52,7 @@ spec:
         .exists(entry,
           entry.endsWith(anno)
         )
-      )
+      )  || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
     messageExpression: |
       "##### " + object.kind + " has missing annotations: " +
       {{ $reqAnnotations }}

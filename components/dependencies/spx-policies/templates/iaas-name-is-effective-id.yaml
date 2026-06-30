@@ -17,6 +17,10 @@ spec:
       expression: "object.metadata.name"
     - name: effectiveID
       expression: object.metadata.labels[{{ include "policies.resEffectiveIDLabel" "" }}]
+    - name: nabokPlanRegex
+      expression: r{{ include "policies.regex" "nabokMigration"}}
+    - name: nabokLabel
+      expression: r{{ include "policies.nabokLabel" ""}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -53,7 +57,7 @@ spec:
         (
           object.kind == "NetworkPolicy" &&
           variables.name.endsWith(variables.effectiveID)
-        )
+        ) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
       messageExpression: |
         "##### " + object.kind +
         " name (" +
