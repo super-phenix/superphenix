@@ -5,6 +5,8 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: etcd-ca-issuer-{{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-6"
 spec:
@@ -15,9 +17,14 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: etcd-ca-{{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-6"
 spec:
+  secretTemplate:
+    labels:
+      etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   isCA: true
   usages:
   - "signing"

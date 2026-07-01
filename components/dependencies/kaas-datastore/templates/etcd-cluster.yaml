@@ -6,6 +6,8 @@ apiVersion: etcd-operator.cozystack.io/v1alpha2
 kind: EtcdCluster
 metadata:
   name: {{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
 spec:
   affinity:
     podAntiAffinity:
