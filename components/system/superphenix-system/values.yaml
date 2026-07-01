@@ -1172,8 +1172,7 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     namespace: "kaas-system"
-    repoURL: "oci://ghcr.io/super-phenix/charts/kaas-controller"
-    path: "."
+    repoURL: "ghcr.io/super-phenix/charts"
     targetRevision: "0.3.0"
     helm:
       chart: "kaas-controller"
@@ -1191,9 +1190,8 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     namespace: "kaas-datastore-system"
-    repoURL: "oci://ghcr.io/super-phenix/charts/kaas-datastore"
-    path: "."
-    targetRevision: "0.2.2"
+    repoURL: "ghcr.io/super-phenix/charts"
+    targetRevision: "0.3.0"
     helm:
       chart: "kaas-datastore"
       releaseName: "kaas-datastore"
@@ -1213,14 +1211,14 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     namespace: "kamaji-system"
-    repoURL: "harbor.agc.dpk-agc-cl04.agoracalyce.net/kats"
-    targetRevision: "2026.2.24"
+    repoURL: harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm
+    targetRevision: 26.5.7
     helm:
       chart: "kamaji"
       releaseName: "kamaji"
       values:
         image:
-          tag: "edge-26.2.5" # https://github.com/clastix/kamaji/releases
+          tag: "26.5.2-edge" # https://github.com/clastix/kamaji/releases
         replicaCount: 3
         defaultDatastoreName: "" # Disable default DS (override in config.yaml)
         extraArgs:
@@ -1259,23 +1257,23 @@ apps:
       syncOptions: {}
     namespace: "capi-operator-system"
     repoURL: "https://kubernetes-sigs.github.io/cluster-api-operator"
-    targetRevision: "0.25.0" # https://github.com/kubernetes-sigs/cluster-api-operator/releases
+    targetRevision: "0.26.0" # https://github.com/kubernetes-sigs/cluster-api-operator/releases
     helm:
       chart: "cluster-api-operator"
       releaseName: "cluster-api-operator"
       values:
         core:
           cluster-api:
-            version: v1.12.3 # https://github.com/kubernetes-sigs/cluster-api/releases
+            version: v1.12.7 # https://github.com/kubernetes-sigs/cluster-api/releases
         bootstrap:
           kubeadm:
-            version: v1.12.3 # https://github.com/kubernetes-sigs/cluster-api/releases
+            version: v1.12.7 # https://github.com/kubernetes-sigs/cluster-api/releases
         infrastructure:
           kubevirt:
-            version: v0.11.1 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
+            version: v0.11.2 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
         controlPlane:
           kamaji:
-            version: v0.17.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
+            version: v0.19.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
 
 
   # ETCD operator -- Deploys datastores for the controlplanes
@@ -1290,9 +1288,8 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     namespace: "etcd-operator-system"
-    repoURL: "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm"
-    targetRevision: "26.3.31"
-    #targetRevision: "0.1.0"
+    repoURL: ghcr.io/cozystack/charts
+    targetRevision: "0.5.1"
     helm:
       chart: "etcd-operator"
       releaseName: "etcd-operator"
