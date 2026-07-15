@@ -28,6 +28,11 @@ gitops: false
 # This parameter cannot be overriden by the user.
 domain: "superphenix.net"
 
+# -- Domain to use in urls generated to fetch AZ IPs
+# Defaults to .domain
+# This parameter cannot be overriden by the user.
+azDomain: ""
+
 # -- Maximum mumber of AZs in a region (for cluster migrations).
 # This parameter cannot be overriden by the user.
 azCount: 10

@@ -10,7 +10,7 @@
 {{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "name" $clusterID "az" $.Values.location "domain" $.Values.domain)) }}
 {{- $region := (split "-" $.Values.location)._0 }}
 {{- $azCount := $.Values.azCount }}
-{{- $azQueryUrl := $.Values.azQueryUrl | default (printf "azs.%s.%s" $region $.Values.domain) }}
+{{- $azQueryUrl := $.Values.azQueryUrl | default (printf "azs.%s.%s" $region ($.Values.azDomain | default $.Values.domain)) }}
 
 {{- range $poolName, $pool := $workers.instances -}}
 {{- $template := $pool.template -}}
