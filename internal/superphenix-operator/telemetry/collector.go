@@ -5,8 +5,10 @@ import (
 	"regexp"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/super-phenix/superphenix-telemetry/pkg/anonymizer"
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 )
 
@@ -21,12 +23,15 @@ var labelValueRe = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)
 type Collector struct {
 	Client          client.Reader
 	OperatorVersion string
+	Namespace       string
 
 	// ManagementVersion is the currently deployed superphenix-management
-	// chart version on this cluster. Empty when this operator does not run
-	// on a management cluster, in which case no component_info metric for
-	// the management chart is emitted.
+	// chart version on this cluster.
 	ManagementVersion string
+
+	// ArgoCDVersion is the currently deployed argocd chart version on
+	// this cluster.
+	ArgoCDVersion string
 }
 
 // Collect returns the current Report. It always includes operator_info;
@@ -34,6 +39,12 @@ type Collector struct {
 // readable.
 func (c *Collector) Collect(ctx context.Context) (Report, error) {
 	report := Report{SchemaVersion: SchemaVersion}
+
+	instUID := c.getInstallationUID(ctx)
+	// We use a fixed salt for the anonymizer to remain consistent across restarts.
+	// UIDs are already unique, so a fixed salt is sufficient to make them opaque.
+	anon, _ := anonymizer.New("superphenix-telemetry-salt")
+	report.InstallationID = anon.Hash(instUID)
 
 	report.Metrics = append(report.Metrics, Metric{
 		Name:   MetricOperatorInfo,
@@ -54,29 +65,89 @@ func (c *Collector) Collect(ctx context.Context) (Report, error) {
 		})
 	}
 
+	if c.ArgoCDVersion != "" {
+		report.Metrics = append(report.Metrics, Metric{
+			Name:  MetricComponentInfo,
+			Kind:  KindGauge,
+			Value: 1,
+			Labels: map[string]string{
+				"name":    "argocd",
+				"version": sanitizeVersion(c.ArgoCDVersion),
+			},
+		})
+	}
+
 	clusters := &operatorv1alpha1.ClusterList{}
 	if err := c.Client.List(ctx, clusters); err != nil {
 		return report, err
 	}
 
+	regionAZs := make(map[string]map[string]struct{})
+	for i := range clusters.Items {
+		r := clusters.Items[i].Spec.Region
+		az := clusters.Items[i].Spec.AvailabilityZone
+		if regionAZs[r] == nil {
+			regionAZs[r] = make(map[string]struct{})
+		}
+		regionAZs[r][az] = struct{}{}
+	}
+
 	report.Metrics = append(report.Metrics, Metric{
-		Name:  MetricAZCount,
+		Name:  MetricRegionCount,
 		Kind:  KindGauge,
-		Value: float64(len(clusters.Items)),
+		Value: float64(len(regionAZs)),
 	})
+
+	for region, azs := range regionAZs {
+		for az := range azs {
+			report.Metrics = append(report.Metrics, Metric{
+				Name:  MetricAZCount,
+				Kind:  KindGauge,
+				Value: 1,
+				Labels: map[string]string{
+					"region": anon.Hash(region),
+					"az":     anon.Hash(az),
+				},
+			})
+		}
+	}
 
 	for i := range clusters.Items {
 		cl := &clusters.Items[i]
 		report.Metrics = append(report.Metrics, Metric{
-			Name:  MetricAZInfo,
+			Name:  MetricClusterInfo,
 			Kind:  KindGauge,
 			Value: 1,
 			Labels: map[string]string{
+				"cluster":  anon.Hash(string(cl.UID)),
+				"az":       anon.Hash(cl.Spec.AvailabilityZone),
 				"topology": topologyLabel(cl.Spec.DeploymentTopology),
 				"type":     typeLabel(cl.Spec.DeploymentTopology, cl.Spec.Type),
 				"version":  sanitizeVersion(cl.Status.CurrentVersion),
 			},
 		})
+
+		report.Metrics = append(report.Metrics, Metric{
+			Name:  MetricComponentInfo,
+			Kind:  KindGauge,
+			Value: 1,
+			Labels: map[string]string{
+				"cluster": anon.Hash(string(cl.UID)),
+				"name":    "superphenix-system",
+				"version": sanitizeVersion(cl.Status.CurrentVersion),
+			},
+		})
+
+		if cl.Status.NodeCount > 0 {
+			report.Metrics = append(report.Metrics, Metric{
+				Name:  MetricNodeCount,
+				Kind:  KindGauge,
+				Value: float64(cl.Status.NodeCount),
+				Labels: map[string]string{
+					"cluster": anon.Hash(string(cl.UID)),
+				},
+			})
+		}
 	}
 
 	if len(report.Metrics) > MaxMetricsPerReport {
@@ -84,6 +155,20 @@ func (c *Collector) Collect(ctx context.Context) (Report, error) {
 	}
 
 	return report, nil
+}
+
+// getInstallationUID fetches the UID of the kube-system namespace or fallbacks to the operator namespace.
+func (c *Collector) getInstallationUID(ctx context.Context) string {
+	ns := &corev1.Namespace{}
+	if err := c.Client.Get(ctx, client.ObjectKey{Name: "kube-system"}, ns); err == nil {
+		return string(ns.UID)
+	}
+	if c.Namespace != "" {
+		if err := c.Client.Get(ctx, client.ObjectKey{Name: c.Namespace}, ns); err == nil {
+			return string(ns.UID)
+		}
+	}
+	return "unknown"
 }
 
 func topologyLabel(t operatorv1alpha1.DeploymentTopology) string {

@@ -23,6 +23,8 @@ metadata:
   {{- end }}
   labels:
     operator.superphenix.net/clusterName: {{ $cluster.name }}
+    operator.superphenix.net/application: {{ $app | lower }}
+    operator.superphenix.net/managed: "true"
     {{ $labels | nindent 4 }}
   annotations:
     {{- if hasKey $values "wave" }}

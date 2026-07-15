@@ -1,0 +1,22 @@
+{{- range .Values.clusters }}
+{{- $cluster := .name }}
+{{- range .objectStores }}
+---
+apiVersion: ceph.rook.io/v1
+kind: CephObjectStore
+metadata:
+  name: {{ printf "%s.%s" $cluster .name }}
+  namespace: {{ $cluster }}
+spec:
+  gateway:
+    port: {{ .port | default 80 }}
+    {{- if .securePort }}
+    securePort: {{ .securePort }}
+    {{- end }}
+    {{- if and .tls .tls.enabled }}
+    sslCertificateRef: {{ printf "%s.%s-tls" $cluster .name }}
+    {{- end }}
+    externalRgwEndpoints:
+      {{- toYaml .endpoints | nindent 6 }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,44 @@
+{{- range $localID, $bucket := .Values.buckets }}
+{{- if eq $bucket.location $.Values.location }}
+
+{{- $class := (required "Must provide a storage class" $bucket.class) }}
+{{- $storageClass := get $.Values.storageClassMapping $class }}
+
+{{- $effectiveID := include "sfs-iaas.spxEID" (dict "projectID" $.Values.projectID "localID" $localID) }}
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  # We need to add a prefix, as the OBC generates ConfigMaps/Secrets with the same name as the OBC.
+  # If another resource has the same projectID and also generates ConfigMaps/Secrets using its own name,
+  # it will conflict with the OBC.
+  name: bucket-{{ $effectiveID }}
+  labels:
+    {{- include "sfs-iaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $effectiveID | quote }}
+    superphenix.net/resourceLocalID: {{ $localID | quote }}
+    superphenix.net/resourceName: {{ $bucket.name | quote }}
+spec:
+  bucketName: {{ $effectiveID | quote }}
+  storageClassName: {{ (required "No storageclass found" $storageClass) | quote }}
+  {{- with $bucket.config }}
+  additionalConfig:
+    {{- if .bucketMaxObjects }}
+    bucketMaxObjects: {{ .bucketMaxObjects | quote }}
+    {{- end }}
+    {{- if .bucketMaxSize }}
+    bucketMaxSize: {{ .bucketMaxSize | quote }}
+    {{- end }}
+    {{- if .bucketPolicy }}
+    bucketPolicy: {{ .bucketPolicy | quote }}
+    {{- end }}
+    {{- if .bucketLifecycle }}
+    bucketLifecycle: {{ .bucketLifecycle | quote }}
+    {{- end }}
+    {{- if .bucketOwner }}
+    bucketOwner: {{ .bucketOwner | quote }}
+    {{- end }}
+  {{- end }}
+
+{{- end }}
+{{- end }}

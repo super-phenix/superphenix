@@ -138,7 +138,8 @@ Resources to backup, grouped by type of resource
 - gateway.gateway.networking.k8s.io
 - tlsroute.gateway.networking.k8s.io
 - certificate.cert-manager.io
-- etcdcluster.etcd.aenix.io
+- etcdcluster.etcd-operator.cozystack.io
+- etcdmember.etcd-operator.cozystack.io
 - issuer.cert-manager.io
 - serviceaccount
 - role.rbac.authorization.k8s.io

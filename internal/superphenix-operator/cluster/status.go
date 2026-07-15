@@ -75,7 +75,7 @@ func (r *Reconciler) isSynced(cluster *operatorv1alpha1.Cluster) bool {
 // syncStatus centralizes the cluster status and phase management.
 // It determines the final status based on the connectivity, ArgoCD application status, and spec.
 // It also updates versions, conditions, phase, and handles the status patch to the Kubernetes API.
-func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster, app *unstructured.Unstructured, k8sVersion string, reconcileErr error, lastSync *metav1.Time) (ctrl.Result, error) {
+func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster, app *unstructured.Unstructured, k8sVersion string, nodeCount int, reconcileErr error, lastSync *metav1.Time) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 	oldStatus := cluster.Status.DeepCopy()
 	patch := client.MergeFrom(cluster.DeepCopy())
@@ -83,6 +83,9 @@ func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.C
 	// 1. Update Versions
 	if k8sVersion != "" {
 		cluster.Status.KubernetesVersion = k8sVersion
+	}
+	if nodeCount > 0 {
+		cluster.Status.NodeCount = nodeCount
 	}
 
 	// Update CurrentVersion based on the currently deployed superphenix-system chart

@@ -1,6 +1,10 @@
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 
+# Operator version used for ldflags
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+LD_FLAGS = -X 'github.com/super-phenix/superphenix/internal/superphenix-operator/version.OperatorVersion=$(VERSION)'
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -107,7 +111,7 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -o bin/manager cmd/superphenix-operator/main.go
+	go build -ldflags="$(LD_FLAGS)" -o bin/manager cmd/superphenix-operator/main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -118,7 +122,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} -f components/system/superphenix-operator/docker/Dockerfile .
+	$(CONTAINER_TOOL) build --build-arg VERSION=$(VERSION) -t ${IMG} -f components/system/superphenix-operator/docker/Dockerfile .
 
 .PHONY: docker-build-superphenix-operator
 docker-build-superphenix-operator: docker-build ## Specific target for superphenix-operator image build.
@@ -144,7 +148,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' components/system/superphenix-operator/docker/Dockerfile > components/system/superphenix-operator/docker/Dockerfile.cross
 	- $(CONTAINER_TOOL) buildx create --name superphenix-operator-builder
 	$(CONTAINER_TOOL) buildx use superphenix-operator-builder
-	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f components/system/superphenix-operator/docker/Dockerfile.cross .
+	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} --build-arg VERSION=$(VERSION) -f components/system/superphenix-operator/docker/Dockerfile.cross .
 	- $(CONTAINER_TOOL) buildx rm superphenix-operator-builder
 	rm components/system/superphenix-operator/docker/Dockerfile.cross
 

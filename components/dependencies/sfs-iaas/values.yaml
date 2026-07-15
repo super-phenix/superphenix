@@ -188,7 +188,7 @@ replication:
 # -- Disks that can be attached to VMs
 # @section -- Disks
 # @default -- ""
-disks:
+disks: {}
 #  example:
 #    # -- User-friendly name of the disk
 #    name: "example"
@@ -197,7 +197,7 @@ disks:
 #    # -- Requested size of the disk
 #    storage: 10G
 #    # -- Storage class to use
-#    class: "" 
+#    class: ""
 #    # -- Source of the data to import in the disk (optional)
 #    # If no source is specified, the disk will be created blank
 #    source:
@@ -214,6 +214,31 @@ disks:
 #      diskSnapshot:
 #        # -- Local ID of the snapshot
 #        target: example
+
+# -- S3 buckets that can be created in the project
+# @section -- Storage
+# @default -- ""
+buckets: {}
+#  example:
+#    # -- User-friendly name of the bucket
+#    name: "example"
+#    # -- AZ in which to deploy the resource
+#    location: ""
+#    # -- Storage class to use for the bucket
+#    class: ""
+#    # -- Additional configuration for the bucket (maxSize, etc.)
+#    # @section -- Storage
+#    config:
+#      # -- Max number of objects in the bucket as an individual bucket quota (optional)
+#      bucketMaxObjects: ""
+#      # -- Max size of the bucket as an individual bucket quota (optional)
+#      bucketMaxSize: ""
+#      # -- JSON string defining the bucket policy (optional)
+#      bucketPolicy: ""
+#      # -- JSON string defining the bucket lifecycle configuration (optional)
+#      bucketLifecycle: ""
+#      # -- Pre-existing Ceph RGW user account that will own the bucket (optional)
+#      bucketOwner: ""
 
 # -- Snapshots of Disks
 # @section -- Disk Snapshots

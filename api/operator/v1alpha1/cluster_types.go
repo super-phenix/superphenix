@@ -217,6 +217,10 @@ type ClusterStatus struct {
 	// +optional
 	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
 
+	// NodeCount is the number of nodes in the cluster.
+	// +optional
+	NodeCount int `json:"nodeCount,omitempty"`
+
 	// Conditions represent the current state of the Cluster resource.
 	// Standard condition types include:
 	// - "Ready": the cluster is fully operational
@@ -243,8 +247,9 @@ type ClusterStatus struct {
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
 // +kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region`
 // +kubebuilder:printcolumn:name="AZ",type=string,JSONPath=`.spec.availabilityZone`
-// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.currentVersion`
-// +kubebuilder:printcolumn:name="K8s Version",type=string,JSONPath=`.status.kubernetesVersion`
+// +kubebuilder:printcolumn:name="SPX version",type=string,JSONPath=`.status.currentVersion`
+// +kubebuilder:printcolumn:name="K8S version",type=string,JSONPath=`.status.kubernetesVersion`
+// +kubebuilder:printcolumn:name="Nodes",type=integer,JSONPath=`.status.nodeCount`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 

@@ -39,3 +39,4 @@ examples/
 # AI agents
 .claude/
 .junie/
+skills-lock.json

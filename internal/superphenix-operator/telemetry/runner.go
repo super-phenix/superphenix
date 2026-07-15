@@ -13,7 +13,7 @@ import (
 const DefaultEndpoint = "https://telemetry.superphenix.net"
 
 // pushInterval is the cadence at which Reports are pushed. Hardcoded by
-// design - users cannot tune it, only disable telemetry entirely.
+// design to prevent abuse of the telemetry endpoint.
 const pushInterval = 6 * time.Hour
 
 // Runner is a controller-runtime manager.Runnable that periodically

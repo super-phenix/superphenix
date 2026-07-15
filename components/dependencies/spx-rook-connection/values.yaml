@@ -27,7 +27,7 @@ clusters: []
 #      - name: "test"
 #        # Create StorageClasses
 #        storageClasses:
-#          - name: "" # Name must be unique across all pools of the same cluster
+#          - name: "" # SC name will be "<cluster>.<name>" unless fullName is set. Name must be unique across every storageclass name in the cluster
 #            # fullName: ""
 #            # -- Data pool specified for erasure coded storage classes
 #            dataPool: ""
@@ -48,3 +48,32 @@ clusters: []
 #      daily:
 #        schedulingInterval: "24h"
 #        schedulingStartTime: "22:00:00"
+#    # -- RGW admin ops user credentials on the remote cluster.
+#    # Required when objectStores is non-empty. Produces the hardcoded `rgw-admin-ops-user` Secret
+#    # that the Rook operator uses to drive the RGW admin ops API for all CephObjectStores in
+#    # this cluster's namespace.
+#    rgwAdminOps:
+#      accessKey: ""
+#      secretKey: ""
+#    # -- External RGW object stores. Each entry produces a CephObjectStore (external),
+#    # an optional TLS Secret and one or more bucket StorageClasses usable with ObjectBucketClaims.
+#    objectStores:
+#      - name: "rgw" # CephObjectStore CR name (also used to derive the TLS secret name)
+#        # -- External RGW endpoints. Each entry accepts either `ip` or `hostname`.
+#        endpoints:
+#          - ip: ""
+#            # hostname: ""
+#        # -- Gateway HTTP port
+#        port: 80
+#        # -- Gateway HTTPS port (only set when TLS is enabled)
+#        # securePort: 443
+#        # -- TLS configuration for the remote RGW
+#        # tls:
+#        #   enabled: false
+#        #   # PEM-encoded certificate the operator will trust when talking to the RGW
+#        #   cert: ""
+#        # -- Bucket StorageClasses to create for this object store
+#        storageClasses:
+#          - name: "bucket" # SC name will be "<cluster>.<name>" unless fullName is set. Name must be unique across every storageclass name in the cluster.
+#            # fullName: ""
+#            reclaimPolicy: Delete

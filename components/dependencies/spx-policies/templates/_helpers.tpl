@@ -148,7 +148,7 @@ Regex for label values and other fields
 {{- else if eq . "vmsnapshotVolume" -}}
 "^vmsnapshot-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-volume-spx-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
 {{- else if eq . "etcddisk" -}}
-"^data-(etcd-)?spx-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[0-9]$"
+"^data(-etcd)?-spx-(([a-z0-9-]*-datastore[0-9][0-9]-([a-z0-9]{5}|[0-9]))|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[a-z0-9]{5})$"
 {{- end }}
 {{- end }}
 

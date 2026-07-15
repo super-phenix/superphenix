@@ -28,11 +28,14 @@ spec:
       name: AZ
       type: string
     - jsonPath: .status.currentVersion
-      name: Version
+      name: SPX version
       type: string
     - jsonPath: .status.kubernetesVersion
-      name: K8s Version
+      name: K8S version
       type: string
+    - jsonPath: .status.nodeCount
+      name: Nodes
+      type: integer
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -256,6 +259,9 @@ spec:
                   cluster.
                 format: date-time
                 type: string
+              nodeCount:
+                description: NodeCount is the number of nodes in the cluster.
+                type: integer
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
                   recently observed Cluster.

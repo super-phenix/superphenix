@@ -28,11 +28,14 @@ spec:
       name: AZ
       type: string
     - jsonPath: .status.currentVersion
-      name: Version
+      name: SPX version
       type: string
     - jsonPath: .status.kubernetesVersion
-      name: K8s Version
+      name: K8S version
       type: string
+    - jsonPath: .status.nodeCount
+      name: Nodes
+      type: integer
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -79,8 +82,10 @@ spec:
               cleanupOnDeletion:
                 default: false
                 description: |-
-                  CleanupOnDeletion allows to cleanup all resources created by the cluster's ArgoCD Application when the Cluster is deleted.
-                  When set to true, the ArgoCD finalizer is added to the cluster's ArgoCD Application.
+                  CleanupOnDeletion allows the cleanup of the cluster when it gets deleted.
+                  When set to true, deleting the cluster resource will automatically propagate the deletion
+                  to the target, with every application getting cascade deleted. This option is dangerous
+                  and should usually be set to true only before a deletion is planned to avoid any accident.
                 type: boolean
               connection:
                 description: Connection defines the parameters to connect to the remote
@@ -254,6 +259,9 @@ spec:
                   cluster.
                 format: date-time
                 type: string
+              nodeCount:
+                description: NodeCount is the number of nodes in the cluster.
+                type: integer
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
                   recently observed Cluster.
