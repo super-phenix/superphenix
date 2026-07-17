@@ -37,3 +37,6 @@ hacks/.build-and-push.sh
 .claude/
 .junie/
 skills-lock.json
+
+# Folder that contains all configurations for local deployment
+/hacks/compose/local/*

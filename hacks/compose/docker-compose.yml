@@ -6,7 +6,7 @@ services:
       - DSN=postgres://${KRATOS_DB_USER:-kratos}:${KRATOS_DB_PASSWORD:-secret}@postgresd:5432/${KRATOS_DB_NAME:-kratos}?sslmode=disable&max_conns=20&max_idle_conns=4
     volumes:
       - type: bind
-        source: ./kratos
+        source: ./local/kratos
         target: /etc/config/kratos
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
@@ -43,7 +43,7 @@ services:
     command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
     volumes:
       - type: bind
-        source: ./kratos
+        source: ./local/kratos
         target: /etc/config/kratos
     networks:
       - intranet
@@ -90,8 +90,8 @@ services:
       - intranet
   superphenix-api:
     build:
-      context: ..
-      dockerfile: ./components/dependencies/superphenix-api/docker/Dockerfile
+      context: ../../
+      dockerfile: ./components/system/superphenix-api/docker/Dockerfile
     ports:
       - "${SUPERPHENIX_API_PORT:-8080}:8080"
       - "${SUPERPHENIX_API_ADMIN_PORT:-7001}:7000"
@@ -124,7 +124,7 @@ services:
     volumes:
       # Structured config (incl. argoController.app KaaS/BaaS repos + kubeVersions).
       # Env vars above still override matching keys.
-      - ./superphenix-api.config.yaml:/etc/superphenix-api/config.yaml:ro
+      - ./local/superphenix-api.config.yaml:/etc/superphenix-api/config.yaml:ro
     networks:
       - intranet
   spx-panel:
