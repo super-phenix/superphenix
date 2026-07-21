@@ -32,7 +32,7 @@ func Module(cfg *config.Config, s API) router.Module {
 	return router.Module{
 		Name:        ModuleName,
 		Mount:       "/billing",
-		Middlewares: []router.Middleware{authentication.SecretAuth(cfg.BillingHTTP.AuthSecret)},
+		Middlewares: []router.Middleware{authentication.SecretAuth(cfg.AdminHTTP.AuthSecret)},
 		Routes: []router.Route{
 			router.Get("/project/{projectId}", s.GetProjectName),
 			router.Get("/organization/{orgaId}", s.GetOrgaName),

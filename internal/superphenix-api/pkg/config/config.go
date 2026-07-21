@@ -78,10 +78,6 @@ type Config struct {
 		AuthSecret string
 	}
 
-	BillingHTTP struct {
-		AuthSecret string
-	}
-
 	SuperAdmins []string `yaml:"superAdmins"`
 
 	Redis struct {
@@ -213,8 +209,6 @@ publicHttp:
 adminHttp:
   enabled: true
   address: ":7000"
-  authSecret: ""
-billingHttp:
   authSecret: ""
 superAdmins: []
 redis:
