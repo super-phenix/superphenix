@@ -3,7 +3,6 @@ package server
 import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
-	adminAz "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/az"
 	adminBilling "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/billing"
 	adminPermission "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/permission"
 	apiToken "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/apitoken"
@@ -71,7 +70,6 @@ type Providers struct {
 	Argo         RegisterFunc
 
 	// admin
-	AdminAZ         RegisterFunc
 	AdminPermission RegisterFunc
 	AdminBilling    RegisterFunc
 }
@@ -105,7 +103,6 @@ func DefaultProviders() Providers {
 		Metadata:     metadatactrl.ProvideService,
 		Argo:         argoApp.ProvideService,
 
-		AdminAZ:         adminAz.ProvideService,
 		AdminPermission: adminPermission.ProvideService,
 		AdminBilling:    adminBilling.ProvideService,
 	}
@@ -132,7 +129,7 @@ func (p Providers) registerPublic(cfg *config.Config, reg *router.Registry) {
 // field is skipped, so an edition can drop a service by zeroing its slot.
 func (p Providers) registerAdmin(cfg *config.Config, reg *router.Registry) {
 	for _, register := range []RegisterFunc{
-		p.AdminAZ, p.AdminPermission, p.AdminBilling,
+		p.AdminPermission, p.AdminBilling,
 	} {
 		if register == nil {
 			log.Debug().Msg("server: skipping nil admin provider")

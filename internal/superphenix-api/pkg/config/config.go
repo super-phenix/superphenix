@@ -73,10 +73,9 @@ type Config struct {
 	}
 
 	AdminHTTP struct {
-		Enabled        bool
-		HealthEndpoint string
-		Address        string
-		AuthSecret     string
+		Enabled    bool
+		Address    string
+		AuthSecret string
 	}
 
 	BillingHTTP struct {
@@ -213,10 +212,8 @@ publicHttp:
   maxBodySize: 5
 adminHttp:
   enabled: true
-  healthEndpoint: "/healthz"
   address: ":7000"
   authSecret: ""
-  azHealthTimeout: 15
 billingHttp:
   authSecret: ""
 superAdmins: []
