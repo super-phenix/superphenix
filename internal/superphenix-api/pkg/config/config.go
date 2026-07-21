@@ -80,13 +80,6 @@ type Config struct {
 
 	SuperAdmins []string `yaml:"superAdmins"`
 
-	Redis struct {
-		Address  string
-		Password string
-		Database int
-		Timeout  time.Duration
-	}
-
 	Tracing struct {
 		Enabled        bool
 		Address        string
@@ -211,11 +204,6 @@ adminHttp:
   address: ":7000"
   authSecret: ""
 superAdmins: []
-redis:
-  address: "<redis-host>:<redis-port>"
-  password: "<redis-password>"
-  database: 0
-  timeout: 10s
 tracing:
   enabled: true
   address: "http://<tracing-host>:<tracing-port>/api/traces"
