@@ -1,0 +1,53 @@
+{{- if .Values.pxeEnabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-pxe-setup"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-pxe-setup"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        # Sets up PXE and reboots nodes into PXE
+        - name: "{{ .Chart.Name }}-pxe-setup"
+          image: "{{ .Values.pxeSetup.repository }}:{{ .Values.pxeSetup.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.pxeSetup.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: CLUSTER_NAME
+              value: "{{ .Values.clusterName }}"
+            - name: CLUSTER_VLAN_ID
+              value: "{{ .Values.clusterNetwork.vlanId }}"
+            - name: CONFIG_PATH
+              value: "/config/nodes-list"
+            - name: STATE_PATH
+              value: "/state"
+      hostNetwork: true
+      volumes:
+        - name: config-vol
+          configMap:
+            name: "{{ .Release.Name }}-pxe-setup-config"
+            items:
+              - key: nodes-list
+                path: nodes-list
+        - name: state-vol
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-pxe-setup-state-pvc"
+{{- end }}

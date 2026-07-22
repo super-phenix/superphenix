@@ -12,6 +12,6 @@ dependencies:
 #    repository: "oci://ghcr.io/super-phenix/charts"
 #    condition: superphenix-console.enabled
   - name: talos-operator
-    version: 0.5.3
+    version: 0.6.1
     repository: "https://alperencelik.github.io/helm-charts"
     condition: talos-operator.enabled

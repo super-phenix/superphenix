@@ -120,6 +120,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(ClusterType)
 		**out = **in
 	}
+	if in.TalosBootstrapConfiguration != nil {
+		in, out := &in.TalosBootstrapConfiguration, &out.TalosBootstrapConfiguration
+		*out = new(v1.JSON)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.SystemConfiguration != nil {
 		in, out := &in.SystemConfiguration, &out.SystemConfiguration
 		*out = new(v1.JSON)

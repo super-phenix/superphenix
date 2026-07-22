@@ -93,6 +93,21 @@ const (
 	ClusterTypeVirtualization ClusterType = "Virtualization"
 )
 
+// TalosSupportMode defines the support mode for the Talos cluster.
+// +kubebuilder:validation:Enum=Disabled;Import;Full
+type TalosSupportMode string
+
+const (
+	// TalosSupportDisabled - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+	TalosSupportDisabled TalosSupportMode = "Disabled"
+
+	// TalosSupportImport - The operator imports an already installed Talos cluster and manages its configuration.
+	TalosSupportImport TalosSupportMode = "Import"
+
+	// TalosSupportFull - The Talos cluster is fully installed and configured by the operator.
+	TalosSupportFull TalosSupportMode = "Full"
+)
+
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
 	// DeploymentTopology defines whether the cluster is hyperconverged or decoupled.
@@ -104,6 +119,15 @@ type ClusterSpec struct {
 	// This field can only be set when DeploymentTopology is Decoupled and is ignored otherwise.
 	// +optional
 	Type *ClusterType `json:"type,omitempty"`
+
+	// TalosSupportMode specifies how Talos configuration should be managed.
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Enum=Disabled;Import;Full
+	TalosSupportMode TalosSupportMode `json:"talosSupportMode,omitempty"`
+
+	// TalosBootstrapConfiguration is a YAML dict of unknown values that will be passed to the talos-bootstrap chart.
+	// +optional
+	TalosBootstrapConfiguration *apiextensionsv1.JSON `json:"talosBootstrapConfiguration,omitempty"`
 
 	// Region is the geographic region where this cluster is located.
 	// +kubebuilder:validation:Required

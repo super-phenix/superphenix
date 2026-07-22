@@ -67,6 +67,12 @@ spec:
             {{- if .Values.config.system.version }}
             - --default-version={{ .Values.config.system.version }}
             {{- end }}
+            {{- if .Values.config.talosBootstrap.chart.url }}
+            - --talos-bootstrap-chart-url={{ .Values.config.talosBootstrap.chart.url }}
+            {{- end }}
+            {{- if .Values.config.talosBootstrap.chart.version }}
+            - --talos-bootstrap-chart-version={{ .Values.config.talosBootstrap.chart.version }}
+            {{- end }}
             {{- if .Values.config.argocd.ha.enabled }}
             - --ha-enabled=true
             {{- end }}

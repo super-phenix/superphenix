@@ -1,0 +1,13 @@
+{{- if .Values.pxeEnabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ .Release.Name }}-pxe-setup-state-pvc"
+spec:
+  volumeName: "{{ .Release.Name }}-pxe-setup-state-pv"
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: "{{ .Values.pxeSetup.statePvCapacity }}"
+{{- end }}

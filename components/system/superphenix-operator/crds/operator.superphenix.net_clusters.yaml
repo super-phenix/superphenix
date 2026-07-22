@@ -158,6 +158,23 @@ spec:
                 description: SystemConfiguration is a YAML dict of unknown values
                   that will be passed to the system configuration chart.
                 x-kubernetes-preserve-unknown-fields: true
+              talosBootstrapConfiguration:
+                description: TalosBootstrapConfiguration is a YAML dict of unknown
+                  values that will be passed to the talos-bootstrap chart.
+                x-kubernetes-preserve-unknown-fields: true
+              talosSupportMode:
+                allOf:
+                - enum:
+                  - Disabled
+                  - Import
+                  - Full
+                - enum:
+                  - Disabled
+                  - Import
+                  - Full
+                description: TalosSupportMode specifies how Talos configuration should
+                  be managed.
+                type: string
               type:
                 description: |-
                   Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
@@ -178,6 +195,7 @@ spec:
             - connection
             - deploymentTopology
             - region
+            - talosSupportMode
             type: object
           status:
             description: Status defines the observed state of Cluster.

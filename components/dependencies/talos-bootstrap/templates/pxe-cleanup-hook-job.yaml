@@ -1,0 +1,39 @@
+{{- if .Values.pxeEnabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-pxe-cleanup"
+  labels:
+    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-pxe-cleanup"
+      labels:
+        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        # Cleans up the "done" flags for the nodes of the TalosCluster being deleted
+        - name: "{{ .Chart.Name }}-pxe-cleanup"
+          image: "{{ .Values.pxeCleanup.repository }}:{{ .Values.pxeCleanup.imageTag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.pxeCleanup.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          command: ["/bin/sh"]
+          args: ["-c", "rm -rf /state/{{ .Values.clusterName }}"]
+      volumes:
+        - name: state-vol
+          persistentVolumeClaim:
+            claimName: "{{ .Release.Name }}-pxe-setup-state-pvc"
+{{- end }}

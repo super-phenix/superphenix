@@ -1,0 +1,11 @@
+{{- if .Values.pxeEnabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Release.Name }}-linkaliases-setup
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: ["talos.alperen.cloud"]
+  resources: ["talosclusters"]
+  verbs: ["get", "patch"]
+{{- end }}

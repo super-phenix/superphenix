@@ -57,6 +57,10 @@ type Reconciler struct {
 
 	// ArgoCDWatcher handles dynamic watching of ArgoCD Applications.
 	ArgoCDWatcher *argocd.Watcher
+
+	// talos-bootstrap chart configuration.
+	TalosBootstrapChartURL     string
+	TalosBootstrapChartVersion string
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -265,6 +269,15 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 					log.Error(err, "Failed to update LastSync in status")
 				}
 			}
+		}
+	}
+
+	// "Disabled" mode disables talos-bootstrap entirely:
+	if cluster.Spec.TalosSupportMode != operatorv1alpha1.TalosSupportDisabled {
+		// Reconcile talos-bootstrap application:
+		if err := r.reconcileTalosBootstrap(ctx, cluster); err != nil {
+			log.Error(err, "talos-bootstrap reconciliation failed")
+			reconcileErr = err
 		}
 	}
 
