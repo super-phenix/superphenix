@@ -16,6 +16,7 @@ import (
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
 	v2 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	v1 "kubevirt.io/api/core/v1"
 )
 
@@ -268,6 +269,18 @@ func withAdvancedOptions(vm *v1.VirtualMachine, adv *AdvancedOptionsInput) {
 			clearSMM(vm)
 		}
 	}
+
+	// SMBIOS
+	if smbios := adv.Firmware.SMBIOS; smbios != nil {
+		ensureFirmware(vm)
+		fw := vm.Spec.Template.Spec.Domain.Firmware
+		if smbios.Serial != "" {
+			fw.Serial = smbios.Serial
+		}
+		if smbios.UUID != "" {
+			fw.UUID = types.UID(smbios.UUID)
+		}
+	}
 }
 
 // clearEFIOverride drops our bootloader override (EFI on, or BIOS off) and the
@@ -298,6 +311,13 @@ func forceBIOS(vm *v1.VirtualMachine) {
 		bl.BIOS = &v1.BIOS{}
 	}
 	clearSMM(vm)
+}
+
+// ensureFirmware makes sure Firmware exists.
+func ensureFirmware(vm *v1.VirtualMachine) {
+	if vm.Spec.Template.Spec.Domain.Firmware == nil {
+		vm.Spec.Template.Spec.Domain.Firmware = &v1.Firmware{}
+	}
 }
 
 // ensureFirmwareBootloader makes sure Firmware and Bootloader exist.

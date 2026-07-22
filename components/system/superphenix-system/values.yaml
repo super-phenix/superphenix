@@ -992,14 +992,14 @@ apps:
       prune: true
       cleanupOnDeletion: false
       syncOptions: {}
-    namespace: "velero-system"
+    namespace: velero-system
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://vmware-tanzu.github.io/helm-charts"
     targetRevision: "12.0.0"
     helm:
       chart: velero
-      releaseName: "velero"
+      releaseName: velero
       values:
         # Install plugins at boot of Velero
         initContainers:
@@ -1073,11 +1073,6 @@ apps:
 
         # We don't backup the persistent data by default, only the K8s resources
         snapshotsEnabled: false
-
-        # Override kubectl due to Bitnami issues
-        kubectl:
-          image:
-            tag: 1.33.4
 
   # CSI-Addons -- Used to add features such as replications to the CSI
   csi-addons:

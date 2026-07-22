@@ -377,7 +377,7 @@ vms:
 #      # -- Enable TPM device
 #      enabled: true
 #      # -- Enable TPM persistence
-#      persistent: true
+#      persistent: false
 #    # -- UEFI configuration.
 #    # Enabling EFI automatically enables Secure Boot, unless the secureBoot field is set to false.
 #    # By default, VMs run with a BIOS, unless this option is enabled.
@@ -389,13 +389,21 @@ vms:
 #      # Enabling EFI automatically enables Secure Boot, unless this field is set to false.
 #      secureBoot: true
 #      # -- Enable UEFI persistence
-#      persistent: true
+#      persistent: false
 #    # -- BIOS configuration.
 #    # This option forces using a BIOS. If enabled, UEFI is disabled.
 #    # If unspecified or false with no UEFI enabled, BIOS is the default VM mode.
 #    # @section -- Virtual Machines
 #    # @default -- enabled
-#    bios: enabled
+#    bios:
+#      enabled: true
+#    # -- SMBIOS configuration.
+#    # @section -- Virtual Machines
+#    smbios:
+#      # -- System serial number
+#      serial: ""
+#      # -- System UUID
+#      uuid: ""
 
 # -- Snapshots of Virtual Machines
 # @section -- VM Snapshots

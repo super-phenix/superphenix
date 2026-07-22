@@ -61,6 +61,12 @@ type AdvancedBootloader struct {
 
 type AdvancedFirmware struct {
 	Bootloader AdvancedBootloader `json:"bootloader"`
+	SMBIOS     *AdvancedSMBIOS    `json:"smbios,omitempty"`
+}
+
+type AdvancedSMBIOS struct {
+	Serial string `json:"serial,omitempty"`
+	UUID   string `json:"uuid,omitempty"`
 }
 
 // AdvancedOptionsInput carries optional device/firmware overrides. Its shape
