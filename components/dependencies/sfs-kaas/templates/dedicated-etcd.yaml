@@ -58,7 +58,7 @@ spec:
     autoCompactionMode: periodic
     autoCompactionRetention: 5m
     # limit DB size to 85% of the PVC, leaving space for other files and some headroom in case of a full DB causing issues
-    quotaBackendBytes: {{ mul (atoi (trimSuffix "Gi" ($dataStore.storage | default $.Values.dataStoreDefaults.storage))) 1024 1024 870 }}
+    quotaBackendBytes: {{ int (mulf (atoi (trimSuffix "Gi" ($dataStore.storage | default $.Values.dataStoreDefaults.storage))) 1024 1024 1024 0.85) }}
     snapshotCount: 10000
   storage:
     size: {{ $dataStore.storage | default $dataStoreDefaults.storage }}
