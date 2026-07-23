@@ -134,25 +134,3 @@ nodes:
 # Constants specific to this chart (do not need to be changed):
 image:
   pullPolicy: IfNotPresent
-
-pxeSetup:
-  repository: "ghcr.io/super-phenix/pxe-setup"
-  imageTag: "latest"
-  statePvPath: "/tmp/superphenix-talos-bootstrap-state-pv"
-  statePvCapacity: 1Ki
-  volumeMounts:
-    - name: config-vol
-      mountPath: /config
-    - name: state-vol
-      mountPath: /state
-
-linkAliasesSetup:
-  repository: "ghcr.io/super-phenix/linkaliases-setup"
-  imageTag: "latest"
-
-pxeCleanup:
-  repository: "docker.io/alpine"
-  imageTag: "latest"
-  volumeMounts:
-    - name: state-vol
-      mountPath: /state
