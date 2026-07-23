@@ -172,6 +172,7 @@ spec:
                   - Disabled
                   - Import
                   - Full
+                default: Disabled
                 description: TalosSupportMode specifies how Talos configuration should
                   be managed.
                 type: string
@@ -195,7 +196,6 @@ spec:
             - connection
             - deploymentTopology
             - region
-            - talosSupportMode
             type: object
           status:
             description: Status defines the observed state of Cluster.

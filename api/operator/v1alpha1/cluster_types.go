@@ -121,7 +121,8 @@ type ClusterSpec struct {
 	Type *ClusterType `json:"type,omitempty"`
 
 	// TalosSupportMode specifies how Talos configuration should be managed.
-	// +kubebuilder:validation:Required
+	// +optional
+	// +kubebuilder:default=Disabled
 	// +kubebuilder:validation:Enum=Disabled;Import;Full
 	TalosSupportMode TalosSupportMode `json:"talosSupportMode,omitempty"`
 

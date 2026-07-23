@@ -19,7 +19,7 @@ spec:
   {{- if eq $cluster.deploymentTopology "Decoupled" }}
   type: {{ $cluster.type }}
   {{- end }}
-  talosSupportMode: {{ $cluster.talosSupportMode }}
+  talosSupportMode: {{ $cluster.talosSupportMode | default "Disabled" }}
   {{- if $cluster.talosBootstrapConfiguration }}
   talosBootstrapConfiguration:
     {{- toYaml $cluster.talosBootstrapConfiguration | nindent 4 }}

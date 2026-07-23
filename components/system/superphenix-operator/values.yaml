@@ -113,7 +113,7 @@ clusters: {}
 #    # Import - The operator imports an already installed Talos cluster and manages its configuration.
 #    # Full - The Talos cluster is fully installed and configured by the operator.
 #    # Accepted values: Disabled, Import, Full
-#    talosSupportMode:
+#    talosSupportMode: Disabled
 #
 #    # Region is the geographic region where this cluster is located.
 #    region: us
