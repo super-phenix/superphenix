@@ -272,8 +272,8 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 		}
 	}
 
-	// "Disabled" mode disables talos-bootstrap entirely:
-	if cluster.Spec.TalosSupportMode != operatorv1alpha1.TalosSupportDisabled {
+	// "Unmanaged" mode disables talos-bootstrap entirely:
+	if cluster.Spec.TalosManagementMode != operatorv1alpha1.TalosManagementUnmanaged {
 		// Reconcile talos-bootstrap application:
 		if err := r.reconcileTalosBootstrap(ctx, cluster); err != nil {
 			log.Error(err, "talos-bootstrap reconciliation failed")

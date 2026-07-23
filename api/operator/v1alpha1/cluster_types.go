@@ -93,19 +93,19 @@ const (
 	ClusterTypeVirtualization ClusterType = "Virtualization"
 )
 
-// TalosSupportMode defines the support mode for the Talos cluster.
-// +kubebuilder:validation:Enum=Disabled;Import;Full
-type TalosSupportMode string
+// TalosManagementMode defines the management mode for the Talos cluster.
+// +kubebuilder:validation:Enum=Unmanaged;Import;Full
+type TalosManagementMode string
 
 const (
-	// TalosSupportDisabled - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
-	TalosSupportDisabled TalosSupportMode = "Disabled"
+	// TalosManagementUnmanaged - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+	TalosManagementUnmanaged TalosManagementMode = "Unmanaged"
 
-	// TalosSupportImport - The operator imports an already installed Talos cluster and manages its configuration.
-	TalosSupportImport TalosSupportMode = "Import"
+	// TalosManagementImport - The operator imports an already installed Talos cluster and manages its configuration.
+	TalosManagementImport TalosManagementMode = "Import"
 
-	// TalosSupportFull - The Talos cluster is fully installed and configured by the operator.
-	TalosSupportFull TalosSupportMode = "Full"
+	// TalosManagementFull - The Talos cluster is fully installed and configured by the operator.
+	TalosManagementFull TalosManagementMode = "Full"
 )
 
 // ClusterSpec defines the desired state of Cluster.
@@ -120,11 +120,11 @@ type ClusterSpec struct {
 	// +optional
 	Type *ClusterType `json:"type,omitempty"`
 
-	// TalosSupportMode specifies how Talos configuration should be managed.
+	// TalosManagementMode specifies how Talos configuration should be managed.
 	// +optional
-	// +kubebuilder:default=Disabled
-	// +kubebuilder:validation:Enum=Disabled;Import;Full
-	TalosSupportMode TalosSupportMode `json:"talosSupportMode,omitempty"`
+	// +kubebuilder:default=Unmanaged
+	// +kubebuilder:validation:Enum=Unmanaged;Import;Full
+	TalosManagementMode TalosManagementMode `json:"talosManagementMode,omitempty"`
 
 	// TalosBootstrapConfiguration is a YAML dict of unknown values that will be passed to the talos-bootstrap chart.
 	// +optional

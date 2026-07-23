@@ -108,12 +108,12 @@ clusters: {}
 #    # Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
 #    # type: Storage
 #
-#    # TalosSupportMode specifies how Talos configuration should be managed.
-#    # Disabled - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+#    # TalosManagementMode specifies how Talos configuration should be managed.
+#    # Unmanaged - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
 #    # Import - The operator imports an already installed Talos cluster and manages its configuration.
 #    # Full - The Talos cluster is fully installed and configured by the operator.
-#    # Accepted values: Disabled, Import, Full
-#    talosSupportMode: Disabled
+#    # Accepted values: Unmanaged, Import, Full
+#    talosManagementMode: Unmanaged
 #
 #    # Region is the geographic region where this cluster is located.
 #    region: us

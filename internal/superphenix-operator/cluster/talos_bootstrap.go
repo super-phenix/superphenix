@@ -31,7 +31,7 @@ func (r *Reconciler) reconcileTalosBootstrap(ctx context.Context, cluster *opera
 	values := map[string]any{
 		"pxeEnabled": true,
 	}
-	if cluster.Spec.TalosSupportMode == operatorv1alpha1.TalosSupportImport {
+	if cluster.Spec.TalosManagementMode == operatorv1alpha1.TalosManagementImport {
 		// "Import" mode disables PXE from talos-bootstrap
 		values = map[string]any{
 			"pxeEnabled": false,

@@ -162,19 +162,19 @@ spec:
                 description: TalosBootstrapConfiguration is a YAML dict of unknown
                   values that will be passed to the talos-bootstrap chart.
                 x-kubernetes-preserve-unknown-fields: true
-              talosSupportMode:
+              talosManagementMode:
                 allOf:
                 - enum:
-                  - Disabled
+                  - Unmanaged
                   - Import
                   - Full
                 - enum:
-                  - Disabled
+                  - Unmanaged
                   - Import
                   - Full
-                default: Disabled
-                description: TalosSupportMode specifies how Talos configuration should
-                  be managed.
+                default: Unmanaged
+                description: TalosManagementMode specifies how Talos configuration
+                  should be managed.
                 type: string
               type:
                 description: |-
