@@ -15,9 +15,9 @@ spec:
     kubeVersion: {{ .Values.k8sVersion }}
     mode: metal
     {{- if not (empty .Values.controlplaneIpv6) }}
-    endpoint: https://[{{ .Values.controlplaneIpv6 }}]:6443
+    endpoint: https://[{{ .Values.controlplaneIpv6 }}]:{{ .Values.controlplanePort }}
     {{- else }}
-    endpoint: https://{{ .Values.controlplaneIpv4 }}:6443
+    endpoint: https://{{ .Values.controlplaneIpv4 }}:{{ .Values.controlplanePort }}
     {{- end }}
     # We install the CNI ourselves using ArgoCD
     cni:

@@ -53,6 +53,8 @@ serviceSubnets:
 controlplaneIpv4:
 # IPv6 address of the Talos control plane node:
 controlplaneIpv6:
+# Port of the Talos control plane:
+controlplanePort:
 # ArgoCD token:
 argocdToken:
 # Version of Talos to install on nodes:
