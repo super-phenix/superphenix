@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"maps"
-	"reflect"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	kjson "k8s.io/apimachinery/pkg/util/json"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -49,23 +46,31 @@ func (r *Reconciler) reconcileTalosBootstrap(ctx context.Context, cluster *opera
 			return err
 		}
 
-		app := r.buildTalosBootstrapApp(fmt.Sprintf("%s-%s", TalosBootstrapApp, cluster.Name), r.TalosBootstrapChartURL, "talos-bootstrap", r.TalosBootstrapChartVersion, values)
+		app := r.initTalosBootstrapApp(fmt.Sprintf("%s-%s", TalosBootstrapApp, cluster.Name))
 
-		// Set ownership and finalizers
-		if err := r.setApplicationOwnership(cluster, app); err != nil {
-			return err
-		}
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, app, func() error {
+			// Ensure labels are up to date
+			r.setTalosBootstrapAppLabels(app, cluster)
 
-		// Handle finalizers based on CleanupOnDeletion
-		// This finalizer propagates the deletion of the app to the resources it manages
-		finalizer := "resources-finalizer.argocd.argoproj.io"
-		if cluster.Spec.CleanupOnDeletion {
-			controllerutil.AddFinalizer(app, finalizer)
-		} else {
-			controllerutil.RemoveFinalizer(app, finalizer)
-		}
+			// Set ownership and finalizers
+			if err := r.setApplicationOwnership(cluster, app); err != nil {
+				return err
+			}
 
-		if err := r.createOrUpdateArgoCDApplication(ctx, app); err != nil {
+			// Handle finalizers based on CleanupOnDeletion
+			// This finalizer propagates the deletion of the app to the resources it manages
+			finalizer := "resources-finalizer.argocd.argoproj.io"
+			if cluster.Spec.CleanupOnDeletion {
+				controllerutil.AddFinalizer(app, finalizer)
+			} else {
+				controllerutil.RemoveFinalizer(app, finalizer)
+			}
+
+			// Define and set Application Spec
+			spec := r.buildTalosBootstrapAppSpec(values)
+			return unstructured.SetNestedMap(app.Object, spec, "spec")
+		}); err != nil {
+			log.Error(err, "Failed to reconcile talos-bootstrap Application")
 			return err
 		}
 
@@ -77,96 +82,66 @@ func (r *Reconciler) reconcileTalosBootstrap(ctx context.Context, cluster *opera
 	}
 }
 
-// buildTalosBootstrapApp constructs a self-syncing ArgoCD Application manifest backed by a Helm chart.
-func (r *Reconciler) buildTalosBootstrapApp(name, repoURL, chartName, chartVersion string, vals map[string]any) *unstructured.Unstructured {
-	return &unstructured.Unstructured{
-		Object: map[string]any{
-			"apiVersion": "argoproj.io/v1alpha1",
-			"kind":       "Application",
-			"metadata": map[string]any{
-				"name":      name,
-				"namespace": r.OperatorNamespace,
-				"labels": map[string]any{
-					version.ManagedLabel: "true",
-				},
-			},
-			"spec": map[string]any{
-				"project": "default",
-				"source": map[string]any{
-					"repoURL":        repoURL,
-					"targetRevision": chartVersion,
-					"chart":          chartName,
-					"helm": map[string]any{
-						"valuesObject": vals,
-					},
-				},
-				"destination": map[string]any{
-					"name":      "in-cluster",
-					"namespace": r.OperatorNamespace,
-				},
-				"syncPolicy": map[string]any{
-					"automated": map[string]any{
-						"prune":    true,
-						"selfHeal": true,
-					},
-					"syncOptions": []any{
-						"RespectIgnoreDifferences=true",
-					},
-				},
-				// The "kernelCmdlineArgs" field is modified by the job "linkaliases-setup" from the talos-bootstrap chart after deployment, so it should be ignored by ArgoCD:
-				"ignoreDifferences": []any{
-					map[string]any{
-						"group": "talos.alperen.cloud",
-						"kind":  "TalosCluster",
-						"jqPathExpressions": []any{
-							".spec.controlPlane.metalSpec.machines[].pxeClientSpec.kernelCmdlineArgs",
-							".spec.worker.metalSpec.machines[].pxeClientSpec.kernelCmdlineArgs",
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-// createOrUpdateArgoCDApplication creates the ArgoCD Application if it does not exist, or updates it otherwise.
-// The application name is derived from app.GetName().
-func (r *Reconciler) createOrUpdateArgoCDApplication(ctx context.Context, app *unstructured.Unstructured) error {
-	log := logf.FromContext(ctx)
-	name := app.GetName()
-
-	existing := &unstructured.Unstructured{}
-	existing.SetGroupVersionKind(schema.GroupVersionKind{
+// initTalosBootstrapApp creates the template of the talos-bootstrap Application.
+func (r *Reconciler) initTalosBootstrapApp(name string) *unstructured.Unstructured {
+	app := &unstructured.Unstructured{}
+	app.SetName(name)
+	app.SetNamespace(r.OperatorNamespace)
+	app.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "argoproj.io",
 		Version: "v1alpha1",
 		Kind:    "Application",
 	})
 
-	err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: r.OperatorNamespace}, existing)
-	if err != nil {
-		if !apierrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get ArgoCD Application %s: %w", name, err)
-		}
-		log.Info("Creating ArgoCD Application", "name", name)
-		if err := r.Create(ctx, app); err != nil {
-			return fmt.Errorf("failed to create ArgoCD Application %s: %w", name, err)
-		}
-		return nil
+	return app
+}
+
+// setTalosBootstrapAppLabels sets the required labels on the talos-bootstrap Application.
+func (r *Reconciler) setTalosBootstrapAppLabels(app *unstructured.Unstructured, cluster *operatorv1alpha1.Cluster) {
+	labels := app.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
 	}
 
-	// Only update if the spec actually changed to avoid spurious generation bumps.
-	existingSpec, _, _ := unstructured.NestedMap(existing.Object, "spec")
-	desiredSpec, _, _ := unstructured.NestedMap(app.Object, "spec")
-	if reflect.DeepEqual(existingSpec, desiredSpec) {
-		log.Info("ArgoCD Application spec unchanged, skipping update", "name", name)
-		return nil
-	}
+	labels[version.ManagedLabel] = "true"
+	app.SetLabels(labels)
+}
 
-	log.Info("Updating ArgoCD Application", "name", name)
-	app.SetResourceVersion(existing.GetResourceVersion())
-	if err := r.Update(ctx, app); err != nil {
-		return fmt.Errorf("failed to update ArgoCD Application %s: %w", name, err)
+// buildTalosBootstrapAppSpec creates the specs of the talos-bootstrap application
+func (r *Reconciler) buildTalosBootstrapAppSpec(vals map[string]any) map[string]any {
+	return map[string]any{
+		"project": "default",
+		"source": map[string]any{
+			"repoURL":        r.TalosBootstrapChartURL,
+			"targetRevision": r.TalosBootstrapChartVersion,
+			"chart":          "talos-bootstrap",
+			"helm": map[string]any{
+				"valuesObject": vals,
+			},
+		},
+		"destination": map[string]any{
+			"name":      "in-cluster",
+			"namespace": r.OperatorNamespace,
+		},
+		"syncPolicy": map[string]any{
+			"automated": map[string]any{
+				"prune":    true,
+				"selfHeal": true,
+			},
+			"syncOptions": []any{
+				"RespectIgnoreDifferences=true",
+			},
+		},
+		// The "kernelCmdlineArgs" field is modified by the job "linkaliases-setup" from the talos-bootstrap chart after deployment, so it should be ignored by ArgoCD:
+		"ignoreDifferences": []any{
+			map[string]any{
+				"group": "talos.alperen.cloud",
+				"kind":  "TalosCluster",
+				"jqPathExpressions": []any{
+					".spec.controlPlane.metalSpec.machines[].pxeClientSpec.kernelCmdlineArgs",
+					".spec.worker.metalSpec.machines[].pxeClientSpec.kernelCmdlineArgs",
+				},
+			},
+		},
 	}
-
-	return nil
 }
