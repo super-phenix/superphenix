@@ -17,7 +17,8 @@ import (
 
 const (
 	// TalosBootstrapApp is the ArgoCD Application name for the talos-bootstrap chart.
-	TalosBootstrapApp = "talos-bootstrap"
+	// FIXME: The chart will be renamed to "talos-manager" later. We change it only here for now.
+	TalosBootstrapApp = "talos-manager"
 )
 
 // reconcileTalosBootstrap creates or updates the ArgoCD Application for the talos-bootstrap chart,
