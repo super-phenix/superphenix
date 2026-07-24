@@ -25,6 +25,8 @@ spec:
       expression: r{{ include "policies.projectIDLabel" "" }}
     - name: projectID
       expression: object.metadata.labels[variables.projectIDLabel]
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -43,10 +45,10 @@ spec:
         has(variables.annotations) &&
         variables.netpolEnforcementKey in variables.annotations
       messageExpression: |
-        "##### " + object.kind + " is missing the \"" +
+        "##### " + object.kind + " in missing the \"" +
         variables.netpolEnforcementKey + "\" annotation. #####"
       message: "##### Missing \"Network Policy Enforcement\" annotation #####"
-    # Check that the "netpol-enforcement" annotation has the correct value ("lax")
+      # Check that the "netpol-enforcement" annotation has the correct value ("lax")
     - expression: |
         variables.annotations[variables.netpolEnforcementKey]
         == variables.netpolEnforcementValue
@@ -58,6 +60,7 @@ spec:
       message: "##### Incorrect \"Network Policy Enforcement\" annotation value #####"
     # Check that the matchLabel "projectID" is the ProjectID
     - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
         !has(object.spec.podSelector.matchLabels) ||
         !(variables.projectIDLabel in variables.matchLabels) ||
         variables.matchLabels[variables.projectIDLabel].matches(variables.projectID)

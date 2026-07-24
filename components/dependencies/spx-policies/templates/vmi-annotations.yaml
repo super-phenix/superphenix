@@ -27,10 +27,8 @@ spec:
     expression: r{{ include "policies.regex" "spxid" | replace "^" "" | replace  "$" "" }}
   - name: projectID
     expression: variables.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
-  - name: nabokPlanRegex
-    expression: r{{ include "policies.regex" "nabokMigration"}}
-  - name: nabokLabel
-    expression: r{{ include "policies.nabokLabel" ""}}
+  - name: testMissingLabel
+    expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -52,9 +50,9 @@ spec:
         .exists(entry,
           entry.endsWith(anno)
         )
-      )  || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+      )
     messageExpression: |
-      "##### " + object.kind + " has missing annotations: " +
+      "##### " + object.kind + " has missing annotations : " +
       {{ $reqAnnotations }}
       .filter(anno, variables.metadata.annotations
         .all(entry,
@@ -64,6 +62,7 @@ spec:
     message: "##### Missing VMI annotation(s) #####"
   # Check annotations regex ("SPXID.projectID.annotation", for "subnetID.namespace.annotation")
   - expression: |
+      variables.testMissingLabel in object.metadata.labels ||
       {{ $keySubNsAnnotations }}
       .all(anno, variables.metadata.annotations
         .all(entry,
@@ -74,7 +73,7 @@ spec:
         )
       )
     messageExpression: |
-      "##### " + object.kind + " has incorrect annotations: " +
+      "##### " + object.kind + " has incorrect annotations : " +
       variables.metadata.annotations
       .filter(entry, 
         {{ $keySubNsAnnotations }}

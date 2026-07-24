@@ -25,10 +25,8 @@ spec:
       expression: r{{ include "policies.regex" "vmsnapshotVolume" }}
     - name: projectID
       expression: object.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
-    - name: nabokPlanRegex
-      expression: r{{ include "policies.regex" "nabokMigration"}}
-    - name: nabokLabel
-      expression: r{{ include "policies.nabokLabel" ""}}
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -44,7 +42,7 @@ spec:
   validations:
     # Check that the source is valid
     - expression: |
-        variables.source.all(s, s in variables.allowedSources) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        variables.source.all(s, s in variables.allowedSources)
       messageExpression: |
         "##### " + object.kind +
         " has an invalid source (" +
@@ -59,7 +57,7 @@ spec:
           variables.source[s].name.matches(variables.spxidRegex) ||
           variables.source[s].name.matches(variables.snapshotRegex) ||
           variables.source[s].name.matches(variables.vmsnapvolumeRegex)
-        )|| (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        )
       messageExpression: |
         "##### " + object.kind +
         " source has an incorrect name regex (" +
@@ -74,10 +72,11 @@ spec:
       message: "##### Incorrect Datavolume source name regex, must be an SPXID, snapshot, or VM snapshot volume name #####"
     # If PVC or Snapshot, check that the namespace is the ProjectID
     - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
         variables.source.all(s,
           !(s in ["pvc", "snapshot"]) ||
           variables.source[s].namespace.matches(variables.projectID)
-        ) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        )
       messageExpression: |
         "##### " + object.kind +
         " source has an incorrect namespace (" +

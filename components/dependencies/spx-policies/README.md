@@ -1,11 +1,37 @@
+
+Homepage
+Primary navigation
+Project
+
+    S
+    SPX-POLICIES
+
+    Issues
+    3
+    Merge requests
+    0
+    Wiki
+
+    avatarSPX
+    Manifests
+    Helm
+    SPX-POLICIES
+
+    spx-policies
+    README.md
+
+README.md
+Janna's avatar
+add Nabok-related exceptions + tests & fix some conflicting overlaps
+Janna ISMAILOVA authored 16 hours ago
+d092fbdc
+README.md
+34.52 KiB
+
 # spx-policies
-
 ![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square)
-
 A Helm chart for templating Validating Admission Policies
-
 ## Values
-
 <h3>DataVolume Labels and Annotations</h3>
 <table>
 	<thead>
@@ -46,7 +72,7 @@ false
 			<td>policies.dv-metadata.matchConditions</td>
 			<td>string</td>
 			<td><pre lang="json">
-"[spxid]"
+"[spxid, notNabok]"
 </pre>
 </td>
 			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
@@ -68,6 +94,7 @@ false
 		<th>Key</th>
 		<th>Type</th>
 		<th>Default</th>
+
 		<th>Description</th>
 	</thead>
 	<tbody>
@@ -93,7 +120,7 @@ false
 			<td>policies.dv-sources.matchConditions</td>
 			<td>string</td>
 			<td><pre lang="json">
-"[spxid]"
+"[spxid, notNabok]"
 </pre>
 </td>
 			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
@@ -138,9 +165,10 @@ false
 		</tr>
 		<tr>
 			<td>policies.iaas-labels.matchConditions</td>
+
 			<td>string</td>
 			<td><pre lang="json">
-"[spxid, notSourcedVolSnap, notTmpSnapshot]"
+"[spxid, notSourcedVolSnap, notTmpSnapshot, notNabok]"
 </pre>
 </td>
 			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
@@ -187,7 +215,7 @@ false
 			<td>policies.iaas-name-is-effective-id.matchConditions</td>
 			<td>string</td>
 			<td><pre lang="json">
-"[spxid, notGenerated, notSourcedVolSnap, notTmpSnapshot, notVeleroVolsnap]"
+"[spxid, notGenerated, notSourcedVolSnap, notTmpSnapshot, notVeleroVolsnap, notNabok]"
 </pre>
 </td>
 			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
@@ -208,6 +236,7 @@ false
 	<thead>
 		<th>Key</th>
 		<th>Type</th>
+
 		<th>Default</th>
 		<th>Description</th>
 	</thead>
@@ -278,6 +307,7 @@ false
 			<td>If debug is True, the VAP only matches resources having the "test-janna" label.</td>
 		</tr>
 		<tr>
+
 			<td>policies.netpol.matchConditions</td>
 			<td>string</td>
 			<td><pre lang="json">
@@ -348,6 +378,7 @@ false
 			<td><pre lang="">
 "{}"
 </pre>
+
 </td>
 			<td>Check that system workloads in customer namespaces have the correct fields</td>
 		</tr>
@@ -418,6 +449,7 @@ false
 </td>
 			<td>Check that all virt-launcher pods have the correct network annotations</td>
 		</tr>
+
 		<tr>
 			<td>policies.pod-annotations.debug</td>
 			<td>bool</td>
@@ -488,6 +520,7 @@ false
 			<td>string</td>
 			<td><pre lang="json">
 "[Deny, Audit]"
+
 </pre>
 </td>
 			<td>Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.</td>
@@ -558,6 +591,7 @@ false
 </pre>
 </td>
 			<td>Check that all VM/Volume Snapshots source names are SPXIDs</td>
+
 		</tr>
 		<tr>
 			<td>policies.snapshot.debug</td>
@@ -628,6 +662,7 @@ false
 			<td>policies.subnet.validationActions</td>
 			<td>string</td>
 			<td><pre lang="json">
+
 "[Deny, Audit]"
 </pre>
 </td>
@@ -698,6 +733,7 @@ false
 true
 </pre>
 </td>
+
 			<td>If debug is True, the VAP only matches resources having the "test-janna" label.</td>
 		</tr>
 		<tr>
@@ -768,6 +804,7 @@ false
 	</tbody>
 </table>
 <h3>VM Networks</h3>
+
 <table>
 	<thead>
 		<th>Key</th>
@@ -838,6 +875,7 @@ true
 			<td><pre lang="json">
 false
 </pre>
+
 </td>
 			<td>If debug is True, the VAP only matches resources having the "test-janna" label.</td>
 		</tr>
@@ -845,7 +883,7 @@ false
 			<td>policies.vm-vmi-same-labels.matchConditions</td>
 			<td>string</td>
 			<td><pre lang="json">
-"[spxid]"
+"[spxid, notNabok]"
 </pre>
 </td>
 			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
@@ -908,6 +946,7 @@ true
 		</tr>
 	</tbody>
 </table>
+
 <h3>VMI Annotations</h3>
 <table>
 	<thead>
@@ -939,7 +978,7 @@ false
 			<td>policies.vmi-annotations.matchConditions</td>
 			<td>string</td>
 			<td><pre lang="json">
-"[spxid]"
+"[spxid, notNabok]"
 </pre>
 </td>
 			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
@@ -978,6 +1017,7 @@ false
 			<td>bool</td>
 			<td><pre lang="json">
 false
+
 </pre>
 </td>
 			<td>If debug is True, the VAP only matches resources having the "test-janna" label.</td>

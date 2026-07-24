@@ -27,6 +27,8 @@ spec:
       expression: variables.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
     - name: spxidRegex
       expression: r{{ include "policies.regex" "spxid" | replace "^" "" | replace  "$" "" }}
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -62,6 +64,7 @@ spec:
       message: "##### Incorrect VM network type, must be Multus #####"
     # Check network name regex ("projectID/SPXID", for "namespace/subnetID")
     - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
         variables.spec.networks
         .all(n, n.multus.networkName
           .matches(

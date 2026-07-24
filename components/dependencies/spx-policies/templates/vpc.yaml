@@ -17,6 +17,8 @@ spec:
       expression: object.spec.namespaces
     - name: projectID
       expression: object.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -31,7 +33,9 @@ spec:
         scope: '*'
   validations:
     # Check that the namespace is the ProjectID
-    - expression: variables.namespaces[0].matches(variables.projectID)
+    - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
+        variables.namespaces[0].matches(variables.projectID)
       messageExpression: |
         "##### " + object.kind + " has an incorrect namespace (" +
         variables.namespaces.map(k,k).join(", ") + "), must be the ProjectID. #####"

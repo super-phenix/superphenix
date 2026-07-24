@@ -26,6 +26,8 @@ spec:
           variables.spxidRegex + '.' +
           variables.spxidRegex + r'.ovn"*\s*}\s*]\s*}'
         )
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -52,6 +54,7 @@ spec:
       message: "##### Invalid Network-Attachment-Definition config #####"
     # Check that the config contains the correct provider ("SPXID.projectID.ovn", for "subnetID.namespace.ovn")
     - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
         variables.config.matches(string(
           r'.*provider"*:\s*"*' + variables.spxidRegex + "." + variables.projectID + r'.ovn.*'
         ))
