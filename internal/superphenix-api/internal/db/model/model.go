@@ -21,6 +21,7 @@ const (
 	ProductTypeFirewall     = "firewall"
 	ProductTypeKaaS         = "kaas"
 	ProductTypeBaaS         = "baas"
+	ProductTypeBucket       = "bucket"
 )
 
 type Model struct {

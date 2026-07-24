@@ -25,6 +25,7 @@ import (
 	"kubevirt.io/api/snapshot/v1beta1"
 	cdiv1beta1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
 
+	bktv1alpha1 "github.com/kube-object-storage/lib-bucket-provisioner/pkg/apis/objectbucket.io/v1alpha1"
 	veleroV1 "github.com/vmware-tanzu/velero/pkg/apis/velero/v1"
 )
 
@@ -65,6 +66,13 @@ const (
 	Schedule = "schedules"
 )
 
+// S3
+const (
+	ObjectBucketClaim = "objectbucketclaims"
+	ObjectBucket      = "objectbuckets"
+	CephObjectStore   = "cephobjectstores"
+)
+
 type Watcher struct {
 	cache.Indexer
 }
@@ -96,6 +104,10 @@ var (
 		// BaaS
 		{Group: veleroV1.SchemeGroupVersion.Group, Version: veleroV1.SchemeGroupVersion.Version, Resource: Backup},
 		{Group: veleroV1.SchemeGroupVersion.Group, Version: veleroV1.SchemeGroupVersion.Version, Resource: Schedule},
+		// S3
+		{Group: bktv1alpha1.SchemeGroupVersion.Group, Version: bktv1alpha1.SchemeGroupVersion.Version, Resource: ObjectBucketClaim},
+		{Group: bktv1alpha1.SchemeGroupVersion.Group, Version: bktv1alpha1.SchemeGroupVersion.Version, Resource: ObjectBucket},
+		{Group: "ceph.rook.io", Version: "v1", Resource: CephObjectStore},
 	}
 
 	WatcherSet = map[string]Watcher{}

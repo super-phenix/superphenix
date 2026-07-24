@@ -243,6 +243,357 @@
                 }
             }
         },
+        "/{orgId}/{projectId}/bucket": {
+            "get": {
+                "description": "Retrieve all S3 Buckets for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Retrieve all Buckets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Buckets",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "description": "Create an S3 Bucket",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Create a Bucket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Bucket info",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/objectbucket.CreateBucketInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/bucket/localId/{localId}": {
+            "get": {
+                "description": "Get Bucket by local ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Get Bucket by local ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Local ID",
+                        "name": "localId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bucket",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/bucket/{effectiveId}": {
+            "get": {
+                "description": "Get Bucket by effective ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Get Bucket by effective ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Bucket",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "description": "Update an S3 Bucket configuration (quotas, policy, lifecycle)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Update a Bucket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Bucket info",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/objectbucket.UpdateBucketInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete an S3 Bucket by Effective ID",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Delete a Bucket",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/bucket/{effectiveId}/credentials": {
+            "get": {
+                "description": "Get the S3 endpoint and admin credentials generated for a Bucket",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Bucket"
+                ],
+                "summary": "Get Bucket credentials",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Bucket Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Credentials",
+                        "schema": {
+                            "$ref": "#/definitions/objectbucket.Credentials"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgId}/{projectId}/container-disks": {
             "get": {
                 "security": [
@@ -3036,6 +3387,51 @@
                 }
             }
         },
+        "/{orgId}/{projectId}/s3-config": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get the S3 storage classes and bucket limits of this availability zone",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Config"
+                ],
+                "summary": "Get S3 Config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "S3 Config",
+                        "schema": {
+                            "$ref": "#/definitions/config.S3Config"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgId}/{projectId}/snapshot": {
             "get": {
                 "description": "Retrieve all Snapshots for a project",
@@ -4424,6 +4820,23 @@
                 }
             }
         },
+        "config.S3Config": {
+            "type": "object",
+            "properties": {
+                "maxBucketObjects": {
+                    "type": "integer"
+                },
+                "maxBucketSize": {
+                    "type": "string"
+                },
+                "storageClasses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "config.StorageClass": {
             "type": "object",
             "properties": {
@@ -5669,6 +6082,68 @@
                 "warnings": {
                     "description": "Warnings is a count of all warning messages that were generated during\nexecution of the backup. The actual warnings are in the backup's log\nfile in object storage.\n+optional",
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket": {
+            "type": "object",
+            "properties": {
+                "bucket": {
+                    "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BucketView"
+                },
+                "codeAZ": {
+                    "type": "string"
+                },
+                "eid": {
+                    "description": "effective ID",
+                    "type": "string"
+                },
+                "gitops": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "local ID",
+                    "type": "string"
+                },
+                "productName": {
+                    "description": "human-readable name",
+                    "type": "string"
+                },
+                "resourceTypeId": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BucketView": {
+            "type": "object",
+            "properties": {
+                "creationTimestamp": {
+                    "type": "string"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "lifecycle": {
+                    "type": "string"
+                },
+                "maxObjects": {
+                    "type": "string"
+                },
+                "maxSize": {
+                    "type": "string"
+                },
+                "name": {
+                    "description": "S3 bucket name (spec.bucketName)",
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                },
+                "policy": {
+                    "type": "string"
+                },
+                "storageClass": {
+                    "type": "string"
                 }
             }
         },
@@ -8192,6 +8667,87 @@
                 "ConditionProgressing",
                 "ConditionFailure"
             ]
+        },
+        "objectbucket.BucketConfig": {
+            "type": "object",
+            "properties": {
+                "lifecycle": {
+                    "description": "S3 lifecycle configuration JSON",
+                    "type": "string"
+                },
+                "maxObjects": {
+                    "type": "integer"
+                },
+                "maxSize": {
+                    "description": "kubernetes quantity, e.g. \"100Gi\"",
+                    "type": "string"
+                },
+                "policy": {
+                    "description": "S3 bucket policy JSON",
+                    "type": "string"
+                }
+            }
+        },
+        "objectbucket.CreateBucketInfo": {
+            "type": "object",
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "config": {
+                            "$ref": "#/definitions/objectbucket.BucketConfig"
+                        },
+                        "storageClass": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "orgID": {
+                    "type": "string"
+                },
+                "projectID": {
+                    "type": "string"
+                },
+                "resourceEffectiveID": {
+                    "type": "string"
+                },
+                "resourceLocalID": {
+                    "type": "string"
+                }
+            }
+        },
+        "objectbucket.Credentials": {
+            "type": "object",
+            "properties": {
+                "accessKeyId": {
+                    "type": "string"
+                },
+                "bucketName": {
+                    "type": "string"
+                },
+                "endpoint": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "secretAccessKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "objectbucket.UpdateBucketInfo": {
+            "type": "object",
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "config": {
+                            "$ref": "#/definitions/objectbucket.BucketConfig"
+                        }
+                    }
+                }
+            }
         },
         "paas.GroupDeletion": {
             "type": "object",
