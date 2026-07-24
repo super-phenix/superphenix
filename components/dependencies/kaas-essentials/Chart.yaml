@@ -15,4 +15,4 @@ dependencies:
   - enabled: true
     name: coredns
     repository: https://coredns.github.io/helm
-    version: "1.45.*" # https://github.com/coredns/helm/releases
+    version: "1.46.*" # https://github.com/coredns/helm/releases
