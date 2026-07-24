@@ -27,10 +27,6 @@ spec:
       expression: {{ include "policies.iaasLabels" "name" | toJson }}
     - name: nameSyntax
       expression: r{{ include "policies.regex" "name" }}
-    - name: nabokPlanRegex
-      expression: r{{ include "policies.regex" "nabokMigration"}}
-    - name: nabokLabel
-      expression: r{{ include "policies.nabokLabel" ""}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -66,17 +62,15 @@ spec:
       messageExpression: '"##### " + object.kind + " has a missing or incorrect \"" + variables.gitopsLabel + "\" label. #####"'
       message: "##### 'gitops' label missing or incorrect #####"
     # Check SPXID labels
-    - expression: |
-        variables.spxidLabels.all(entry, entry in object.metadata.labels) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+    - expression: "variables.spxidLabels.all(entry, entry in object.metadata.labels)"
       messageExpression: |
         "##### " + object.kind +
-        " is missing required labels: " +
+        " is missing required labels : " +
         variables.spxidLabels
         .filter(entry, !(entry in object.metadata.labels))
         .join(", ") + " #####"
       message: "##### SPXID label(s) missing #####"
-    - expression: |
-        variables.spxidLabels.all(entry, object.metadata.labels[entry].matches(variables.spxidRegex)) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+    - expression: 'variables.spxidLabels.all(entry, object.metadata.labels[entry].matches(variables.spxidRegex))'
       messageExpression: |
         "##### " + object.kind +
         " has an incorrect SPXID regex for labels: " +
@@ -90,7 +84,7 @@ spec:
     - expression: |
         variables.localIDLabel in object.metadata.labels &&
         object.metadata.labels[variables.localIDLabel]
-        .matches(variables.nameSyntax) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        .matches(variables.nameSyntax)
       messageExpression: '"##### " + object.kind + " has a missing or incorrect \"" + variables.localIDLabel + "\" label. #####"'
       message: "##### 'localID' label missing or incorrect #####"
     # Check Name labels
@@ -102,7 +96,7 @@ spec:
         variables.nameLabels.all(entry, entry in object.metadata.labels)
       messageExpression: |
         "##### " + object.kind +
-        " is missing required labels: " +
+        " is missing required labels : " +
         variables.nameLabels
         .filter(entry, !(entry in object.metadata.labels))
         .join(", ") + " #####"

@@ -45,10 +45,10 @@ spec:
         has(variables.annotations) &&
         variables.netpolEnforcementKey in variables.annotations
       messageExpression: |
-        "##### " + object.kind + " in missing the \"" +
+        "##### " + object.kind + " is missing the \"" +
         variables.netpolEnforcementKey + "\" annotation. #####"
       message: "##### Missing \"Network Policy Enforcement\" annotation #####"
-      # Check that the "netpol-enforcement" annotation has the correct value ("lax")
+    # Check that the "netpol-enforcement" annotation has the correct value ("lax")
     - expression: |
         variables.annotations[variables.netpolEnforcementKey]
         == variables.netpolEnforcementValue

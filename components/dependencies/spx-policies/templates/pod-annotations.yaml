@@ -51,7 +51,7 @@ spec:
           )
         )
       messageExpression: |
-        "##### " + object.kind + " has incorrect network annotations : " +
+        "##### " + object.kind + " has incorrect network annotations: " +
         variables.annotations.filter(entry, 
           [variables.router, variables.switch]
           .exists(anno,

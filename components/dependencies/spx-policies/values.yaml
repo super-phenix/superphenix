@@ -3,7 +3,7 @@ policies:
   # @section -- Labels (IaaS)
   # @default -- "{}"
   iaas-labels:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Labels (IaaS)
     matchConditions: "[spxid, notSourcedVolSnap, notTmpSnapshot, notNabok]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -17,7 +17,7 @@ policies:
   # @section -- Labels (Org)
   # @default -- "{}"
   org-labels:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
       # @section -- Labels (Org)
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -31,7 +31,7 @@ policies:
   # @section -- Name is EffectiveID
   # @default -- "{}"
   iaas-name-is-effective-id:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Name is EffectiveID
     matchConditions: "[spxid, notGenerated, notSourcedVolSnap, notTmpSnapshot, notVeleroVolsnap, notNabok]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -45,7 +45,7 @@ policies:
   # @section -- Reference is SPXID
   # @default -- "{}"
   ref-is-spxid:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Reference is SPXID
     matchConditions: "[spxid, notGeneratedSubnet]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -59,7 +59,7 @@ policies:
   # @section -- VM Credentials
   # @default -- "{}"
   vm-credentials:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VM Credentials
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -73,7 +73,7 @@ policies:
   # @section -- VM Interfaces
   # @default -- "{}"
   vm-interfaces:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VM Interfaces
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -87,7 +87,7 @@ policies:
   # @section -- VM Networks
   # @default -- "{}"
   vm-networks:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VM Networks
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -101,7 +101,7 @@ policies:
   # @section -- VM-VMI Same Labels
   # @default -- "{}"
   vm-vmi-same-labels:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VM-VMI Same Labels
     matchConditions: "[spxid, notNabok]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -115,7 +115,7 @@ policies:
   # @section -- VM Volumes
   # @default -- "{}"
   vm-volumes:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VM Volumes
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -125,11 +125,11 @@ policies:
     # @section -- VM Volumes
     debug: true
 
-  # -- Check that all VirtualMachines templates and VirtualMachineInstances have the correct annotations
+  # -- Check that all VirtualMachine templates and VirtualMachineInstances have the correct annotations
   # @section -- VMI Annotations
   # @default -- "{}"
   vmi-annotations:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VMI Annotations
     matchConditions: "[spxid, notNabok]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -138,12 +138,12 @@ policies:
     # -- If debug is True, the VAP only matches resources having the "test-janna" label.
     # @section -- VMI Annotations
     debug: false
-
+  
   # -- Check that all virt-launcher pods have the correct network annotations
   # @section -- Pod Annotations
   # @default -- "{}"
   pod-annotations:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Pod Annotations
     matchConditions: "[virtLauncher]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -157,7 +157,7 @@ policies:
   # @section -- DataVolume Labels and Annotations
   # @default -- "{}"
   dv-metadata:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
       # @section -- DataVolume Labels and Annotations
     matchConditions: "[spxid, notNabok]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -169,12 +169,12 @@ policies:
     # -- Value of the "default-network" annotation.
     # @section -- DataVolume Labels and Annotations
     defaultNetwork: "kube-system/system-isolated-egress"
-
+  
   # -- Check that all DataVolumes have valid sources and references to other resources
   # @section -- DataVolume Sources
   # @default -- "{}"
   dv-sources:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- DataVolume Sources
     matchConditions: "[spxid, notNabok]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -183,12 +183,12 @@ policies:
     # -- If debug is True, the VAP only matches resources having the "test-janna" label.
     # @section -- DataVolume Sources
     debug: false
-
+  
   # -- Check that all VM/Volume Snapshots source names are SPXIDs
   # @section -- Snapshots (VM/Volume)
   # @default -- "{}"
   snapshot:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Snapshots (VM/Volume)
     matchConditions: "[spxid, notCsiDriver]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -197,12 +197,12 @@ policies:
     # -- If debug is True, the VAP only matches resources having the "test-janna" label.
     # @section -- Snapshots (VM/Volume)
     debug: false
-
+  
   # -- Check that all VM Restores have correct fields
   # @section -- Restores (VM)
   # @default -- "{}"
   restore:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Restores (VM)
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -216,7 +216,7 @@ policies:
   # @section -- Network-Attachment-Definitions Config
   # @default -- "{}"
   netattachdef-config:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Network-Attachment-Definitions Config
     matchConditions: "[spxid, notGenerated]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -225,12 +225,12 @@ policies:
     # -- If debug is True, the VAP only matches resources having the "test-janna" label.
     # @section -- Network-Attachment-Definitions Config
     debug: false
-
+  
   # -- Check that all Subnets have the correct fields
   # @section -- Subnet
   # @default -- "{}"
   subnet:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Subnet
     matchConditions: "[spxid, notGenerated]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -244,7 +244,7 @@ policies:
   # @section -- VPC
   # @default -- "{}"
   vpc:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- VPC
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -258,7 +258,7 @@ policies:
   # @section -- Network Policy MatchLabels
   # @default -- "{}"
   netpol:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Network Policy MatchLabels
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -267,12 +267,12 @@ policies:
     # -- If debug is True, the VAP only matches resources having the "test-janna" label.
     # @section -- Network Policy MatchLabels
     debug: false
-
+  
   # -- Check that CIDRs used by network resources are allowed
   # @section -- Allowed/reserved CIDRs
   # @default -- "{}"
   network-cidr:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- Allowed/reserved CIDRs
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
@@ -281,12 +281,12 @@ policies:
     # -- If debug is True, the VAP only matches resources having the "test-janna" label.
     # @section -- Allowed/reserved CIDRs
     debug: false
-
+  
   # -- Check that system workloads in customer namespaces have the correct fields
   # @section -- Allowed/reserved CIDRs
   # @default -- "{}"
   system-workloads:
-    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace or name are SPXIDs), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
+    # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
     # @section -- System workloads
     matchConditions: "[spxid, systemWorkloads]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
