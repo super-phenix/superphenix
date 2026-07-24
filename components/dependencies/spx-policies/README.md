@@ -1,33 +1,3 @@
-
-Homepage
-Primary navigation
-Project
-
-    S
-    SPX-POLICIES
-
-    Issues
-    3
-    Merge requests
-    0
-    Wiki
-
-    avatarSPX
-    Manifests
-    Helm
-    SPX-POLICIES
-
-    spx-policies
-    README.md
-
-README.md
-Janna's avatar
-add Nabok-related exceptions + tests & fix some conflicting overlaps
-Janna ISMAILOVA authored 16 hours ago
-d092fbdc
-README.md
-34.52 KiB
-
 # spx-policies
 ![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square)
 A Helm chart for templating Validating Admission Policies
