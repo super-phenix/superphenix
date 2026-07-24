@@ -59,9 +59,9 @@ type Reconciler struct {
 	// ArgoCDWatcher handles dynamic watching of ArgoCD Applications.
 	ArgoCDWatcher *argocd.Watcher
 
-	// talos-bootstrap chart configuration.
-	TalosBootstrapChartURL     string
-	TalosBootstrapChartVersion string
+	// talos-manager chart configuration.
+	TalosManagerChartURL     string
+	TalosManagerChartVersion string
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -273,16 +273,16 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 		}
 	}
 
-	// "Unmanaged" mode disables talos-bootstrap entirely:
+	// "Unmanaged" mode disables talos-manager entirely:
 	if cluster.Spec.TalosManagementMode != operatorv1alpha1.TalosManagementUnmanaged {
-		// Reconcile talos-bootstrap application:
-		if err := r.reconcileTalosBootstrap(ctx, cluster); err != nil {
-			log.Error(err, "talos-bootstrap reconciliation failed")
+		// Reconcile talos-manager application:
+		if err := r.reconcileTalosManager(ctx, cluster); err != nil {
+			log.Error(err, "talos-manager reconciliation failed")
 			reconcileErr = err
 		}
 	} else {
-		// We have to check if there is an existing talos-bootstrap Application, because in that case, it should be deleted:
-		name := fmt.Sprintf("%s-%s", TalosBootstrapApp, cluster.Name)
+		// We have to check if there is an existing talos-manager Application, because in that case, it should be deleted:
+		name := fmt.Sprintf("%s-%s", TalosManagerApp, cluster.Name)
 		exists := true
 
 		existing := &unstructured.Unstructured{}

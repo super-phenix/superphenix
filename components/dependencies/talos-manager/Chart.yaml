@@ -1,5 +1,5 @@
 apiVersion: v2
-name: talos-bootstrap
+name: talos-manager
 description: Sets up PXE on nodes and generates a TalosCluster resource for talos-operator to manage the cluster.
 type: application
 version: 0.1.0

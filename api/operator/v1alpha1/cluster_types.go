@@ -126,9 +126,9 @@ type ClusterSpec struct {
 	// +kubebuilder:validation:Enum=Unmanaged;Import;Full
 	TalosManagementMode TalosManagementMode `json:"talosManagementMode,omitempty"`
 
-	// TalosBootstrapConfiguration is a YAML dict of unknown values that will be passed to the talos-bootstrap chart.
+	// TalosManagerConfiguration is a YAML dict of unknown values that will be passed to the talos-manager chart.
 	// +optional
-	TalosBootstrapConfiguration *apiextensionsv1.JSON `json:"talosBootstrapConfiguration,omitempty"`
+	TalosManagerConfiguration *apiextensionsv1.JSON `json:"talosManagerConfiguration,omitempty"`
 
 	// Region is the geographic region where this cluster is located.
 	// +kubebuilder:validation:Required

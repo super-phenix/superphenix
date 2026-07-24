@@ -71,8 +71,8 @@ func main() {
 	var defaultVersion string
 	var syncPeriod time.Duration
 	var syncTimeout time.Duration
-	var talosBootstrapChartURL string
-	var talosBootstrapChartVersion string
+	var talosManagerChartURL string
+	var talosManagerChartVersion string
 	var disableTelemetry bool
 	var telemetryEndpoint string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
@@ -106,8 +106,8 @@ func main() {
 	flag.StringVar(&defaultVersion, "default-version", "0.0.0", "The default version for the Superphenix system chart")
 	flag.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The interval at which to periodically resync sub-applications")
 	flag.DurationVar(&syncTimeout, "sync-timeout", 15*time.Minute, "The duration after which an in-progress sub-application sync is considered stuck, aborted, and restarted")
-	flag.StringVar(&talosBootstrapChartURL, "talos-bootstrap-chart-url", "ghcr.io/super-phenix/charts", "The repository URL for the talos-bootstrap chart")
-	flag.StringVar(&talosBootstrapChartVersion, "talos-bootstrap-chart-version", "0.1.0", "The version for the talos-bootstrap chart")
+	flag.StringVar(&talosManagerChartURL, "talos-manager-chart-url", "ghcr.io/super-phenix/charts", "The repository URL for the talos-manager chart")
+	flag.StringVar(&talosManagerChartVersion, "talos-manager-chart-version", "0.1.0", "The version for the talos-manager chart")
 	flag.StringVar(&operatorNamespace, "operator-namespace", os.Getenv("OPERATOR_NAMESPACE"), "The namespace where the operator is deployed")
 	flag.BoolVar(&isManagementCluster, "is-management-cluster", false, "Whether this operator is running on a management cluster and should reconcile management components")
 	flag.BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable sending anonymous telemetry to the Superphenix open-source project")
@@ -238,17 +238,17 @@ func main() {
 	}
 
 	if err := (&cluster.Reconciler{
-		Client:                     mgr.GetClient(),
-		Scheme:                     mgr.GetScheme(),
-		OperatorNamespace:          operatorNamespace,
-		ClustersConfigMapName:      clustersConfigMapName,
-		DefaultRepoURL:             defaultRepoURL,
-		DefaultChartName:           defaultChartName,
-		DefaultVersion:             defaultVersion,
-		SyncPeriod:                 syncPeriod,
-		SyncTimeout:                syncTimeout,
-		TalosBootstrapChartURL:     talosBootstrapChartURL,
-		TalosBootstrapChartVersion: talosBootstrapChartVersion,
+		Client:                   mgr.GetClient(),
+		Scheme:                   mgr.GetScheme(),
+		OperatorNamespace:        operatorNamespace,
+		ClustersConfigMapName:    clustersConfigMapName,
+		DefaultRepoURL:           defaultRepoURL,
+		DefaultChartName:         defaultChartName,
+		DefaultVersion:           defaultVersion,
+		SyncPeriod:               syncPeriod,
+		SyncTimeout:              syncTimeout,
+		TalosManagerChartURL:     talosManagerChartURL,
+		TalosManagerChartVersion: talosManagerChartVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "Cluster")
 		os.Exit(1)

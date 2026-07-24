@@ -20,9 +20,9 @@ spec:
   type: {{ $cluster.type }}
   {{- end }}
   talosManagementMode: {{ $cluster.talosManagementMode | default "Unmanaged" }}
-  {{- if $cluster.talosBootstrapConfiguration }}
-  talosBootstrapConfiguration:
-    {{- toYaml $cluster.talosBootstrapConfiguration | nindent 4 }}
+  {{- if $cluster.talosManagerConfiguration }}
+  talosManagerConfiguration:
+    {{- toYaml $cluster.talosManagerConfiguration | nindent 4 }}
   {{- end }}
   region: {{ $cluster.region }}
   availabilityZone: {{ $cluster.availabilityZone }}

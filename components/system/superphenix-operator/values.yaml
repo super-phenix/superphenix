@@ -81,8 +81,8 @@ config:
     chartName: superphenix-system
     version: 0.0.0
 
-  # talos-bootstrap chart deployed by the cluster controller for every managed cluster.
-  talosBootstrap:
+  # talos-manager chart deployed by the cluster controller for every managed cluster.
+  talosManager:
     chart:
       url: ghcr.io/super-phenix/charts
       version: 0.1.0
@@ -135,8 +135,8 @@ clusters: {}
 #    #  network:
 #    #    mtu: 1500
 #
-#    # TalosBootstrapConfiguration is a YAML dict of values that will be passed to the talos-bootstrap chart.
-#    # talosBootstrapConfiguration:
+#    # TalosManagerConfiguration is a YAML dict of values that will be passed to the talos-manager chart.
+#    # talosManagerConfiguration:
 #    #   talosVersion: "v1.13.4"
 #
 #    # Connection defines the parameters to connect to the remote cluster.
