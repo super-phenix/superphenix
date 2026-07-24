@@ -20,10 +20,6 @@ spec:
       expression: "object.spec.template.metadata.labels"
     - name: ignoredLabels
       expression: {{- include "policies.ignoredLabels" $ | quote | indent 1 }}
-    - name: nabokPlanRegex
-      expression: r{{ include "policies.regex" "nabokMigration"}}
-    - name: nabokLabel
-      expression: r{{ include "policies.nabokLabel" ""}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -44,7 +40,7 @@ spec:
             label.startsWith(ignore)
           )) ||
           label in variables.vmiLabels
-        )  || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        )
       messageExpression: |
         "##### " + object.kind + " labels (" +
         variables.vmLabels.filter(label,
@@ -62,7 +58,7 @@ spec:
             label.startsWith(ignore)
           )) ||
           label in variables.vmLabels
-        ) || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        )
       messageExpression: |
         "##### Templated VMI labels (" +
         variables.vmiLabels.filter(label,
@@ -80,7 +76,7 @@ spec:
             label.startsWith(ignore)
           )) ||
           variables.vmLabels[label] == variables.vmiLabels[label]
-        )  || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        )
       messageExpression: |
         "##### " + object.kind + " and templated VMI labels don't share the same values: " +
         variables.vmLabels.filter(label,

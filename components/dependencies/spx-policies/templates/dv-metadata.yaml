@@ -27,10 +27,6 @@ spec:
       expression: r"superphenix.net/ignoreNetworkPolicies"
     - name: ignoreNetpolValue
       expression: r"true"
-    - name: nabokPlanRegex
-      expression: r{{ include "policies.regex" "nabokMigration"}}
-    - name: nabokLabel
-      expression: r{{ include "policies.nabokLabel" ""}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -45,15 +41,13 @@ spec:
         scope: '*'
   validations:
     # Check that the "ignoreNetworkPolicies" label is present
-    - expression: variables.ignoreNetpolKey in variables.labels || (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+    - expression: variables.ignoreNetpolKey in variables.labels
       messageExpression: |
         "##### " + object.kind + " is missing required label : \"" +
         variables.ignoreNetpolKey + "\". #####"
       message: "##### DataVolume is missing the \"ignoreNetworkPolicies\" label #####"
     # Check that the "ignoreNetworkPolicies" label has the correct value ("true")
-    - expression: |
-        variables.labels[variables.ignoreNetpolKey] == variables.ignoreNetpolValue ||
-        (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+    - expression: variables.labels[variables.ignoreNetpolKey] == variables.ignoreNetpolValue
       messageExpression: |
         "##### " + object.kind + " has an incorrect value for label \"" +
         variables.ignoreNetpolKey + "\" (\"" +
@@ -63,8 +57,7 @@ spec:
     # Check that the "default-network" and "allowClaimAdoption" annotations are present
     - expression: |
         [variables.defaultNetworkKey, variables.allowClaimAdoptionKey]
-          .all(key, key in variables.annotations) ||
-        (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+          .all(key, key in variables.annotations)
       messageExpression: |
         "##### " + object.kind + " is missing required annotations : " +
         [variables.defaultNetworkKey, variables.allowClaimAdoptionKey]
@@ -73,8 +66,7 @@ spec:
       message: "##### Missing DataVolume annotation #####"
     # Check that the "default-network" annotation has the correct value
     - expression: |
-        variables.annotations[variables.defaultNetworkKey] == variables.defaultNetworkValue ||
-        (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        variables.annotations[variables.defaultNetworkKey] == variables.defaultNetworkValue
       messageExpression: |
         "##### " + object.kind + " has an incorrect value for annotation \"" +
         variables.defaultNetworkKey + "\" (" +
@@ -83,8 +75,7 @@ spec:
       message: "##### Incorrect DataVolume \"default-network\" annotation value #####"
     # Check that the "allowClaimAdoption" annotation has the correct value ("true")
     - expression: |
-        variables.annotations[variables.allowClaimAdoptionKey] == "true" ||
-        (variables.nabokLabel in object.metadata.labels && object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex))
+        variables.annotations[variables.allowClaimAdoptionKey] == "true"
       messageExpression: |
         "##### " + object.kind + " has an incorrect value for annotation \"" +
         variables.allowClaimAdoptionKey + "\" (\"" +
