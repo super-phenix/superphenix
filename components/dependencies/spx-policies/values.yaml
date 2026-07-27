@@ -18,7 +18,7 @@ policies:
   # @default -- "{}"
   org-labels:
     # -- Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.
-      # @section -- Labels (Org)
+    # @section -- Labels (Org)
     matchConditions: "[spxid]"
     # -- Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.
     # @section -- Labels (Org)
