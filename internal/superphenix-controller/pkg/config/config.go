@@ -64,41 +64,37 @@ type Config struct {
 
 	OrganizationWhitelist []string `yaml:"organizationWhitelist"`
 
-	NatGatewayDefault struct {
-		ExternalSubnets []string `yaml:"externalSubnets"`
-		DefaultRoutes   []struct {
-			Cidr      string `yaml:"cidr"`
-			NextHopIP string `yaml:"nextHopIP"`
-		} `yaml:"defaultRoutes"`
-		BgpSpeaker struct {
-			Enabled               bool          `yaml:"enabled"`
-			ASN                   uint32        `yaml:"asn"`
-			RemoteASN             uint32        `yaml:"remoteAsn"`
-			Neighbors             []string      `yaml:"neighbors"`
-			HoldTime              time.Duration `yaml:"holdTime"`
-			RouterID              string        `yaml:"routerId"`
-			Password              string        `yaml:"password"`
-			EnableGracefulRestart bool          `yaml:"enableGracefulRestart"`
-			ExtraArgs             []string      `yaml:"extraArgs"`
-		} `yaml:"bgpSpeaker"`
-	} `yaml:"natGatewayDefault"`
-	EipDefault struct {
-		ExternalSubnet string `yaml:"externalSubnet"`
-	} `yaml:"eipDefault"`
+	ProductsConfig struct {
+		NatGatewayDefault struct {
+			ExternalSubnets []string `yaml:"externalSubnets"`
+			DefaultRoutes   []struct {
+				Cidr      string `yaml:"cidr"`
+				NextHopIP string `yaml:"nextHopIP"`
+			} `yaml:"defaultRoutes"`
+			BgpSpeaker struct {
+				Enabled               bool          `yaml:"enabled"`
+				ASN                   uint32        `yaml:"asn"`
+				RemoteASN             uint32        `yaml:"remoteAsn"`
+				Neighbors             []string      `yaml:"neighbors"`
+				HoldTime              time.Duration `yaml:"holdTime"`
+				RouterID              string        `yaml:"routerId"`
+				Password              string        `yaml:"password"`
+				EnableGracefulRestart bool          `yaml:"enableGracefulRestart"`
+				ExtraArgs             []string      `yaml:"extraArgs"`
+			} `yaml:"bgpSpeaker"`
+		} `yaml:"natGatewayDefault"`
+		EipDefault struct {
+			ExternalSubnet string `yaml:"externalSubnet"`
+		} `yaml:"eipDefault"`
 
-	SubnetDefault struct {
-		DnsV4 string `yaml:"dnsV4"`
-		DnsV6 string `yaml:"dnsV6"`
-	} `yaml:"subnetDefault"`
+		Datavolume struct {
+			DefaultAnnotations map[string]string `yaml:"defaultAnnotations"`
+		} `yaml:"datavolume"`
 
-	Datavolume struct {
-		DefaultAnnotations []struct {
-			Key   string `yaml:"key"`
-			Value string `yaml:"value"`
-		} `yaml:"defaultAnnotations"`
-	} `yaml:"datavolume"`
-
-	StorageClassMapping map[string]string `yaml:"storageClassMapping"`
+		Blocks struct {
+			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
+		} `yaml:"blocks"`
+	} `yaml:"productsConfig"`
 
 	S3 struct {
 		StorageClassMapping map[string]string `yaml:"storageClassMapping"`
@@ -121,14 +117,10 @@ type Config struct {
 		QPS   float32 `yaml:"qps"`
 		Burst int     `yaml:"burst"`
 	} `yaml:"kubernetesConfig"`
-
-	SnapshotSchedule struct {
-		MinHour int `yaml:"minHour"`
-		MaxHour int `yaml:"maxHour"`
-	} `yaml:"snapshotSchedule"`
 }
 
 var defaultConfig = []byte(`
+azName: ""
 logging:
   pretty: true
 http:
@@ -149,32 +141,33 @@ swagger:
 spxPrefix: "spx"
 organizationWhitelist: []
 containerDiskCatalog: []
-natGatewayDefault:
-  externalSubnets:
-    - spx-internal-bgp
-  defaultRoutes:
-    - cidr: 198.18.0.0/16
-      nextHopIP: gateway
-  bgpSpeaker:
-    enabled: true
-    asn: 65500
-    remoteAsn: 65000
-    neighbors:
-    - "172.17.0.1"
-    - "fd00:0:0:ffff::1"
-    extraArgs:
-      - -v5
-      - --graceful-restart
-eipDefault: 
-  externalSubnet: skala-subnet
-datavolume:
-  defaultAnnotations:
-  - key: "v1.multus-cni.io/default-network"
-    value: "kube-system/system-isolated-egress"
-  - key : "cdi.kubevirt.io/allowClaimAdoption"
-    value: "true"
+productsConfig:
+  natGatewayDefault:
+    externalSubnets:
+      - spx-internal-bgp
+    defaultRoutes:
+      - cidr: 198.18.0.0/16
+        nextHopIP: gateway
+    bgpSpeaker:
+      enabled: true
+      asn: 65500
+      remoteAsn: 65000
+      neighbors:
+        - "172.17.0.1"
+        - "fd00:0:0:ffff::1"
+      extraArgs:
+        - -v5
+        - --graceful-restart
+  eipDefault:
+    externalSubnet: skala-subnet
+  datavolume:
+    defaultAnnotations:
+      "v1.multus-cni.io/default-network": "kube-system/system-isolated-egress"
+      "cdi.kubevirt.io/allowClaimAdoption": "true"
+  blocks:
+    storageClassMapping: {}
 disableEditionForResourcesByLabels:
-  - "app.kubernetes.io/name": "sfs-kaas"
+  "app.kubernetes.io/name": "sfs-kaas"
 garbageCollection:
   interval: 15m
   timeout: 10m
@@ -184,9 +177,6 @@ garbageCollection:
 kubernetesConfig:
   qps: 100
   burst: 100
-snapshotSchedule:
-  minHour: 21
-  maxHour: 23
 s3:
   storageClassMapping: {}
   maxBucketSize: "1Ti"

@@ -89,7 +89,7 @@ func FindByInviteCode(inviteCode uuid.UUID) (model.User, error) {
 var ErrInviteCodeCooldown = fmt.Errorf("invite code regeneration cooldown has not elapsed")
 
 func RegenerateInviteCode(userId uuid.UUID) (uuid.UUID, error) {
-	cooldown := config.Global.Session.InviteCodeRegenerationCooldown
+	cooldown := config.Global.UserSettings.InviteCodeRegenerationCooldown
 
 	var u model.User
 	if err := db.Client.Select("invite_code_regenerated_at").Where("id = ?", userId).First(&u).Error; err != nil {

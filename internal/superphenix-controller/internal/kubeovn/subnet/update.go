@@ -12,7 +12,6 @@ import (
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
-	v1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -100,18 +99,8 @@ func (s *UpdateSubnetInfo) UpdateSubnet(ctx context.Context, namespace, name str
 	}
 
 	// Custom DHCP
-	dnsV4Server := k8s.Global.SubnetDefault.DnsV4
-	dnsV6Server := k8s.Global.SubnetDefault.DnsV6
-	if subnetToUpdate.Spec.Protocol == v1.ProtocolIPv4 || subnetToUpdate.Spec.Protocol == v1.ProtocolDual {
-		if s.Network.DnsV4 != "" {
-			dnsV4Server = s.Network.DnsV4
-		}
-	}
-	if subnetToUpdate.Spec.Protocol == v1.ProtocolIPv6 || subnetToUpdate.Spec.Protocol == v1.ProtocolDual {
-		if s.Network.DnsV6 != "" {
-			dnsV6Server = s.Network.DnsV6
-		}
-	}
+	dnsV4Server := s.Network.DnsV4
+	dnsV6Server := s.Network.DnsV6
 	subnetToUpdate.Spec.DHCPv4Options = fmt.Sprintf(dhcpOptionFormat, dnsV4Server)
 	subnetToUpdate.Spec.DHCPv6Options = fmt.Sprintf(dhcpOptionFormat, dnsV6Server)
 

@@ -1,20 +1,21 @@
 package view
 
 import (
-	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 	"testing"
+
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 
 	corev1 "k8s.io/api/core/v1"
 )
 
 func TestPVCToView_AutomaticConversion(t *testing.T) {
 	// Backup and restore Global config
-	originalMapping := config.Global.StorageClassMapping
+	originalMapping := config.Global.ProductsConfig.Blocks.StorageClassMapping
 	defer func() {
-		config.Global.StorageClassMapping = originalMapping
+		config.Global.ProductsConfig.Blocks.StorageClassMapping = originalMapping
 	}()
 
-	config.Global.StorageClassMapping = map[string]string{
+	config.Global.ProductsConfig.Blocks.StorageClassMapping = map[string]string{
 		"SSD Storage": "fast",
 	}
 
@@ -71,12 +72,12 @@ func TestPVCToView_AutomaticConversion(t *testing.T) {
 
 func TestConvertStorageClassName(t *testing.T) {
 	// Backup and restore Global config
-	originalMapping := config.Global.StorageClassMapping
+	originalMapping := config.Global.ProductsConfig.Blocks.StorageClassMapping
 	defer func() {
-		config.Global.StorageClassMapping = originalMapping
+		config.Global.ProductsConfig.Blocks.StorageClassMapping = originalMapping
 	}()
 
-	config.Global.StorageClassMapping = map[string]string{
+	config.Global.ProductsConfig.Blocks.StorageClassMapping = map[string]string{
 		"SSD Storage": "fast",
 		"HDD Storage": "slow",
 	}

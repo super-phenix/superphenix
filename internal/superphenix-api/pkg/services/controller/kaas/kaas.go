@@ -53,7 +53,7 @@ func (h *Service) ListKaaS(w http.ResponseWriter, r *http.Request) {
 
 	urls := az.FindAll(orgDb.ID.String())
 
-	responses, err := proxy.SendBatchProxy(r, urls, h.cfg.Controller.ApiPrefix)
+	responses, err := proxy.SendBatchProxy(r, urls, config.ApiPrefix)
 	if err != nil {
 		log.Err(err).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Msg(consts.SpxProxyToAZFailure)
@@ -122,7 +122,7 @@ func (h *Service) GetKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Error().Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -447,7 +447,7 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Err(err).Msg("Failed to marshal group deletion body")
 			} else {
-				resp2, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(gdBody), h.cfg.Controller.AuthSecret)
+				resp2, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(gdBody), azDb.AuthSecret)
 				if err != nil {
 					log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 					return
@@ -645,7 +645,7 @@ func (h *Service) DeleteKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Router			/{orgaId}/api/spx-ctrl/{projectId}/kaas/kube-versions [get]
 //	@Security		Bearer[OrganizationRead]
 func (h *Service) GetKubeVersion(w http.ResponseWriter, r *http.Request) {
-	kubeVersions := h.cfg.ArgoController.App.KaaS.KubeVersions
+	kubeVersions := h.cfg.ProductsConfig.App.Kubernetes.KubeVersions
 	versions := make([]string, 0, len(kubeVersions))
 	for _, v := range kubeVersions {
 		versions = append(versions, v.Version)
@@ -681,7 +681,7 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 
 	// Fetch the raw kubeconfig from the AZ controller.
 	url := fmt.Sprintf("%s/%s/%s/kaas/%s/kubeconfig", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), effectiveId)
-	resp, err := proxy.SendRequest(r.Context(), url, "GET", http.NoBody, config.Global.Controller.AuthSecret)
+	resp, err := proxy.SendRequest(r.Context(), url, "GET", http.NoBody, azDb.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", effectiveId).Msg(consts.SpxProxyToAZFailure)
@@ -717,8 +717,8 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if argokaas.ShouldRewriteFQDN(h.cfg.ArgoController.App.KaaS.KubeVersions, spec.KubeVersion) {
-		body, err = argokaas.RewriteFQDN(body, effectiveId, azDb.Code, h.cfg.ArgoController.App.KaaS.KubeConfigDomain)
+	if argokaas.ShouldRewriteFQDN(h.cfg.ProductsConfig.App.Kubernetes.KubeVersions, spec.KubeVersion) {
+		body, err = argokaas.RewriteFQDN(body, effectiveId, azDb.Code, h.cfg.ProductsConfig.App.Kubernetes.KubeConfigDomain)
 		if err != nil {
 			log.Err(err).Str("eid", effectiveId).Msg("Failed to rewrite kubeconfig server endpoint")
 			httpError.Http(w, r, http.StatusInternalServerError).Str("eid", effectiveId).Msg(consts.SpxResponseParseFailure)
@@ -736,7 +736,7 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 func getKaaSConfig(ctx context.Context, az config.AZConfig, orgId, projectId string) (argokaas.KaaSConfig, error) {
 	log := logger.GetLogger(ctx)
 	url := fmt.Sprintf("%s/%s/%s/kaas-config", az.ControllerUrl, orgId, projectId)
-	resp, err := proxy.SendRequest(ctx, url, "GET", http.NoBody, config.Global.Controller.AuthSecret)
+	resp, err := proxy.SendRequest(ctx, url, "GET", http.NoBody, az.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("az", az.Code).Msg(consts.SpxProxyToAZFailure)
 		return argokaas.KaaSConfig{}, err

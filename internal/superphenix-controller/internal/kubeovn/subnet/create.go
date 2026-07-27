@@ -58,18 +58,8 @@ func (s *CreateSubnetInfo) CreateSubnet(ctx context.Context) error {
 	}
 
 	// Custom DHCP
-	dnsV4Server := k8s.Global.SubnetDefault.DnsV4
-	dnsV6Server := k8s.Global.SubnetDefault.DnsV6
-	if s.Network.Protocol == v1.ProtocolIPv4 || s.Network.Protocol == v1.ProtocolDual {
-		if s.Network.DnsV4 != "" {
-			dnsV4Server = s.Network.DnsV4
-		}
-	}
-	if s.Network.Protocol == v1.ProtocolIPv6 || s.Network.Protocol == v1.ProtocolDual {
-		if s.Network.DnsV6 != "" {
-			dnsV6Server = s.Network.DnsV6
-		}
-	}
+	dnsV4Server := s.Network.DnsV4
+	dnsV6Server := s.Network.DnsV6
 
 	subnet := v1.Subnet{
 		ObjectMeta: metav1.ObjectMeta{Name: s.GetResourceEffectiveID(), Labels: s.GetLabels()},

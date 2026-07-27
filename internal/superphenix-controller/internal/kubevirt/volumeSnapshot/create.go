@@ -81,7 +81,12 @@ func (info *CreateSnapshotInfo) createScheduledSnapshot(ctx context.Context, nam
 		return err
 	}
 
-	randHours := schedule.RandomHourInRange(config.Global.SnapshotSchedule.MinHour, config.Global.SnapshotSchedule.MaxHour)
+	if err := info.SnapshotSchedule.Validate(); err != nil {
+		log.Error().Msg(err.Error())
+		return err
+	}
+
+	randHours := schedule.RandomHourInRange(info.SnapshotSchedule.MinHour, info.SnapshotSchedule.MaxHour)
 	randMinutes := rand.IntN(60)
 	cronSchedule := fmt.Sprintf("%d %d */%d * *", randMinutes, randHours, info.Spec.Schedule)
 

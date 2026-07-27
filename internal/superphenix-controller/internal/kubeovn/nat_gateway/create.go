@@ -21,10 +21,10 @@ type CreateNatGwInfo struct {
 
 func CreateNatGateway(ctx context.Context, info CreateNatGwInfo) error {
 	log := logger.GetLogger(ctx)
-	bgpSpeakerDefault := config.Global.NatGatewayDefault.BgpSpeaker
+	bgpSpeakerDefault := config.Global.ProductsConfig.NatGatewayDefault.BgpSpeaker
 
 	routes := make([]v1.Route, 0)
-	for _, route := range config.Global.NatGatewayDefault.DefaultRoutes {
+	for _, route := range config.Global.ProductsConfig.NatGatewayDefault.DefaultRoutes {
 		routes = append(routes, v1.Route{
 			CIDR:      route.Cidr,
 			NextHopIP: route.NextHopIP,
@@ -39,7 +39,7 @@ func CreateNatGateway(ctx context.Context, info CreateNatGwInfo) error {
 		Spec: v1.VpcNatGatewaySpec{
 			Vpc:             info.VpcEID,
 			Subnet:          info.GetResourceEffectiveID(),
-			ExternalSubnets: config.Global.NatGatewayDefault.ExternalSubnets,
+			ExternalSubnets: config.Global.ProductsConfig.NatGatewayDefault.ExternalSubnets,
 			LanIP:           info.LanIP,
 			Routes:          routes,
 			BgpSpeaker: v1.VpcBgpSpeaker{

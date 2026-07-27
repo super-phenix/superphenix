@@ -50,7 +50,7 @@ func (h *Service) ListBaaS(w http.ResponseWriter, r *http.Request) {
 
 	urls := az.FindAll(orgDb.ID.String())
 
-	responses, err := proxy.SendBatchProxy(r, urls, h.cfg.Controller.ApiPrefix)
+	responses, err := proxy.SendBatchProxy(r, urls, config.ApiPrefix)
 	if err != nil {
 		log.Err(err).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Msg(consts.SpxProxyToAZFailure)
@@ -119,7 +119,7 @@ func (h *Service) GetBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Error().Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -489,7 +489,7 @@ func (h *Service) DeleteBaaS(w http.ResponseWriter, r *http.Request) {
 	if resp.StatusCode == 200 || resp.StatusCode == 404 {
 		// We need to ask Controller to clean remaining backup
 		url := fmt.Sprintf("%s/%s/%s/baas/%s", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), productEId)
-		resp2, err := proxy.SendRequest(r.Context(), url, "DELETE", http.NoBody, config.Global.Controller.AuthSecret)
+		resp2, err := proxy.SendRequest(r.Context(), url, "DELETE", http.NoBody, azDb.AuthSecret)
 		if err != nil {
 			log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 			httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
@@ -568,7 +568,7 @@ func fetchBaaSApp(ctx context.Context, cfg *config.Config, orgId, projectId, res
 func canCreateAllBaas(ctx context.Context, orgId, projectId string, az config.AZConfig) (bool, error) {
 	log := logger.GetLogger(ctx)
 	url := fmt.Sprintf("%s/%s/%s/baas/check-limit", az.ControllerUrl, orgId, projectId)
-	resp, err := proxy.SendRequest(ctx, url, "GET", http.NoBody, config.Global.Controller.AuthSecret)
+	resp, err := proxy.SendRequest(ctx, url, "GET", http.NoBody, az.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("az", az.Code).Msg(consts.SpxProxyToAZFailure)
 		return false, err

@@ -33,8 +33,8 @@ type S3Config struct {
 
 // storageClassKeys returns the friendly names from the unified StorageClassMapping.
 func storageClassKeys() []string {
-	keys := make([]string, 0, len(config.Global.StorageClassMapping))
-	for k := range config.Global.StorageClassMapping {
+	keys := make([]string, 0, len(config.Global.ProductsConfig.Blocks.StorageClassMapping))
+	for k := range config.Global.ProductsConfig.Blocks.StorageClassMapping {
 		keys = append(keys, k)
 	}
 	return keys
@@ -165,7 +165,7 @@ func GetVMClusterPreferenceAdvancedOptions(w http.ResponseWriter, r *http.Reques
 //	@Security		Bearer
 func GetKaaSConfig(w http.ResponseWriter, r *http.Request) {
 	storageClasses := make([]StorageClass, 0)
-	for k, fullname := range config.Global.StorageClassMapping {
+	for k, fullname := range config.Global.ProductsConfig.Blocks.StorageClassMapping {
 		storageClasses = append(storageClasses, StorageClass{
 			Shortname: k,
 			Fullname:  fullname,

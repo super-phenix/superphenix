@@ -14,6 +14,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/proxy"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
 	ctrlutils "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/utils"
 	"github.com/super-phenix/superphenix/pkg/utils/decoder"
@@ -49,7 +50,7 @@ func (h *Service) ListVmSnapshots(w http.ResponseWriter, r *http.Request) {
 
 	urls := az.FindAll(orga.ID.String())
 
-	responses, err := proxy.SendBatchProxy(r, urls, h.cfg.Controller.ApiPrefix)
+	responses, err := proxy.SendBatchProxy(r, urls, config.ApiPrefix)
 	if err != nil {
 		log.Err(err).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Msg(consts.SpxProxyToAZFailure)
@@ -110,7 +111,7 @@ func (h *Service) ListAZVmSnapshots(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Error().Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -172,7 +173,7 @@ func (h *Service) GetVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Error().Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -306,7 +307,7 @@ func (h *Service) CreateVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
 		return
 	}
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, bytes.NewReader(marshal))
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, bytes.NewReader(marshal))
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -351,7 +352,7 @@ func (h *Service) DeleteVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -439,7 +440,7 @@ func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 	//
 	//}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -538,7 +539,7 @@ func (h *Service) CloneVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
 		return
 	}
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, bytes.NewReader(marshal))
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, bytes.NewReader(marshal))
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)

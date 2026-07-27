@@ -39,7 +39,7 @@ func MarkResources(ctx context.Context, orgId, projectId string) error {
 	azs := az.FindAll(orgId)
 
 	for _, azCfg := range azs {
-		if err := callMarkEndpoint(ctx, azCfg.ControllerUrl, orgId, projectId, config.Global.Controller.AuthSecret, azCfg.Code); err != nil {
+		if err := callMarkEndpoint(ctx, azCfg.ControllerUrl, orgId, projectId, azCfg.AuthSecret, azCfg.Code); err != nil {
 			return err
 		}
 	}

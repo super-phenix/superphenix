@@ -92,7 +92,7 @@ func (info *CreateDiskInfo) CreateDisk(ctx context.Context, namespace string) er
 
 	volumeMode := v1.PersistentVolumeBlock
 	storageClassName := ""
-	if fullname, ok := config.Global.StorageClassMapping[info.General.StorageClass]; ok {
+	if fullname, ok := config.Global.ProductsConfig.Blocks.StorageClassMapping[info.General.StorageClass]; ok {
 		storageClassName = fullname
 	}
 
@@ -103,8 +103,8 @@ func (info *CreateDiskInfo) CreateDisk(ctx context.Context, namespace string) er
 	}
 
 	defaultAnnotations := make(map[string]string)
-	for _, annotation := range config.Global.Datavolume.DefaultAnnotations {
-		defaultAnnotations[annotation.Key] = annotation.Value
+	for key, value := range config.Global.ProductsConfig.Datavolume.DefaultAnnotations {
+		defaultAnnotations[key] = value
 	}
 
 	labels := metadata.GetLabels()

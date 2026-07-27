@@ -58,7 +58,7 @@ func (s *CreateEIPInfo) CreateEip(ctx context.Context) error {
 		},
 		Spec: v1.IptablesEIPSpec{
 			NatGwDp:        s.General.SubnetEId,
-			ExternalSubnet: k8s.Global.EipDefault.ExternalSubnet,
+			ExternalSubnet: k8s.Global.ProductsConfig.EipDefault.ExternalSubnet,
 		},
 	}
 	if _, err := k8s.KubeOvnClient.KubeovnV1().IptablesEIPs().Create(ctx, &eip, metav1.CreateOptions{}); err != nil {

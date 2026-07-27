@@ -51,7 +51,7 @@ func InitializeProjectDefaultResources(ctx context.Context, orgUUID, projectUUID
 func initializeVPC(ctx context.Context, orgUUID, projectUUID uuid.UUID, az config.AZConfig) (string, error) {
 	log := logger.GetLogger(ctx)
 	vpc, err := product.Save(model.Product{
-		ProductName:   config.Global.DefaultProducts.VPC.ProductName,
+		ProductName:   config.Global.ProductsConfig.DefaultVPC.ProductName,
 		CodeAZ:        az.Code,
 		ProjectId:     projectUUID,
 		ProductTypeId: model.ProductTypeVPC,
@@ -102,7 +102,7 @@ func initializeVPC(ctx context.Context, orgUUID, projectUUID uuid.UUID, az confi
 
 	// {base}/{orgaId}/{projectId}/vpc
 	url := fmt.Sprintf("%s/%s/%s/vpc", az.ControllerUrl, orgUUID.String(), projectUUID.String())
-	resp, err := proxy.SendRequest(ctx, url, "POST", bytes.NewReader(marshal), config.Global.Controller.AuthSecret)
+	resp, err := proxy.SendRequest(ctx, url, "POST", bytes.NewReader(marshal), az.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("url", url).Msg("Failed to send request on controller")
 		return "", FailedVpcCreation
@@ -116,7 +116,7 @@ func initializeVPC(ctx context.Context, orgUUID, projectUUID uuid.UUID, az confi
 func initializeSubnet(ctx context.Context, orgUUID, projectUUID uuid.UUID, az config.AZConfig, vpcEID string) error {
 	log := logger.GetLogger(ctx)
 	subnet, err := product.Save(model.Product{
-		ProductName:   config.Global.DefaultProducts.Subnet.ProductName,
+		ProductName:   config.Global.ProductsConfig.DefaultSubnet.ProductName,
 		CodeAZ:        az.Code,
 		ProjectId:     projectUUID,
 		ProductTypeId: model.ProductTypeSubnet,
@@ -165,15 +165,17 @@ func initializeSubnet(ctx context.Context, orgUUID, projectUUID uuid.UUID, az co
 			DnsV4    string `json:"dnsV4,omitempty"`
 			DnsV6    string `json:"dnsV6,omitempty"`
 		}{
-			Private:  config.Global.DefaultProducts.Subnet.Private,
-			Protocol: config.Global.DefaultProducts.Subnet.Protocol,
-			IPv4:     config.Global.DefaultProducts.Subnet.IPv4,
-			IPv6:     config.Global.DefaultProducts.Subnet.IPv6,
+			Private:  config.Global.ProductsConfig.DefaultSubnet.Private,
+			Protocol: config.Global.ProductsConfig.DefaultSubnet.Protocol,
+			IPv4:     config.Global.ProductsConfig.DefaultSubnet.IPv4,
+			IPv6:     config.Global.ProductsConfig.DefaultSubnet.IPv6,
+			DnsV4:    config.Global.ProductsConfig.DefaultSubnet.DnsV4,
+			DnsV6:    config.Global.ProductsConfig.DefaultSubnet.DnsV6,
 		},
 		NatGateway: struct {
 			Enable bool `json:"enable"`
 		}{
-			Enable: config.Global.DefaultProducts.Subnet.NatGatewayEnabled,
+			Enable: config.Global.ProductsConfig.DefaultSubnet.NatGatewayEnabled,
 		},
 	}
 
@@ -191,7 +193,7 @@ func initializeSubnet(ctx context.Context, orgUUID, projectUUID uuid.UUID, az co
 
 	// {base}/{orgaId}/{projectId}/subnet
 	url := fmt.Sprintf("%s/%s/%s/subnet", az.ControllerUrl, orgUUID.String(), projectUUID.String())
-	resp, err := proxy.SendRequest(ctx, url, "POST", bytes.NewReader(marshal), config.Global.Controller.AuthSecret)
+	resp, err := proxy.SendRequest(ctx, url, "POST", bytes.NewReader(marshal), az.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("url", url).Msg("Failed to send request on controller")
 		return FailedSubnetCreation

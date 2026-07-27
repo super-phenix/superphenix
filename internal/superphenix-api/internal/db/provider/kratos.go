@@ -47,7 +47,7 @@ func InitializeKratosUser(r *http.Request, session *kratos.Session) *http.Reques
 		Email:      traits.Email,
 		Provider:   db.KratosProvider,
 		ProviderId: session.Identity.Id,
-		IsActive:   config.Global.Session.UserIsActiveOnCreate,
+		IsActive:   config.Global.UserSettings.UserIsActiveOnCreate,
 		PersonalOrg: []model.Organization{{
 			Name: "Personal Org",
 		}},

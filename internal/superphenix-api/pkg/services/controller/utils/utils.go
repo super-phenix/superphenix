@@ -39,7 +39,7 @@ func SimpleRedirect() http.HandlerFunc {
 		}
 		// Transfer to the right AZ
 		// Remove the pattern and the code from the call
-		reverseProxy, err := proxy.ReverseProxy(azCfg.ControllerUrl, config.Global.Controller.ApiPrefix+"/"+azCode)
+		reverseProxy, err := proxy.ReverseProxy(azCfg.ControllerUrl, config.ApiPrefix+"/"+azCode)
 		if err != nil {
 			log.Error().Err(err).Str("az", azCode).Msg("Failed to proxy request")
 			http.Error(w, err.Error(), http.StatusNotFound)

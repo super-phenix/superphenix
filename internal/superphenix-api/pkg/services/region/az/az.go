@@ -7,7 +7,6 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	httpModel "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/proxy"
-	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	"github.com/go-chi/chi/v5"
@@ -65,7 +64,7 @@ func (h *Service) StatusCheck(w http.ResponseWriter, r *http.Request) {
 	result := make(map[string]string)
 
 	for _, a := range azConfigs {
-		resp, err := proxy.SendRequest(r.Context(), a.ControllerUrl+"/health", http.MethodGet, http.NoBody, config.Global.Controller.AuthSecret)
+		resp, err := proxy.SendRequest(r.Context(), a.ControllerUrl+"/health", http.MethodGet, http.NoBody, a.AuthSecret)
 		if err != nil || resp.StatusCode != http.StatusOK {
 			result[a.Code] = "down"
 		} else {

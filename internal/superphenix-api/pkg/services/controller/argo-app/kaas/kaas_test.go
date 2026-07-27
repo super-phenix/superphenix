@@ -13,7 +13,7 @@ import (
 )
 
 func TestCreateKaaSAppValues_Comparison(t *testing.T) {
-	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "1.24.0"}}
+	config.Global.ProductsConfig.App.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.24.0"}}
 	ctx := context.Background()
 	localId := "test-cluster"
 	location := "test-loc"
@@ -391,7 +391,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 }
 
 func TestCreateKaaSAppValues_DataStore(t *testing.T) {
-	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "1.34.0"}, {Version: "v1.34.5"}, {Version: "1.35.0"}, {Version: "v1.35.5"}}
+	config.Global.ProductsConfig.App.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.34.0"}, {Version: "v1.34.5"}, {Version: "1.35.0"}, {Version: "v1.35.5"}}
 	ctx := context.Background()
 	localId := "test-cluster"
 	location := "test-loc"
@@ -558,7 +558,7 @@ func TestCreateKaaSAppValues_DataStore(t *testing.T) {
 // TestConvertAppToUpdateKaaSSpec_DataStore round-trips a DR-enabled cluster:
 // build the helm values, wrap them in the argo app shape, then convert back.
 func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
-	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	config.Global.ProductsConfig.App.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	ctx := context.Background()
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
@@ -863,8 +863,8 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 		Chart:          "sfs-kaas-edge",
 	}
 
-	config.Global.ArgoController.App.KaaS.Repo = defaultRepo
-	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{
+	config.Global.ProductsConfig.App.Kubernetes.Repo = defaultRepo
+	config.Global.ProductsConfig.App.Kubernetes.KubeVersions = []config.KubeVersionConfig{
 		{Version: "v1.35.5", Repo: &overrideRepo},
 		{Version: "v1.34.8"},
 	}
