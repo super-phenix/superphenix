@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"maps"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -22,31 +21,139 @@ import (
 const (
 	// TalosManagerApp is the ArgoCD Application name for the talos-manager chart.
 	TalosManagerApp = "talos-manager"
+
+	// LinkAliasTemplate is the template of a Talos LinkAlias.
+	LinkAliasTemplate = "apiVersion: v1alpha1\nkind: LinkAliasConfig\nname: %s\nselector:\n  match: mac(link.permanent_addr) == \"%s\""
 )
+
+// TalosManagerConfigurationSpec represents the values of the talos-manager chart.
+type TalosManagerConfigurationSpec struct {
+	PxeEnabled                   bool               `json:"pxeEnabled"`
+	DhcpInterface                string             `json:"dhcpInterface"`
+	PxeIpAddr                    string             `json:"pxeIpAddr"`
+	ClusterName                  string             `json:"clusterName"`
+	ClusterType                  string             `json:"clusterType"`
+	ReconciliationMode           string             `json:"reconciliationMode"`
+	ClusterNetwork               ClusterNetworkSpec `json:"clusterNetwork"`
+	PublicNetwork                NetworkSpec        `json:"publicNetwork"`
+	StorageNetwork               NetworkSpec        `json:"storageNetwork"`
+	PodSubnets                   SubnetSpec         `json:"podSubnets"`
+	ServiceSubnets               SubnetSpec         `json:"serviceSubnets"`
+	ControlplaneIpv4             string             `json:"controlplaneIpv4"`
+	ControlplaneIpv6             string             `json:"controlplaneIpv6"`
+	ControlplanePort             int                `json:"controlplanePort"`
+	ArgocdToken                  string             `json:"argocdToken"`
+	TalosVersion                 string             `json:"talosVersion"`
+	K8sVersion                   string             `json:"k8sVersion"`
+	MachineGlobalOverrides       []any              `json:"machineGlobalOverrides"`
+	MachineOverridesControlPlane []any              `json:"machineOverridesControlPlane"`
+	MachineOverridesWorker       []any              `json:"machineOverridesWorker"`
+	Nodes                        []NodeSpec         `json:"nodes"`
+	Image                        ImageSpec          `json:"image"`
+}
+
+type ClusterNetworkSpec struct {
+	Ipv4        string `json:"ipv4"`
+	Ipv6        string `json:"ipv6"`
+	CidrIpv4    int    `json:"cidrIpv4"`
+	CidrIpv6    int    `json:"cidrIpv6"`
+	VlanId      int    `json:"vlanId"`
+	GatewayIpv4 string `json:"gatewayIpv4"`
+	GatewayIpv6 string `json:"gatewayIpv6"`
+	LinkMtu     int    `json:"linkMtu"`
+}
+
+type NetworkSpec struct {
+	Ipv4     string `json:"ipv4"`
+	Ipv6     string `json:"ipv6"`
+	CidrIpv4 int    `json:"cidrIpv4"`
+	CidrIpv6 int    `json:"cidrIpv6"`
+	VlanId   int    `json:"vlanId"`
+	LinkMtu  int    `json:"linkMtu"`
+}
+
+type SubnetSpec struct {
+	Ipv4     string `json:"ipv4"`
+	Ipv6     string `json:"ipv6"`
+	CidrIpv4 int    `json:"cidrIpv4"`
+	CidrIpv6 int    `json:"cidrIpv6"`
+}
+
+type NodeSpec struct {
+	Hostname          string            `json:"hostname"`
+	Type              string            `json:"type"`
+	CpuArchitecture   string            `json:"cpuArchitecture"`
+	PxeMacAddress     string            `json:"pxeMacAddress"`
+	KernelCmdlineArgs string            `json:"kernelCmdlineArgs"`
+	PxeSetup          bool              `json:"pxeSetup"`
+	IpmiIpv4          string            `json:"ipmiIpv4"`
+	IpmiUser          string            `json:"ipmiUser"`
+	IpmiPassword      string            `json:"ipmiPassword"`
+	PxeInterfaceName  string            `json:"pxeInterfaceName"`
+	Interface         NodeInterfaceSpec `json:"interface"`
+	InstallDisk       InstallDiskSpec   `json:"installDisk"`
+	MachineOverrides  []any             `json:"machineOverrides"`
+}
+
+type NodeInterfaceSpec struct {
+	Name               string             `json:"name"`
+	ClusterNetwork     NodeNetworkAddress `json:"clusterNetwork"`
+	PublicNetwork      NodeNetworkAddress `json:"publicNetwork"`
+	StorageNetwork     NodeNetworkAddress `json:"storageNetwork"`
+	UseVlan            bool               `json:"useVlan"`
+	LacpBond           LacpBondSpec       `json:"lacpBond"`
+	PhysicalMacAddress string             `json:"physicalMacAddress"`
+}
+
+type NodeNetworkAddress struct {
+	Ipv4 string `json:"ipv4"`
+	Ipv6 string `json:"ipv6"`
+}
+
+type LacpBondSpec struct {
+	Enabled            bool                    `json:"enabled"`
+	LacpRate           string                  `json:"lacpRate"`
+	XmitHashPolicy     string                  `json:"xmitHashPolicy"`
+	Miimon             int                     `json:"miimon"`
+	Updelay            int                     `json:"updelay"`
+	Downdelay          int                     `json:"downdelay"`
+	LinkMtu            int                     `json:"linkMtu"`
+	PhysicalInterfaces []LacpBondInterfaceSpec `json:"physicalInterfaces"`
+}
+
+type LacpBondInterfaceSpec struct {
+	Name       string `json:"name"`
+	MacAddress string `json:"macAddress"`
+}
+
+type InstallDiskSpec struct {
+	Auto     bool   `json:"auto"`
+	Selector string `json:"selector"`
+}
+
+type ImageSpec struct {
+	PullPolicy string `json:"pullPolicy"`
+}
 
 // reconcileTalosManager creates or updates the ArgoCD Application for the talos-manager chart,
 // which sets up PXE on nodes and generates a TalosCluster resource for talos-operator to manage the cluster.
 func (r *Reconciler) reconcileTalosManager(ctx context.Context, cluster *operatorv1alpha1.Cluster) error {
 	log := logf.FromContext(ctx)
 
-	values := map[string]any{
-		"pxeEnabled": true,
-	}
-	if cluster.Spec.TalosManagementMode == operatorv1alpha1.TalosManagementImport {
-		// "Import" mode disables PXE from talos-manager
-		values = map[string]any{
-			"pxeEnabled": false,
-		}
-	}
 	if cluster.Spec.TalosManagerConfiguration != nil {
-		var talosManagerConfig map[string]any
+		var values map[string]any
+		var config TalosManagerConfigurationSpec
+		config.PxeEnabled = true
+		if cluster.Spec.TalosManagementMode == operatorv1alpha1.TalosManagementImport {
+			// "Import" mode disables PXE from talos-manager
+			config.PxeEnabled = false
+		}
+
 		// Use k8s JSON unmarshaler (PreserveInts) so integer values like port numbers
 		// decode as int64 — matching what the API server returns when reading the spec back.
 		// Standard encoding/json decodes all numbers as float64, which causes a type mismatch
 		// in CreateOrUpdate's DeepEqual check and triggers an infinite reconcile loop.
-		if err := kjson.Unmarshal(cluster.Spec.TalosManagerConfiguration.Raw, &talosManagerConfig); err == nil {
-			maps.Copy(values, talosManagerConfig)
-		} else {
+		if err := kjson.Unmarshal(cluster.Spec.TalosManagerConfiguration.Raw, &config); err != nil {
 			return err
 		}
 
@@ -55,9 +162,18 @@ func (r *Reconciler) reconcileTalosManager(ctx context.Context, cluster *operato
 		// because it will be used for the initial network configuration
 		// injected via kernel command line arguments by talos-manager:
 		if cluster.Spec.TalosManagementMode == operatorv1alpha1.TalosManagementFull {
-			if err := r.injectLinkAliases(ctx, &values); err != nil {
+			if err := r.injectLinkAliases(&config); err != nil {
 				return err
 			}
+		}
+
+		// Converting config to a map by marshaling then unmarshaling:
+		jconfig, err := kjson.Marshal(&config)
+		if err != nil {
+			return err
+		}
+		if err := kjson.Unmarshal(jconfig, &values); err != nil {
+			return err
 		}
 
 		app := r.initTalosManagerApp(fmt.Sprintf("%s-%s", TalosManagerApp, cluster.Name))
@@ -147,60 +263,16 @@ func (r *Reconciler) buildTalosManagerAppSpec(vals map[string]any) map[string]an
 }
 
 // injectLinkAliases generates the Talos LinkAliases for all the nodes and injects them in the kernel command line arguments
-func (r *Reconciler) injectLinkAliases(ctx context.Context, vals *map[string]any) error {
-	nodes, ok := (*vals)["nodes"].([]any)
-	if !ok {
-		return fmt.Errorf("Incorrect type for 'nodes' in 'talosManagerConfiguration' ('%T' instead of '[]any')", (*vals)["nodes"])
-	}
-	for _, item := range nodes {
-		node, ok := item.(map[string]any)
-		if !ok {
-			return fmt.Errorf("Incorrect type for node in 'nodes' array ('%T' instead of 'map[string]any')", item)
-		}
+func (r *Reconciler) injectLinkAliases(config *TalosManagerConfigurationSpec) error {
+	for i, node := range config.Nodes {
 		// Generate LinkAliases:
 		linkAliases := ""
-		interfaceSpec, ok := node["interface"].(map[string]any)
-		if !ok {
-			return fmt.Errorf("Incorrect type for 'interface' in node ('%T' instead of 'map[string]any')", node["interface"])
-		}
-		lacpBond, ok := interfaceSpec["lacpBond"].(map[string]any)
-		if !ok {
-			return fmt.Errorf("Incorrect type for 'interface.lacpBond' in node ('%T' instead of 'map[string]any')", interfaceSpec["lacpBond"])
-		}
-		lacpEnabled, ok := lacpBond["enabled"].(bool)
-		if !ok {
-			return fmt.Errorf("Incorrect type for 'interface.lacpBond.enabled' in node ('%T' instead of 'bool')", lacpBond["enabled"])
-		}
-		if lacpEnabled {
-			interfaces, ok := lacpBond["physicalInterfaces"].([]any)
-			if !ok {
-				return fmt.Errorf("Incorrect type for 'interface.lacpBond.physicalInterfaces' in node ('%T' instead of '[]any')", lacpBond["physicalInterfaces"])
-			}
-			for _, item := range interfaces {
-				iface, ok := item.(map[string]any)
-				if !ok {
-					return fmt.Errorf("Incorrect type for interface in 'interface.lacpBond.physicalInterfaces' array in node ('%T' instead of 'map[string]any')", item)
-				}
-				name, ok := iface["name"].(string)
-				if !ok {
-					return fmt.Errorf("Incorrect type for 'interface.lacpBond.physicalInterfaces[].name' in node ('%T' instead of 'string')", iface["name"])
-				}
-				macAddress, ok := iface["macAddress"].(string)
-				if !ok {
-					return fmt.Errorf("Incorrect type for 'interface.lacpBond.physicalInterfaces[].macAddress' in node ('%T' instead of 'string')", iface["macAddress"])
-				}
-				linkAliases = fmt.Sprintf("%s\n---\napiVersion: v1alpha1\nkind: LinkAliasConfig\nname: %s\nselector:\n  match: mac(link.permanent_addr) == \"%s\"", linkAliases, name, strings.ToLower(macAddress))
+		if node.Interface.LacpBond.Enabled {
+			for _, iface := range node.Interface.LacpBond.PhysicalInterfaces {
+				linkAliases = fmt.Sprintf("%s\n---\n%s", linkAliases, fmt.Sprintf(LinkAliasTemplate, iface.Name, strings.ToLower(iface.MacAddress)))
 			}
 		} else {
-			name, ok := interfaceSpec["name"].(string)
-			if !ok {
-				return fmt.Errorf("Incorrect type for 'interface.name' in node ('%T' instead of 'string')", interfaceSpec["name"])
-			}
-			macAddress, ok := interfaceSpec["physicalMacAddress"].(string)
-			if !ok {
-				return fmt.Errorf("Incorrect type for 'interface.physicalMacAddress' in node ('%T' instead of 'string')", interfaceSpec["physicalMacAddress"])
-			}
-			linkAliases = fmt.Sprintf("apiVersion: v1alpha1\nkind: LinkAliasConfig\nname: %s\nselector:\n  match: mac(link.permanent_addr) == \"%s\"", name, strings.ToLower(macAddress))
+			linkAliases = fmt.Sprintf(LinkAliasTemplate, node.Interface.Name, strings.ToLower(node.Interface.PhysicalMacAddress))
 		}
 
 		// Prepare LinkAliases for injection using the 'talos.config.inline' option.
@@ -222,13 +294,12 @@ func (r *Reconciler) injectLinkAliases(ctx context.Context, vals *map[string]any
 		linkAliasesFinal := fmt.Sprintf("talos.config.inline=%s", base64.StdEncoding.EncodeToString(linkAliasesZstd.Bytes()))
 
 		// Inject into kernel command line arguments:
-		_, ok = node["kernelCmdlineArgs"].(string)
-		if ok {
+		if node.KernelCmdlineArgs != "" {
 			// Add LinkAliases to existing arguments:
-			node["kernelCmdlineArgs"] = fmt.Sprintf("%s %s", linkAliasesFinal, node["kernelCmdlineArgs"])
+			config.Nodes[i].KernelCmdlineArgs = fmt.Sprintf("%s %s", linkAliasesFinal, node.KernelCmdlineArgs)
 		} else {
 			// No other arguments than LinkAliases:
-			node["kernelCmdlineArgs"] = linkAliasesFinal
+			config.Nodes[i].KernelCmdlineArgs = linkAliasesFinal
 		}
 	}
 	return nil

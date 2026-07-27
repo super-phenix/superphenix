@@ -122,14 +122,14 @@ nodes:
             macAddress: ""
       # MAC address of the single physical interface, if bond is disabled:
       physicalMacAddress: ""
-      # Specifications of the installation disk:
-      installDisk:
-        # Indicates whether the installation disk should be selected automatically ("true" makes other sub-fields optional):
-        auto: false
-        # Selector for the installation disk, if not selected automatically (this is the same as the "diskSelector" field from the Talos documentation : https://docs.siderolabs.com/talos/v1.13/reference/configuration/v1alpha1/config#diskselector):
-        selector: ""
-      # 'MachineConfig' overrides for this node (array, optional):
-      machineOverrides: []
+    # Specifications of the installation disk:
+    installDisk:
+      # Indicates whether the installation disk should be selected automatically ("true" makes other sub-fields optional):
+      auto: false
+      # Selector for the installation disk, if not selected automatically (this is the same as the "diskSelector" field from the Talos documentation : https://docs.siderolabs.com/talos/v1.13/reference/configuration/v1alpha1/config#diskselector):
+      selector: ""
+    # 'MachineConfig' overrides for this node (array, optional):
+    machineOverrides: []
 
 # Constants specific to this chart (do not need to be changed):
 image:
