@@ -65,6 +65,68 @@ func listOBC(namespace, bucketName, obName string) *unstructured.Unstructured {
 	}
 }
 
+func TestGetOBEndpoint(t *testing.T) {
+	const storeNs = "rook-ceph"
+
+	tests := []struct {
+		name      string
+		obName    string
+		noWatcher bool
+		obs       []*unstructured.Unstructured
+		stores    []*unstructured.Unstructured
+		want      string
+	}{
+		{
+			name:   "OB without store ref uses port heuristic",
+			obName: "ob-plain",
+			obs:    []*unstructured.Unstructured{newOB("ob-plain", "s3.example.com", 80, "", "")},
+			want:   "http://s3.example.com",
+		},
+		{
+			name:   "OB with TLS store ref",
+			obName: "ob-tls",
+			obs: []*unstructured.Unstructured{
+				withStoreRef(newOB("ob-tls", "s3.example.com", 80, "", ""), storeNs, "store"),
+			},
+			stores: []*unstructured.Unstructured{
+				newCephObjectStore(storeNs, "store", map[string]interface{}{"dnsName": "s3.example.com", "port": int64(80), "useTls": true}, 0),
+			},
+			want: "https://s3.example.com:80",
+		},
+		{
+			name: "empty obName",
+			obs:  []*unstructured.Unstructured{newOB("ob-plain", "s3.example.com", 80, "", "")},
+			want: "",
+		},
+		{
+			name:      "OB watcher absent",
+			obName:    "ob-plain",
+			noWatcher: true,
+			want:      "",
+		},
+		{
+			name:   "OB not in cache",
+			obName: "ob-missing",
+			obs:    []*unstructured.Unstructured{newOB("ob-plain", "s3.example.com", 80, "", "")},
+			want:   "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.noWatcher {
+				clearWatcher(t, informers.ObjectBucket)
+			} else {
+				setFakeWatcher(t, informers.ObjectBucket, tt.obs...)
+			}
+			setFakeWatcher(t, informers.CephObjectStore, tt.stores...)
+
+			if got := getOBEndpoint(context.Background(), tt.obName); got != tt.want {
+				t.Errorf("getOBEndpoint(%q) = %q, want %q", tt.obName, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestListBuckets(t *testing.T) {
 	namespace := testNamespace(t)
 

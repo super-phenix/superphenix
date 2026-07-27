@@ -42,8 +42,6 @@ func ListBuckets(ctx context.Context, namespace string) ([]view.Bucket, error) {
 		return nil, err
 	}
 
-	endpoints := listOBEndpoints(ctx)
-
 	buckets := make([]view.Bucket, 0, len(list))
 	for _, item := range list {
 		obc, ok := item.(*unstructured.Unstructured)
@@ -51,37 +49,38 @@ func ListBuckets(ctx context.Context, namespace string) ([]view.Bucket, error) {
 			continue
 		}
 		obName, _, _ := unstructured.NestedString(obc.Object, "spec", "objectBucketName")
-		endpoint := endpointOrFallback(endpoints[obName])
+		endpoint := endpointOrFallback(getOBEndpoint(ctx, obName))
 		buckets = append(buckets, view.BucketToResource(obc, endpoint))
 	}
 	return buckets, nil
 }
 
-// listOBEndpoints returns an index of ObjectBucket name -> composed S3 endpoint,
-// read from the informer cache so ListBuckets makes no API calls. A missing
-// informer degrades to an empty index (callers fall back to config).
-func listOBEndpoints(ctx context.Context) map[string]string {
+// getOBEndpoint returns the composed S3 endpoint for one ObjectBucket
+// if the OB can't be resolved it returns ""
+func getOBEndpoint(ctx context.Context, obName string) string {
 	log := logger.GetLogger(ctx)
 
+	if obName == "" {
+		return ""
+	}
 	watcher, ok := informers.WatcherSet[informers.ObjectBucket]
 	if !ok {
 		log.Warn().Msg("objectbucket informer not initialized, falling back to configured endpoint")
-		return nil
+		return ""
 	}
-
-	list := watcher.List()
-	index := make(map[string]string, len(list))
-	for _, item := range list {
-		ob, ok := item.(*unstructured.Unstructured)
-		if !ok {
-			continue
-		}
-		host, _, _ := unstructured.NestedString(ob.Object, "spec", "endpoint", "bucketHost")
-		port, _, _ := unstructured.NestedInt64(ob.Object, "spec", "endpoint", "bucketPort")
-		useTls, effectivePort := obScheme(ctx, ob, port)
-		index[ob.GetName()] = composeEndpoint(host, effectivePort, useTls)
+	// ObjectBucket is cluster-scoped, the cache key is the bare name.
+	item, exists, err := watcher.GetByKey(obName)
+	if err != nil || !exists {
+		return ""
 	}
-	return index
+	ob, ok := item.(*unstructured.Unstructured)
+	if !ok {
+		return ""
+	}
+	host, _, _ := unstructured.NestedString(ob.Object, "spec", "endpoint", "bucketHost")
+	port, _, _ := unstructured.NestedInt64(ob.Object, "spec", "endpoint", "bucketPort")
+	useTls, effectivePort := obScheme(ctx, ob, port)
+	return composeEndpoint(host, effectivePort, useTls)
 }
 
 // endpointOrFallback returns endpoint, or the configured ExternalEndpoint when

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"reflect"
-	"strings"
 	"testing"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
@@ -91,14 +90,6 @@ func TestCreateBucket(t *testing.T) {
 			mapping:           mapping,
 			storageClass:      "standard",
 			config:            BucketConfig{Policy: `{"a":`},
-			wantErr:           true,
-			wantValidationErr: true,
-		},
-		{
-			name:              "policy too long after minification",
-			mapping:           mapping,
-			storageClass:      "standard",
-			config:            BucketConfig{Policy: `{"a":"` + strings.Repeat("x", 1000) + `"}`},
 			wantErr:           true,
 			wantValidationErr: true,
 		},

@@ -10,9 +10,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// maxJSONLength caps the size of policy/lifecycle JSON after minification.
-const maxJSONLength = 1000
-
 // ValidationError marks user errors so handlers can answer 400 instead of 500.
 type ValidationError struct {
 	msg string
@@ -36,7 +33,7 @@ func resolveStorageClass(friendly string) (string, error) {
 	return fullname, nil
 }
 
-// minifyJSON compacts a JSON document and enforces the length cap.
+// minifyJSON compacts a JSON document
 func minifyJSON(field, raw string) (string, error) {
 	if raw == "" {
 		return "", nil
@@ -44,9 +41,6 @@ func minifyJSON(field, raw string) (string, error) {
 	var buf bytes.Buffer
 	if err := json.Compact(&buf, []byte(raw)); err != nil {
 		return "", newValidationError("%s is not valid JSON", field)
-	}
-	if buf.Len() > maxJSONLength {
-		return "", newValidationError("%s exceeds %d characters after minification (%d)", field, maxJSONLength, buf.Len())
 	}
 	return buf.String(), nil
 }

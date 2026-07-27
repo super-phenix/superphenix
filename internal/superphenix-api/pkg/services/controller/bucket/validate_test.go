@@ -4,32 +4,49 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
+
 	"github.com/stretchr/testify/assert"
 )
 
+// setMaxMinifiedJSONLen overrides the configured cap
+func setMaxMinifiedJSONLen(t *testing.T, max int) {
+	t.Helper()
+	old := config.Global.S3.MaxMinifiedJSONLen
+	config.Global.S3.MaxMinifiedJSONLen = max
+	t.Cleanup(func() { config.Global.S3.MaxMinifiedJSONLen = old })
+}
+
 func TestValidateAndMinifyJSON(t *testing.T) {
+	max := maxMinifiedJSONLen()
 	// {"a":"..."} weighs 8 chars plus the value length
-	exactly1000 := `{"a":"` + strings.Repeat("x", 992) + `"}`
-	over1000 := `{"a":"` + strings.Repeat("x", 993) + `"}`
+	exactlyMax := `{"a":"` + strings.Repeat("x", max-8) + `"}`
+	overMax := `{"a":"` + strings.Repeat("x", max-7) + `"}`
 	// whitespace-heavy document that only fits once minified
-	whitespaceHeavy := `{` + strings.Repeat(" ", 2000) + `"a":  "b"  }`
+	whitespaceHeavy := `{` + strings.Repeat(" ", 2*max) + `"a":  "b"  }`
 
 	tests := []struct {
-		name    string
-		raw     string
-		want    string
-		wantErr bool
+		name          string
+		raw           string
+		configuredMax int
+		want          string
+		wantErr       bool
 	}{
 		{name: "empty", raw: "", want: ""},
 		{name: "pretty json is compacted", raw: "{\n  \"a\": \"b\"\n}", want: `{"a":"b"}`},
 		{name: "invalid json", raw: `{"a":`, wantErr: true},
-		{name: "exactly 1000 chars", raw: exactly1000, want: exactly1000},
-		{name: "over 1000 chars", raw: over1000, wantErr: true},
+		{name: "exactly max chars", raw: exactlyMax, want: exactlyMax},
+		{name: "over max chars", raw: overMax, wantErr: true},
 		{name: "fits only after minification", raw: whitespaceHeavy, want: `{"a":"b"}`},
+		{name: "configured cap wins", raw: `{"a":"bcdefghijklmnop"}`, configuredMax: 10, wantErr: true},
+		{name: "zero config falls back to default", raw: exactlyMax, configuredMax: -1, want: exactlyMax},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.configuredMax != 0 {
+				setMaxMinifiedJSONLen(t, tt.configuredMax)
+			}
 			got, err := ValidateAndMinifyJSON("policy", tt.raw)
 			if tt.wantErr {
 				assert.Error(t, err)

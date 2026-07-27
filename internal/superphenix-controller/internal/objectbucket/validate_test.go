@@ -7,10 +7,7 @@ import (
 )
 
 func TestMinifyJSON(t *testing.T) {
-	// {"a":"..."} weighs 8 chars plus the value length
-	exactly1000 := `{"a":"` + strings.Repeat("x", 992) + `"}`
-	over1000 := `{"a":"` + strings.Repeat("x", 993) + `"}`
-	// whitespace-heavy document that only fits once minified
+	// whitespace-heavy document that only shrinks once minified
 	whitespaceHeavy := `{` + strings.Repeat(" ", 2000) + `"a":  "b"  }`
 
 	tests := []struct {
@@ -22,9 +19,7 @@ func TestMinifyJSON(t *testing.T) {
 		{name: "empty", raw: "", want: ""},
 		{name: "pretty json is compacted", raw: "{\n  \"a\": \"b\"\n}", want: `{"a":"b"}`},
 		{name: "invalid json", raw: `{"a":`, wantErr: true},
-		{name: "exactly 1000 chars", raw: exactly1000, want: exactly1000},
-		{name: "over 1000 chars", raw: over1000, wantErr: true},
-		{name: "fits only after minification", raw: whitespaceHeavy, want: `{"a":"b"}`},
+		{name: "whitespace-heavy doc is minified", raw: whitespaceHeavy, want: `{"a":"b"}`},
 	}
 
 	for _, tt := range tests {

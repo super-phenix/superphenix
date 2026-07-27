@@ -5,12 +5,22 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// maxMinifiedJSONLen caps the size of policy/lifecycle JSON after minification.
-// The AZ controller enforces the same rule; this check owns the user-facing error.
-const maxMinifiedJSONLen = 1000
+// defaultMaxMinifiedJSONLen caps policy/lifecycle JSON after minification when
+// no limit is configured.
+const defaultMaxMinifiedJSONLen = 5 * 1000
+
+// maxMinifiedJSONLen returns the configured cap, or the default when unset.
+func maxMinifiedJSONLen() int {
+	if v := config.Global.S3.MaxMinifiedJSONLen; v > 0 {
+		return v
+	}
+	return defaultMaxMinifiedJSONLen
+}
 
 // ValidateAndMinifyJSON returns the compacted JSON or an error if invalid or too long.
 func ValidateAndMinifyJSON(field, raw string) (string, error) {
@@ -21,8 +31,8 @@ func ValidateAndMinifyJSON(field, raw string) (string, error) {
 	if err := json.Compact(&buf, []byte(raw)); err != nil {
 		return "", fmt.Errorf("%s is not valid JSON", field)
 	}
-	if buf.Len() > maxMinifiedJSONLen {
-		return "", fmt.Errorf("%s exceeds %d characters after minification (%d)", field, maxMinifiedJSONLen, buf.Len())
+	if max := maxMinifiedJSONLen(); buf.Len() > max {
+		return "", fmt.Errorf("%s exceeds %d characters after minification (%d)", field, max, buf.Len())
 	}
 	return buf.String(), nil
 }
