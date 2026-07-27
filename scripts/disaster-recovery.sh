@@ -35,7 +35,7 @@ function usage() {
 function namespace_secret() {
 	SOURCE_CLUSTER=$1
 
-        # Mapping contains "clusterSource:clusterDestination" or "clusterDestination:clusterSource" to map the source and destination storage clusters
+  # Mapping contains "clusterSource:clusterDestination" or "clusterDestination:clusterSource" to map the source and destination storage clusters
 	# We need to check both syntaxes
 	MAPPING=$(kubectl get --context=admin@${CLUSTER} -n ${ROOK_NAMESPACE} configmap rook-ceph-csi-mapping-config -o json | jq -r '.data."csi-mapping-config-json"')
 
@@ -51,9 +51,40 @@ function namespace_secret() {
 	echo $NS
 }
 
+function create_remove_path_cm() {
+	msg_action "Creating resource modifier ConfigMap $BWhite remove-path$RST\n"
+	cat <<EOF | kubectl apply --context=admin@${CLUSTER} -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: remove-path
+  namespace: ${VELERO_NAMESPACE}
+data:
+  remove-path.yaml: |
+    version: v1
+    resourceModifierRules:
+    - conditions:
+        groupResource: "persistentvolume"
+      patches:
+        - operation: remove
+          path: "/spec/capacity"
+        - operation: remove
+          path: "/spec/claimRef"
+EOF
+}
+
+# To ensure we can modify the PVCs once they're exported, we would need to change their secrets
+#     - operation: replace
+#      path: "/spec/csi/controllerExpandSecretRef/namespace"
+#      value: "spx-aq01-test01-storage01"
+#    - operation: replace
+#      path: "/spec/csi/nodeStageSecretRef/namespace"
+#      value: "spx-aq01-test01-storage01"
+
 function apply_restore() {
 if [[ $REPLICATION == "true" ]]; then
 msg_info "Restoring from replication\n"
+create_remove_path_cm
 cat <<EOF | kubectl apply --context=admin@${CLUSTER} -f -
 apiVersion: velero.io/v1
 kind: Restore
@@ -277,15 +308,15 @@ read
 # Verify the user agreed to proceed
 if [[ $REPLY != "yes" ]]; then msg_warn "Aborting...\n"; exit 1; fi
 
-# Apply Velero restore
-echo -e "\n\n"
-msg_action "Proceeding with restore $BWhite$PROJECT$RST\n"
-apply_restore $PROJECT
-
 # Start restoring the volumes
 echo -e "\n\n"
 msg_action "Resources restored, proceeding with PVs/PVCs...\n"
 handle_volumes
+
+# Apply Velero restore
+echo -e "\n\n"
+msg_action "Proceeding with restore $BWhite$PROJECT$RST\n"
+apply_restore $PROJECT
 
 if [[ $REPLICATION == "false" ]]; then
 	RECLAIM_PVCS=$(kubectl get pvc -n $PROJECT --context=admin@${CLUSTER} -l velero.io/backup-name=$BACKUP -o jsonpath='{.items[*].metadata.name}')

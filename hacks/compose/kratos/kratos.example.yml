@@ -1,0 +1,105 @@
+dev: false
+help: true
+log:
+  leak_sensitive_values: false
+secrets:
+  # Generate a real value before running locally: `openssl rand -base64 32`
+  default:
+    - CHANGE_ME_GENERATE_A_RANDOM_32_BYTE_BASE64_STRING
+identity:
+  default_schema_id: default
+  schemas:
+    - id: default
+      url: file:///etc/config/kratos/identity.default.schema.json
+courier:
+  smtp:
+    # Point this at any SMTP server you can reach. Recovery / verification flows
+    # need it, but otherwise local dev works fine with the placeholder.
+    connection_uri: smtps://user:pass@smtp.example.com:465/
+    from_address: console@example.com
+    from_name: Console Auth
+selfservice:
+  methods:
+    code:
+      enabled: true
+      config:
+        lifespan: "15m"
+  default_browser_return_url: http://localhost:4200/
+  allowed_return_urls:
+    - http://localhost:5000/
+    - http://localhost:4200/
+    - http://localhost:3000/
+    - http://localhost:4433/
+    - http://localhost:8080/
+    - https://auth.console.dev.superphenix.net/
+    - https://api.dev.superphenix.net/ # TODO: To Change
+    - https://pm.console.dev.superphenix.net/
+  flows:
+    recovery:
+      enabled: true
+      ui_url: http://localhost:3000/ui/recovery
+      after:
+        hooks:
+          - hook: revoke_active_sessions
+    verification:
+      enabled: true
+      ui_url: http://localhost:3000/ui/verification
+      lifespan: "1h"
+      use: code
+      notify_unknown_recipients: false
+    registration:
+      ui_url: http://localhost:3000/ui/registration
+      after:
+        password:
+          hooks:
+            - hook: show_verification_ui
+        code:
+          hooks:
+            - hook: show_verification_ui
+        webauthn:
+          hooks:
+            - hook: show_verification_ui
+    login:
+      ui_url: http://localhost:3000/ui/login
+      after:
+        hooks:
+          - hook: require_verified_address
+    error:
+      ui_url: http://localhost:3000/ui/error
+    settings:
+      ui_url: http://localhost:3000/ui/settings
+      # Sessions older than 15 minute requires the user to sign in again before
+      # the password is changed.
+      privileged_session_max_age: 15m
+cookies:
+  domain: localhost
+  same_site: Lax
+serve:
+  public:
+    base_url: http://localhost:4433
+    cors:
+      enabled: true
+      allow_credentials: true
+      allowed_origins:
+        - "http://localhost:5000"
+        - "http://localhost:4200"
+        - "http://localhost:3000"
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+      allowed_headers:
+        - Authorization
+        - Cookie
+        - Content-Type
+        - Max-Age
+        - X-Session-Token
+        - X-XSRF-TOKEN
+        - X-CSRF-TOKEN
+      exposed_headers:
+        - Content-Type
+        - Set-Cookie
+    request_log:
+      disable_for_health: true

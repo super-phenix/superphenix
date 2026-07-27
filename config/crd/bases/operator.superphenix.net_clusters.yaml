@@ -27,12 +27,15 @@ spec:
     - jsonPath: .spec.availabilityZone
       name: AZ
       type: string
-    - jsonPath: .status.currentVersion
-      name: Version
+    - jsonPath: .status.superphenixVersion
+      name: SPX version
       type: string
     - jsonPath: .status.kubernetesVersion
-      name: K8s Version
+      name: K8S version
       type: string
+    - jsonPath: .status.nodeCount
+      name: Nodes
+      type: integer
     - jsonPath: .status.phase
       name: Phase
       type: string
@@ -79,8 +82,10 @@ spec:
               cleanupOnDeletion:
                 default: false
                 description: |-
-                  CleanupOnDeletion allows to cleanup all resources created by the cluster's ArgoCD Application when the Cluster is deleted.
-                  When set to true, the ArgoCD finalizer is added to the cluster's ArgoCD Application.
+                  CleanupOnDeletion allows the cleanup of the cluster when it gets deleted.
+                  When set to true, deleting the cluster resource will automatically propagate the deletion
+                  to the target, with every application getting cascade deleted. This option is dangerous
+                  and should usually be set to true only before a deletion is planned to avoid any accident.
                 type: boolean
               connection:
                 description: Connection defines the parameters to connect to the remote
@@ -153,6 +158,24 @@ spec:
                 description: SystemConfiguration is a YAML dict of unknown values
                   that will be passed to the system configuration chart.
                 x-kubernetes-preserve-unknown-fields: true
+              talosManagementMode:
+                allOf:
+                - enum:
+                  - Unmanaged
+                  - Import
+                  - Full
+                - enum:
+                  - Unmanaged
+                  - Import
+                  - Full
+                default: Unmanaged
+                description: TalosManagementMode specifies how Talos configuration
+                  should be managed.
+                type: string
+              talosManagerConfiguration:
+                description: TalosManagerConfiguration is a YAML dict of unknown values
+                  that will be passed to the talos-manager chart.
+                x-kubernetes-preserve-unknown-fields: true
               type:
                 description: |-
                   Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
@@ -177,6 +200,40 @@ spec:
           status:
             description: Status defines the observed state of Cluster.
             properties:
+              apps:
+                additionalProperties:
+                  description: |-
+                    ClusterApp reports the observed state of a single application belonging to the
+                    cluster's app-of-apps tree.
+                  properties:
+                    lastRefresh:
+                      description: LastRefresh is the last time ArgoCD reconciled
+                        the Application against its source.
+                      format: date-time
+                      type: string
+                    lastSync:
+                      description: LastSync is the last time a sync operation on the
+                        Application completed.
+                      format: date-time
+                      type: string
+                    name:
+                      description: Name is the application name.
+                      type: string
+                    status:
+                      description: Status is the health status of the Application
+                        (e.g. Healthy, Degraded, Progressing).
+                      type: string
+                    version:
+                      description: Version is the target revision of the Application
+                        source.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                description: |-
+                  Apps reports the state of each application deployed by the cluster's root
+                  app-of-apps, keyed by application name.
+                type: object
               conditions:
                 description: |-
                   Conditions represent the current state of the Cluster resource.
@@ -242,10 +299,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              currentVersion:
-                description: CurrentVersion is the actual Superphenix version currently
-                  running on the cluster.
-                type: string
               kubernetesVersion:
                 description: KubernetesVersion is the version of the Kubernetes cluster.
                 type: string
@@ -254,6 +307,9 @@ spec:
                   cluster.
                 format: date-time
                 type: string
+              nodeCount:
+                description: NodeCount is the number of nodes in the cluster.
+                type: integer
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
                   recently observed Cluster.
@@ -268,6 +324,10 @@ spec:
                 - Error
                 - Paused
                 - Unknown
+                type: string
+              superphenixVersion:
+                description: SuperphenixVersion is the actual Superphenix version
+                  currently running on the cluster.
                 type: string
             type: object
         required:

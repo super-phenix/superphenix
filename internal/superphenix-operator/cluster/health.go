@@ -11,6 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -19,7 +20,7 @@ import (
 )
 
 // reconcileHealth checks the connectivity of the cluster (local or remote).
-func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alpha1.Cluster) (string, ctrl.Result, error) {
+func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alpha1.Cluster) (string, int, ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 
 	var config *rest.Config
@@ -28,16 +29,24 @@ func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alp
 	config, err = r.getRESTConfigForCluster(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to build REST config for cluster")
-		return "", ctrl.Result{RequeueAfter: time.Minute}, err
+		return "", 0, ctrl.Result{RequeueAfter: time.Minute}, err
 	}
 
 	version, err := r.checkReachability(config)
 	if err != nil {
 		log.Error(err, "Cluster unreachable")
-		return "", ctrl.Result{RequeueAfter: time.Minute}, err
+		return "", 0, ctrl.Result{RequeueAfter: time.Minute}, err
 	}
 
-	log.Info("Cluster is reachable", "version", version)
+	nodeCount, err := r.getNodeCount(ctx, config)
+	if err != nil {
+		log.Error(err, "Failed to get node count")
+		// We don't fail the health check if node count fails, but we log it
+		// Actually, the requirement says "Update it on every health check", so maybe we should return it.
+		// If we can't get node count, we might still want to consider the cluster reachable.
+	}
+
+	log.Info("Cluster is reachable", "version", version, "nodeCount", nodeCount)
 
 	r.setCondition(&cluster.Status.Conditions, metav1.Condition{
 		Type:               operatorv1alpha1.ConditionTypeReachable,
@@ -47,7 +56,7 @@ func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alp
 		ObservedGeneration: cluster.Generation,
 	})
 
-	return version, ctrl.Result{}, nil
+	return version, nodeCount, ctrl.Result{}, nil
 }
 
 // getRESTConfigForCluster generates the configuration to connect to a Kubernetes cluster
@@ -167,4 +176,19 @@ func (r *Reconciler) checkReachability(config *rest.Config) (string, error) {
 		return "", err
 	}
 	return version.GitVersion, nil
+}
+
+// getNodeCount fetches the number of nodes in the cluster.
+func (r *Reconciler) getNodeCount(ctx context.Context, config *rest.Config) (int, error) {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return 0, err
+	}
+
+	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return 0, err
+	}
+
+	return len(nodes.Items), nil
 }

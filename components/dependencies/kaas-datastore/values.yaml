@@ -1,3 +1,6 @@
+#  # -- AZ in which the datastores are deployed
+location: ""
+
 # -- Defines default values for datastores
 # @section -- Datastore default parameters
 dataStoreDefaults:
@@ -20,4 +23,20 @@ dataStores: {}
   #
   #   # -- Version tag of the etcd image
   #   # @section -- Datastore
-  #   version: v3.6.7
+  #   version: 3.6.7
+  #
+  #   # -- Datastore backups configuration
+  #   # @section -- Backups
+  #   backups:
+  #     # -- Whether backups are enabled
+  #     enabled: true
+  #
+  #     # -- Whether the backup schedule is paused
+  #     paused: false
+  #
+  #     # -- CRON schedule to run the backups at intervals
+  #     schedule: "30 1 * * *"
+  #
+  #     retention:
+  #       # -- Retention time of the backups in hours (max is 960, or 40 days)
+  #       expiryTime: 720

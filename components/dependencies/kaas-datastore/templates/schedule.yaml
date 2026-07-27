@@ -1,0 +1,56 @@
+{{- range $dataStoreID, $dataStore := .Values.dataStores }}
+{{- if ($dataStore.backups).enabled }}
+
+{{- $backup := $dataStore.backups }}
+
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: {{ $dataStoreID | quote }}
+  namespace: velero-system
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
+    superphenix.net/backupSourceAZ: {{ required "Values.location must be given" $.Values.location }}
+    
+spec:
+  # Whether this schedule is paused
+  paused: {{ $backup.paused | default false }}
+
+  # The schedule in Cron format, see https://crontab.guru/
+  schedule: {{ $backup.schedule | default "30 1 * * *" | quote }}
+  template:
+    # Cluster scoped resources to backup
+    includedClusterScopedResources:
+      - datastore.kamaji.clastix.io
+      - persistentvolume
+
+    # Namespace scoped resources to backup
+    includedNamespaceScopedResources:
+      - etcdcluster.etcd-operator.cozystack.io
+      - etcdmember.etcd-operator.cozystack.io
+      - certificate.cert-manager.io
+      - issuer.cert-manager.io
+      - secret
+      - persistenvolumeclaim
+
+    # Resources to target using label selectors
+    labelSelector:
+      matchLabels:
+        etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
+
+    # Backups are scoped to the project, but some resources are cluster scoped
+    includedNamespaces:
+      - kaas-datastore-system
+
+    # Time to retain backups in hours
+    ttl: {{ printf "%dh0m0s" (min ($backup.retention).expiryTime 960 | int | default 720) | quote }}
+
+    # We want to snapshot the PVCs
+    snapshotVolumes: true
+
+    # We want the PVCs to be moved to the backup location
+    snapshotMoveData: true
+
+{{- end }}
+{{- end }}

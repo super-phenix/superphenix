@@ -2,6 +2,7 @@ apiVersion: v2
 name: superphenix-management
 description: A Helm chart for Superphenix management components
 type: application
+# This chart inherits the tag of the Git repository
 version: 0.0.0
 appVersion: "0.0.0"
 # Removed to temporarily satisfy CICD
@@ -11,6 +12,6 @@ dependencies:
 #    repository: "oci://ghcr.io/super-phenix/charts"
 #    condition: superphenix-console.enabled
   - name: talos-operator
-    version: 0.5.3
+    version: 0.6.1
     repository: "https://alperencelik.github.io/helm-charts"
     condition: talos-operator.enabled

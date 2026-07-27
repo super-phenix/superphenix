@@ -93,6 +93,21 @@ const (
 	ClusterTypeVirtualization ClusterType = "Virtualization"
 )
 
+// TalosManagementMode defines the management mode for the Talos cluster.
+// +kubebuilder:validation:Enum=Unmanaged;Import;Full
+type TalosManagementMode string
+
+const (
+	// TalosManagementUnmanaged - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+	TalosManagementUnmanaged TalosManagementMode = "Unmanaged"
+
+	// TalosManagementImport - The operator imports an already installed Talos cluster and manages its configuration.
+	TalosManagementImport TalosManagementMode = "Import"
+
+	// TalosManagementFull - The Talos cluster is fully installed and configured by the operator.
+	TalosManagementFull TalosManagementMode = "Full"
+)
+
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
 	// DeploymentTopology defines whether the cluster is hyperconverged or decoupled.
@@ -104,6 +119,16 @@ type ClusterSpec struct {
 	// This field can only be set when DeploymentTopology is Decoupled and is ignored otherwise.
 	// +optional
 	Type *ClusterType `json:"type,omitempty"`
+
+	// TalosManagementMode specifies how Talos configuration should be managed.
+	// +optional
+	// +kubebuilder:default=Unmanaged
+	// +kubebuilder:validation:Enum=Unmanaged;Import;Full
+	TalosManagementMode TalosManagementMode `json:"talosManagementMode,omitempty"`
+
+	// TalosManagerConfiguration is a YAML dict of unknown values that will be passed to the talos-manager chart.
+	// +optional
+	TalosManagerConfiguration *apiextensionsv1.JSON `json:"talosManagerConfiguration,omitempty"`
 
 	// Region is the geographic region where this cluster is located.
 	// +kubebuilder:validation:Required
@@ -209,13 +234,17 @@ type ClusterStatus struct {
 	// +optional
 	Phase string `json:"phase,omitempty"`
 
-	// CurrentVersion is the actual Superphenix version currently running on the cluster.
+	// SuperphenixVersion is the actual Superphenix version currently running on the cluster.
 	// +optional
-	CurrentVersion string `json:"currentVersion,omitempty"`
+	SuperphenixVersion string `json:"superphenixVersion,omitempty"`
 
 	// KubernetesVersion is the version of the Kubernetes cluster.
 	// +optional
 	KubernetesVersion string `json:"kubernetesVersion,omitempty"`
+
+	// NodeCount is the number of nodes in the cluster.
+	// +optional
+	NodeCount int `json:"nodeCount,omitempty"`
 
 	// Conditions represent the current state of the Cluster resource.
 	// Standard condition types include:
@@ -234,6 +263,34 @@ type ClusterStatus struct {
 	// LastSync is the last time a sync was performed on the cluster.
 	// +optional
 	LastSync *metav1.Time `json:"lastSync,omitempty"`
+
+	// Apps reports the state of each application deployed by the cluster's root
+	// app-of-apps, keyed by application name.
+	// +optional
+	Apps map[string]ClusterApp `json:"apps,omitempty"`
+}
+
+// ClusterApp reports the observed state of a single application belonging to the
+// cluster's app-of-apps tree.
+type ClusterApp struct {
+	// Name is the application name.
+	Name string `json:"name"`
+
+	// Status is the health status of the Application (e.g. Healthy, Degraded, Progressing).
+	// +optional
+	Status string `json:"status,omitempty"`
+
+	// LastRefresh is the last time ArgoCD reconciled the Application against its source.
+	// +optional
+	LastRefresh *metav1.Time `json:"lastRefresh,omitempty"`
+
+	// LastSync is the last time a sync operation on the Application completed.
+	// +optional
+	LastSync *metav1.Time `json:"lastSync,omitempty"`
+
+	// Version is the target revision of the Application source.
+	// +optional
+	Version string `json:"version,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -243,8 +300,9 @@ type ClusterStatus struct {
 // +kubebuilder:printcolumn:name="Type",type=string,JSONPath=`.spec.type`
 // +kubebuilder:printcolumn:name="Region",type=string,JSONPath=`.spec.region`
 // +kubebuilder:printcolumn:name="AZ",type=string,JSONPath=`.spec.availabilityZone`
-// +kubebuilder:printcolumn:name="Version",type=string,JSONPath=`.status.currentVersion`
-// +kubebuilder:printcolumn:name="K8s Version",type=string,JSONPath=`.status.kubernetesVersion`
+// +kubebuilder:printcolumn:name="SPX version",type=string,JSONPath=`.status.superphenixVersion`
+// +kubebuilder:printcolumn:name="K8S version",type=string,JSONPath=`.status.kubernetesVersion`
+// +kubebuilder:printcolumn:name="Nodes",type=integer,JSONPath=`.status.nodeCount`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 

@@ -1,0 +1,152 @@
+version: '3.7'
+services:
+  kratos-migrate:
+    image: oryd/kratos:v26.2.0
+    environment:
+      - DSN=postgres://${KRATOS_DB_USER:-kratos}:${KRATOS_DB_PASSWORD:-secret}@postgresd:5432/${KRATOS_DB_NAME:-kratos}?sslmode=disable&max_conns=20&max_idle_conns=4
+    volumes:
+      - type: bind
+        source: ./kratos
+        target: /etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    restart: on-failure
+    profiles:
+      - backend
+    depends_on:
+      - postgresd
+    networks:
+      - intranet
+  auth-ui:
+    build:
+      context: ${AUTH_UI_PATH}
+      dockerfile: Dockerfile.local
+    ports:
+      - '${AUTH_UI_PORT:-3000}:80'
+    networks:
+      - intranet
+    restart: on-failure
+    profiles:
+      - auth-ui
+  kratos:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v26.2.0
+    ports:
+      - '${KRATOS_PUBLIC_PORT:-4433}:4433' # public
+      - '${KRATOS_ADMIN_PORT:-4434}:4434' # admin
+    restart: unless-stopped
+    profiles:
+      - backend
+    environment:
+      - DSN=postgres://${KRATOS_DB_USER:-kratos}:${KRATOS_DB_PASSWORD:-secret}@postgresd:5432/${KRATOS_DB_NAME:-kratos}?sslmode=disable&max_conns=20&max_idle_conns=4
+      - LOG_LEVEL=trace
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    volumes:
+      - type: bind
+        source: ./kratos
+        target: /etc/config/kratos
+    networks:
+      - intranet
+  postgresd:
+    image: postgres:14
+    profiles:
+      - backend
+    ports:
+      - "${KRATOS_DB_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=${KRATOS_DB_USER:-kratos}
+      - POSTGRES_PASSWORD=${KRATOS_DB_PASSWORD:-secret}
+      - POSTGRES_DB=${KRATOS_DB_NAME:-kratos}
+    networks:
+      - intranet
+  superphenix-api-db:
+    image: postgres:14
+    profiles:
+      - backend
+    ports:
+      - "${SUPERPHENIX_DB_PORT:-5433}:5432"
+    environment:
+      - POSTGRES_USER=${SUPERPHENIX_DB_USER:-superphenix}
+      - POSTGRES_PASSWORD=${SUPERPHENIX_DB_PASSWORD:-secret}
+      - POSTGRES_DB=${SUPERPHENIX_DB_NAME:-superphenix}
+    configs:
+      - source: init_permify_db
+        target: /docker-entrypoint-initdb.d/10-permify.sql
+    networks:
+      - intranet
+  permify:
+    image: ghcr.io/permify/permify:latest
+    ports:
+      - "${PERMIFY_PORT:-3478}:3478"
+    command: serve
+    profiles:
+      - backend
+    depends_on:
+      - superphenix-api-db
+    environment:
+      - PERMIFY_DATABASE_ENGINE=postgres
+      - PERMIFY_DATABASE_URI=postgres://${SUPERPHENIX_DB_USER:-superphenix}:${SUPERPHENIX_DB_PASSWORD:-secret}@superphenix-api-db:5432/permify?sslmode=disable
+    networks:
+      - intranet
+  superphenix-api:
+    build:
+      context: ..
+      dockerfile: ./components/dependencies/superphenix-api/docker/Dockerfile
+    ports:
+      - "${SUPERPHENIX_API_PORT:-8080}:8080"
+      - "${SUPERPHENIX_API_ADMIN_PORT:-7001}:7000"
+    restart: unless-stopped
+    profiles:
+      - backend
+    depends_on:
+      - superphenix-api-db
+      - kratos
+      - permify
+    environment:
+      - SUPERPHENIX-API_DATABASE_HOST=superphenix-api-db
+      - SUPERPHENIX-API_DATABASE_PORT=5432
+      - SUPERPHENIX-API_DATABASE_USERNAME=${SUPERPHENIX_DB_USER:-superphenix}
+      - SUPERPHENIX-API_DATABASE_PASSWORD=${SUPERPHENIX_DB_PASSWORD:-secret}
+      - SUPERPHENIX-API_DATABASE_DATABASE=${SUPERPHENIX_DB_NAME:-superphenix}
+      - SUPERPHENIX-API_AUTHENTICATION_KRATOSENDPOINT=http://kratos:4433
+      - SUPERPHENIX-API_TRACING_ENABLED=false
+      - SUPERPHENIX-API_METRICS_ENABLED=false
+      - SUPERPHENIX-API_LOGGING_PRETTY=true
+      - SUPERPHENIX-API_SESSION_COOKIES_SECURE=false
+      - SUPERPHENIX-API_SESSION_COOKIES_SAMESITE=Lax
+      - SUPERPHENIX-API_SESSION_CORS_ALLOWEDORIGINS=http://localhost:${SPX_PANEL_PORT:-4200},http://localhost:${AUTH_UI_PORT:-3000}
+      - SUPERPHENIX-API_PERMIFY_URL=permify:3478
+      - SUPERPHENIX-API_ADMINHTTP_AUTHSECRET=${SUPERPHENIX_API_ADMIN_SECRET:-local}
+      - SUPERPHENIX-API_CONTROLLER_AUTHSECRET=${SUPERPHENIX_API_CONTROLLER_SECRET:-local}
+      - SUPERPHENIX-API_ARGOCONTROLLER_URL=${ARGO_CONTROLLER_URL:-http://localhost:8081/v1}
+      - SUPERPHENIX-API_ARGOCONTROLLER_AUTHSECRET=${ARGO_CONTROLLER_SECRET:-local}
+      - SUPERPHENIX-API_ARGOCDURL=${ARGOCD_URL:-https://argocd.example.com}
+    volumes:
+      # Structured config (incl. argoController.app KaaS/BaaS repos + kubeVersions).
+      # Env vars above still override matching keys.
+      - ./superphenix-api.config.yaml:/etc/superphenix-api/config.yaml:ro
+    networks:
+      - intranet
+  spx-panel:
+    build:
+      context: ${SPX_PANEL_PATH}
+      dockerfile: Dockerfile.local
+    ports:
+      - "${SPX_PANEL_PORT:-4200}:80"
+    restart: unless-stopped
+    profiles:
+      - spx-panel
+    depends_on:
+      - superphenix-api
+      - auth-ui
+    networks:
+      - intranet
+networks:
+  intranet:
+volumes:
+  kratos-sqlite:
+configs:
+  init_permify_db:
+    content: |
+      CREATE DATABASE permify;
+      GRANT ALL PRIVILEGES ON DATABASE permify TO ${SUPERPHENIX_DB_USER:-superphenix};

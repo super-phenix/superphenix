@@ -42,7 +42,7 @@ func (r *Reconciler) validateClustersCompatibility(ctx context.Context, manageme
 	anyIncompatible := false
 	var incompatibleErrors []string
 	for _, cluster := range clusterList.Items {
-		clusterVersionStr := cluster.Status.CurrentVersion
+		clusterVersionStr := cluster.Status.SuperphenixVersion
 		if clusterVersionStr == "" {
 			// Fall back to spec version when the cluster has not been deployed yet.
 			clusterVersionStr = cluster.Spec.Version

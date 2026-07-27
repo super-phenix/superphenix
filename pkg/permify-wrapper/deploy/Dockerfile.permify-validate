@@ -1,0 +1,6 @@
+FROM ghcr.io/permify/permify:latest AS base
+
+FROM ubuntu:22.04
+COPY --from=base /usr/local/bin/permify /permify
+RUN chmod +x /permify
+ENTRYPOINT ["bash"]

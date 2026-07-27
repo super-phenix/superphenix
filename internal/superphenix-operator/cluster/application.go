@@ -23,6 +23,9 @@ func (r *Reconciler) reconcileApplication(ctx context.Context, cluster *operator
 	app := r.initApplication(cluster)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, app, func() error {
+		// Ensure labels are up to date
+		r.setApplicationLabels(app, cluster)
+
 		// Set ownership and finalizers
 		if err := r.setApplicationOwnership(cluster, app); err != nil {
 			return err
@@ -63,11 +66,20 @@ func (r *Reconciler) initApplication(cluster *operatorv1alpha1.Cluster) *unstruc
 		Kind:    "Application",
 	})
 
-	app.SetLabels(map[string]string{
-		version.ClusterLabel: cluster.Name,
-	})
-
 	return app
+}
+
+// setApplicationLabels sets the required labels on the ArgoCD Application.
+func (r *Reconciler) setApplicationLabels(app *unstructured.Unstructured, cluster *operatorv1alpha1.Cluster) {
+	labels := app.GetLabels()
+	if labels == nil {
+		labels = make(map[string]string)
+	}
+
+	labels[version.ClusterLabel] = cluster.Name
+	labels[version.ManagedLabel] = "true"
+	labels[version.RootApplicationLabel] = "true"
+	app.SetLabels(labels)
 }
 
 // setApplicationOwnership ensures the application is owned by the Cluster CRD.

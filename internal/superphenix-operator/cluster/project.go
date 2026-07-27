@@ -19,6 +19,9 @@ func (r *Reconciler) reconcileAppProject(ctx context.Context, cluster *operatorv
 	project := r.initAppProject(cluster)
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, project, func() error {
+		// Ensure finalizers
+		controllerutil.AddFinalizer(project, "resources-finalizer.argocd.argoproj.io")
+
 		// Set ownership
 		if err := r.setAppProjectOwnership(cluster, project); err != nil {
 			return err
@@ -48,9 +51,6 @@ func (r *Reconciler) initAppProject(cluster *operatorv1alpha1.Cluster) *unstruct
 		Version: "v1alpha1",
 		Kind:    "AppProject",
 	})
-
-	// Add the ArgoCD finalizer
-	project.SetFinalizers([]string{"resources-finalizer.argocd.argoproj.io"})
 
 	return project
 }

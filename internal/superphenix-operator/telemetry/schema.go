@@ -29,19 +29,20 @@ const (
 // Allowed metric names.
 const (
 	MetricOperatorInfo  = "operator_info"
-	MetricAZInfo        = "az_info"
+	MetricClusterInfo   = "cluster_info"
 	MetricComponentInfo = "component_info"
+	MetricRegionCount   = "region_count"
 	MetricAZCount       = "az_count"
-	MetricNodesPerAZ    = "nodes_per_az"
+	MetricNodeCount     = "node_count"
 )
 
-// Allowed values for the az_info "topology" label.
+// Allowed values for the cluster_info "topology" label.
 const (
 	TopologyHyperconverged = "hyperconverged"
 	TopologyDecoupled      = "decoupled"
 )
 
-// Allowed values for the az_info "type" label.
+// Allowed values for the cluster_info "type" label.
 const (
 	TypeStorage        = "storage"
 	TypeVirtualization = "virtualization"
@@ -50,8 +51,9 @@ const (
 
 // Report is the top-level body posted to the ingest endpoint.
 type Report struct {
-	SchemaVersion int      `json:"schema_version"`
-	Metrics       []Metric `json:"metrics"`
+	SchemaVersion  int      `json:"schema_version"`
+	InstallationID string   `json:"installation_id"`
+	Metrics        []Metric `json:"metrics"`
 }
 
 // Metric describes a single observation.

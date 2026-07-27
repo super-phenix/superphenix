@@ -1,0 +1,7 @@
+apiVersion: v2
+name: superphenix-controller
+description: Helm chart to deploy the Superphenix AZ controller
+type: application
+# This chart inherits the tag of the Git repository
+version: 0.0.0
+appVersion: "0.0.0"

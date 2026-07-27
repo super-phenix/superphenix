@@ -350,7 +350,7 @@ var _ = Describe("Cluster Controller", func() {
 			err = k8sClient.Get(ctx, typeNamespacedName, latestCluster)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Perform one extra reconcile to stabilize any remaining fields (e.g. KubernetesVersion or CurrentVersion patches)
+			// Perform one extra reconcile to stabilize any remaining fields (e.g. KubernetesVersion or SuperphenixVersion patches)
 			_, _ = controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
@@ -686,15 +686,15 @@ var _ = Describe("Cluster Controller", func() {
 
 			updatedCluster := &operatorv1alpha1.Cluster{}
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			updatedCluster.Status.CurrentVersion = "1.0.0"
+			updatedCluster.Status.SuperphenixVersion = "1.0.0"
 			Expect(k8sClient.Status().Update(ctx, updatedCluster)).To(Succeed())
 
 			// Some envtest setups don't support status subresource or require specific configuration.
 			// Let's try to verify if it actually worked.
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "1.0.0" {
+			if updatedCluster.Status.SuperphenixVersion != "1.0.0" {
 				// Fallback: manually set it on the object we pass to reconcile if the client fails us
-				updatedCluster.Status.CurrentVersion = "1.0.0"
+				updatedCluster.Status.SuperphenixVersion = "1.0.0"
 			}
 
 			By("Valid upgrade using static dictionary")
@@ -708,10 +708,10 @@ var _ = Describe("Cluster Controller", func() {
 
 			// Refresh to get updated status from reconcile
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "1.1.0" {
-				updatedCluster.Status.CurrentVersion = "1.1.0"
+			if updatedCluster.Status.SuperphenixVersion != "1.1.0" {
+				updatedCluster.Status.SuperphenixVersion = "1.1.0"
 			}
-			Expect(updatedCluster.Status.CurrentVersion).To(Equal("1.1.0"))
+			Expect(updatedCluster.Status.SuperphenixVersion).To(Equal("1.1.0"))
 
 			By("Valid upgrade to next version using static dictionary")
 			updatedCluster.Spec.Version = "1.2.0"
@@ -721,10 +721,10 @@ var _ = Describe("Cluster Controller", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "1.2.0" {
-				updatedCluster.Status.CurrentVersion = "1.2.0"
+			if updatedCluster.Status.SuperphenixVersion != "1.2.0" {
+				updatedCluster.Status.SuperphenixVersion = "1.2.0"
 			}
-			Expect(updatedCluster.Status.CurrentVersion).To(Equal("1.2.0"))
+			Expect(updatedCluster.Status.SuperphenixVersion).To(Equal("1.2.0"))
 
 			By("Valid upgrade to major version using static dictionary")
 			updatedCluster.Spec.Version = "2.0.0"
@@ -734,19 +734,19 @@ var _ = Describe("Cluster Controller", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "2.0.0" {
-				updatedCluster.Status.CurrentVersion = "2.0.0"
+			if updatedCluster.Status.SuperphenixVersion != "2.0.0" {
+				updatedCluster.Status.SuperphenixVersion = "2.0.0"
 			}
-			Expect(updatedCluster.Status.CurrentVersion).To(Equal("2.0.0"))
+			Expect(updatedCluster.Status.SuperphenixVersion).To(Equal("2.0.0"))
 
 			By("Invalid upgrade (fails to satisfy constraint)")
 			// Reset to 0.9.0 for this sub-test (below MinClusterVersion)
-			updatedCluster.Status.CurrentVersion = "0.9.0"
+			updatedCluster.Status.SuperphenixVersion = "0.9.0"
 			updatedCluster.Status.Conditions = nil
 			Expect(k8sClient.Status().Update(ctx, updatedCluster)).To(Succeed())
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "0.9.0" {
-				updatedCluster.Status.CurrentVersion = "0.9.0"
+			if updatedCluster.Status.SuperphenixVersion != "0.9.0" {
+				updatedCluster.Status.SuperphenixVersion = "0.9.0"
 			}
 
 			// Try to upgrade to 1.0.0 from 0.9.0 (requires >= 1.0.0)
@@ -758,7 +758,7 @@ var _ = Describe("Cluster Controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion == "1.0.0" {
+			if updatedCluster.Status.SuperphenixVersion == "1.0.0" {
 				// This should NOT happen if validation works
 				Fail("Status version was updated despite invalid version upgrade")
 			}
@@ -789,12 +789,12 @@ var _ = Describe("Cluster Controller", func() {
 
 			By("Valid upgrade to version not previously in dictionary")
 			// Reset to 1.0.0
-			updatedCluster.Status.CurrentVersion = "1.0.0"
+			updatedCluster.Status.SuperphenixVersion = "1.0.0"
 			updatedCluster.Status.Conditions = nil
 			Expect(k8sClient.Status().Update(ctx, updatedCluster)).To(Succeed())
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "1.0.0" {
-				updatedCluster.Status.CurrentVersion = "1.0.0"
+			if updatedCluster.Status.SuperphenixVersion != "1.0.0" {
+				updatedCluster.Status.SuperphenixVersion = "1.0.0"
 			}
 
 			updatedCluster.Spec.Version = "3.0.0" // 3.0.0 is now supported
@@ -805,11 +805,11 @@ var _ = Describe("Cluster Controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(k8sClient.Get(ctx, typeNamespacedName, updatedCluster)).To(Succeed())
-			if updatedCluster.Status.CurrentVersion != "3.0.0" {
+			if updatedCluster.Status.SuperphenixVersion != "3.0.0" {
 				// We manually set it if status subresource is not working well in envtest
-				updatedCluster.Status.CurrentVersion = "3.0.0"
+				updatedCluster.Status.SuperphenixVersion = "3.0.0"
 			}
-			Expect(updatedCluster.Status.CurrentVersion).To(Equal("3.0.0"))
+			Expect(updatedCluster.Status.SuperphenixVersion).To(Equal("3.0.0"))
 
 			By("Reconciling when the connection secret is updated")
 			// Create a new cluster with remote mode

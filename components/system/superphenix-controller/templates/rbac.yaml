@@ -1,0 +1,218 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "superphenix-controller.fullname" . }}
+  labels:
+    {{- include "superphenix-controller.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - subresources.kubevirt.io
+    resources:
+      - virtualmachineinstances/console
+      - virtualmachineinstances/vnc
+      - virtualmachines/expand-spec
+    verbs:
+      - get
+  - apiGroups:
+      - subresources.kubevirt.io
+    resources:
+      - virtualmachines/start
+      - virtualmachines/stop
+      - virtualmachines/restart
+      - expand-vm-spec
+    verbs:
+      - update
+  - apiGroups:
+      - kubevirt.io
+    resources:
+      - virtualmachineinstances
+      - virtualmachines
+      - virtualmachineinstancepresets
+      - virtualmachineinstancereplicasets
+    verbs:
+      - get
+      - delete
+      - create
+      - update
+      - list
+      - watch
+  - apiGroups:
+      - cdi.kubevirt.io
+    resources:
+      - datavolumes
+    verbs:
+      - get
+      - delete
+      - create
+      - update
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - secrets
+      - persistentvolumeclaims
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - delete
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - update
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - kubeovn.io
+    resources:
+      - iptables-dnat-rules
+      - iptables-snat-rules
+      - iptables-eips
+      - iptables-fip-rules
+      - vpcs
+      - vpc-nat-gateways
+      - subnets
+      - switch-lb-rules
+    verbs:
+      - create
+      - get
+      - update
+      - list
+      - patch
+      - delete
+      - watch
+  - apiGroups:
+      - k8s.cni.cncf.io
+    resources:
+      -  network-attachment-definitions
+    verbs:
+      - create
+      - get
+      - update
+      - list
+      - patch
+      - delete
+      - watch
+  - apiGroups:
+      - snapshot.storage.k8s.io
+    resources:
+      -  volumesnapshots
+    verbs:
+      - create
+      - get
+      - update
+      - list
+      - patch
+      - delete
+      - watch
+  - apiGroups:
+      - snapshot.kubevirt.io
+    resources:
+      - virtualmachinesnapshots
+      - virtualmachinerestores
+    verbs:
+      - create
+      - get
+      - update
+      - list
+      - patch
+      - delete
+      - watch
+  - apiGroups:
+      - snapshot.kubevirt.io
+    resources:
+      - virtualmachinesnapshotcontents
+    verbs:
+      - get
+      - list
+      - update
+      - delete
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - networkpolicies
+    verbs:
+      - create
+      - get
+      - update
+      - list
+      - patch
+      - delete
+      - watch
+  - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - cluster.x-k8s.io
+    resources:
+      - machinedeployments
+    verbs:
+      - get
+      - deletecollection
+      - list
+      - watch
+  - apiGroups:
+      - infrastructure.cluster.x-k8s.io
+    resources:
+      - kubevirtmachinetemplates
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - velero.io
+    resources:
+      - "backups"
+      - "schedules"
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - velero.io
+    resources:
+      - "deletebackuprequests"
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - snapscheduler.backube
+    resources:
+      - "snapshotschedules"
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - watch
+      - delete
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "superphenix-controller.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "superphenix-controller.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ include "superphenix-controller.fullname" . }}
+  apiGroup: rbac.authorization.k8s.io

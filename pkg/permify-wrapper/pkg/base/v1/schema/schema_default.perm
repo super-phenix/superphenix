@@ -1,0 +1,123 @@
+entity user {}
+
+entity group {
+	relation assignee @user
+}
+
+entity organization {
+// 	relation with 'spx_' are internal use relation and can't be see by users
+	relation spx_owner @group#assignee
+	relation spx_member @group#assignee
+
+	relation BillingFullAccess @group#assignee
+	relation BillingReadOnly @group#assignee
+
+	relation IAMFullAccess @group#assignee
+	relation IAMReadOnly @group#assignee
+
+	relation ProjectManagement @group#assignee
+
+	relation SettingsEdition @group#assignee
+
+// Permissions
+// - Organization Global
+	permission OrganizationRead = spx_owner or spx_member
+	permission OrganizationWrite = spx_owner or SettingsEdition
+
+// - IAM Management
+	permission OrganizationIAMRead = spx_owner or IAMReadOnly or IAMFullAccess
+	permission OrganizationIAMWrite = spx_owner or IAMFullAccess
+
+// - Billing
+	permission OrganizationBillingRead = spx_owner or BillingFullAccess or BillingReadOnly
+	permission OrganizationBillingWrite = spx_owner or BillingFullAccess
+
+// - Organization Project
+	permission OrganizationProjectManagement = spx_owner or ProjectManagement
+
+}
+
+
+// Project
+entity project {
+    relation parent @organization
+
+    relation ProjectInstanceFullAccess @group#assignee
+    relation ProjectInstanceTerminalAccess @group#assignee
+    relation ProjectInstanceReadOnly @group#assignee
+
+	relation ProjectDiskFullAccess @group#assignee
+	relation ProjectDiskReadOnly @group#assignee
+
+	relation ProjectSnapshotFullAccess @group#assignee
+	relation ProjectSnapshotReadOnly @group#assignee
+
+	relation ProjectVPCFullAccess @group#assignee
+	relation ProjectVPCReadOnly @group#assignee
+
+	relation ProjectSubnetFullAccess @group#assignee
+	relation ProjectSubnetReadOnly @group#assignee
+
+	relation ProjectEipFullAccess @group#assignee
+	relation ProjectEipReadOnly @group#assignee
+
+	relation ProjectLoadBalancerFullAccess @group#assignee
+	relation ProjectLoadBalancerReadOnly @group#assignee
+
+	relation ProjectFirewallFullAccess @group#assignee
+	relation ProjectFirewallReadOnly @group#assignee
+
+	relation ProjectSSHFullAccess @group#assignee
+	relation ProjectSSHReadOnly @group#assignee
+
+	relation ProjectKaaSFullAccess @group#assignee
+	relation ProjectKaaSClusterAccess @group#assignee
+	relation ProjectKaaSReadOnly @group#assignee
+
+	relation ProjectBaaSFullAccess @group#assignee
+	relation ProjectBaaSReadOnly @group#assignee
+
+	relation ProjectArgoCdAccess @group#assignee
+
+
+    permission ProjectRead = ProjectInstanceRead or ProjectDiskRead or ProjectSnapshotRead or ProjectVPCRead or ProjectSubnetRead or ProjectEipRead or ProjectLoadBalancerRead or ProjectFirewallRead or ProjectSSHRead or ProjectKaaSRead or ProjectBaaSRead or ProjectArgoCdRead
+
+    permission ProjectInstanceRead = parent.spx_owner or ProjectInstanceReadOnly or ProjectInstanceFullAccess or ProjectInstanceTerminalAccess
+    permission ProjectInstanceTerminal = parent.spx_owner or ProjectInstanceFullAccess or ProjectInstanceTerminalAccess
+    permission ProjectInstanceControl = parent.spx_owner or ProjectInstanceFullAccess
+    permission ProjectInstanceWrite = parent.spx_owner or ProjectInstanceFullAccess
+
+    permission ProjectDiskRead = parent.spx_owner or ProjectDiskReadOnly or ProjectDiskFullAccess
+	permission ProjectDiskWrite = parent.spx_owner or ProjectDiskFullAccess
+
+    permission ProjectSnapshotRead = parent.spx_owner or ProjectSnapshotReadOnly or ProjectSnapshotFullAccess
+	permission ProjectSnapshotWrite = parent.spx_owner or ProjectSnapshotFullAccess
+
+    permission ProjectVPCRead = parent.spx_owner or ProjectVPCReadOnly or ProjectVPCFullAccess
+	permission ProjectVPCWrite = parent.spx_owner or ProjectVPCFullAccess
+
+    permission ProjectSubnetRead = parent.spx_owner or ProjectSubnetReadOnly or ProjectSubnetFullAccess
+	permission ProjectSubnetWrite = parent.spx_owner or ProjectSubnetFullAccess
+
+    permission ProjectEipRead = parent.spx_owner or ProjectEipReadOnly or ProjectEipFullAccess
+	permission ProjectEipWrite = parent.spx_owner or ProjectEipFullAccess
+
+    permission ProjectLoadBalancerRead = parent.spx_owner or ProjectLoadBalancerReadOnly or ProjectLoadBalancerFullAccess
+	permission ProjectLoadBalancerWrite = parent.spx_owner or ProjectLoadBalancerFullAccess
+
+    permission ProjectFirewallRead = parent.spx_owner or ProjectFirewallReadOnly or ProjectFirewallFullAccess
+	permission ProjectFirewallWrite = parent.spx_owner or ProjectFirewallFullAccess
+
+    permission ProjectSSHRead = parent.spx_owner or ProjectSSHReadOnly or ProjectSSHFullAccess
+	permission ProjectSSHWrite = parent.spx_owner or ProjectSSHFullAccess
+
+    permission ProjectKaaSRead = parent.spx_owner or ProjectKaaSReadOnly or ProjectKaaSFullAccess or ProjectKaaSClusterAccess
+    permission ProjectKaaSKubeConfig = parent.spx_owner or ProjectKaaSClusterAccess or ProjectKaaSFullAccess
+	permission ProjectKaaSWrite = parent.spx_owner or ProjectKaaSFullAccess
+
+    permission ProjectBaaSRead = parent.spx_owner or ProjectBaaSReadOnly or ProjectBaaSFullAccess
+	permission ProjectBaaSWrite = parent.spx_owner or ProjectBaaSFullAccess
+
+    permission ProjectArgoCdRead = parent.spx_owner or ProjectArgoCdAccess
+
+}

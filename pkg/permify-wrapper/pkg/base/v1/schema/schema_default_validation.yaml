@@ -1,0 +1,741 @@
+schema: ./schemas/schema_default.perm
+
+# Initialize default group for an organization
+# Define only 1 organization because, there is only 1 organization by tenant
+# Group 1 : Owner
+# Group 2 : Admin
+# Group 3 : Billing
+# Group 4 : Developer
+# Group 5 : Project 1 Only
+# Group 6 : Project 2 Only
+# Group 7 : Project Read Only + Terminal
+relationships:
+  - "organization:1#spx_owner@group:1#assignee"
+  - "organization:1#spx_member@group:2#assignee"
+  - "organization:1#IAMFullAccess@group:2#assignee"
+  - "organization:1#SettingsEdition@group:2#assignee"
+  - "organization:1#BillingFullAccess@group:2#assignee"
+  - "organization:1#ProjectManagement@group:2#assignee"
+  - "organization:1#spx_member@group:3#assignee"
+  - "organization:1#BillingFullAccess@group:3#assignee"
+  - "organization:1#spx_member@group:4#assignee"
+  - "organization:1#ProjectManagement@group:4#assignee"
+  - "organization:1#spx_member@group:5#assignee"
+  - "organization:1#spx_member@group:6#assignee"
+  - "organization:1#spx_member@group:7#assignee"
+    # Define project 1
+  - "project:1#parent@organization:1"
+  - "project:1#ProjectInstanceFullAccess@group:2#assignee"
+  - "project:1#ProjectDiskFullAccess@group:2#assignee"
+  - "project:1#ProjectSnapshotFullAccess@group:2#assignee"
+  - "project:1#ProjectVPCFullAccess@group:2#assignee"
+  - "project:1#ProjectSubnetFullAccess@group:2#assignee"
+  - "project:1#ProjectEipFullAccess@group:2#assignee"
+  - "project:1#ProjectSSHFullAccess@group:2#assignee"
+  - "project:1#ProjectKaaSFullAccess@group:2#assignee"
+  - "project:1#ProjectBaaSFullAccess@group:2#assignee"
+  - "project:1#ProjectLoadBalancerFullAccess@group:2#assignee"
+  - "project:1#ProjectFirewallFullAccess@group:2#assignee"
+  - "project:1#ProjectArgoCdAccess@group:2#assignee"
+  - "project:1#ProjectInstanceFullAccess@group:4#assignee"
+  - "project:1#ProjectDiskFullAccess@group:4#assignee"
+  - "project:1#ProjectSnapshotFullAccess@group:4#assignee"
+  - "project:1#ProjectVPCFullAccess@group:4#assignee"
+  - "project:1#ProjectSubnetFullAccess@group:4#assignee"
+  - "project:1#ProjectEipFullAccess@group:4#assignee"
+  - "project:1#ProjectSSHFullAccess@group:4#assignee"
+  - "project:1#ProjectKaaSFullAccess@group:4#assignee"
+  - "project:1#ProjectBaaSFullAccess@group:4#assignee"
+  - "project:1#ProjectLoadBalancerFullAccess@group:4#assignee"
+  - "project:1#ProjectFirewallFullAccess@group:4#assignee"
+  - "project:1#ProjectArgoCdAccess@group:4#assignee"
+  - "project:1#ProjectInstanceFullAccess@group:5#assignee"
+  - "project:1#ProjectDiskFullAccess@group:5#assignee"
+  - "project:1#ProjectSnapshotFullAccess@group:5#assignee"
+  - "project:1#ProjectVPCFullAccess@group:5#assignee"
+  - "project:1#ProjectSubnetFullAccess@group:5#assignee"
+  - "project:1#ProjectEipFullAccess@group:5#assignee"
+  - "project:1#ProjectSSHFullAccess@group:5#assignee"
+  - "project:1#ProjectKaaSFullAccess@group:5#assignee"
+  - "project:1#ProjectBaaSFullAccess@group:5#assignee"
+  - "project:1#ProjectLoadBalancerFullAccess@group:5#assignee"
+  - "project:1#ProjectFirewallFullAccess@group:5#assignee"
+  - "project:1#ProjectArgoCdAccess@group:5#assignee"
+  - "project:1#ProjectInstanceTerminalAccess@group:7#assignee"
+  - "project:1#ProjectDiskReadOnly@group:7#assignee"
+  - "project:1#ProjectSnapshotReadOnly@group:7#assignee"
+  - "project:1#ProjectVPCReadOnly@group:7#assignee"
+  - "project:1#ProjectSubnetReadOnly@group:7#assignee"
+  - "project:1#ProjectEipReadOnly@group:7#assignee"
+  - "project:1#ProjectLoadBalancerReadOnly@group:7#assignee"
+  - "project:1#ProjectFirewallReadOnly@group:7#assignee"
+  - "project:1#ProjectSSHReadOnly@group:7#assignee"
+  - "project:1#ProjectKaaSReadOnly@group:7#assignee"
+  - "project:1#ProjectBaaSReadOnly@group:7#assignee"
+  - "project:1#ProjectArgoCdAccess@group:7#assignee"
+  # Define project 2
+  - "project:2#parent@organization:1"
+  - "project:2#ProjectInstanceFullAccess@group:2#assignee"
+  - "project:2#ProjectDiskFullAccess@group:2#assignee"
+  - "project:2#ProjectSnapshotFullAccess@group:2#assignee"
+  - "project:2#ProjectVPCFullAccess@group:2#assignee"
+  - "project:2#ProjectSubnetFullAccess@group:2#assignee"
+  - "project:2#ProjectEipFullAccess@group:2#assignee"
+  - "project:2#ProjectSSHFullAccess@group:2#assignee"
+  - "project:2#ProjectKaaSFullAccess@group:2#assignee"
+  - "project:2#ProjectBaaSFullAccess@group:2#assignee"
+  - "project:2#ProjectLoadBalancerFullAccess@group:2#assignee"
+  - "project:2#ProjectFirewallFullAccess@group:2#assignee"
+  - "project:2#ProjectArgoCdAccess@group:2#assignee"
+  - "project:2#ProjectInstanceFullAccess@group:4#assignee"
+  - "project:2#ProjectDiskFullAccess@group:4#assignee"
+  - "project:2#ProjectSnapshotFullAccess@group:4#assignee"
+  - "project:2#ProjectVPCFullAccess@group:4#assignee"
+  - "project:2#ProjectSubnetFullAccess@group:4#assignee"
+  - "project:2#ProjectEipFullAccess@group:4#assignee"
+  - "project:2#ProjectSSHFullAccess@group:4#assignee"
+  - "project:2#ProjectKaaSFullAccess@group:4#assignee"
+  - "project:2#ProjectBaaSFullAccess@group:4#assignee"
+  - "project:2#ProjectLoadBalancerFullAccess@group:4#assignee"
+  - "project:2#ProjectFirewallFullAccess@group:4#assignee"
+  - "project:2#ProjectArgoCdAccess@group:4#assignee"
+  - "project:2#ProjectInstanceFullAccess@group:6#assignee"
+  - "project:2#ProjectDiskFullAccess@group:6#assignee"
+  - "project:2#ProjectSnapshotFullAccess@group:6#assignee"
+  - "project:2#ProjectVPCFullAccess@group:6#assignee"
+  - "project:2#ProjectSubnetFullAccess@group:6#assignee"
+  - "project:2#ProjectEipFullAccess@group:6#assignee"
+  - "project:2#ProjectSSHFullAccess@group:6#assignee"
+  - "project:2#ProjectKaaSFullAccess@group:6#assignee"
+  - "project:2#ProjectBaaSFullAccess@group:6#assignee"
+  - "project:2#ProjectLoadBalancerFullAccess@group:6#assignee"
+  - "project:2#ProjectFirewallFullAccess@group:6#assignee"
+  - "project:2#ProjectArgoCdAccess@group:6#assignee"
+  - "project:2#ProjectInstanceTerminalAccess@group:7#assignee"
+  - "project:2#ProjectDiskReadOnly@group:7#assignee"
+  - "project:2#ProjectSnapshotReadOnly@group:7#assignee"
+  - "project:2#ProjectVPCReadOnly@group:7#assignee"
+  - "project:2#ProjectSubnetReadOnly@group:7#assignee"
+  - "project:2#ProjectEipReadOnly@group:7#assignee"
+  - "project:2#ProjectLoadBalancerReadOnly@group:7#assignee"
+  - "project:2#ProjectFirewallReadOnly@group:7#assignee"
+  - "project:2#ProjectSSHReadOnly@group:7#assignee"
+  - "project:2#ProjectKaaSReadOnly@group:7#assignee"
+  - "project:2#ProjectBaaSReadOnly@group:7#assignee"
+  - "project:2#ProjectArgoCdAccess@group:7#assignee"
+  # Define Users
+  #   User 1 - Owner permission
+  - "group:1#assignee@user:1"
+  #   User 2 - Admin permission
+  - "group:2#assignee@user:2"
+  #   User 3 - Billing permission
+  - "group:3#assignee@user:3"
+  #   User 4 - Developer permission
+  - "group:4#assignee@user:4"
+  #   User 5 - Full Access Project 1
+  - "group:5#assignee@user:5"
+  #   User 6 - Full Access Project 2
+  - "group:6#assignee@user:6"
+  #   User 7 - Read Only + Terminal all project
+  - "group:7#assignee@user:7"
+  #   User 8 - Combo group 5 and 7
+  - "group:5#assignee@user:8"
+  - "group:7#assignee@user:8"
+
+attributes: []
+
+scenarios:
+  - name: User 1 - Owner User
+    description: test du Group Owner
+    checks:
+      - entity: organization:1
+        subject: user:1
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: true
+          OrganizationIAMRead: true
+          OrganizationIAMWrite: true
+          OrganizationBillingRead: true
+          OrganizationBillingWrite: true
+          OrganizationProjectManagement: true
+      - entity: project:1
+        subject: user:1
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+      - entity: project:2
+        subject: user:1
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+  - name: User 2 - Admin User
+    description: test du Group Admin
+    checks:
+      - entity: organization:1
+        subject: user:2
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: true
+          OrganizationIAMRead: true
+          OrganizationIAMWrite: true
+          OrganizationBillingRead: true
+          OrganizationBillingWrite: true
+          OrganizationProjectManagement: true
+      - entity: project:1
+        subject: user:2
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+      - entity: project:2
+        subject: user:2
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+  - name: User 3 - Billing User
+    description: test du Group Billing
+    checks:
+      - entity: organization:1
+        subject: user:3
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: false
+          OrganizationIAMRead: false
+          OrganizationIAMWrite: false
+          OrganizationBillingRead: true
+          OrganizationBillingWrite: true
+          OrganizationProjectManagement: false
+      - entity: project:1
+        subject: user:3
+        depth: 200
+        assertions:
+          ProjectRead: false
+          ProjectInstanceRead: false
+          ProjectInstanceTerminal: false
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: false
+          ProjectDiskWrite: false
+          ProjectVPCRead: false
+          ProjectVPCWrite: false
+          ProjectSubnetRead: false
+          ProjectSubnetWrite: false
+          ProjectEipRead: false
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: false
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: false
+          ProjectFirewallWrite: false
+          ProjectSSHRead: false
+          ProjectSSHWrite: false
+          ProjectKaaSRead: false
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: false
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: false
+      - entity: project:2
+        subject: user:3
+        depth: 200
+        assertions:
+          ProjectRead: false
+          ProjectInstanceRead: false
+          ProjectInstanceTerminal: false
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: false
+          ProjectDiskWrite: false
+          ProjectVPCRead: false
+          ProjectVPCWrite: false
+          ProjectSubnetRead: false
+          ProjectSubnetWrite: false
+          ProjectEipRead: false
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: false
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: false
+          ProjectFirewallWrite: false
+          ProjectSSHRead: false
+          ProjectSSHWrite: false
+          ProjectKaaSRead: false
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: false
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: false
+  - name: User 4 - Developer User
+    description: test du Group Developer
+    checks:
+      - entity: organization:1
+        subject: user:4
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: false
+          OrganizationIAMRead: false
+          OrganizationIAMWrite: false
+          OrganizationBillingRead: false
+          OrganizationBillingWrite: false
+          OrganizationProjectManagement: true
+      - entity: project:1
+        subject: user:4
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+      - entity: project:2
+        subject: user:4
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+  - name: User 5 - Full Access Project 1
+    description: ""
+    checks:
+      - entity: organization:1
+        subject: user:5
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: false
+          OrganizationIAMRead: false
+          OrganizationIAMWrite: false
+          OrganizationBillingRead: false
+          OrganizationBillingWrite: false
+          OrganizationProjectManagement: false
+      - entity: project:1
+        subject: user:5
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+      - entity: project:2
+        subject: user:5
+        depth: 200
+        assertions:
+          ProjectRead: false
+          ProjectInstanceRead: false
+          ProjectInstanceTerminal: false
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: false
+          ProjectDiskWrite: false
+          ProjectVPCRead: false
+          ProjectVPCWrite: false
+          ProjectSubnetRead: false
+          ProjectSubnetWrite: false
+          ProjectEipRead: false
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: false
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: false
+          ProjectFirewallWrite: false
+          ProjectSSHRead: false
+          ProjectSSHWrite: false
+          ProjectKaaSRead: false
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: false
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: false
+  - name: User 6 - Full Access Project 2
+    description: ""
+    checks:
+      - entity: organization:1
+        subject: user:6
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: false
+          OrganizationIAMRead: false
+          OrganizationIAMWrite: false
+          OrganizationBillingRead: false
+          OrganizationBillingWrite: false
+          OrganizationProjectManagement: false
+      - entity: project:1
+        subject: user:6
+        depth: 200
+        assertions:
+          ProjectRead: false
+          ProjectInstanceRead: false
+          ProjectInstanceTerminal: false
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: false
+          ProjectDiskWrite: false
+          ProjectVPCRead: false
+          ProjectVPCWrite: false
+          ProjectSubnetRead: false
+          ProjectSubnetWrite: false
+          ProjectEipRead: false
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: false
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: false
+          ProjectFirewallWrite: false
+          ProjectSSHRead: false
+          ProjectSSHWrite: false
+          ProjectKaaSRead: false
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: false
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: false
+      - entity: project:2
+        subject: user:6
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+  - name: User 7 - Read Only + Terminal all project
+    description: ""
+    checks:
+      - entity: organization:1
+        subject: user:7
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: false
+          OrganizationIAMRead: false
+          OrganizationIAMWrite: false
+          OrganizationBillingRead: false
+          OrganizationBillingWrite: false
+          OrganizationProjectManagement: false
+      - entity: project:1
+        subject: user:7
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: true
+          ProjectDiskWrite: false
+          ProjectVPCRead: true
+          ProjectVPCWrite: false
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: false
+          ProjectEipRead: true
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: false
+          ProjectSSHRead: true
+          ProjectSSHWrite: false
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: true
+      - entity: project:2
+        subject: user:7
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: true
+          ProjectDiskWrite: false
+          ProjectVPCRead: true
+          ProjectVPCWrite: false
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: false
+          ProjectEipRead: true
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: false
+          ProjectSSHRead: true
+          ProjectSSHWrite: false
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: true
+  - name: User 8 - Combo group 5 and 7
+    description: ""
+    checks:
+      - entity: organization:1
+        subject: user:8
+        depth: 200
+        assertions:
+          OrganizationRead: true
+          OrganizationWrite: false
+          OrganizationIAMRead: false
+          OrganizationIAMWrite: false
+          OrganizationBillingRead: false
+          OrganizationBillingWrite: false
+          OrganizationProjectManagement: false
+      - entity: project:1
+        subject: user:8
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: true
+          ProjectInstanceWrite: true
+          ProjectDiskRead: true
+          ProjectDiskWrite: true
+          ProjectSnapshotRead: true
+          ProjectSnapshotWrite: true
+          ProjectVPCRead: true
+          ProjectVPCWrite: true
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: true
+          ProjectEipRead: true
+          ProjectEipWrite: true
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: true
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: true
+          ProjectSSHRead: true
+          ProjectSSHWrite: true
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: true
+          ProjectKaaSWrite: true
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: true
+          ProjectArgoCdRead: true
+      - entity: project:2
+        subject: user:8
+        depth: 200
+        assertions:
+          ProjectRead: true
+          ProjectInstanceRead: true
+          ProjectInstanceTerminal: true
+          ProjectInstanceControl: false
+          ProjectInstanceWrite: false
+          ProjectDiskRead: true
+          ProjectDiskWrite: false
+          ProjectVPCRead: true
+          ProjectVPCWrite: false
+          ProjectSubnetRead: true
+          ProjectSubnetWrite: false
+          ProjectEipRead: true
+          ProjectEipWrite: false
+          ProjectLoadBalancerRead: true
+          ProjectLoadBalancerWrite: false
+          ProjectFirewallRead: true
+          ProjectFirewallWrite: false
+          ProjectSSHRead: true
+          ProjectSSHWrite: false
+          ProjectKaaSRead: true
+          ProjectKaaSKubeConfig: false
+          ProjectKaaSWrite: false
+          ProjectBaaSRead: true
+          ProjectBaaSWrite: false
+          ProjectArgoCdRead: true

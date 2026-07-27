@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "argo-controller.fullname" . }}
+  labels:
+    {{- include "argo-controller.labels" . | nindent 4 }}
+data:
+  config.yaml: |-
+    {{- toYaml .Values.argoController.config | nindent 4 }}
+

@@ -50,7 +50,7 @@ var _ = Describe("Cluster Validation", func() {
 					Version: "1.1.0",
 				},
 				Status: operatorv1alpha1.ClusterStatus{
-					CurrentVersion: "0.9.0", // 1.1.0 requires >= 1.0.0
+					SuperphenixVersion: "0.9.0", // 1.1.0 requires >= 1.0.0
 				},
 			}
 
@@ -70,7 +70,7 @@ var _ = Describe("Cluster Validation", func() {
 					Version: "1.1.0",
 				},
 				Status: operatorv1alpha1.ClusterStatus{
-					CurrentVersion: "1.0.0",
+					SuperphenixVersion: "1.0.0",
 				},
 			}
 

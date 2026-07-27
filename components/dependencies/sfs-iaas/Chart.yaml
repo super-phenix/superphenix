@@ -1,4 +1,4 @@
 apiVersion: v2
 name: sfs-iaas
-version: "1.0.0"
+version: "1.4.0"
 description: "This Helm Chart is used by the self-service ArgoCDs of Superphenix to generate IaaS resources"

@@ -1,0 +1,26 @@
+
+# The logger section sets the logging level for the service.
+logger:
+  level: debug
+
+
+
+# The tracer section enables or disables distributed tracing and sets the
+# exporter and endpoint for the tracing data.
+#tracer:
+#  exporter: jaeger
+#  endpoint: http://jaeger:14268/api/traces
+#  enabled: true
+
+#  The database section specifies the database engine and connection settings,
+# including the URI for the database, whether or not to auto-migrate the database,
+# and connection pool settings.
+database:
+  engine: postgres
+  uri: postgres://postgres:secret@database:5432/permify
+  garbage_collection:
+    enabled: true
+    interval: 10m
+    window: 5m
+    timeout: 5m
+

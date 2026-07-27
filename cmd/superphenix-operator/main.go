@@ -10,10 +10,15 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -66,6 +71,8 @@ func main() {
 	var defaultVersion string
 	var syncPeriod time.Duration
 	var syncTimeout time.Duration
+	var talosManagerChartURL string
+	var talosManagerChartVersion string
 	var disableTelemetry bool
 	var telemetryEndpoint string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
@@ -99,6 +106,8 @@ func main() {
 	flag.StringVar(&defaultVersion, "default-version", "0.0.0", "The default version for the Superphenix system chart")
 	flag.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The interval at which to periodically resync sub-applications")
 	flag.DurationVar(&syncTimeout, "sync-timeout", 15*time.Minute, "The duration after which an in-progress sub-application sync is considered stuck, aborted, and restarted")
+	flag.StringVar(&talosManagerChartURL, "talos-manager-chart-url", "ghcr.io/super-phenix/charts", "The repository URL for the talos-manager chart")
+	flag.StringVar(&talosManagerChartVersion, "talos-manager-chart-version", "0.1.0", "The version for the talos-manager chart")
 	flag.StringVar(&operatorNamespace, "operator-namespace", os.Getenv("OPERATOR_NAMESPACE"), "The namespace where the operator is deployed")
 	flag.BoolVar(&isManagementCluster, "is-management-cluster", false, "Whether this operator is running on a management cluster and should reconcile management components")
 	flag.BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable sending anonymous telemetry to the Superphenix open-source project")
@@ -178,6 +187,27 @@ func main() {
 		metricsServerOptions.KeyName = metricsCertKey
 	}
 
+	// Restrict the ArgoCD Application informer to Applications the operator manages:
+	// root cluster Apps, superphenix-system child Apps, and management Apps. All three
+	// cohorts carry the operator.superphenix.net/managed=true label and live in the
+	// operator's namespace. Without this filter the informer LIST/WATCHes every
+	// Application in the cluster.
+	argoApp := &unstructured.Unstructured{}
+	argoApp.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "argoproj.io",
+		Version: "v1alpha1",
+		Kind:    "Application",
+	})
+	managedSel, err := labels.Parse("operator.superphenix.net/managed=true")
+	if err != nil {
+		setupLog.Error(err, "Failed to parse managed label selector")
+		os.Exit(1)
+	}
+	argoAppByObject := cache.ByObject{Label: managedSel}
+	if operatorNamespace != "" {
+		argoAppByObject.Namespaces = map[string]cache.Config{operatorNamespace: {}}
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
@@ -185,6 +215,11 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "d19ca498.superphenix.net",
+		Cache: cache.Options{
+			ByObject: map[client.Object]cache.ByObject{
+				argoApp: argoAppByObject,
+			},
+		},
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -203,15 +238,17 @@ func main() {
 	}
 
 	if err := (&cluster.Reconciler{
-		Client:                mgr.GetClient(),
-		Scheme:                mgr.GetScheme(),
-		OperatorNamespace:     operatorNamespace,
-		ClustersConfigMapName: clustersConfigMapName,
-		DefaultRepoURL:        defaultRepoURL,
-		DefaultChartName:      defaultChartName,
-		DefaultVersion:        defaultVersion,
-		SyncPeriod:            syncPeriod,
-		SyncTimeout:           syncTimeout,
+		Client:                   mgr.GetClient(),
+		Scheme:                   mgr.GetScheme(),
+		OperatorNamespace:        operatorNamespace,
+		ClustersConfigMapName:    clustersConfigMapName,
+		DefaultRepoURL:           defaultRepoURL,
+		DefaultChartName:         defaultChartName,
+		DefaultVersion:           defaultVersion,
+		SyncPeriod:               syncPeriod,
+		SyncTimeout:              syncTimeout,
+		TalosManagerChartURL:     talosManagerChartURL,
+		TalosManagerChartVersion: talosManagerChartVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "Cluster")
 		os.Exit(1)
@@ -242,14 +279,15 @@ func main() {
 	if !disableTelemetry {
 		runner := &telemetry.Runner{
 			Collector: &telemetry.Collector{
-				Client:          mgr.GetClient(),
-				OperatorVersion: version.OperatorVersion,
+				Client:            mgr.GetClient(),
+				OperatorVersion:   version.OperatorVersion,
+				Namespace:         operatorNamespace,
+				ManagementVersion: managementChartVersion,
+				ArgoCDVersion:     argocdChartVersion,
 			},
 			Client: telemetry.NewClient(telemetryEndpoint),
 		}
-		if isManagementCluster {
-			runner.Collector.ManagementVersion = managementChartVersion
-		}
+
 		// Register the telemetry runner. Since it implements LeaderElectionRunnable,
 		// it will only start when the manager is elected leader.
 		if err := mgr.Add(runner); err != nil {

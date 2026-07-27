@@ -67,6 +67,12 @@ spec:
             {{- if .Values.config.system.version }}
             - --default-version={{ .Values.config.system.version }}
             {{- end }}
+            {{- if .Values.config.talosManager.chart.url }}
+            - --talos-manager-chart-url={{ .Values.config.talosManager.chart.url }}
+            {{- end }}
+            {{- if .Values.config.talosManager.chart.version }}
+            - --talos-manager-chart-version={{ .Values.config.talosManager.chart.version }}
+            {{- end }}
             {{- if .Values.config.argocd.ha.enabled }}
             - --ha-enabled=true
             {{- end }}

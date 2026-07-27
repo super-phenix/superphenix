@@ -1,0 +1,55 @@
+basePath: /api
+info:
+  contact:
+    email: contact@superphenix.net
+    name: API Support
+    url: https://superphenix.net
+  description: Superphenix HTTP API
+  title: Superphenix API
+  version: "0.1"
+paths: {}
+securityDefinitions:
+  Bearer:
+    description: Access token used to check user access in Superphenix API.
+    in: header
+    name: Authorization
+    scopes:
+      organizationbillingread: Grants read access to organization billing
+      organizationbillingwrite: Grants write access to organization billing
+      organizationiamread: Grants read access to organization IAM
+      organizationiamwrite: Grants write access to organization IAM
+      organizationprojectmanagement: Grants project management access in organization
+      organizationread: Grants read access to organization
+      organizationwrite: Grants write access to organization
+      projectdiskread: Grants read access to Disk in project
+      projectdiskwrite: Grants write access to Disk in project
+      projecteipread: Grants read access to LoadBalancer in project
+      projecteipwrite: Grants write access to LoadBalancer in project
+      projectinstancecontrol: Grants control (start, stop) access to instance in project
+      projectinstanceread: Grants read access to instance in project
+      projectinstanceterminal: Grants terminal access to instance in project
+      projectinstancewrite: Grants write access to instance in project
+      projectsnapshotread: Grants read access to Snapshot and Instance Snapshot in
+        project
+      projectsnapshotwrite: Grants write access to Snapshot and Instance Snapshot
+        in project
+      projectsshread: Grants read access to SSH in project
+      projectsshwrite: Grants write access to SSH in project
+      projectsubnetread: Grants read access to Subnet in project
+      projectsubnetwrite: Grants write access to Subnet in project
+      projectvpcread: Grants read access to VPC in project
+      projectvpcwrite: Grants write access to VPC in project
+    type: apiKey
+  Kratos:
+    description: Session cookie for authentication service Kratos. Used to get Refresh
+      and Access Token used in Superphenix API
+    in: header
+    name: ory_kratos_session
+    type: apiKey
+  RefreshToken:
+    description: Refresh token with longer validity. Used to generate a new access
+      token within the validity of the token.
+    in: header
+    name: session
+    type: apiKey
+swagger: "2.0"

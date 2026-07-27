@@ -9,6 +9,8 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: etcd-issuer-{{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
 spec:
@@ -20,9 +22,14 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: etcd-server-{{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
 spec:
+  secretTemplate:
+    labels:
+      etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   secretName: etcd-server-{{ $dataStoreID }}
   isCA: false
   usages:
@@ -61,9 +68,14 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: etcd-peer-{{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
 spec:
+  secretTemplate:
+    labels:
+      etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   secretName: etcd-peer-{{ $dataStoreID }}
   isCA: false
   usages:
@@ -102,9 +114,14 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: etcd-client-{{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   annotations:
     argocd.argoproj.io/sync-wave: "-5"
 spec:
+  secretTemplate:
+    labels:
+      etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
   commonName: root
   secretName: etcd-client-{{ $dataStoreID }}
   usages:

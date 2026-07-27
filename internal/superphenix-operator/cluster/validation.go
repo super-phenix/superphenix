@@ -26,7 +26,7 @@ func (r *Reconciler) validate(ctx context.Context, cluster *v1alpha1.Cluster) er
 // validateUpgradePath ensures the upgrade path is possible and safe.
 func (r *Reconciler) validateUpgradePath(ctx context.Context, cluster *v1alpha1.Cluster) error {
 	specVersion := cluster.Spec.Version
-	statusVersion := cluster.Status.CurrentVersion
+	statusVersion := cluster.Status.SuperphenixVersion
 
 	return version.IsClusterUpgradeSupported(statusVersion, specVersion)
 }

@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: ${{ env.GIT_DEPTH }}
 
@@ -92,14 +92,17 @@ jobs:
               echo "Processing Docker image for component: $COMPONENT_NAME"
               echo "Directory: $docker_dir"
 
-              # Determine the tag
+              # Determine the tag and version
               TAGS=""
+              VERSION_ARG="dev"
               if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
                 # Tagged build
                 TAGS="${IMAGE_NAME}:${{ github.ref_name }}"
+                VERSION_ARG="${{ github.ref_name }}"
               elif [[ "${{ github.ref_name }}" == "main" ]]; then
                 # Main branch build
                 TAGS="${IMAGE_NAME}:latest"
+                VERSION_ARG="latest"
               fi
 
               # Check if a custom make target exists for this component
@@ -108,22 +111,22 @@ jobs:
                 echo "Found specific make target: $MAKE_TARGET"
                 if [ -n "$TAGS" ]; then
                   echo "Building and pushing $TAGS using make"
-                  make "$MAKE_TARGET" IMG="$TAGS"
+                  make "$MAKE_TARGET" IMG="$TAGS" VERSION="$VERSION_ARG"
                   docker push "$TAGS"
                 else
                   echo "No tag determined, building temp image using make"
-                  make "$MAKE_TARGET" IMG="${IMAGE_NAME}:temp"
+                  make "$MAKE_TARGET" IMG="${IMAGE_NAME}:temp" VERSION="$VERSION_ARG"
                 fi
               else
                 if [ -n "$TAGS" ]; then
                   echo "Building and pushing $TAGS"
                   # Use --tag for each tag identified
                   # Run from project root to ensure Docker context has access to go.mod etc.
-                  docker build -t "$TAGS" -f "$docker_dir/Dockerfile" .
+                  docker build -t "$TAGS" --build-arg VERSION="$VERSION_ARG" -f "$docker_dir/Dockerfile" .
                   docker push "$TAGS"
                 else
                   echo "No tag determined (not on main or tag), skipping push."
-                  docker build -t "${IMAGE_NAME}:temp" -f "$docker_dir/Dockerfile" .
+                  docker build -t "${IMAGE_NAME}:temp" --build-arg VERSION="$VERSION_ARG" -f "$docker_dir/Dockerfile" .
                 fi
               fi
             else

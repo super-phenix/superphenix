@@ -8,6 +8,8 @@ apiVersion: kamaji.clastix.io/v1alpha1
 kind: DataStore
 metadata:
   name: {{ $dataStoreID }}
+  labels:
+    etcd-operator.cozystack.io/cluster: {{ $dataStoreID | quote }}
 spec:
   driver: etcd
   endpoints:

@@ -1,0 +1,39 @@
+version: "3.9"
+name: permify-stack
+services:
+  permify:
+    image: ghcr.io/permify/permify
+    restart: "always"
+    command:
+      - serve
+    ports:
+      - "3476:3476"
+      - "3478:3478"
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
+    depends_on:
+      - "database"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3476/healthz"]
+      interval: 10s
+      retries: 10
+      start_period: 60s
+
+  database:
+    image: "postgres"
+    restart: "always"
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_PASSWORD=secret"
+      - "POSTGRES_DB=permify"
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    restart: "always"
+    ports:
+      - "14268:14268"
+      - "16686:16686"
+
+volumes:
+  pg-data:

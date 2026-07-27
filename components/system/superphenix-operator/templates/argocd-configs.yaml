@@ -31,7 +31,7 @@ data:
 
         # We need this ID when tracking with annotations to distinguish between multiple ArgoCD instances
         # when one cluster is managed by multiple ArgoCDs
-        installationID: "controller.superphenix.net"
+        installationID: "operator.superphenix.net"
 
         # Setup health assessment for Application CRDs to allow for sync waves between them
         resource.customizations: |

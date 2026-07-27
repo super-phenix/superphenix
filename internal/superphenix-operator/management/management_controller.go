@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/yaml"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
 	"github.com/super-phenix/superphenix/pkg/argocd"
 )
 
@@ -346,6 +347,9 @@ func (r *Reconciler) buildApplication(name, repoURL, chartName, chartVersion str
 			"metadata": map[string]interface{}{
 				"name":      name,
 				"namespace": r.OperatorNamespace,
+				"labels": map[string]interface{}{
+					version.ManagedLabel: "true",
+				},
 			},
 			"spec": map[string]interface{}{
 				"project": "default",

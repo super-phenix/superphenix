@@ -1,6 +1,6 @@
 # SFS-IAAS
 
-![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square)  ![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square)
+![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square)  ![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square)
 
 This Helm Chart is used by the self-service ArgoCDs of Superphenix to generate IaaS resources
 
@@ -133,6 +133,26 @@ false
 		</tr>
 	</tbody>
 </table>
+<h3>Storage</h3>
+<table>
+	<thead>
+		<th>Key</th>
+		<th>Type</th>
+		<th>Default</th>
+		<th>Description</th>
+	</thead>
+	<tbody>
+		<tr>
+			<td>buckets</td>
+			<td>object</td>
+			<td><pre lang="">
+""
+</pre>
+</td>
+			<td>S3 buckets that can be created in the project through Ceph/Rook OBCs</td>
+		</tr>
+	</tbody>
+</table>
 <h3>Disk Snapshot Schedules</h3>
 <table>
 	<thead>
@@ -184,7 +204,7 @@ false
 	<tbody>
 		<tr>
 			<td>disks</td>
-			<td>string</td>
+			<td>object</td>
 			<td><pre lang="">
 ""
 </pre>

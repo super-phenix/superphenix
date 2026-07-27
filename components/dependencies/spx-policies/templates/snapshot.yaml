@@ -46,8 +46,8 @@ spec:
         )
       messageExpression: |
         "##### " + object.kind + " source has an incorrect name regex (" +
-        variables.source + "), must be an SPXID or a boot-disk. #####"
-      message: "##### Incorrect Snapshot source name regex, must be an SPXID or a boot-disk #####"
+        variables.source + "), must be an SPXID, a boot-disk or an etcd-disk. #####"
+      message: "##### Incorrect Snapshot source name regex, must be an SPXID, a boot-disk or an etcd-disk #####"
 
 ---
 apiVersion: admissionregistration.k8s.io/v1

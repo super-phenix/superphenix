@@ -32,9 +32,9 @@ Phases:
 Transitions:
 1. Any -> Deploying:
    - When Status.Phase is empty.
-   - When a version update is triggered (CurrentVersion != Spec.Version).
+   - When a version update is triggered (SuperphenixVersion != Spec.Version).
 2. Deploying -> Deployed:
-   - When Spec.Version == CurrentVersion AND ArgoCD sync status is "Synced".
+   - When Spec.Version == SuperphenixVersion AND ArgoCD sync status is "Synced".
 3. Any -> Paused:
    - When Spec.PauseSync is true.
 4. Paused -> Any:
@@ -75,7 +75,7 @@ func (r *Reconciler) isSynced(cluster *operatorv1alpha1.Cluster) bool {
 // syncStatus centralizes the cluster status and phase management.
 // It determines the final status based on the connectivity, ArgoCD application status, and spec.
 // It also updates versions, conditions, phase, and handles the status patch to the Kubernetes API.
-func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster, app *unstructured.Unstructured, k8sVersion string, reconcileErr error, lastSync *metav1.Time) (ctrl.Result, error) {
+func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster, app *unstructured.Unstructured, k8sVersion string, nodeCount int, reconcileErr error, lastSync *metav1.Time) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 	oldStatus := cluster.Status.DeepCopy()
 	patch := client.MergeFrom(cluster.DeepCopy())
@@ -84,19 +84,25 @@ func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.C
 	if k8sVersion != "" {
 		cluster.Status.KubernetesVersion = k8sVersion
 	}
+	if nodeCount > 0 {
+		cluster.Status.NodeCount = nodeCount
+	}
 
-	// Update CurrentVersion based on the currently deployed superphenix-system chart
+	// Update SuperphenixVersion based on the currently deployed superphenix-system chart
 	if reconcileErr == nil {
 		currentVersion, err := version.GetCurrentClusterVersion(ctx, r, cluster.Name, r.OperatorNamespace)
 		if err != nil {
 			log.Error(err, "Failed to get current cluster version")
 		} else if currentVersion != "" {
-			if cluster.Status.CurrentVersion != currentVersion {
-				log.Info("Updating current version from deployed chart", "oldVersion", cluster.Status.CurrentVersion, "newVersion", currentVersion)
-				cluster.Status.CurrentVersion = currentVersion
+			if cluster.Status.SuperphenixVersion != currentVersion {
+				log.Info("Updating superphenix version from deployed chart", "oldVersion", cluster.Status.SuperphenixVersion, "newVersion", currentVersion)
+				cluster.Status.SuperphenixVersion = currentVersion
 			}
 		}
 	}
+
+	// Refresh the per-app status map from the ArgoCD Applications handled by the root app.
+	r.updateAppsStatus(ctx, cluster)
 
 	// 2. Determine Conditions
 	// Check version compatibility with management
@@ -181,7 +187,7 @@ func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.C
 	}
 
 	// If we are "Deployed" but version mismatch, we should be "Deploying"
-	if phase == "Deployed" && cluster.Status.CurrentVersion != cluster.Spec.Version && cluster.Status.CurrentVersion != "" {
+	if phase == "Deployed" && cluster.Status.SuperphenixVersion != cluster.Spec.Version && cluster.Status.SuperphenixVersion != "" {
 		phase = "Deploying"
 	}
 
@@ -426,4 +432,82 @@ func (r *Reconciler) updateCompatibilityCondition(ctx context.Context, cluster *
 		Reason:  reason,
 		Message: message,
 	})
+}
+
+// updateAppsStatus refreshes cluster.Status.Apps with one entry per ArgoCD Application handled
+// by the cluster's root app-of-apps. The root Application itself is excluded so the map reflects
+// only the components it manages. Listing errors are non-fatal: the previous map is preserved so
+// a transient failure does not blank out the reported state.
+func (r *Reconciler) updateAppsStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster) {
+	log := logf.FromContext(ctx)
+
+	subApps, err := r.listSubApplications(ctx, cluster)
+	if err != nil {
+		log.Error(err, "Failed to list sub-applications, preserving existing Apps status")
+		return
+	}
+
+	apps := make(map[string]operatorv1alpha1.ClusterApp, len(subApps))
+	for i := range subApps {
+		app := &subApps[i]
+		name := app.GetName()
+		if name == "" || name == cluster.Name {
+			continue
+		}
+		apps[name] = buildClusterApp(app)
+	}
+
+	if len(apps) == 0 {
+		cluster.Status.Apps = nil
+		return
+	}
+	cluster.Status.Apps = apps
+}
+
+// buildClusterApp extracts the observable fields the operator reports for a single ArgoCD
+// Application. Missing or unparseable fields are left at their zero value rather than causing
+// the whole entry to be dropped.
+func buildClusterApp(app *unstructured.Unstructured) operatorv1alpha1.ClusterApp {
+	entry := operatorv1alpha1.ClusterApp{Name: app.GetName()}
+
+	if healthStatus, _, _ := unstructured.NestedString(app.Object, "status", "health", "status"); healthStatus != "" {
+		entry.Status = healthStatus
+	}
+
+	entry.Version = applicationTargetRevision(app)
+
+	if reconciledAt, _, _ := unstructured.NestedString(app.Object, "status", "reconciledAt"); reconciledAt != "" {
+		if t, err := time.Parse(time.RFC3339, reconciledAt); err == nil {
+			mt := metav1.NewTime(t)
+			entry.LastRefresh = &mt
+		}
+	}
+
+	if finishedAt, _, _ := unstructured.NestedString(app.Object, "status", "operationState", "finishedAt"); finishedAt != "" {
+		if t, err := time.Parse(time.RFC3339, finishedAt); err == nil {
+			mt := metav1.NewTime(t)
+			entry.LastSync = &mt
+		}
+	}
+
+	return entry
+}
+
+// applicationTargetRevision returns the target revision of the Application, handling both the
+// single-source (spec.source.targetRevision) and multi-source (spec.sources[0].targetRevision)
+// layouts. Returns an empty string when neither is set.
+func applicationTargetRevision(app *unstructured.Unstructured) string {
+	if rev, found, _ := unstructured.NestedString(app.Object, "spec", "source", "targetRevision"); found && rev != "" {
+		return rev
+	}
+	sources, found, _ := unstructured.NestedSlice(app.Object, "spec", "sources")
+	if !found || len(sources) == 0 {
+		return ""
+	}
+	first, ok := sources[0].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	rev, _, _ := unstructured.NestedString(first, "targetRevision")
+	return rev
 }

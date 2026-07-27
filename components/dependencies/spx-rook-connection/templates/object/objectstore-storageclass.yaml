@@ -1,0 +1,19 @@
+{{- range .Values.clusters }}
+{{- $cluster := .name }}
+{{- range .objectStores }}
+{{- $storeName := .name }}
+{{- range .storageClasses }}
+{{- $scName := .fullName | default (printf "%s.%s" $cluster .name) }}
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $scName | quote }}
+provisioner: {{ $.Values.rookOperatorNamespace }}.ceph.rook.io/bucket
+reclaimPolicy: {{ .reclaimPolicy | default "Delete" }}
+parameters:
+  objectStoreName: {{ printf "%s.%s" $cluster $storeName }}
+  objectStoreNamespace: {{ $cluster }}
+{{- end }}
+{{- end }}
+{{- end }}
