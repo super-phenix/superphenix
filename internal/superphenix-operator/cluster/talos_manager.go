@@ -5,18 +5,31 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"slices"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	kjson "k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/klauspost/compress/zstd"
+	"github.com/stmcginnis/gofish"
+	"github.com/stmcginnis/gofish/schemas"
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
 )
+
+// PXE setup related variables:
+
+// Known motherboard manufacturers:
+var ManufacturerNames = map[string]string{"DELL": "Dell Inc.", "LENOVO": "Lenovo"}
+
+// Manufacturers supported for PXE setup:
+var PXESetupSupportedManufacturers = []string{ManufacturerNames["DELL"], ManufacturerNames["LENOVO"]}
 
 const (
 	// TalosManagerApp is the ArgoCD Application name for the talos-manager chart.
@@ -24,6 +37,9 @@ const (
 
 	// LinkAliasTemplate is the template of a Talos LinkAlias.
 	LinkAliasTemplate = "apiVersion: v1alpha1\nkind: LinkAliasConfig\nname: %s\nselector:\n  match: mac(link.permanent_addr) == \"%s\""
+
+	// State of a TalosMachine resource when the machine is booting.
+	TalosMachineStateBooting = "Booting"
 )
 
 // TalosManagerConfigurationSpec represents the values of the talos-manager chart.
@@ -165,6 +181,11 @@ func (r *Reconciler) reconcileTalosManager(ctx context.Context, cluster *operato
 			if err := r.injectLinkAliases(&config); err != nil {
 				return err
 			}
+
+			// Set up PXE boot on nodes and reboot to PXE:
+			if err := r.pxeSetup(ctx, config, cluster); err != nil {
+				return err
+			}
 		}
 
 		// Converting config to a map by marshaling then unmarshaling:
@@ -180,7 +201,7 @@ func (r *Reconciler) reconcileTalosManager(ctx context.Context, cluster *operato
 
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, app, func() error {
 			// Ensure labels are up to date
-			r.setTalosManagerAppLabels(app, cluster)
+			r.setTalosManagerAppLabels(app)
 
 			// Set ownership and finalizers
 			if err := r.setApplicationOwnership(cluster, app); err != nil {
@@ -227,7 +248,7 @@ func (r *Reconciler) initTalosManagerApp(name string) *unstructured.Unstructured
 }
 
 // setTalosManagerAppLabels sets the required labels on the talos-manager Application.
-func (r *Reconciler) setTalosManagerAppLabels(app *unstructured.Unstructured, cluster *operatorv1alpha1.Cluster) {
+func (r *Reconciler) setTalosManagerAppLabels(app *unstructured.Unstructured) {
 	labels := app.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string)
@@ -302,5 +323,166 @@ func (r *Reconciler) injectLinkAliases(config *TalosManagerConfigurationSpec) er
 			config.Nodes[i].KernelCmdlineArgs = linkAliasesFinal
 		}
 	}
+	return nil
+}
+
+// pxeSetup configures IPMI of servers for PXE boot and reboots them to PXE
+func (r *Reconciler) pxeSetup(ctx context.Context, config TalosManagerConfigurationSpec, cluster *operatorv1alpha1.Cluster) error {
+	log := logf.FromContext(ctx)
+
+	// Lists nodes that have already been set up:
+	var doneList []string
+
+	// Specifies whether there has been an update to the "done" list this time (if at least one node has been added or removed from the list):
+	doneListUpdate := false
+
+	// Only adding nodes that still exist to the up-to-date "done" list
+	// in case some have been removed:
+	if cluster.Status.PXESetupDone != nil {
+		for _, done := range cluster.Status.PXESetupDone {
+			found := false
+			for _, node := range config.Nodes {
+				if node.Hostname == done {
+					found = true
+				}
+			}
+			if found {
+				doneList = append(doneList, done)
+			} else {
+				doneListUpdate = true
+			}
+		}
+	} else {
+		// "done" list is missing from status, so we fall back on TalosMachine resources
+		// to check if nodes are already set up.
+		// If a TalosMachine's status is not "Booting", then talos-operator is already handling it
+		// so PXE is necessarily set up on this machine.
+		talosMachines := &unstructured.UnstructuredList{}
+		talosMachines.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "talos.alperen.cloud",
+			Version: "v1alpha1",
+			Kind:    "TalosMachine",
+		})
+		// We can ignore "IsNoMatchError" because it just means that talos-operator's CRDs are not installed
+		// so machines are not handled by talos-operator yet:
+		if err := r.List(ctx, talosMachines, client.InNamespace(cluster.Namespace)); err != nil && !meta.IsNoMatchError(err) {
+			return err
+		}
+		for _, m := range talosMachines.Items {
+			if clusterName, _, _ := unstructured.NestedString(m.Object, "spec", "controlPlaneRef", "name"); clusterName == cluster.Name {
+				if state, _, _ := unstructured.NestedString(m.Object, "status", "state"); state != TalosMachineStateBooting {
+					// TalosMachine's resource name isn't the same as the hostname
+					// so we rely on the endpoint IP of this TalosMachine resource to find its hostname:
+					var hostname string
+					endpoint, _, _ := unstructured.NestedString(m.Object, "spec", "endpoint")
+					for _, node := range config.Nodes {
+						if node.Interface.ClusterNetwork.Ipv4 == endpoint {
+							hostname = node.Hostname
+						}
+					}
+					doneList = append(doneList, hostname)
+					doneListUpdate = true
+				}
+			}
+		}
+	}
+
+	// Setting up nodes:
+	for _, node := range config.Nodes {
+		// Skip node if PXE setup is not requested or if it is already set up:
+		if node.PxeSetup && !slices.Contains(doneList, node.Hostname) {
+			// Connect to Redfish endpoint:
+			c, err := gofish.Connect(gofish.ClientConfig{
+				Endpoint: fmt.Sprintf("https://%s", node.IpmiIpv4),
+				Username: node.IpmiUser,
+				Password: node.IpmiPassword,
+				Insecure: true,
+			})
+			if err != nil {
+				return err
+			}
+			defer c.Logout()
+
+			// Get the System and BIOS objects and manufacturer name:
+			systems, err := c.Service.Systems()
+			if err != nil {
+				return err
+			}
+			system := systems[0]
+			bios, err := system.Bios()
+			if err != nil {
+				return err
+			}
+			manufacturer := system.Manufacturer
+
+			// BIOS configuration for PXE:
+			if slices.Contains(PXESetupSupportedManufacturers, manufacturer) {
+				// Prepare patch for BIOS configuration:
+				var pxePatch schemas.SettingsAttributes
+				switch manufacturer {
+				case ManufacturerNames["DELL"]:
+					pxePatch = schemas.SettingsAttributes{
+						"BootMode":         "Uefi",
+						"PxeDev1EnDis":     "Enabled",
+						"PxeDev1Protocol":  "IPv4",
+						"PxeDev1Interface": node.PxeInterfaceName,
+					}
+				case ManufacturerNames["LENOVO"]:
+					pxePatch = schemas.SettingsAttributes{
+						"BootModes_SystemBootMode":            "UEFIMode",
+						"NetworkStackSettings_NetworkStack":   "Enable",
+						"NetworkStackSettings_IPv4PXESupport": "Enable",
+					}
+				}
+
+				// Adding VLAN setup to patch if required:
+				if node.Interface.UseVlan {
+					if manufacturer == ManufacturerNames["DELL"] {
+						pxePatch["PxeDev1VlanEnDis"] = "Enabled"
+						pxePatch["PxeDev1VlanId"] = config.ClusterNetwork.VlanId
+					} else {
+						log.Info(fmt.Sprintf("WARNING: Setting up PXE VLAN automatically is not supported on '%s' machines yet, it might need to be set up manually.", manufacturer))
+					}
+				}
+
+				// Apply patch:
+				if err := bios.UpdateBiosAttributesApplyAt(pxePatch, schemas.OnResetSettingsApplyTime); err != nil {
+					return err
+				}
+			} else {
+				log.Info(fmt.Sprintf("WARNING: Setting up PXE automatically is not supported on '%s' machines yet, it might need to be set up manually. Only next boot option will be set.", manufacturer))
+			}
+
+			// Set next boot option to PXE:
+			system.Boot.BootSourceOverrideEnabled = schemas.OnceBootSourceOverrideEnabled
+			system.Boot.BootSourceOverrideTarget = schemas.PxeBootSource
+			if err := system.SetBoot(&system.Boot); err != nil {
+				return err
+			}
+
+			// Reboot if already on, else power on:
+			resetType := schemas.ForceRestartResetType
+			if system.PowerState == schemas.OffPowerState {
+				resetType = schemas.OnResetType
+			}
+			if _, err := system.Reset(resetType); err != nil {
+				return err
+			}
+
+			// Add this node to the "done" list:
+			doneList = append(doneList, node.Hostname)
+			doneListUpdate = true
+		}
+	}
+
+	// Updating Cluster's status to add nodes that have been set up (skip if no node has been added or removed from the list):
+	if doneListUpdate {
+		patch := client.MergeFrom(cluster.DeepCopy())
+		cluster.Status.PXESetupDone = doneList
+		if err := r.Status().Patch(ctx, cluster, patch); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

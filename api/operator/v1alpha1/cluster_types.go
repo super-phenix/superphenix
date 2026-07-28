@@ -268,6 +268,11 @@ type ClusterStatus struct {
 	// app-of-apps, keyed by application name.
 	// +optional
 	Apps map[string]ClusterApp `json:"apps,omitempty"`
+
+	// PXESetupDone lists hostname of machines that have been set up for PXE
+	// when using TalosManagementModeFull.
+	// +optional
+	PXESetupDone []string `json:"pxeSetupDone,omitempty"`
 }
 
 // ClusterApp reports the observed state of a single application belonging to the
