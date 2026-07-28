@@ -524,6 +524,11 @@ networkPolicies:
 #    # -- AZs on which to deploy the network policies
 #    # Use "all" to target every AZ
 #    locations: []
+#    # -- Subnets on which this network policy is enforced. Each entry must be
+#    # the local ID of a subnet defined in `.subnets`. When empty, the policy
+#    # applies to every subnet the selected VMs are attached to.
+#    subnets: []
+#    # - default-subnet
 #    # -- VMs selected by that network policy
 #    # Selectors are ANDed between .matchLabels and .matchExpressions
 #    selector:

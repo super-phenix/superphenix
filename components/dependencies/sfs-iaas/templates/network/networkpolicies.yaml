@@ -9,6 +9,12 @@
 
 {{- $blockAll := (and $netpol.blockAll (or $netpol.blockAll.ingress $netpol.blockAll.egress)) }}
 {{- $effectiveID := include "sfs-iaas.spxEID" (dict "projectID" $.Values.projectID "localID" $localID) }}
+
+{{- $subnetRefs := list }}
+{{- range $sn := $netpol.subnets }}
+{{- $subnetEID := include "sfs-iaas.spxEID" (dict "projectID" $.Values.projectID "localID" $sn) }}
+{{- $subnetRefs = append $subnetRefs (printf "%s/%s" $.Release.Namespace $subnetEID) }}
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -22,6 +28,10 @@ metadata:
   annotations:
     # Do not block ICMPv4/ICMPv6/DHCPv4/DHCPv6
     ovn.kubernetes.io/network_policy_enforcement: lax
+    {{- with $subnetRefs }}
+    # Restrict enforcement to the listed subnets (NAD refs)
+    ovn.kubernetes.io/network_policy_for: {{ join "," . | quote }}
+    {{- end }}
 spec:
   podSelector:
     matchLabels:
