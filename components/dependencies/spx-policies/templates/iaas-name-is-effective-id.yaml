@@ -17,6 +17,8 @@ spec:
       expression: "object.metadata.name"
     - name: effectiveID
       expression: object.metadata.labels[{{ include "policies.resEffectiveIDLabel" "" }}]
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -49,6 +51,7 @@ spec:
   validations:
     # Check that 'name' matches 'effective ID' label
     - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
         variables.name == variables.effectiveID ||
         (
           object.kind == "NetworkPolicy" &&

@@ -25,6 +25,17 @@ definitions:
           $ref: '#/definitions/config.StorageClass'
         type: array
     type: object
+  config.S3Config:
+    properties:
+      maxBucketObjects:
+        type: integer
+      maxBucketSize:
+        type: string
+      storageClasses:
+        items:
+          type: string
+        type: array
+    type: object
   config.StorageClass:
     properties:
       fullname:
@@ -932,6 +943,48 @@ definitions:
           file in object storage.
           +optional
         type: integer
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket:
+    properties:
+      bucket:
+        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BucketView'
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BucketView:
+    properties:
+      creationTimestamp:
+        type: string
+      endpoint:
+        type: string
+      lifecycle:
+        type: string
+      maxObjects:
+        type: string
+      maxSize:
+        type: string
+      name:
+        description: S3 bucket name (spec.bucketName)
+        type: string
+      phase:
+        type: string
+      policy:
+        type: string
+      storageClass:
+        type: string
     type: object
   github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Cluster:
     properties:
@@ -3262,6 +3315,59 @@ definitions:
     - ConditionReady
     - ConditionProgressing
     - ConditionFailure
+  objectbucket.BucketConfig:
+    properties:
+      lifecycle:
+        description: S3 lifecycle configuration JSON
+        type: string
+      maxObjects:
+        type: integer
+      maxSize:
+        description: kubernetes quantity, e.g. "100Gi"
+        type: string
+      policy:
+        description: S3 bucket policy JSON
+        type: string
+    type: object
+  objectbucket.CreateBucketInfo:
+    properties:
+      general:
+        properties:
+          config:
+            $ref: '#/definitions/objectbucket.BucketConfig'
+          storageClass:
+            type: string
+        type: object
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+    type: object
+  objectbucket.Credentials:
+    properties:
+      accessKeyId:
+        type: string
+      bucketName:
+        type: string
+      endpoint:
+        type: string
+      region:
+        type: string
+      secretAccessKey:
+        type: string
+    type: object
+  objectbucket.UpdateBucketInfo:
+    properties:
+      general:
+        properties:
+          config:
+            $ref: '#/definitions/objectbucket.BucketConfig'
+        type: object
+    type: object
   paas.GroupDeletion:
     properties:
       groupName:
@@ -10277,6 +10383,245 @@ paths:
       tags:
       - v1
       - BaaS
+  /{orgId}/{projectId}/bucket:
+    get:
+      description: Retrieve all S3 Buckets for a project
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Buckets
+          schema:
+            items:
+              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket'
+            type: array
+        "500":
+          description: Internal Server Error
+      summary: Retrieve all Buckets
+      tags:
+      - v1
+      - Bucket
+    post:
+      consumes:
+      - application/json
+      description: Create an S3 Bucket
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/objectbucket.CreateBucketInfo'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "409":
+          description: Conflict
+      summary: Create a Bucket
+      tags:
+      - v1
+      - Bucket
+  /{orgId}/{projectId}/bucket/{effectiveId}:
+    delete:
+      description: Delete an S3 Bucket by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket Effective ID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Delete a Bucket
+      tags:
+      - v1
+      - Bucket
+    get:
+      description: Get Bucket by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket Effective ID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bucket
+          schema:
+            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get Bucket by effective ID
+      tags:
+      - v1
+      - Bucket
+    post:
+      consumes:
+      - application/json
+      description: Update an S3 Bucket configuration (quotas, policy, lifecycle)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket Effective ID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Bucket info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/objectbucket.UpdateBucketInfo'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Update a Bucket
+      tags:
+      - v1
+      - Bucket
+  /{orgId}/{projectId}/bucket/{effectiveId}/credentials:
+    get:
+      description: Get the S3 endpoint and admin credentials generated for a Bucket
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket Effective ID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Credentials
+          schema:
+            $ref: '#/definitions/objectbucket.Credentials'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Get Bucket credentials
+      tags:
+      - v1
+      - Bucket
+  /{orgId}/{projectId}/bucket/localId/{localId}:
+    get:
+      description: Get Bucket by local ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket Local ID
+        in: path
+        name: localId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bucket
+          schema:
+            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Get Bucket by local ID
+      tags:
+      - v1
+      - Bucket
   /{orgId}/{projectId}/container-disks:
     get:
       description: Returns this AZ's catalog of container-disk types declared in the
@@ -12177,6 +12522,36 @@ paths:
       tags:
       - v1
       - GC
+  /{orgId}/{projectId}/s3-config:
+    get:
+      description: Get the S3 storage classes and bucket limits of this availability
+        zone
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: S3 Config
+          schema:
+            $ref: '#/definitions/config.S3Config'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Get S3 Config
+      tags:
+      - v1
+      - Config
   /{orgId}/{projectId}/snapshot:
     get:
       description: Retrieve all Snapshots for a project

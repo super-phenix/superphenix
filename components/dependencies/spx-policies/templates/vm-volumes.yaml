@@ -22,6 +22,10 @@ spec:
         object.spec
     - name: spxidRegex
       expression: r{{ include "policies.regex" "spxid" }}
+    - name: nabokLabel
+      expression: r{{ include "policies.nabokLabel" "" }}
+    - name: nabokPlanRegex
+      expression: r{{ include "policies.regex" "nabokMigration"}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -83,6 +87,10 @@ spec:
           (has(v.persistentVolumeClaim) &&
           v.name.matches(variables.spxidRegex)) ||
           !has(v.persistentVolumeClaim)
+        ) ||
+        (
+          variables.nabokLabel in object.metadata.labels &&
+          object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex)
         )
       messageExpression: |
         "##### " + object.kind +
@@ -100,6 +108,10 @@ spec:
           (has(v.persistentVolumeClaim) &&
           v.persistentVolumeClaim.claimName.matches(variables.spxidRegex)) ||
           !has(v.persistentVolumeClaim)
+        ) ||
+        (
+          variables.nabokLabel in object.metadata.labels &&
+          object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex)
         )
       messageExpression: |
         "##### " + object.kind +

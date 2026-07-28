@@ -120,6 +120,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(ClusterType)
 		**out = **in
 	}
+	if in.TalosManagerConfiguration != nil {
+		in, out := &in.TalosManagerConfiguration, &out.TalosManagerConfiguration
+		*out = new(v1.JSON)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.SystemConfiguration != nil {
 		in, out := &in.SystemConfiguration, &out.SystemConfiguration
 		*out = new(v1.JSON)
@@ -159,6 +164,13 @@ func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	if in.Apps != nil {
 		in, out := &in.Apps, &out.Apps
 		*out = make(map[string]ClusterApp, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
+		}
+	}
+	if in.CephClusters != nil {
+		in, out := &in.CephClusters, &out.CephClusters
+		*out = make(map[string]v1.JSON, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
 		}

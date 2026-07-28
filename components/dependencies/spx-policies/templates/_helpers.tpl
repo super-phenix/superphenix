@@ -132,6 +132,20 @@ IaaS labels
 {{- end }}
 
 {{/*
+Nabok label
+*/}}
+{{- define "policies.nabokLabel" -}}
+"plan-name"
+{{- end }}
+
+{{/*
+Label for test resources missing a required label on purpose
+*/}}
+{{- define "policies.testMissingLabel" -}}
+"testMissingLabel"
+{{- end }}
+
+{{/*
 Regex for label values and other fields
 */}}
 {{- define "policies.regex" -}}
@@ -149,6 +163,9 @@ Regex for label values and other fields
 "^vmsnapshot-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-volume-spx-[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
 {{- else if eq . "etcddisk" -}}
 "^data(-etcd)?-spx-(([a-z0-9-]*-datastore[0-9][0-9]-([a-z0-9]{5}|[0-9]))|[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}-[a-z0-9]{5})$"
+{{- else if eq . "nabokMigration" -}}
+"^migration-[a-zA-Z0-9/-]{0,53}$"
+
 {{- end }}
 {{- end }}
 
@@ -245,6 +262,22 @@ Do not match Volume Snapshots with a name starting with "velero-*"
 {{- end }}
 
 {{/*
+Do not match resources related to Nabok
+*/}}
+{{- define "policies.mcNotNabok" -}}
+{{- $nabokLabel := include "policies.nabokLabel" . -}}
+{{- $nabokMigration := include "policies.regex" "nabokMigration" -}}
+# Do not match resources related to Nabok
+- name: matchNotNabok
+  expression: |
+    has(object.metadata.labels) &&
+    !(
+      {{ $nabokLabel }} in object.metadata.labels &&
+      object.metadata.labels[{{ $nabokLabel }}].matches({{ $nabokMigration }})
+    )
+{{- end }}
+
+{{/*
 Match resources whose name starts with "virt-launcher"
 */}}
 {{- define "policies.mcVirtLauncher" -}}
@@ -330,6 +363,9 @@ matchConditions:
   {{- end }}
   {{- if has "notVeleroVolsnap" $mc -}}
   {{- include "policies.mcNotVeleroVolsnap" . | nindent 2 -}}
+  {{- end }}
+  {{- if has "notNabok" $mc -}}
+  {{- include "policies.mcNotNabok" . | nindent 2 -}}
   {{- end }}
   {{- if has "virtLauncher" $mc -}}
   {{- include "policies.mcVirtLauncher" . | nindent 2 -}}

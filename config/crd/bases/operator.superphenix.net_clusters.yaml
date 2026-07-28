@@ -158,6 +158,24 @@ spec:
                 description: SystemConfiguration is a YAML dict of unknown values
                   that will be passed to the system configuration chart.
                 x-kubernetes-preserve-unknown-fields: true
+              talosManagementMode:
+                allOf:
+                - enum:
+                  - Unmanaged
+                  - Import
+                  - Full
+                - enum:
+                  - Unmanaged
+                  - Import
+                  - Full
+                default: Unmanaged
+                description: TalosManagementMode specifies how Talos configuration
+                  should be managed.
+                type: string
+              talosManagerConfiguration:
+                description: TalosManagerConfiguration is a YAML dict of unknown values
+                  that will be passed to the talos-manager chart.
+                x-kubernetes-preserve-unknown-fields: true
               type:
                 description: |-
                   Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
@@ -215,6 +233,13 @@ spec:
                 description: |-
                   Apps reports the state of each application deployed by the cluster's root
                   app-of-apps, keyed by application name.
+                type: object
+              cephClusters:
+                additionalProperties:
+                  x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  CephClusters reports the state of each Ceph cluster running on the SPX cluster,
+                  keyed by their FSID.
                 type: object
               conditions:
                 description: |-

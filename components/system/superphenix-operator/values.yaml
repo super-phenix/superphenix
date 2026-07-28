@@ -71,7 +71,8 @@ config:
   management:
     chart:
       url: ghcr.io/super-phenix/charts
-      version: 0.0.0
+      # If none provided, inherits the version from the superphenix-operator chart
+      version: ""
     # Arbitrary Helm values merged under the "superphenix" ConfigMap key.
     values: {}
 
@@ -79,7 +80,14 @@ config:
   system:
     repoURL: ghcr.io/super-phenix/charts
     chartName: superphenix-system
-    version: 0.0.0
+    # If none provided, inherits the version from the superphenix-operator chart
+    version: ""
+
+  # talos-manager chart deployed by the cluster controller for every managed cluster.
+  talosManager:
+    chart:
+      url: ghcr.io/super-phenix/charts
+      version: 0.1.0
 
 # Metrics and Health
 metrics:
@@ -102,6 +110,13 @@ clusters: {}
 #    # Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
 #    # type: Storage
 #
+#    # TalosManagementMode specifies how Talos configuration should be managed.
+#    # Unmanaged - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+#    # Import - The operator imports an already installed Talos cluster and manages its configuration.
+#    # Full - The Talos cluster is fully installed and configured by the operator.
+#    # Accepted values: Unmanaged, Import, Full
+#    talosManagementMode: Unmanaged
+#
 #    # Region is the geographic region where this cluster is located.
 #    region: us
 #
@@ -121,6 +136,10 @@ clusters: {}
 #    # systemConfiguration:
 #    #  network:
 #    #    mtu: 1500
+#
+#    # TalosManagerConfiguration is a YAML dict of values that will be passed to the talos-manager chart.
+#    # talosManagerConfiguration:
+#    #   talosVersion: "v1.13.4"
 #
 #    # Connection defines the parameters to connect to the remote cluster.
 #    connection:

@@ -13,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
 )
@@ -75,7 +76,7 @@ func (r *Reconciler) isSynced(cluster *operatorv1alpha1.Cluster) bool {
 // syncStatus centralizes the cluster status and phase management.
 // It determines the final status based on the connectivity, ArgoCD application status, and spec.
 // It also updates versions, conditions, phase, and handles the status patch to the Kubernetes API.
-func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster, app *unstructured.Unstructured, k8sVersion string, nodeCount int, reconcileErr error, lastSync *metav1.Time) (ctrl.Result, error) {
+func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.Cluster, app *unstructured.Unstructured, k8sVersion string, nodeCount int, cephClusters map[string]apiextensionsv1.JSON, reconcileErr error, lastSync *metav1.Time) (ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 	oldStatus := cluster.Status.DeepCopy()
 	patch := client.MergeFrom(cluster.DeepCopy())
@@ -86,6 +87,9 @@ func (r *Reconciler) syncStatus(ctx context.Context, cluster *operatorv1alpha1.C
 	}
 	if nodeCount > 0 {
 		cluster.Status.NodeCount = nodeCount
+	}
+	if cephClusters != nil {
+		cluster.Status.CephClusters = cephClusters
 	}
 
 	// Update SuperphenixVersion based on the currently deployed superphenix-system chart

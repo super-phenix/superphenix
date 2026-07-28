@@ -100,6 +100,13 @@ type Config struct {
 
 	StorageClassMapping map[string]string `yaml:"storageClassMapping"`
 
+	S3 struct {
+		StorageClassMapping map[string]string `yaml:"storageClassMapping"`
+		MaxBucketSize       string            `yaml:"maxBucketSize"`
+		MaxBucketObjects    uint64            `yaml:"maxBucketObjects"`
+		ExternalEndpoint    string            `yaml:"externalEndpoint"`
+	} `yaml:"s3"`
+
 	DisableEditionForResourcesByLabels map[string]string `yaml:"disableEditionForResourcesByLabels"`
 
 	GarbageCollection struct {
@@ -180,6 +187,11 @@ kubernetesConfig:
 snapshotSchedule:
   minHour: 21
   maxHour: 23
+s3:
+  storageClassMapping: {}
+  maxBucketSize: "1Ti"
+  maxBucketObjects: 1000000
+  externalEndpoint: ""
 `)
 
 // Global is the global configuration of this application, provisioned once LoadConfig is called

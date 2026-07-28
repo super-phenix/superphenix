@@ -65,7 +65,7 @@ spec:
     - expression: "variables.spxidLabels.all(entry, entry in object.metadata.labels)"
       messageExpression: |
         "##### " + object.kind +
-        " is missing required labels: " +
+        " is missing required labels : " +
         variables.spxidLabels
         .filter(entry, !(entry in object.metadata.labels))
         .join(", ") + " #####"
@@ -96,7 +96,7 @@ spec:
         variables.nameLabels.all(entry, entry in object.metadata.labels)
       messageExpression: |
         "##### " + object.kind +
-        " is missing required labels: " +
+        " is missing required labels : " +
         variables.nameLabels
         .filter(entry, !(entry in object.metadata.labels))
         .join(", ") + " #####"

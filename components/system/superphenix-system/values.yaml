@@ -19,6 +19,27 @@ cleanupOnDeletion: false
 
 # -- "Per application" settings
 apps:
+  # -- Superphenix Controller installed on the AZs
+  superphenix-controller:
+    enabled: true
+    wave: "-10"
+    modes: [Hyperconverged, DecoupledVirtualization]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions:
+        - SkipDryRunOnMissingResource=true
+    repoURL: ghcr.io/super-phenix/charts
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
+    namespace: superphenix-system
+    helm:
+      chart: superphenix-controller
+      releaseName: superphenix-controller
+      values: {}
+
   # -- CoreDNS used for DNS resolution within the Kubernetes clusters
   coredns:
     enabled: true
@@ -992,14 +1013,14 @@ apps:
       prune: true
       cleanupOnDeletion: false
       syncOptions: {}
-    namespace: "velero-system"
+    namespace: velero-system
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://vmware-tanzu.github.io/helm-charts"
     targetRevision: "12.0.0"
     helm:
       chart: velero
-      releaseName: "velero"
+      releaseName: velero
       values:
         # Install plugins at boot of Velero
         initContainers:
@@ -1074,11 +1095,6 @@ apps:
         # We don't backup the persistent data by default, only the K8s resources
         snapshotsEnabled: false
 
-        # Override kubectl due to Bitnami issues
-        kubectl:
-          image:
-            tag: 1.33.4
-
   # CSI-Addons -- Used to add features such as replications to the CSI
   csi-addons:
     enabled: true
@@ -1134,6 +1150,10 @@ apps:
     helm:
       chart: "kyverno"
       releaseName: "kyverno"
+      values:
+        # Unnecessary controller doing high CPU usage under unknown circumstances
+        reportsController:
+          enabled: false
 
   # Snapscheduler -- Used to schedule snapshots of volumes
   snapscheduler:

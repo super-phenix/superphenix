@@ -39,6 +39,7 @@ var (
 		permissionSet.ProjectSSHFullAccess,
 		permissionSet.ProjectKaaSFullAccess,
 		permissionSet.ProjectBaaSFullAccess,
+		permissionSet.ProjectBucketFullAccess,
 		permissionSet.ProjectArgoCdAccess,
 	}
 
@@ -64,6 +65,7 @@ var (
 		permissionSet.ProjectSSHFullAccess,
 		permissionSet.ProjectKaaSFullAccess,
 		permissionSet.ProjectBaaSFullAccess,
+		permissionSet.ProjectBucketFullAccess,
 		permissionSet.ProjectArgoCdAccess,
 	}
 )

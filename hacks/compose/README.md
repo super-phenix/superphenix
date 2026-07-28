@@ -8,7 +8,8 @@ It is **not** a production deployment. It bundles Kratos, Postgres, Permify, the
 
 - `docker-compose.yml` — the stack definition
 - `.env.example` — user-specific paths you must set (frontend repo checkouts)
-- `kratos/` — Kratos config (`kratos.example.yml` committed, `kratos.yml` gitignored) and identity schema
+- `local/` - user-specifics configurations (the whole folder is gitignored)
+- `kratos/` — Kratos config example and identity schema
 
 ## First-time setup
 
@@ -20,8 +21,8 @@ cp .env.example .env
 $EDITOR .env   # set AUTH_UI_PATH and SPX_PANEL_PATH to absolute paths
 
 # 2. Create a local Kratos config (the example is committed, the real file is gitignored)
-cp kratos/kratos.example.yml kratos/kratos.yml
-$EDITOR kratos/kratos.yml   # set secrets.default (e.g. `openssl rand -base64 32`) and SMTP creds
+cp kratos/kratos.example.yml local/kratos/kratos.yml
+$EDITOR local/kratos/kratos.yml   # set secrets.default (e.g. `openssl rand -base64 32`) and SMTP creds
 
 # 3. Bring the stack up (from this directory)
 docker compose up -d
@@ -56,7 +57,7 @@ Then run the usual command without any `--profile` flags:
 docker compose up -d
 
 # From root directory
-docker compose -f deployment/docker-compose.yml up -d --build
+docker compose -f hacks/compose/docker-compose.yml up -d --build
 ```
 
 To exclude a service, simply remove its profile from the list. For example, to run only the backend:

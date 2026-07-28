@@ -23,6 +23,8 @@ spec:
       expression: object.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
     - name: spxidRegex
       expression: r{{ include "policies.regex" "spxid" | replace "^" "" | replace  "$" "" }}
+    - name: testMissingLabel
+      expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -38,6 +40,7 @@ spec:
   validations:
     # Check annotations regex ("SPXID.projectID.annotation", for "subnetID.namespace.annotation")
     - expression: |
+        variables.testMissingLabel in object.metadata.labels ||
         [variables.router, variables.switch]
         .all(anno, variables.annotations
           .all(entry,

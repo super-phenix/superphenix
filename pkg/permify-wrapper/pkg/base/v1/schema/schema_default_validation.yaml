@@ -34,6 +34,7 @@ relationships:
   - "project:1#ProjectSSHFullAccess@group:2#assignee"
   - "project:1#ProjectKaaSFullAccess@group:2#assignee"
   - "project:1#ProjectBaaSFullAccess@group:2#assignee"
+  - "project:1#ProjectBucketFullAccess@group:2#assignee"
   - "project:1#ProjectLoadBalancerFullAccess@group:2#assignee"
   - "project:1#ProjectFirewallFullAccess@group:2#assignee"
   - "project:1#ProjectArgoCdAccess@group:2#assignee"
@@ -46,6 +47,7 @@ relationships:
   - "project:1#ProjectSSHFullAccess@group:4#assignee"
   - "project:1#ProjectKaaSFullAccess@group:4#assignee"
   - "project:1#ProjectBaaSFullAccess@group:4#assignee"
+  - "project:1#ProjectBucketFullAccess@group:4#assignee"
   - "project:1#ProjectLoadBalancerFullAccess@group:4#assignee"
   - "project:1#ProjectFirewallFullAccess@group:4#assignee"
   - "project:1#ProjectArgoCdAccess@group:4#assignee"
@@ -58,6 +60,7 @@ relationships:
   - "project:1#ProjectSSHFullAccess@group:5#assignee"
   - "project:1#ProjectKaaSFullAccess@group:5#assignee"
   - "project:1#ProjectBaaSFullAccess@group:5#assignee"
+  - "project:1#ProjectBucketFullAccess@group:5#assignee"
   - "project:1#ProjectLoadBalancerFullAccess@group:5#assignee"
   - "project:1#ProjectFirewallFullAccess@group:5#assignee"
   - "project:1#ProjectArgoCdAccess@group:5#assignee"
@@ -72,6 +75,7 @@ relationships:
   - "project:1#ProjectSSHReadOnly@group:7#assignee"
   - "project:1#ProjectKaaSReadOnly@group:7#assignee"
   - "project:1#ProjectBaaSReadOnly@group:7#assignee"
+  - "project:1#ProjectBucketReadOnly@group:7#assignee"
   - "project:1#ProjectArgoCdAccess@group:7#assignee"
   # Define project 2
   - "project:2#parent@organization:1"
@@ -84,6 +88,7 @@ relationships:
   - "project:2#ProjectSSHFullAccess@group:2#assignee"
   - "project:2#ProjectKaaSFullAccess@group:2#assignee"
   - "project:2#ProjectBaaSFullAccess@group:2#assignee"
+  - "project:2#ProjectBucketFullAccess@group:2#assignee"
   - "project:2#ProjectLoadBalancerFullAccess@group:2#assignee"
   - "project:2#ProjectFirewallFullAccess@group:2#assignee"
   - "project:2#ProjectArgoCdAccess@group:2#assignee"
@@ -96,6 +101,7 @@ relationships:
   - "project:2#ProjectSSHFullAccess@group:4#assignee"
   - "project:2#ProjectKaaSFullAccess@group:4#assignee"
   - "project:2#ProjectBaaSFullAccess@group:4#assignee"
+  - "project:2#ProjectBucketFullAccess@group:4#assignee"
   - "project:2#ProjectLoadBalancerFullAccess@group:4#assignee"
   - "project:2#ProjectFirewallFullAccess@group:4#assignee"
   - "project:2#ProjectArgoCdAccess@group:4#assignee"
@@ -108,6 +114,7 @@ relationships:
   - "project:2#ProjectSSHFullAccess@group:6#assignee"
   - "project:2#ProjectKaaSFullAccess@group:6#assignee"
   - "project:2#ProjectBaaSFullAccess@group:6#assignee"
+  - "project:2#ProjectBucketFullAccess@group:6#assignee"
   - "project:2#ProjectLoadBalancerFullAccess@group:6#assignee"
   - "project:2#ProjectFirewallFullAccess@group:6#assignee"
   - "project:2#ProjectArgoCdAccess@group:6#assignee"
@@ -122,6 +129,7 @@ relationships:
   - "project:2#ProjectSSHReadOnly@group:7#assignee"
   - "project:2#ProjectKaaSReadOnly@group:7#assignee"
   - "project:2#ProjectBaaSReadOnly@group:7#assignee"
+  - "project:2#ProjectBucketReadOnly@group:7#assignee"
   - "project:2#ProjectArgoCdAccess@group:7#assignee"
   # Define Users
   #   User 1 - Owner permission
@@ -189,6 +197,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
       - entity: project:2
         subject: user:1
@@ -220,6 +231,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
   - name: User 2 - Admin User
     description: test du Group Admin
@@ -265,6 +279,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
       - entity: project:2
         subject: user:2
@@ -296,6 +313,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
   - name: User 3 - Billing User
     description: test du Group Billing
@@ -339,6 +359,9 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectBucketRead: false
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: false
       - entity: project:2
         subject: user:3
@@ -368,6 +391,9 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectBucketRead: false
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: false
   - name: User 4 - Developer User
     description: test du Group Developer
@@ -413,6 +439,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
       - entity: project:2
         subject: user:4
@@ -444,6 +473,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
   - name: User 5 - Full Access Project 1
     description: ""
@@ -489,6 +521,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
       - entity: project:2
         subject: user:5
@@ -518,6 +553,9 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectBucketRead: false
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: false
   - name: User 6 - Full Access Project 2
     description: ""
@@ -561,6 +599,9 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectBucketRead: false
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: false
       - entity: project:2
         subject: user:6
@@ -592,6 +633,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
   - name: User 7 - Read Only + Terminal all project
     description: ""
@@ -635,6 +679,9 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: true
           ProjectBaaSWrite: false
+          ProjectBucketRead: true
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: true
       - entity: project:2
         subject: user:7
@@ -664,6 +711,9 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: true
           ProjectBaaSWrite: false
+          ProjectBucketRead: true
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: true
   - name: User 8 - Combo group 5 and 7
     description: ""
@@ -709,6 +759,9 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectBucketRead: true
+          ProjectBucketCredentials: true
+          ProjectBucketWrite: true
           ProjectArgoCdRead: true
       - entity: project:2
         subject: user:8
@@ -738,4 +791,7 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: true
           ProjectBaaSWrite: false
+          ProjectBucketRead: true
+          ProjectBucketCredentials: false
+          ProjectBucketWrite: false
           ProjectArgoCdRead: true

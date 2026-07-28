@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -23,6 +24,7 @@ import (
 
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 	"github.com/super-phenix/superphenix/pkg/argocd"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 const (
@@ -57,6 +59,10 @@ type Reconciler struct {
 
 	// ArgoCDWatcher handles dynamic watching of ArgoCD Applications.
 	ArgoCDWatcher *argocd.Watcher
+
+	// talos-manager chart configuration.
+	TalosManagerChartURL     string
+	TalosManagerChartVersion string
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -143,7 +149,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		if controllerutil.ContainsFinalizer(cluster, FinalizerName) {
 			if err := r.cleanupCluster(ctx, cluster); err != nil {
 				// Update status with the cleanup error
-				if _, syncErr := r.syncStatus(ctx, cluster, nil, "", 0, err, nil); syncErr != nil {
+				if _, syncErr := r.syncStatus(ctx, cluster, nil, "", 0, nil, err, nil); syncErr != nil {
 					logf.FromContext(ctx).Error(syncErr, "Failed to update status after cleanup failure")
 				}
 				return ctrl.Result{RequeueAfter: time.Minute}, err
@@ -179,6 +185,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 	var reconcileErr error
 	var k8sVersion string
 	var nodeCount int
+	var cephClusters map[string]apiextensionsv1.JSON
 	var app *unstructured.Unstructured
 
 	// Reconcile ArgoCD connection secret
@@ -190,7 +197,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 	if reconcileErr == nil {
 		// Verify the cluster can be reached and administered
 		var result ctrl.Result
-		k8sVersion, nodeCount, result, reconcileErr = r.reconcileHealth(ctx, cluster)
+		k8sVersion, nodeCount, cephClusters, result, reconcileErr = r.reconcileHealth(ctx, cluster)
 		if reconcileErr == nil && !result.IsZero() {
 			// Health check wants to requeue without error
 			return result, nil
@@ -240,7 +247,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 	r.ArgoCDWatcher.EnsureWatch(ctx, &operatorv1alpha1.Cluster{})
 
 	// Centralized status sync
-	res, err := r.syncStatus(ctx, cluster, app, k8sVersion, nodeCount, reconcileErr, nil)
+	res, err := r.syncStatus(ctx, cluster, app, k8sVersion, nodeCount, cephClusters, reconcileErr, nil)
 	if err != nil || !res.IsZero() {
 		return res, err
 	}
@@ -261,9 +268,46 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 		if reconcileErr == nil || !ready {
 			if r.runPeriodicSync(ctx, cluster) {
 				now := metav1.Now()
-				if _, err := r.syncStatus(ctx, cluster, app, k8sVersion, nodeCount, reconcileErr, &now); err != nil {
+				if _, err := r.syncStatus(ctx, cluster, app, k8sVersion, nodeCount, cephClusters, reconcileErr, &now); err != nil {
 					log.Error(err, "Failed to update LastSync in status")
 				}
+			}
+		}
+	}
+
+	// "Unmanaged" mode disables talos-manager entirely:
+	if cluster.Spec.TalosManagementMode != operatorv1alpha1.TalosManagementUnmanaged {
+		// Reconcile talos-manager application:
+		if err := r.reconcileTalosManager(ctx, cluster); err != nil {
+			log.Error(err, "talos-manager reconciliation failed")
+			reconcileErr = err
+		}
+	} else {
+		// We have to check if there is an existing talos-manager Application, because in that case, it should be deleted:
+		name := fmt.Sprintf("%s-%s", TalosManagerApp, cluster.Name)
+		exists := true
+
+		existing := &unstructured.Unstructured{}
+		existing.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "argoproj.io",
+			Version: "v1alpha1",
+			Kind:    "Application",
+		})
+
+		if err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: r.OperatorNamespace}, existing); err != nil {
+			if !apierrors.IsNotFound(err) {
+				log.Error(err, "failed to get ArgoCD Application %s", name)
+				reconcileErr = err
+			} else {
+				exists = false
+			}
+		}
+
+		if exists && reconcileErr == nil {
+			// Application exists, deleting it:
+			if err := r.Delete(ctx, existing); err != nil {
+				log.Error(err, "failed to delete ArgoCD Application %s", name)
+				reconcileErr = err
 			}
 		}
 	}

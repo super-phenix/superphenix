@@ -21,6 +21,10 @@ spec:
         object.spec.domain.devices
     - name: interfaceNameRegex
       expression: r{{ include "policies.regex" "interfaceName" }}
+    - name: nabokLabel
+      expression: r{{ include "policies.nabokLabel" "" }}
+    - name: nabokPlanRegex
+      expression: r{{ include "policies.regex" "nabokMigration"}}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -69,6 +73,10 @@ spec:
         variables.devices.interfaces
         .all(n,
           n.name.matches(variables.interfaceNameRegex)
+        ) ||
+        (
+          variables.nabokLabel in object.metadata.labels &&
+          object.metadata.labels[variables.nabokLabel].matches(variables.nabokPlanRegex)
         )
       messageExpression: |
         "##### " + object.kind + " has incorrect interface name (" +

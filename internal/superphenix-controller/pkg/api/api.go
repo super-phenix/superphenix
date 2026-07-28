@@ -74,6 +74,7 @@ func LaunchEndpoint(address string) {
 		r.Get("/vm-type/{name}", configApi.GetVMClusterPreferenceByName)
 		r.Get("/vm-type/{name}/advanced-options", configApi.GetVMClusterPreferenceAdvancedOptions)
 		r.Get("/kaas-config", configApi.GetKaaSConfig)
+		r.Get("/s3-config", configApi.GetS3Config)
 		r.Get("/container-disks", configApi.GetContainerDiskCatalog)
 
 		//// COMPUTE ////
@@ -86,6 +87,7 @@ func LaunchEndpoint(address string) {
 		kubevirt.DiskEndpoint(r)
 		kubevirt.SnapshotEndpoint(r)
 		paas.BaasEndpoint(r)
+		k8s.BucketEndpoint(r)
 
 		//// NETWORK ////
 		kubeovn.VPCEndpoint(r)

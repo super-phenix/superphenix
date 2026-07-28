@@ -1,0 +1,402 @@
+apiVersion: talos.alperen.cloud/v1alpha1
+kind: TalosCluster
+metadata:
+  name: {{ .Values.clusterName }}
+  annotations:
+    talos.alperen.cloud/reconcile-mode: {{ .Values.reconciliationMode }}
+spec:
+  {{- if .Values.pxeEnabled }}
+  pxeServerSpec:
+    address: {{ .Values.pxeIpAddr }}
+    interface: {{ .Values.dhcpInterface }}
+  {{- end }}
+  controlPlane:
+    version: {{ .Values.talosVersion }}
+    kubeVersion: {{ .Values.k8sVersion }}
+    mode: metal
+    {{- if not (empty .Values.controlplaneIpv6) }}
+    endpoint: https://[{{ .Values.controlplaneIpv6 }}]:{{ .Values.controlplanePort }}
+    {{- else }}
+    endpoint: https://{{ .Values.controlplaneIpv4 }}:{{ .Values.controlplanePort }}
+    {{- end }}
+    # We install the CNI ourselves using ArgoCD
+    cni:
+      name: none
+    deletionPolicy: preserve
+    rolloutStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+    metalSpec:
+      machines:
+        {{- range .Values.nodes }}
+        {{- if eq .type "controlplane" }}
+        {{- include "node-specs" (list $.Values .) | indent 8 }}
+        {{- end }}
+        {{- end }}
+      machineSpec:
+        # Control plane nodes also handle running normal workload
+        allowSchedulingOnControlPlanes: true
+        configPatches:
+          # Global overrides:
+          {{- include "global-overrides" . | indent 10 }}
+          # Control plane specific overrides:
+          - cluster:
+              # Static bearer token to authentify ArgoCD to the clusters
+              # This should not be used on production clusters, only on clusters that are bound to be
+              # wiped and recreated often
+              apiServer:
+                extraArgs:
+                  token-auth-file: /etc/spx-bootstrap-token.csv
+                extraVolumes:
+                  - hostPath: /var/spx-bootstrap-token.csv
+                    mountPath: /etc/spx-bootstrap-token.csv
+              # Setup controller-manager for Prometheus scrapping
+              controllerManager:
+                extraArgs:
+                  bind-address: 0.0.0.0
+                  node-cidr-mask-size-ipv4: "24"
+                  node-cidr-mask-size-ipv6: "112"
+              # Setup scheduler for Prometheus scrapping
+              scheduler:
+                extraArgs:
+                  bind-address: 0.0.0.0
+              # Setup kube-proxy for Prometheus scrapping
+              proxy:
+                {{- if eq .Values.clusterType "virt" }}
+                disabled: false
+                mode: ipvs
+                {{- else if eq .Values.clusterType "storage" }}
+                disabled: true
+                {{- end }}
+                extraArgs:
+                  metrics-bind-address: 0.0.0.0:10249
+              # Setup etcd for Prometheus scrapping
+              etcd:
+                extraArgs:
+                  listen-metrics-urls: http://0.0.0.0:2381
+                # We might have multiple IPs/interfaces, use the network dedicated to internal connectivity
+                advertisedSubnets:
+                  - "{{ .Values.clusterNetwork.ipv6 }}/{{ .Values.clusterNetwork.cidrIpv6 }}"
+              # We install CoreDNS ourselves using ArgoCD, with custom parameters and high-availability
+              coreDNS:
+                disabled: true
+            machine:
+              # Static file containing the static token, do not do this in production
+              files:
+                - content: '{{ .Values.argocdToken }},spx-bootstrap,spx-bootstrap,"system:masters"'
+                  permissions: 0o666
+                  path: /var/spx-bootstrap-token.csv
+                  op: create
+              features:
+                kubernetesTalosAPIAccess:
+                  enabled: true
+                  allowedRoles:
+                  - os:etcd:backup
+                  allowedKubernetesNamespaces:
+                  - talos-backup
+          {{- if eq .Values.clusterType "storage" }}
+          # Firewall configuration:
+          - # Block all communications by default, on every interface
+            # We must open everything, protocol by protocol, address by address and port by port
+            apiVersion: v1alpha1
+            kind: NetworkDefaultActionConfig
+            ingress: block
+          - # Allow all TCP traffic in the cluster network and overlay network
+            apiVersion: v1alpha1
+            kind: NetworkRuleConfig
+            name: allow-cluster-tcp
+            portSelector:
+              ports:
+                - 1-65535
+              protocol: tcp
+            ingress:
+              - subnet: "{{ .Values.clusterNetwork.ipv6 }}/{{ .Values.clusterNetwork.cidrIpv6 }}" # Cluster network
+              - subnet: "{{ .Values.clusterNetwork.ipv4 }}/{{ .Values.clusterNetwork.cidrIpv4 }}" # Cluster network
+              - subnet: "{{ .Values.podSubnets.ipv6 }}/{{ .Values.podSubnets.cidrIpv6 }}"         # Pod network
+              - subnet: "{{ .Values.serviceSubnets.ipv6 }}/{{ .Values.serviceSubnets.cidrIpv6 }}" # Service network
+              - subnet: "{{ .Values.podSubnets.ipv4 }}/{{ .Values.podSubnets.cidrIpv4 }}"         # Pod network
+              - subnet: "{{ .Values.serviceSubnets.ipv4 }}/{{ .Values.serviceSubnets.cidrIpv4 }}" # Service network
+          - # Allow all UDP traffic in the cluster network and overlay network
+            apiVersion: v1alpha1
+            kind: NetworkRuleConfig
+            name: allow-cluster-udp
+            portSelector:
+              ports:
+                - 1-65535
+              protocol: udp
+            ingress:
+              - subnet: "{{ .Values.clusterNetwork.ipv6 }}/{{ .Values.clusterNetwork.cidrIpv6 }}" # Cluster network
+              - subnet: "{{ .Values.clusterNetwork.ipv4 }}/{{ .Values.clusterNetwork.cidrIpv4 }}" # Cluster network
+              - subnet: "{{ .Values.podSubnets.ipv6 }}/{{ .Values.podSubnets.cidrIpv6 }}"         # Pod network
+              - subnet: "{{ .Values.serviceSubnets.ipv6 }}/{{ .Values.serviceSubnets.cidrIpv6 }}" # Service network
+              - subnet: "{{ .Values.podSubnets.ipv4 }}/{{ .Values.podSubnets.cidrIpv4 }}"         # Pod network
+              - subnet: "{{ .Values.serviceSubnets.ipv4 }}/{{ .Values.serviceSubnets.cidrIpv4 }}" # Service network
+          - # Allow Ceph TCP traffic in the public network
+            apiVersion: v1alpha1
+            kind: NetworkRuleConfig
+            name: allow-public-tcp
+            portSelector:
+              ports:
+                - 3300      # Ceph v2
+                - 6789      # Ceph v1
+                - 6800-7300 # OSDs
+              protocol: tcp
+            ingress:
+              - subnet: "{{ .Values.publicNetwork.ipv6 }}/{{ .Values.publicNetwork.cidrIpv6 }}" # Public network
+              - subnet: fe80::/10                                                               # Ceph clients use their link-local address
+          {{- end }}
+          {{- with .Values.machineOverridesControlPlane }}
+          {{ toYaml . | nindent 10 }}
+          {{- end }}
+  {{- /* Checking if there are workers */}}
+  {{- $workers := false -}}
+  {{- range .Values.nodes }}
+  {{- if eq .type "worker" }}
+  {{- $workers = true -}}
+  {{- end }}
+  {{- end }}
+  {{- if $workers }}
+  worker:
+    version: {{ .Values.talosVersion }}
+    kubeVersion: {{ .Values.k8sVersion }}
+    mode: metal
+    deletionPolicy: preserve
+    rolloutStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+    metalSpec:
+      machines:
+        {{- range .Values.nodes }}
+        {{- if eq .type "worker" }}
+        {{- include "node-specs" (list $.Values .) | indent 8 }}
+        {{- end }}
+        {{- end }}
+      machineSpec:
+        # Control plane nodes also handle running normal workload
+        allowSchedulingOnControlPlanes: true
+        configPatches:
+          # Global overrides:
+          {{- include "global-overrides" . | indent 10 }}
+          # Worker specific overrides:
+          {{- with .Values.machineOverridesWorker }}
+          {{ toYaml . | nindent 10 }}
+          {{- end }}
+  {{- end }}
+
+{{/* Talos config overrides for all types of nodes */}}
+{{- define "global-overrides" }}
+- machine:
+    {{- if eq .Values.clusterType "virt" }}
+    # Static file to override the containerd config
+    # https://github.com/kubevirt/containerized-data-importer/issues/2378#issuecomment-1297007860
+    files:
+      - content: |
+          [plugins]
+            [plugins."io.containerd.grpc.v1.cri"]
+              device_ownership_from_security_context = true
+            [plugins."io.containerd.cri.v1.runtime"]
+              device_ownership_from_security_context = true
+        path: /etc/cri/conf.d/20-customization.part
+        op: create
+    kernel:
+      modules:
+      - name: openvswitch
+    {{- end }}
+    kubelet:
+      {{- if eq .Values.clusterType "virt" }}
+      # Enable MutatingAdmission
+      extraArgs:
+        feature-gates: "MutatingAdmissionPolicy=true"
+      {{- end }}
+      nodeIP:
+        validSubnets:
+          - "{{ .Values.clusterNetwork.ipv6 }}/{{ .Values.clusterNetwork.cidrIpv6 }}"
+          - "{{ .Values.clusterNetwork.ipv4 }}/{{ .Values.clusterNetwork.cidrIpv4 }}"
+    time:
+      servers:
+        - time.cloudflare.com
+  cluster:
+    network:
+      podSubnets:
+        - "{{ .Values.podSubnets.ipv6 }}/{{ .Values.podSubnets.cidrIpv6 }}"
+        - "{{ .Values.podSubnets.ipv4 }}/{{ .Values.podSubnets.cidrIpv4 }}"
+      serviceSubnets:
+        - "{{ .Values.serviceSubnets.ipv6 }}/{{ .Values.serviceSubnets.cidrIpv6 }}"
+        - "{{ .Values.serviceSubnets.ipv4 }}/{{ .Values.serviceSubnets.cidrIpv4 }}"
+    {{- if eq .Values.clusterType "virt" }}
+    controllerManager:
+      # Enable MutatingAdmission
+      extraArgs:
+        feature-gates: "MutatingAdmissionPolicy=true"
+    apiServer:
+      # Enable MutatingAdmission
+      extraArgs:
+        feature-gates: "MutatingAdmissionPolicy=true"
+        {{- $version := trimPrefix "v" .Values.k8sVersion }}
+        {{- if lt $version "1.34" }}
+        runtime-config: "admissionregistration.k8s.io/v1alpha1=true"
+        {{- else }}
+        runtime-config: "admissionregistration.k8s.io/v1beta1=true"
+        {{- end }}
+    {{- end }}
+{{- with .Values.machineGlobalOverrides }}
+{{ toYaml . }}
+{{- end }}
+{{- end }}
+
+{{/* Talos config overrides for individual nodes */}}
+{{- define "node-specs" }}
+{{- $Values := index . 0 }}
+{{- $ := index . 1 }}
+- address: {{ $.interface.clusterNetwork.ipv4 }}
+  {{- if $Values.pxeEnabled }}
+  pxeClientSpec:
+    macAddress: {{ $.pxeMacAddress }}
+    cpuArchitecture: {{ $.cpuArchitecture }}
+    {{- /* Need to take into account multiple scenarios (bond/not bond, vlan/not vlan, etc.) */}}
+    {{- $bondsetup := "" }}
+    {{- $vlansetup := "" }}
+    {{- $baseifname := $.interface.name }}
+    {{- $finalifname := "" }}
+    {{- if $.interface.lacpBond.enabled }}
+    {{- /* Adding all bond interfaces to a list */}}
+    {{- $iflist := "" }}
+    {{- range $.interface.lacpBond.physicalInterfaces }}
+    {{- if eq $iflist "" }}
+    {{- $iflist = printf "%v" .name }}
+    {{- else }}
+    {{- $iflist = printf "%v,%v" $iflist .name }}
+    {{- end }}
+    {{- end }}
+    {{- $bondsetup = printf "bond=%v:%v:mode=802.3ad" $baseifname $iflist }}
+    {{- end }}
+    {{- if $.interface.useVlan }}
+    {{- $finalifname = printf "%v.%v" $baseifname $Values.clusterNetwork.vlanId }}
+    {{- $vlansetup = printf "vlan=%v:%v" $finalifname $baseifname }}
+    {{- else }}
+    {{- $finalifname = $baseifname }}
+    {{- end }}
+    {{- $kernelcmdlineargs := "" }}
+    {{- if not (empty $.kernelCmdlineArgs) }}
+    {{- $kernelcmdlineargs = $.kernelCmdlineArgs }}
+    {{- end }}
+    kernelCmdlineArgs: '{{ printf "%v %v ip=%v::%v:%v:spx-boot:%v:none:1.1.1.1:8.8.8.8:: %v" $bondsetup $vlansetup $.interface.clusterNetwork.ipv4 $Values.clusterNetwork.gatewayIpv4 $Values.clusterNetwork.cidrIpv4 $finalifname $kernelcmdlineargs }}'
+  {{- end }}
+  configPatches:
+    - apiVersion: v1alpha1
+      kind: HostnameConfig
+      hostname: {{ $.hostname }}
+      auto: "off"
+    {{- if $.interface.lacpBond.enabled }}
+    {{- range $.interface.lacpBond.physicalInterfaces }}
+    - apiVersion: v1alpha1
+      kind: LinkAliasConfig
+      name: {{ .name }}
+      selector:
+        match: mac(link.permanent_addr) == "{{ lower .macAddress }}"
+    {{- end }}
+    {{- else }}
+    - apiVersion: v1alpha1
+      kind: LinkAliasConfig
+      name: {{ $.interface.name }}
+      selector:
+        match: mac(link.permanent_addr) == "{{ lower $.interface.physicalMacAddress }}"
+    {{- end }}
+    - machine:
+        {{- if and (eq $.type "controlplane") (eq $Values.clusterType "storage") }}
+        nodeAnnotations:
+          # Public IP of the node, must be identical to the IP on the public VLAN
+          network.rook.io/mon-ip: "{{ $.interface.publicNetwork.ipv6 }}"
+        {{- end }}
+        {{- if not $.installDisk.auto }}
+        install:
+          diskSelector:
+            {{- with $.installDisk.selector }}
+            {{ toYaml . }}
+            {{- end }}
+        {{- end }}
+        network:
+          interfaces:
+            - interface: {{ $.interface.name }}
+              dhcp: false
+              {{- if $.interface.lacpBond.enabled }}
+              # LACP aggregate of the physical 25G interfaces
+              {{- with $.interface.lacpBond }}
+              mtu: {{ .linkMtu }}
+              bond:
+                mode: 802.3ad
+                lacpRate: {{ .lacpRate }}
+                xmitHashPolicy: {{ .xmitHashPolicy }}
+                miimon: {{ .miimon }}
+                updelay: {{ .updelay }}
+                downdelay: {{ .downdelay }}
+                interfaces:
+                {{- range .physicalInterfaces }}
+                  - {{ .name }}
+                {{- end }}
+              {{- end }}
+              {{- end }}
+              {{- if $.interface.useVlan }}
+              vlans:
+                {{- if not (empty $Values.clusterNetwork.vlanId) }}
+                # Cluster network
+                - vlanId: {{ $Values.clusterNetwork.vlanId }}
+                  {{- if eq $.type "controlplane" }}
+                  vip:
+                    {{- if not (empty $Values.controlplaneIpv6) }}
+                    ip: "{{ $Values.controlplaneIpv6 }}"
+                    {{- else }}
+                    ip: "{{ $Values.controlplaneIpv4 }}"
+                    {{- end }}
+                  {{- end }}
+                  addresses:
+                    - "{{ $.interface.clusterNetwork.ipv4 }}/{{ $Values.clusterNetwork.cidrIpv4 }}"
+                    - "{{ $.interface.clusterNetwork.ipv6 }}/{{ $Values.clusterNetwork.cidrIpv6 }}"
+                  routes:
+                    - network: 0.0.0.0/0
+                      gateway: "{{ $Values.clusterNetwork.gatewayIpv4 }}"
+                  mtu: {{ $Values.clusterNetwork.linkMtu }}
+                {{- end }}
+                {{- if not (empty $Values.publicNetwork.vlanId) }}
+                # Public network
+                - vlanId: {{ $Values.publicNetwork.vlanId }}
+                  addresses:
+                    - "{{ $.interface.publicNetwork.ipv6 }}/{{ $Values.publicNetwork.cidrIpv6 }}"
+                  mtu: {{ $Values.publicNetwork.linkMtu }}
+                {{- end }}
+                {{- if not (empty $Values.storageNetwork.vlanId) }}
+                # Storage network
+                - vlanId: {{ $Values.storageNetwork.vlanId }}
+                  addresses:
+                    - "{{ $.interface.storageNetwork.ipv6 }}/{{ $Values.storageNetwork.cidrIpv6 }}"
+                  mtu: {{ $Values.storageNetwork.linkMtu }}
+                {{- end }}
+              {{- end }}
+              {{- if not $.interface.useVlan }}
+              {{- if eq $.type "controlplane" }}
+              vip:
+                {{- if not (empty $Values.controlplaneIpv6) }}
+                ip: "{{ $Values.controlplaneIpv6 }}"
+                {{- else }}
+                ip: "{{ $Values.controlplaneIpv4 }}"
+                {{- end }}
+              {{- end }}
+              addresses:
+                - "{{ $.interface.clusterNetwork.ipv4 }}/{{ $Values.clusterNetwork.cidrIpv4 }}"
+                - "{{ $.interface.clusterNetwork.ipv6 }}/{{ $Values.clusterNetwork.cidrIpv6 }}"
+                {{- if not (empty $.interface.publicNetwork) }}
+                - "{{ $.interface.publicNetwork.ipv6 }}/{{ $Values.publicNetwork.cidrIpv6 }}"
+                {{- end }}
+                {{- if not (empty $.interface.storageNetwork) }}
+                - "{{ $.interface.storageNetwork.ipv6 }}/{{ $Values.storageNetwork.cidrIpv6 }}"
+                {{- end }}
+              routes:
+                - network: 0.0.0.0/0
+                  gateway: "{{ $Values.clusterNetwork.gatewayIpv4 }}"
+              {{- end }}
+    {{- with $.machineOverrides }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

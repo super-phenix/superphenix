@@ -179,6 +179,11 @@ type Config struct {
 
 	AZs []AZConfig `yaml:"azs"`
 
+	S3 struct {
+		// MaxMinifiedJSONLen caps bucket policy/lifecycle JSON minified length
+		MaxMinifiedJSONLen int `yaml:"maxMinifiedJSONLen"`
+	} `yaml:"s3"`
+
 	SpxPrefix string `yaml:"spxPrefix"`
 	ArgoCdUrl string `yaml:"argoCdUrl"`
 
@@ -274,6 +279,8 @@ database:
   password: ""
   database: ""
 azs: []
+s3:
+  maxMinifiedJSONLen: 5000
 spxPrefix: "spx"
 argoCdUrl: "https://<argocd-host>"
 defaultProducts:

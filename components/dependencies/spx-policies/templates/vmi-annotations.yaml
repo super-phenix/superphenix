@@ -27,6 +27,8 @@ spec:
     expression: r{{ include "policies.regex" "spxid" | replace "^" "" | replace  "$" "" }}
   - name: projectID
     expression: variables.metadata.labels[{{ include "policies.projectIDLabel" "" }}]
+  - name: testMissingLabel
+    expression: r{{ include "policies.testMissingLabel" "" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -60,6 +62,7 @@ spec:
     message: "##### Missing VMI annotation(s) #####"
   # Check annotations regex ("SPXID.projectID.annotation", for "subnetID.namespace.annotation")
   - expression: |
+      variables.testMissingLabel in object.metadata.labels ||
       {{ $keySubNsAnnotations }}
       .all(anno, variables.metadata.annotations
         .all(entry,

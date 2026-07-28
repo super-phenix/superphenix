@@ -9,6 +9,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/alerting"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/namespace"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/netpol"
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/obc"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/pvc"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/ssh"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/kubeovn/eip"
@@ -106,6 +107,7 @@ func garbageCollection(ctx context.Context, processDone chan<- bool) {
 		&subnet.Cleaner{ResourceType: "Subnet (NAD + NatGW)", Logger: logger},
 		&datavolume.Cleaner{ResourceType: "DataVolume", Logger: logger},
 		&volumeSnapshot.Cleaner{ResourceType: "Volume Snapshot", Logger: logger},
+		&obc.Cleaner{ResourceType: "ObjectBucketClaim", Logger: logger},
 	}
 
 	for _, cleaner := range cleanersLvl2 {

@@ -5,3 +5,5 @@ superphenix-console:
 # -- Talos Operator configuration
 talos-operator:
   enabled: false
+  featureFlags:
+    enablePxeBootStack: true

@@ -7,6 +7,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/session"
 	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
 	baasctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/baas"
+	bucketctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/bucket"
 	diskctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/disk"
 	eipctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/eip"
 	firewallctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/firewall"
@@ -83,6 +84,7 @@ func wirePublicRoutes() chi.Router {
 	instancectrl.ProvideService(&config.Global, reg)
 	vmsnapshotctrl.ProvideService(&config.Global, reg)
 	diskctrl.ProvideService(&config.Global, reg)
+	bucketctrl.ProvideService(&config.Global, reg)
 	snapshotctrl.ProvideService(&config.Global, reg)
 	baasctrl.ProvideService(&config.Global, reg)
 	vpcctrl.ProvideService(&config.Global, reg)

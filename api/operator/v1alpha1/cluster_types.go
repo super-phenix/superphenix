@@ -93,6 +93,21 @@ const (
 	ClusterTypeVirtualization ClusterType = "Virtualization"
 )
 
+// TalosManagementMode defines the management mode for the Talos cluster.
+// +kubebuilder:validation:Enum=Unmanaged;Import;Full
+type TalosManagementMode string
+
+const (
+	// TalosManagementUnmanaged - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+	TalosManagementUnmanaged TalosManagementMode = "Unmanaged"
+
+	// TalosManagementImport - The operator imports an already installed Talos cluster and manages its configuration.
+	TalosManagementImport TalosManagementMode = "Import"
+
+	// TalosManagementFull - The Talos cluster is fully installed and configured by the operator.
+	TalosManagementFull TalosManagementMode = "Full"
+)
+
 // ClusterSpec defines the desired state of Cluster.
 type ClusterSpec struct {
 	// DeploymentTopology defines whether the cluster is hyperconverged or decoupled.
@@ -104,6 +119,16 @@ type ClusterSpec struct {
 	// This field can only be set when DeploymentTopology is Decoupled and is ignored otherwise.
 	// +optional
 	Type *ClusterType `json:"type,omitempty"`
+
+	// TalosManagementMode specifies how Talos configuration should be managed.
+	// +optional
+	// +kubebuilder:default=Unmanaged
+	// +kubebuilder:validation:Enum=Unmanaged;Import;Full
+	TalosManagementMode TalosManagementMode `json:"talosManagementMode,omitempty"`
+
+	// TalosManagerConfiguration is a YAML dict of unknown values that will be passed to the talos-manager chart.
+	// +optional
+	TalosManagerConfiguration *apiextensionsv1.JSON `json:"talosManagerConfiguration,omitempty"`
 
 	// Region is the geographic region where this cluster is located.
 	// +kubebuilder:validation:Required
@@ -221,6 +246,16 @@ type ClusterStatus struct {
 	// +optional
 	NodeCount int `json:"nodeCount,omitempty"`
 
+	// Apps reports the state of each application deployed by the cluster's root
+	// app-of-apps, keyed by application name.
+	// +optional
+	Apps map[string]ClusterApp `json:"apps,omitempty"`
+
+	// CephClusters reports the state of each Ceph cluster running on the SPX cluster,
+	// keyed by their FSID.
+	// +optional
+	CephClusters map[string]apiextensionsv1.JSON `json:"cephClusters,omitzero"`
+
 	// Conditions represent the current state of the Cluster resource.
 	// Standard condition types include:
 	// - "Ready": the cluster is fully operational
@@ -238,11 +273,6 @@ type ClusterStatus struct {
 	// LastSync is the last time a sync was performed on the cluster.
 	// +optional
 	LastSync *metav1.Time `json:"lastSync,omitempty"`
-
-	// Apps reports the state of each application deployed by the cluster's root
-	// app-of-apps, keyed by application name.
-	// +optional
-	Apps map[string]ClusterApp `json:"apps,omitempty"`
 }
 
 // ClusterApp reports the observed state of a single application belonging to the

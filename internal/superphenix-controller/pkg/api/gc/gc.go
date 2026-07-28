@@ -9,6 +9,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/alerting"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/namespace"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/netpol"
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/obc"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/pvc"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/k8s/ssh"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/kubeovn/eip"
@@ -72,6 +73,7 @@ func deletionLabeling(ctx context.Context, namespaceValue string) error {
 		&subnet.Cleaner{ResourceType: "Subnet (NAD + NatGW)", Logger: logger},
 		&datavolume.Cleaner{ResourceType: "DataVolume", Logger: logger},
 		&volumeSnapshot.Cleaner{ResourceType: "Volume Snapshot", Logger: logger},
+		&obc.Cleaner{ResourceType: "ObjectBucketClaim", Logger: logger},
 		&pvc.Cleaner{ResourceType: "PVC", Logger: logger},
 		&vpc.Cleaner{ResourceType: "VPC", Logger: logger},
 		&namespace.Cleaner{ResourceType: "Namespace", Logger: logger},
