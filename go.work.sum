@@ -647,6 +647,8 @@ github.com/kopia/kopia v0.16.0/go.mod h1:ME65fdntswtj0aI+EGq53/869f7tP5ptVTVoQRD
 github.com/kr/fs v0.1.0 h1:Jskdu9ieNAYnjxsi0LbQp1ulIKZV1LAFgK1tWhpZgl8=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515 h1:T+h1c/A9Gawja4Y9mFVWj2vyii2bbUNDw3kt9VxK2EY=
 github.com/kr/pty v1.1.1 h1:VkoXIwSboBpnk99O/KFauAEILuNHv5DVFKZMBN/gUgw=
+github.com/kube-object-storage/lib-bucket-provisioner v0.0.0-20260420161730-5164e3746489 h1:Tnm8Vr9GmtuWNmhp+HZI1I8pMXuhyVomTlvgFT2TQpE=
+github.com/kube-object-storage/lib-bucket-provisioner v0.0.0-20260420161730-5164e3746489/go.mod h1:my+EVjOJLeQ9lUR9uVkxRvNNkhO2saSGIgzV8GZT9HY=
 github.com/kubeovn/dbus/v5 v5.0.0-20250410044920-11a753c7a13f h1:ewn0WJC7ervNqajg85vgTmhw+ltw9HKQFQm89IYoarA=
 github.com/kubeovn/dbus/v5 v5.0.0-20250410044920-11a753c7a13f/go.mod h1:z6NCdi2IAc9vIpLOhe2NIaDwIrAnv1yk3H1Dmhwsri8=
 github.com/kubeovn/felix v0.0.0-20240506083207-ed396be1b6cf h1:YO+anuZKagUda5iejzt070Lvq3zI57EfbEZr7UWO7nc=
@@ -1079,6 +1081,7 @@ k8s.io/gengo v0.0.0-20230829151522-9cce18d56c01/go.mod h1:FiNAH4ZV3gBg2Kwh89tzAE
 k8s.io/gengo/v2 v2.0.0-20250820003526-c297c0c1eb9d h1:qUrYOinhdAUL0xxhA4gPqogPBaS9nIq2l2kTb6pmeB0=
 k8s.io/gengo/v2 v2.0.0-20250820003526-c297c0c1eb9d/go.mod h1:EJykeLsmFC60UQbYJezXkEsG2FLrt0GPNkU5iK5GWxU=
 k8s.io/klog v0.4.0 h1:lCJCxf/LIowc2IGS9TPjWDyXY4nOmdGdfcwwDQCOURQ=
+k8s.io/klog/v2 v2.60.1/go.mod h1:y1WjHnz7Dj687irZUWR/WLkLc5N1YHtjLdmgWjndZn0=
 k8s.io/kms v0.34.0 h1:u+/rcxQ3Jr7gC9AY5nXuEnBcGEB7ZOIJ9cdLdyHyEjQ=
 k8s.io/kms v0.34.0/go.mod h1:s1CFkLG7w9eaTYvctOxosx88fl4spqmixnNpys0JAtM=
 k8s.io/kms v0.34.2 h1:91rj4MDZLyIT9KxG8J5/CcMH666Z88CF/xJQeuPfJc8=

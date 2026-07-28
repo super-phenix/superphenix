@@ -234,6 +234,13 @@ spec:
                   Apps reports the state of each application deployed by the cluster's root
                   app-of-apps, keyed by application name.
                 type: object
+              cephClusters:
+                additionalProperties:
+                  x-kubernetes-preserve-unknown-fields: true
+                description: |-
+                  CephClusters reports the state of each Ceph cluster running on the SPX cluster,
+                  keyed by their FSID.
+                type: object
               conditions:
                 description: |-
                   Conditions represent the current state of the Cluster resource.

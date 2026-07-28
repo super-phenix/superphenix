@@ -71,7 +71,8 @@ config:
   management:
     chart:
       url: ghcr.io/super-phenix/charts
-      version: 0.0.0
+      # If none provided, inherits the version from the superphenix-operator chart
+      version: ""
     # Arbitrary Helm values merged under the "superphenix" ConfigMap key.
     values: {}
 
@@ -79,7 +80,8 @@ config:
   system:
     repoURL: ghcr.io/super-phenix/charts
     chartName: superphenix-system
-    version: 0.0.0
+    # If none provided, inherits the version from the superphenix-operator chart
+    version: ""
 
   # talos-manager chart deployed by the cluster controller for every managed cluster.
   talosManager:

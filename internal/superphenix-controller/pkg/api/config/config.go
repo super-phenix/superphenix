@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	kovm "github.com/super-phenix/superphenix/internal/superphenix-controller/internal/kubevirt/vm"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/kubevirt/vmClusterPreference"
@@ -22,6 +23,12 @@ type KaaSConfig struct {
 type StorageClass struct {
 	Shortname string `json:"name"`
 	Fullname  string `json:"fullname"`
+}
+
+type S3Config struct {
+	StorageClasses   []string `json:"storageClasses"`
+	MaxBucketSize    string   `json:"maxBucketSize"`
+	MaxBucketObjects uint64   `json:"maxBucketObjects"`
 }
 
 // storageClassKeys returns the friendly names from the unified StorageClassMapping.
@@ -170,5 +177,34 @@ func GetKaaSConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	b, _ := json.Marshal(kaasConfig)
+	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
+}
+
+// GetS3Config
+//
+//	@Summary		Get S3 Config
+//	@Description	Get the S3 storage classes and bucket limits of this availability zone
+//	@Tags			v1, Config
+//	@Produce		json
+//	@Param			orgId		path		string		true	"Organization ID"
+//	@Param			projectId	path		string		true	"Project ID"
+//	@Success		200			{object}	S3Config	"S3 Config"
+//	@Failure		500
+//	@Router			/{orgId}/{projectId}/s3-config [get]
+//	@Security		Bearer
+func GetS3Config(w http.ResponseWriter, r *http.Request) {
+	storageClasses := make([]string, 0, len(config.Global.S3.StorageClassMapping))
+	for k := range config.Global.S3.StorageClassMapping {
+		storageClasses = append(storageClasses, k)
+	}
+	sort.Strings(storageClasses)
+
+	s3Config := S3Config{
+		StorageClasses:   storageClasses,
+		MaxBucketSize:    config.Global.S3.MaxBucketSize,
+		MaxBucketObjects: config.Global.S3.MaxBucketObjects,
+	}
+
+	b, _ := json.Marshal(s3Config)
 	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
 }

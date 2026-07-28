@@ -246,6 +246,16 @@ type ClusterStatus struct {
 	// +optional
 	NodeCount int `json:"nodeCount,omitempty"`
 
+	// Apps reports the state of each application deployed by the cluster's root
+	// app-of-apps, keyed by application name.
+	// +optional
+	Apps map[string]ClusterApp `json:"apps,omitempty"`
+
+	// CephClusters reports the state of each Ceph cluster running on the SPX cluster,
+	// keyed by their FSID.
+	// +optional
+	CephClusters map[string]apiextensionsv1.JSON `json:"cephClusters,omitzero"`
+
 	// Conditions represent the current state of the Cluster resource.
 	// Standard condition types include:
 	// - "Ready": the cluster is fully operational
@@ -263,11 +273,6 @@ type ClusterStatus struct {
 	// LastSync is the last time a sync was performed on the cluster.
 	// +optional
 	LastSync *metav1.Time `json:"lastSync,omitempty"`
-
-	// Apps reports the state of each application deployed by the cluster's root
-	// app-of-apps, keyed by application name.
-	// +optional
-	Apps map[string]ClusterApp `json:"apps,omitempty"`
 
 	// PXESetupDone lists hostname of machines that have been set up for PXE
 	// when using TalosManagementModeFull.

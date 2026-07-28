@@ -9,8 +9,7 @@ A Helm chart for Superphenix Operator
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` |  |
-| config.argocd.chart.url | string | `"https://argoproj.github.io/argo-helm"` |  |
-| config.argocd.chart.version | string | `"9.7.0"` |  |
+| clusters | object | `{}` |  |
 | config.argocd.ha.enabled | bool | `false` |  |
 | config.argocd.values | object | `{}` |  |
 | config.clustersConfigMap.name | string | `"superphenix-clusters-config"` |  |
@@ -21,12 +20,14 @@ A Helm chart for Superphenix Operator
 | config.system.chartName | string | `"superphenix-system"` |  |
 | config.system.repoURL | string | `"ghcr.io/super-phenix/charts"` |  |
 | config.system.version | string | `"0.0.0"` |  |
+| config.talosManager.chart.url | string | `"ghcr.io/super-phenix/charts"` |  |
+| config.talosManager.chart.version | string | `"0.1.0"` |  |
 | config.valuesConfigMap.name | string | `"superphenix-mgmt-values"` |  |
 | fullnameOverride | string | `""` |  |
 | health.probeBindAddress | string | `":8081"` |  |
-| image.pullPolicy | string | `"Always"` |  |
-| image.repository | string | `"harbor.agc.dpk-agc-cl04.agoracalyce.net/superphenix-operator/superphenix-operator"` |  |
-| image.tag | string | `"latest"` |  |
+| image.pullPolicy | string | `"IfNotPresent"` |  |
+| image.repository | string | `"ghcr.io/super-phenix/superphenix-operator"` |  |
+| image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` |  |
 | leaderElection.enabled | bool | `false` |  |
 | metrics.bindAddress | string | `"0"` |  |

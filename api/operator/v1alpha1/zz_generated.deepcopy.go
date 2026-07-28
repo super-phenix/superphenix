@@ -5,7 +5,7 @@
 package v1alpha1
 
 import (
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -164,6 +164,13 @@ func (in *ClusterStatus) DeepCopyInto(out *ClusterStatus) {
 	if in.Apps != nil {
 		in, out := &in.Apps, &out.Apps
 		*out = make(map[string]ClusterApp, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
+		}
+	}
+	if in.CephClusters != nil {
+		in, out := &in.CephClusters, &out.CephClusters
+		*out = make(map[string]v1.JSON, len(*in))
 		for key, val := range *in {
 			(*out)[key] = *val.DeepCopy()
 		}

@@ -1,4 +1,1577 @@
 basePath: /api
+definitions:
+  apiToken.createBody:
+    properties:
+      expiresAt:
+        type: string
+      name:
+        type: string
+    type: object
+  apiToken.createResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  argoApp.ArgoCdLinkResponse:
+    properties:
+      link:
+        type: string
+    type: object
+  baas.BaaSFullResponse:
+    properties:
+      backup: {}
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+    type: object
+  baas.BaaSSpec:
+    properties:
+      labelSelector:
+        items:
+          type: string
+        type: array
+      paused:
+        type: boolean
+      retention:
+        allOf:
+        - $ref: '#/definitions/baas.RetentionPolicy'
+        description: Retention is used only for Scheduled BaaS
+      schedule:
+        description: Schedule represent backup interval in days
+        type: integer
+      scheduled:
+        type: boolean
+      type:
+        $ref: '#/definitions/baas.BackupType'
+    type: object
+  baas.BackupType:
+    enum:
+    - all
+    - vm
+    type: string
+    x-enum-varnames:
+    - BackupTypeAll
+    - BackupTypeVM
+  baas.CreateBaaSBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        $ref: '#/definitions/baas.BaaSSpec'
+    type: object
+  baas.RetentionPolicy:
+    properties:
+      expiryTime:
+        description: Retention time of the backups in hours (max is 960, or 40 days)
+        type: integer
+    type: object
+  baas.UpdateBaaSBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        $ref: '#/definitions/baas.BaaSSpec'
+    type: object
+  bucket.BucketConfig:
+    properties:
+      lifecycle:
+        description: S3 lifecycle configuration JSON
+        type: string
+      maxObjects:
+        type: integer
+      maxSize:
+        description: kubernetes quantity, e.g. "100Gi"
+        type: string
+      policy:
+        description: S3 bucket policy JSON
+        type: string
+    type: object
+  bucket.BucketFullResponse:
+    properties:
+      bucket: {}
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+    type: object
+  bucket.CreateBucketBody:
+    properties:
+      general:
+        properties:
+          config:
+            $ref: '#/definitions/bucket.BucketConfig'
+          productName:
+            maxLength: 63
+            type: string
+          storageClass:
+            type: string
+        required:
+        - productName
+        - storageClass
+        type: object
+    type: object
+  bucket.CredentialsResponse:
+    properties:
+      accessKeyId:
+        type: string
+      bucketName:
+        type: string
+      endpoint:
+        type: string
+      region:
+        type: string
+      secretAccessKey:
+        type: string
+    type: object
+  bucket.UpdateBucketBody:
+    properties:
+      general:
+        properties:
+          config:
+            $ref: '#/definitions/bucket.BucketConfig'
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+    type: object
+  controller.BatchContainerDiskBody:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    type: object
+  controller.ContainerDiskSpecResponse:
+    properties:
+      bus:
+        type: string
+      displayName:
+        type: string
+      id:
+        type: string
+      image:
+        type: string
+      recommended:
+        type: boolean
+      supportedOS:
+        items:
+          type: string
+        type: array
+    type: object
+  controller.CreateResponse:
+    properties:
+      eid:
+        type: string
+    type: object
+  disk.CreateDiskBody:
+    properties:
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          productName:
+            maxLength: 63
+            type: string
+          source:
+            properties:
+              clone:
+                type: string
+              snapshot:
+                type: string
+              type:
+                type: string
+              url:
+                type: string
+            type: object
+          storage:
+            description: Storage Size
+            type: string
+          storageClass:
+            type: string
+        type: object
+    type: object
+  disk.DiskFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      disk: {}
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      mountStatus: {}
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      pvc: {}
+    type: object
+  disk.UpdateDiskBody:
+    properties:
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          productName:
+            maxLength: 63
+            type: string
+          storage:
+            description: Storage Size
+            type: string
+        type: object
+    type: object
+  eip.CreateEipBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+          subnetEId:
+            description: SubnetEID = Subnet Effective ID
+            type: string
+        type: object
+      spec:
+        properties:
+          dnat:
+            items:
+              $ref: '#/definitions/eip.EipDNATBody'
+            type: array
+          internalIP:
+            type: string
+          snat:
+            items:
+              type: string
+            type: array
+        type: object
+    type: object
+  eip.EipDNATBody:
+    properties:
+      externalPort:
+        type: string
+      internalIP:
+        type: string
+      internalPort:
+        type: string
+      protocol:
+        type: string
+    type: object
+  eip.EipFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      dnat: {}
+      eid:
+        description: effective ID
+        type: string
+      eip: {}
+      fip: {}
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      snat: {}
+    type: object
+  eip.UpdateEipBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          dnat:
+            items:
+              $ref: '#/definitions/eip.EipDNATBody'
+            type: array
+          internalIP:
+            type: string
+          snat:
+            items:
+              type: string
+            type: array
+        type: object
+    type: object
+  firewall.CreateFirewallBody:
+    properties:
+      general:
+        properties:
+          description:
+            type: string
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          egress:
+            items:
+              $ref: '#/definitions/firewall.EgressRule'
+            type: array
+          ingress:
+            items:
+              $ref: '#/definitions/firewall.IngressRule'
+            type: array
+          target:
+            $ref: '#/definitions/firewall.LabelSelector'
+        type: object
+    type: object
+  firewall.EgressRule:
+    properties:
+      allowAll:
+        type: boolean
+      denyAll:
+        type: boolean
+      ports:
+        items:
+          $ref: '#/definitions/firewall.FwPort'
+        type: array
+      to:
+        items:
+          $ref: '#/definitions/firewall.Peer'
+        type: array
+    type: object
+  firewall.FirewallFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      firewall: {}
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+    type: object
+  firewall.FwPort:
+    properties:
+      endPort:
+        type: integer
+      port:
+        type: integer
+      protocol:
+        type: string
+    type: object
+  firewall.IPBlock:
+    properties:
+      CIDR:
+        type: string
+      Except:
+        items:
+          type: string
+        type: array
+    type: object
+  firewall.IngressRule:
+    properties:
+      allowAll:
+        type: boolean
+      denyAll:
+        type: boolean
+      from:
+        items:
+          $ref: '#/definitions/firewall.Peer'
+        type: array
+      ports:
+        items:
+          $ref: '#/definitions/firewall.FwPort'
+        type: array
+    type: object
+  firewall.LabelSelector:
+    properties:
+      matchExpressions:
+        items:
+          $ref: '#/definitions/firewall.MatchExpression'
+        type: array
+      matchLabels:
+        items:
+          $ref: '#/definitions/firewall.MatchLabel'
+        type: array
+    type: object
+  firewall.MatchExpression:
+    properties:
+      key:
+        type: string
+      operator:
+        type: string
+      values:
+        items:
+          type: string
+        type: array
+    type: object
+  firewall.MatchLabel:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  firewall.Peer:
+    properties:
+      IPBlock:
+        $ref: '#/definitions/firewall.IPBlock'
+      podSelector:
+        $ref: '#/definitions/firewall.LabelSelector'
+    type: object
+  firewall.UpdateFirewallBody:
+    properties:
+      general:
+        properties:
+          description:
+            type: string
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          egress:
+            items:
+              $ref: '#/definitions/firewall.EgressRule'
+            type: array
+          ingress:
+            items:
+              $ref: '#/definitions/firewall.IngressRule'
+            type: array
+          target:
+            $ref: '#/definitions/firewall.LabelSelector'
+        type: object
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization:
+    properties:
+      administrativeContact:
+        type: string
+      billingContact:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+      projects:
+        items:
+          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project'
+        type: array
+      technicalContact:
+        type: string
+      updatedAt:
+        type: string
+      userRoles:
+        items:
+          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.UserOrganization'
+        type: array
+      users:
+        items:
+          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.User'
+        type: array
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Product:
+    properties:
+      codeAZ:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      effectiveID:
+        type: string
+      id:
+        type: string
+      productName:
+        type: string
+      productType:
+        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.ProductType'
+      productTypeId:
+        type: string
+      project:
+        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project'
+      projectId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.ProductType:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      orgaId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      email:
+        type: string
+      firstname:
+        type: string
+      guestOrg:
+        items:
+          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+        type: array
+      id:
+        type: string
+      inviteCode:
+        type: string
+      inviteCodeRegeneratedAt:
+        type: string
+      isActive:
+        description: Default value defined by config
+        type: boolean
+      lastname:
+        type: string
+      personalOrg:
+        items:
+          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+        type: array
+      provider:
+        type: string
+      providerId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.UserOrganization:
+    properties:
+      groupId:
+        type: string
+      organizationId:
+        type: string
+      userId:
+        type: string
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  group.UpdateOrganizationGroupBody:
+    properties:
+      allProjects:
+        description: If true, then ignore ProjectIds
+        type: boolean
+      id:
+        type: string
+      name:
+        maxLength: 63
+        type: string
+      permissionSets:
+        items:
+          type: string
+        type: array
+      projectIds:
+        description: List all projects concerned by the Group
+        items:
+          type: string
+        type: array
+    type: object
+  instance.AdvancedBootloaderBody:
+    properties:
+      efi:
+        $ref: '#/definitions/instance.EFIOptionsBody'
+    type: object
+  instance.AdvancedDevicesBody:
+    properties:
+      tpm:
+        $ref: '#/definitions/instance.TPMOptionsBody'
+    type: object
+  instance.AdvancedFirmwareBody:
+    properties:
+      bootloader:
+        $ref: '#/definitions/instance.AdvancedBootloaderBody'
+    type: object
+  instance.CreateDiskBody:
+    properties:
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          productName:
+            maxLength: 63
+            type: string
+          source:
+            properties:
+              clone:
+                type: string
+              snapshot:
+                type: string
+              type:
+                type: string
+              url:
+                type: string
+            type: object
+          storage:
+            description: Storage Size
+            type: string
+          storageClass:
+            type: string
+        type: object
+    type: object
+  instance.CreateInstanceBody:
+    properties:
+      advanced:
+        allOf:
+        - $ref: '#/definitions/instance.InstanceAdvancedOptionsBody'
+        description: 'Advanced is optional: nil pushes no device/firmware override.'
+      cloudInit:
+        $ref: '#/definitions/instance.InstanceCloudInitBody'
+      compute:
+        properties:
+          cpu:
+            type: integer
+          memory:
+            type: integer
+        type: object
+      containerDisks:
+        description: Nil uses the recommended set; a non-nil slice (even empty) is
+          used as-is.
+        items:
+          type: string
+        type: array
+      disks:
+        items:
+          $ref: '#/definitions/instance.InstanceDiskBody'
+        type: array
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          productName:
+            maxLength: 63
+            type: string
+          runStrategy:
+            type: string
+          vmType:
+            type: string
+        type: object
+      network:
+        items:
+          $ref: '#/definitions/instance.InstanceNetworkBody'
+        type: array
+      sshKeys:
+        items:
+          type: string
+        type: array
+    required:
+    - network
+    type: object
+  instance.EFIOptionsBody:
+    properties:
+      enabled:
+        type: boolean
+      persistent:
+        type: boolean
+      secureBoot:
+        type: boolean
+    type: object
+  instance.InstanceAdvancedOptionsBody:
+    properties:
+      devices:
+        $ref: '#/definitions/instance.AdvancedDevicesBody'
+      firmware:
+        $ref: '#/definitions/instance.AdvancedFirmwareBody'
+    type: object
+  instance.InstanceCloudInitBody:
+    properties:
+      bus:
+        type: string
+      config:
+        type: string
+      custom:
+        type: boolean
+    type: object
+  instance.InstanceDiskBody:
+    properties:
+      bus:
+        type: string
+      cdrom:
+        type: boolean
+      disk:
+        $ref: '#/definitions/instance.CreateDiskBody'
+      eid:
+        type: string
+      order:
+        type: integer
+    type: object
+  instance.InstanceFullResponse:
+    properties:
+      cloudInit: {}
+      codeAZ:
+        type: string
+      containerDisks:
+        items:
+          type: string
+        type: array
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      vm: {}
+      vmi: {}
+    type: object
+  instance.InstanceNetworkBody:
+    properties:
+      ipv4:
+        type: string
+      ipv6:
+        type: string
+      model:
+        type: string
+      order:
+        type: integer
+      subnetEId:
+        type: string
+    type: object
+  instance.TPMOptionsBody:
+    properties:
+      enabled:
+        type: boolean
+      persistent:
+        type: boolean
+    type: object
+  instance.UpdateInstanceBody:
+    properties:
+      advanced:
+        allOf:
+        - $ref: '#/definitions/instance.InstanceAdvancedOptionsBody'
+        description: 'Advanced is optional: nil leaves existing device/firmware overrides
+          untouched.'
+      cloudInit:
+        $ref: '#/definitions/instance.InstanceCloudInitBody'
+      compute:
+        properties:
+          cpu:
+            type: integer
+          memory:
+            type: integer
+        type: object
+      containerDisks:
+        description: Nil preserves the current mounts; a non-nil slice sets them (empty
+          detaches all).
+        items:
+          type: string
+        type: array
+      disks:
+        items:
+          $ref: '#/definitions/instance.InstanceDiskBody'
+        type: array
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          productName:
+            maxLength: 63
+            type: string
+          runStrategy:
+            type: string
+          vmType:
+            type: string
+        type: object
+      network:
+        items:
+          $ref: '#/definitions/instance.InstanceNetworkBody'
+        type: array
+      sshKeys:
+        items:
+          type: string
+        type: array
+    required:
+    - network
+    type: object
+  kaas.ControlPlaneSpec:
+    properties:
+      dataStore:
+        $ref: '#/definitions/kaas.DataStoreSpec'
+    type: object
+  kaas.CreateKaaSBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        $ref: '#/definitions/kaas.KaaSSpec'
+    type: object
+  kaas.DataStoreSpec:
+    properties:
+      dedicated:
+        type: boolean
+      storage:
+        type: integer
+      storageClassName:
+        type: string
+    type: object
+  kaas.EssentialsSpec:
+    properties:
+      ciliumValues:
+        type: string
+      corednsValues:
+        type: string
+      metricsServerValues:
+        type: string
+      revision:
+        type: integer
+    type: object
+  kaas.Group:
+    properties:
+      bootDiskSize:
+        type: integer
+      cpu:
+        type: integer
+      memory:
+        type: integer
+      name:
+        maxLength: 63
+        type: string
+      replicas:
+        type: integer
+      storageClass:
+        type: string
+      subnets:
+        items:
+          $ref: '#/definitions/kaas.GroupSubnet'
+        type: array
+      version:
+        type: integer
+    type: object
+  kaas.GroupSubnet:
+    properties:
+      id:
+        description: Subnet localId
+        type: string
+      order:
+        type: integer
+    type: object
+  kaas.KaaSFullResponse:
+    properties:
+      cluster: {}
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+    type: object
+  kaas.KaaSSpec:
+    properties:
+      controlPlane:
+        $ref: '#/definitions/kaas.ControlPlaneSpec'
+      cpNetPol:
+        type: string
+      groups:
+        items:
+          $ref: '#/definitions/kaas.Group'
+        type: array
+      kaasEssentials:
+        $ref: '#/definitions/kaas.EssentialsSpec'
+      kubeVersion:
+        type: string
+      postInstallChart:
+        $ref: '#/definitions/kaas.PostInstallChartSpec'
+      workersNetPol:
+        type: string
+    type: object
+  kaas.PostInstallChartSpec:
+    properties:
+      chartName:
+        type: string
+      chartVersion:
+        type: string
+      namespace:
+        type: string
+      repoUrl:
+        type: string
+      revision:
+        type: integer
+      values:
+        type: string
+    type: object
+  kaas.UpdateKaaSBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        $ref: '#/definitions/kaas.KaaSSpec'
+    type: object
+  loadbalancer.CreateLoadBalancerBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          endpoints:
+            description: ipv4 list
+            items:
+              type: string
+            type: array
+          ports:
+            items:
+              $ref: '#/definitions/loadbalancer.RulePort'
+            type: array
+          selectors:
+            description: Selectors and Endpoints are mutually exclusives
+            items:
+              type: string
+            type: array
+          vip:
+            type: string
+        type: object
+    type: object
+  loadbalancer.LBFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      loadBalancer: {}
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+    type: object
+  loadbalancer.RulePort:
+    properties:
+      port:
+        type: integer
+      protocol:
+        type: string
+      targetPort:
+        type: integer
+    type: object
+  loadbalancer.UpdateLoadBalancerBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          endpoints:
+            description: ipv4 list
+            items:
+              type: string
+            type: array
+          ports:
+            items:
+              $ref: '#/definitions/loadbalancer.RulePort'
+            type: array
+          selectors:
+            description: Selectors and Endpoints are mutually exclusives
+            items:
+              type: string
+            type: array
+          vip:
+            type: string
+        type: object
+    type: object
+  membership.InviteIntoOrganizationBody:
+    properties:
+      groupIds:
+        items:
+          type: string
+        type: array
+      userInviteCode:
+        type: string
+    type: object
+  model.APIApiToken:
+    properties:
+      createdAt:
+        type: string
+      expiresAt:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      prefix:
+        type: string
+    type: object
+  model.APIAz:
+    properties:
+      code:
+        type: string
+      logoUrl:
+        type: string
+      name:
+        type: string
+    type: object
+  model.APIGroup:
+    properties:
+      allProjects:
+        description: If true, then ignore ProjectIds
+        type: boolean
+      id:
+        type: string
+      name:
+        type: string
+      permissionSets:
+        items:
+          type: string
+        type: array
+      projectIds:
+        description: List all projects concerned by the Group
+        items:
+          type: string
+        type: array
+    type: object
+  model.APIOrganization:
+    properties:
+      administrativeContact:
+        type: string
+      billingContact:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner:
+        $ref: '#/definitions/model.APIUserReduce'
+      ownerId:
+        type: string
+      projects:
+        items:
+          $ref: '#/definitions/model.APIProject'
+        type: array
+      technicalContact:
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/model.APIUserGroup'
+        type: array
+    type: object
+  model.APIOrganizationReduce:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+    type: object
+  model.APIProject:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      orgaId:
+        type: string
+    type: object
+  model.APIUser:
+    properties:
+      email:
+        type: string
+      firstname:
+        type: string
+      guestOrg:
+        items:
+          $ref: '#/definitions/model.APIOrganizationReduce'
+        type: array
+      id:
+        type: string
+      inviteCode:
+        type: string
+      lastname:
+        type: string
+      personalOrg:
+        items:
+          $ref: '#/definitions/model.APIOrganizationReduce'
+        type: array
+      provider:
+        type: string
+      providerId:
+        type: string
+    type: object
+  model.APIUserGroup:
+    properties:
+      groups:
+        items:
+          type: string
+        type: array
+      user:
+        $ref: '#/definitions/model.APIUserReduce'
+    type: object
+  model.APIUserReduce:
+    properties:
+      email:
+        type: string
+      firstname:
+        type: string
+      id:
+        type: string
+      inviteCode:
+        type: string
+      lastname:
+        type: string
+    type: object
+  organization.TransferOrganizationBody:
+    properties:
+      newOwnerInviteCode:
+        type: string
+    type: object
+  organization.UpdateOrganizationBody:
+    properties:
+      administrativeContact:
+        maxLength: 255
+        type: string
+      billingContact:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 63
+        type: string
+      technicalContact:
+        maxLength: 255
+        type: string
+    type: object
+  permission.ListPermissionBody:
+    properties:
+      entityId:
+        type: string
+      entityType:
+        type: string
+    type: object
+  permission.UpdateDefaultSchemaBody:
+    properties:
+      deletedRelations:
+        items:
+          type: string
+        type: array
+      renamedRelations:
+        items:
+          properties:
+            new:
+              type: string
+            old:
+              type: string
+          type: object
+        type: array
+    type: object
+  permission.UpdateDefaultSchemaResponse:
+    properties:
+      groupFailedIds:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      groupMissingIds:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      organization_updated:
+        type: integer
+      organizationFailedIds:
+        items:
+          type: string
+        type: array
+    type: object
+  project.CreateOrUpdateProjectBody:
+    properties:
+      id:
+        type: string
+      name:
+        maxLength: 63
+        type: string
+    type: object
+  snapshot.CreateSnapshotBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          labelSelector:
+            items:
+              type: string
+            type: array
+          paused:
+            type: boolean
+          retention:
+            $ref: '#/definitions/snapshot.RetentionPolicy'
+          schedule:
+            type: integer
+          scheduled:
+            type: boolean
+          source:
+            description: Source EID
+            type: string
+        type: object
+    type: object
+  snapshot.RetentionPolicy:
+    properties:
+      expiryTime:
+        description: Retention time of the backups in hours (max is 960, or 40 days)
+        type: integer
+    type: object
+  snapshot.SnapshotFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      snapshot: {}
+      snapshotSchedule: {}
+    type: object
+  snapshot.UpdateSnapshotBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      spec:
+        properties:
+          labelSelector:
+            items:
+              type: string
+            type: array
+          paused:
+            type: boolean
+          retention:
+            $ref: '#/definitions/snapshot.RetentionPolicy'
+          schedule:
+            type: integer
+        type: object
+    type: object
+  ssh.CreateSSHBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+          publicKey:
+            type: string
+        type: object
+    type: object
+  ssh.SSHFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      ssh: {}
+    type: object
+  subnet.CreateSubnetBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+          vpcEId:
+            type: string
+        type: object
+      natGateway:
+        properties:
+          enable:
+            type: boolean
+        type: object
+      network:
+        properties:
+          dnsV4:
+            type: string
+          dnsV6:
+            type: string
+          ipv4:
+            type: string
+          ipv6:
+            type: string
+          private:
+            type: boolean
+          protocol:
+            type: string
+        type: object
+    type: object
+  subnet.SubnetFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      natGateway: {}
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      subnet: {}
+    type: object
+  subnet.UpdateSubnetBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      natGateway:
+        properties:
+          enable:
+            type: boolean
+        type: object
+      network:
+        properties:
+          dnsV4:
+            type: string
+          dnsV6:
+            type: string
+          private:
+            type: boolean
+        type: object
+    type: object
+  user.RegenerateInviteCodeResponse:
+    properties:
+      inviteCode:
+        type: string
+    type: object
+  vmsnapshot.CreateVmSnapshotBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+          source:
+            description: Source EID
+            type: string
+        type: object
+    type: object
+  vmsnapshot.VmSnapshotFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      vmSnapshot: {}
+      vmSnapshotContent: {}
+    type: object
+  vpc.CreateVPCBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+    type: object
+  vpc.StaticRoute:
+    properties:
+      cidr:
+        type: string
+      nextHopIP:
+        type: string
+      policy:
+        type: string
+      routeTable:
+        type: string
+    type: object
+  vpc.UpdateVPCBody:
+    properties:
+      general:
+        properties:
+          productName:
+            maxLength: 63
+            type: string
+        type: object
+      staticRoutes:
+        items:
+          $ref: '#/definitions/vpc.StaticRoute'
+        type: array
+    type: object
+  vpc.VPCFullResponse:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      productTypeId:
+        type: string
+      vpc: {}
+    type: object
 info:
   contact:
     email: contact@superphenix.net
@@ -7,7 +1580,5193 @@ info:
   description: Superphenix HTTP API
   title: Superphenix API
   version: "0.1"
-paths: {}
+paths:
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/argo-link/{kind}/{effectiveId}:
+    get:
+      description: Returns the Argo CD UI link for a KaaS, BaaS or IaaS resource
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Resource kind (kaas, baas, iaas)
+        in: path
+        name: kind
+        required: true
+        type: string
+      - description: Effective ID of the resource
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Argo CD Link
+          schema:
+            $ref: '#/definitions/argoApp.ArgoCdLinkResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectArgoCdRead
+      summary: Get Argo CD application link
+      tags:
+      - v1
+      - Argo CD
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/baas:
+    post:
+      consumes:
+      - application/json
+      description: Create a new BaaS Backup
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: BaaS info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/baas.CreateBaaSBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBaaSWrite
+      summary: Create BaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/baas/{effectiveId}:
+    delete:
+      description: Delete BaaS Instance by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: BaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBaaSWrite
+      summary: Delete BaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+    get:
+      description: Get BaaS instance by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: BaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BaaS
+          schema:
+            $ref: '#/definitions/baas.BaaSFullResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBaaSRead
+      summary: Get BaaS instance
+      tags:
+      - v1
+      - SPX Argo Ctrl
+    post:
+      consumes:
+      - application/json
+      description: Update a BaaS Backup
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: BaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: BaaS info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/baas.UpdateBaaSBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBaaSWrite
+      summary: Update BaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/baas/{effectiveId}/app:
+    get:
+      description: Get BaaS App for update form
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: BaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BaaS
+          schema:
+            $ref: '#/definitions/baas.BaaSFullResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBaaSRead
+      summary: Get BaaS App
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/bucket:
+    get:
+      description: Retrieve all S3 buckets for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Buckets
+          schema:
+            items:
+              $ref: '#/definitions/bucket.BucketFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketRead
+      summary: Retrieve all AZ buckets
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new S3 bucket with an auto-generated admin user
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/bucket.CreateBucketBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketWrite
+      summary: Create bucket
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/bucket/{effectiveId}:
+    delete:
+      description: Delete S3 bucket by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketWrite
+      summary: Delete bucket
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get S3 bucket by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bucket
+          schema:
+            $ref: '#/definitions/bucket.BucketFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketRead
+      summary: Get bucket
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update an S3 bucket configuration (quotas, policy, lifecycle)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Bucket info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/bucket.UpdateBucketBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketWrite
+      summary: Update bucket
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/bucket/{effectiveId}/credentials:
+    get:
+      description: Get the S3 endpoint and admin credentials generated for a bucket
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Bucket EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Credentials
+          schema:
+            $ref: '#/definitions/bucket.CredentialsResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketRead
+        - ProjectBucketCredentials
+      summary: Get bucket credentials
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/container-disks:
+    get:
+      description: Returns the catalog of container-disk types — vendor ISOs (e.g.
+        driver disks) that can be mounted on instances as read-only CDROMs. The available
+        catalog may vary by availability zone.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Catalog
+          schema:
+            items:
+              $ref: '#/definitions/controller.ContainerDiskSpecResponse'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskRead
+      summary: List container-disk catalog
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/disk:
+    get:
+      description: Retrieve all disks for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disks
+          schema:
+            items:
+              $ref: '#/definitions/disk.DiskFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskRead
+      summary: Retrieve all AZ disks
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new disk and start it
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Disk info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/disk.CreateDiskBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskWrite
+      summary: Create disk
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/disk/{effectiveId}:
+    delete:
+      description: Delete disk by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Disk EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskWrite
+      summary: Delete disk
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get disk by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Disk EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disk
+          schema:
+            $ref: '#/definitions/disk.DiskFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskRead
+      summary: Get disk
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update an disk
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Disk info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/disk.UpdateDiskBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskWrite
+      summary: Update disk
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/disk/{effectiveId}/unmount:
+    get:
+      description: Unmount a specific disk
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Disk EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectDiskRead
+        - ProjectInstanceWrite
+      summary: Unmount Disk
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/eip:
+    get:
+      description: Retrieve all EIPs for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Eips
+          schema:
+            items:
+              $ref: '#/definitions/eip.EipFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectEipRead
+      summary: Retrieve all AZ EIPs
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new EIP
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Eip info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/eip.CreateEipBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectEipWrite
+      summary: Create EIP
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/eip/{effectiveId}:
+    delete:
+      description: Delete EIP by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Eip EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectEipWrite
+      summary: Delete EIP
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get EIP by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Eip EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Eip
+          schema:
+            $ref: '#/definitions/eip.EipFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectEipRead
+      summary: Get EIP
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update a new EIP
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Eip info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/eip.UpdateEipBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: EIP
+          schema:
+            $ref: '#/definitions/eip.EipFullResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectEipWrite
+      summary: Update EIP
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/firewall:
+    get:
+      description: Retrieve all firewalls for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Firewalls
+          schema:
+            items:
+              $ref: '#/definitions/firewall.FirewallFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectFirewallRead
+      summary: Retrieve all AZ firewalls
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new firewall
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Firewall info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/firewall.CreateFirewallBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectFirewallWrite
+      summary: Create firewall
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/firewall/{effectiveId}:
+    delete:
+      description: Delete firewall by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Firewall EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectFirewallWrite
+      summary: Delete firewall
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get firewall by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Firewall EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Firewall
+          schema:
+            $ref: '#/definitions/firewall.FirewallFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectFirewallRead
+      summary: Get firewall
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update a firewall
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Firewall info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/firewall.UpdateFirewallBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectFirewallWrite
+      summary: Update firewall
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance:
+    get:
+      description: Retrieve all instances for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Instances
+          schema:
+            items:
+              $ref: '#/definitions/instance.InstanceFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+      summary: Retrieve all AZ instances
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new instance and start it
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/instance.CreateInstanceBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceWrite
+      summary: Create instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot:
+    get:
+      description: Retrieve all snapshots for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VmSnapshots
+          schema:
+            items:
+              $ref: '#/definitions/vmsnapshot.VmSnapshotFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVmSnapshotRead
+      summary: Retrieve all AZ snapshots
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new snapshot and start it
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VmSnapshot info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/vmsnapshot.CreateVmSnapshotBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVmSnapshotWrite
+      summary: Create snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot/{effectiveId}:
+    delete:
+      description: Delete snapshot by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VmSnapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVmSnapshotWrite
+      summary: Delete snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get snapshot by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VmSnapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VmSnapshot
+          schema:
+            $ref: '#/definitions/vmsnapshot.VmSnapshotFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVmSnapshotRead
+      summary: Get snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot/{effectiveId}/clone:
+    get:
+      description: Clone a VM snapshot by creating a new instance from it
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Snapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: New instance name
+        in: query
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotWrite
+        - ProjectInstanceWrite
+      summary: Clone a VM snapshot
+      tags:
+      - v1
+      - SPX Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot/{effectiveId}/restore:
+    get:
+      description: Restore a VM snapshot by creating a new instance from it
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Snapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: New instance name
+        in: query
+        name: name
+        required: true
+        type: string
+      - description: New instance local ID (UUID)
+        in: query
+        name: localId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotWrite
+        - ProjectInstanceWrite
+      summary: Restore a VM snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}:
+    delete:
+      description: Delete instance by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceWrite
+      summary: Delete instance
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get instance by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Instance
+          schema:
+            $ref: '#/definitions/instance.InstanceFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+      summary: Get instance
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update an instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Instance info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/instance.UpdateInstanceBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceWrite
+      summary: Update instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/advanced-options:
+    get:
+      description: 'Resolve the effective advanced device/firmware options of an instance
+        (value + source: vm/preference/default)'
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Advanced options
+          schema:
+            type: object
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+      summary: Get an instance's advanced options
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/container-disk/mount:
+    post:
+      consumes:
+      - application/json
+      description: Mounts a batch of container disks on an instance by their catalog
+        IDs. The IDs are validated against the availability zone's catalog and attached
+        in a single atomic operation.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Batch of catalog IDs to mount
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.BatchContainerDiskBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceWrite
+        - ProjectDiskRead
+        - ProjectDiskWrite
+      summary: Mount a batch of container disks on an instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/container-disk/unmount:
+    post:
+      consumes:
+      - application/json
+      description: Unmounts a batch of container disks from an instance by their catalog
+        IDs. The IDs are validated against the availability zone's catalog and detached
+        in a single atomic operation.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Batch of catalog IDs to unmount
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/controller.BatchContainerDiskBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceWrite
+        - ProjectDiskRead
+        - ProjectDiskWrite
+      summary: Unmount a batch of container disks from an instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/restart:
+    get:
+      description: Restart a specific instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceControl
+      summary: Restart Instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/serial:
+    get:
+      description: Retrieve serial console information for an instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceTerminal
+      summary: Get Instance serial console
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/start:
+    get:
+      description: Start a specific instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceControl
+      summary: Start Instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/stop:
+    get:
+      description: Stop a specific instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceControl
+      summary: Stop Instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/stop-force:
+    get:
+      description: Force-stop a specific instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceControl
+      summary: Force-stop Instance
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/vnc:
+    get:
+      description: Retrieve VNC console information for an instance
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Instance EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+        - ProjectInstanceTerminal
+      summary: Get Instance VNC console
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas:
+    post:
+      consumes:
+      - application/json
+      description: Create a new KaaS Cluster
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/kaas.CreateKaaSBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSWrite
+      summary: Create KaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}:
+    delete:
+      description: Delete KaaS Instance by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSWrite
+      summary: Delete KaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+    get:
+      description: Get KaaS instance by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: KaaS
+          schema:
+            $ref: '#/definitions/kaas.KaaSFullResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSRead
+      summary: Get KaaS instance
+      tags:
+      - v1
+      - SPX Argo Ctrl
+    post:
+      consumes:
+      - application/json
+      description: Update a KaaS Cluster
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/kaas.UpdateKaaSBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSWrite
+      summary: Update KaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/app:
+    get:
+      description: Get KaaS App for update form
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: KaaS
+          schema:
+            $ref: '#/definitions/kaas.KaaSFullResponse'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSRead
+      summary: Get KaaS App
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/instances:
+    get:
+      description: Retrieve instances belonging to a KaaS cluster
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Instances
+          schema:
+            items:
+              $ref: '#/definitions/instance.InstanceFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSRead
+        - ProjectInstanceRead
+      summary: Get KaaS Instances
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/kubeconfig:
+    get:
+      description: Retrieve KubeConfig for a KaaS cluster
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: KubeConfig file
+          schema:
+            type: file
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSRead
+        - ProjectKaaSKubeConfig
+      summary: Get KaaS KubeConfig
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/netpols:
+    get:
+      description: Retrieve the network policies of a KaaS cluster
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSRead
+        - ProjectFirewallRead
+      summary: Get KaaS network policies
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials:
+    post:
+      description: Reinstall KaaS Essentials by incrementing the kaasEssentials revision
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: KaaS EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSWrite
+      summary: Reinstall KaaS Essentials
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/load-balancer:
+    get:
+      description: Retrieve all loadBalancers for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: LoadBalancers
+          schema:
+            items:
+              $ref: '#/definitions/loadbalancer.LBFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectLoadBalancerRead
+      summary: Retrieve all AZ loadBalancers
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new loadBalancer
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: LoadBalancer info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/loadbalancer.CreateLoadBalancerBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectLoadBalancerWrite
+      summary: Create loadBalancer
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/load-balancer/{effectiveId}:
+    delete:
+      description: Delete loadBalancer by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: LoadBalancer EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectLoadBalancerWrite
+      summary: Delete loadBalancer
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get loadBalancer by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: LoadBalancer EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: LoadBalancer
+          schema:
+            $ref: '#/definitions/loadbalancer.LBFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectLoadBalancerRead
+      summary: Get loadBalancer
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update a loadBalancer
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: LoadBalancer info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/loadbalancer.UpdateLoadBalancerBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectLoadBalancerWrite
+      summary: Update loadBalancer
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/s3-config:
+    get:
+      description: Retrieve the S3 storage classes and bucket limits for a specific
+        AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: S3 Config
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketRead
+      summary: Retrieve S3 configuration
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/snapshot:
+    get:
+      description: Retrieve all snapshots for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Snapshots
+          schema:
+            items:
+              $ref: '#/definitions/snapshot.SnapshotFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotRead
+      summary: Retrieve all AZ snapshots
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new snapshot and start it
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Snapshot info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/snapshot.CreateSnapshotBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotWrite
+      summary: Create snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/snapshot/{effectiveId}:
+    delete:
+      description: Delete snapshot by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Snapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotWrite
+      summary: Delete snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get snapshot by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Snapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Snapshot
+          schema:
+            $ref: '#/definitions/snapshot.SnapshotFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotRead
+      summary: Get snapshot
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      description: Update a snapshot schedule by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Snapshot EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      - description: Snapshot Schedule info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/snapshot.UpdateSnapshotBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotWrite
+      summary: Update snapshot schedule
+      tags:
+      - v1
+      - SPX Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/ssh:
+    get:
+      description: Retrieve all SSH for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SSH
+          schema:
+            items:
+              $ref: '#/definitions/ssh.SSHFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSSHRead
+      summary: Retrieve all AZ SSH
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new SSH Key
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: SSH info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/ssh.CreateSSHBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSSHWrite
+      summary: Create SSH
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/ssh/{effectiveId}:
+    delete:
+      description: Delete SSH by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: SSH EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSSHWrite
+      summary: Delete SSH
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get SSH by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: SSH EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SSH
+          schema:
+            $ref: '#/definitions/ssh.SSHFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSSHRead
+      summary: Get SSH
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/storage-class:
+    get:
+      description: Retrieve all storage classes for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Storage Classes
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: Retrieve storage classes
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/subnet:
+    get:
+      description: Retrieve all subnets for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Subnets
+          schema:
+            items:
+              $ref: '#/definitions/subnet.SubnetFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetRead
+      summary: Retrieve all AZ subnets
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new subnet
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Subnet info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/subnet.CreateSubnetBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetWrite
+      summary: Create subnet
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/subnet/{effectiveId}:
+    delete:
+      description: Delete subnet by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Subnet EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetWrite
+      summary: Delete subnet
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get subnet by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Subnet EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Subnet
+          schema:
+            $ref: '#/definitions/subnet.SubnetFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetRead
+      summary: Get subnet
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update a subnet
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Subnet info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/subnet.UpdateSubnetBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetWrite
+      summary: Update subnet
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/subnet/{effectiveId}/has-eip:
+    get:
+      description: Check if EIP is available/active
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: Subnet EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetRead
+        - ProjectEipRead
+      summary: Check EIP
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/vm-type:
+    get:
+      description: Retrieve all available VM types for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VM Types
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: Retrieve VM types
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/vm-type/{name}:
+    get:
+      description: Retrieve a specific VM type (cluster preference) by name for a
+        specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VM Cluster Preference Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VM Cluster Preference
+          schema:
+            type: object
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: Retrieve a VM type by name
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/vm-type/{name}/advanced-options:
+    get:
+      description: Resolve the advanced device/firmware options defaulted by a preference
+        (no VM), for the create form
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VM Cluster Preference Name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Advanced options
+          schema:
+            type: object
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: Get the advanced options a VM type would apply
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/vpc:
+    get:
+      description: Retrieve all VPCs for a specific AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VPCs
+          schema:
+            items:
+              $ref: '#/definitions/vpc.VPCFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVPCRead
+      summary: Retrieve all AZ VPCs
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Create a new vpc
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VPC info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/vpc.CreateVPCBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controller.CreateResponse'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVPCWrite
+      summary: Create vpc
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{az}/{projectId}/vpc/{effectiveId}:
+    delete:
+      description: Delete vpc by effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VPC EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVPCWrite
+      summary: Delete vpc
+      tags:
+      - v1
+      - Superphenix Controller
+    get:
+      description: Get vpc by Effective ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VPC EID
+        in: path
+        name: effectiveId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VPC
+          schema:
+            $ref: '#/definitions/vpc.VPCFullResponse'
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVPCRead
+      summary: Get vpc
+      tags:
+      - v1
+      - Superphenix Controller
+    post:
+      consumes:
+      - application/json
+      description: Update a vpc
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      - description: VPC info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/vpc.UpdateVPCBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVPCWrite
+      summary: Update vpc
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/baas:
+    get:
+      description: Retrieve all BaaS instances
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: BaaS
+          schema:
+            items:
+              $ref: '#/definitions/baas.BaaSFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBaaSRead
+      summary: Retrieve all BaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{projectId}/bucket:
+    get:
+      description: Retrieve all S3 buckets across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Buckets
+          schema:
+            items:
+              $ref: '#/definitions/bucket.BucketFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectBucketRead
+      summary: Retrieve all buckets
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/disk:
+    get:
+      description: Retrieve all disks across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Disks
+          schema:
+            items:
+              $ref: '#/definitions/disk.DiskFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectDiskRead
+      summary: Retrieve all disks
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/eip:
+    get:
+      description: Retrieve all EIPs across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: EIPs
+          schema:
+            items:
+              $ref: '#/definitions/eip.EipFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectEipRead
+      summary: Retrieve all EIPs
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/firewall:
+    get:
+      description: Retrieve all firewalls across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Firewalls
+          schema:
+            items:
+              $ref: '#/definitions/firewall.FirewallFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectFirewallRead
+      summary: Retrieve all firewalls
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/instance:
+    get:
+      description: Retrieve all instances across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Instances
+          schema:
+            items:
+              $ref: '#/definitions/instance.InstanceFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectInstanceRead
+      summary: Retrieve all instances
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/instance-snapshot:
+    get:
+      description: Retrieve all snapshots across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VmSnapshots
+          schema:
+            items:
+              $ref: '#/definitions/vmsnapshot.VmSnapshotFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVmSnapshotRead
+      summary: Retrieve all snapshots
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/kaas:
+    get:
+      description: Retrieve all KaaS instances
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: AZ Code
+        in: path
+        name: az
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: KaaS
+          schema:
+            items:
+              $ref: '#/definitions/kaas.KaaSFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectKaaSRead
+      summary: Retrieve all KaaS
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{projectId}/kaas/kube-versions:
+    get:
+      description: Get supported KubeVersions
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Kube Versions
+          schema:
+            items:
+              type: string
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: Get supported KubeVersions
+      tags:
+      - v1
+      - SPX Argo Ctrl
+  /{orgaId}/api/spx-ctrl/{projectId}/load-balancer:
+    get:
+      description: Retrieve all loadBalancers across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: LoadBalancers
+          schema:
+            items:
+              $ref: '#/definitions/loadbalancer.LBFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectLoadBalancerRead
+      summary: Retrieve all loadBalancers
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/snapshot:
+    get:
+      description: Retrieve all snapshots across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Snapshots
+          schema:
+            items:
+              $ref: '#/definitions/snapshot.SnapshotFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSnapshotRead
+      summary: Retrieve all snapshots
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/ssh:
+    get:
+      description: Retrieve all SSH across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: SSH
+          schema:
+            items:
+              $ref: '#/definitions/ssh.SSHFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSSHRead
+      summary: Retrieve all SSH
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/subnet:
+    get:
+      description: Retrieve all subnets across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Subnets
+          schema:
+            items:
+              $ref: '#/definitions/subnet.SubnetFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectSubnetRead
+      summary: Retrieve all subnets
+      tags:
+      - v1
+      - Superphenix Controller
+  /{orgaId}/api/spx-ctrl/{projectId}/vpc:
+    get:
+      description: Retrieve all vpcs across AZ
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: VPCs
+          schema:
+            items:
+              $ref: '#/definitions/vpc.VPCFullResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - ProjectVPCRead
+      summary: Retrieve all vpcs
+      tags:
+      - v1
+      - Superphenix Controller
+  /admin/az/health:
+    get:
+      description: Contact each configured AZ's /health endpoint to determine availability
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Map of AZ code to status (up/down)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error
+          schema:
+            type: string
+      summary: Check health of all AZs
+      tags:
+      - Admin endpoint
+  /admin/permission/update-schema:
+    post:
+      consumes:
+      - application/json
+      description: Update permission schema in database and Permify
+      parameters:
+      - description: Update Information
+        in: body
+        name: message
+        required: true
+        schema:
+          $ref: '#/definitions/permission.UpdateDefaultSchemaBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response
+          schema:
+            $ref: '#/definitions/permission.UpdateDefaultSchemaResponse'
+        "400":
+          description: Error
+          schema:
+            type: string
+        "500":
+          description: Error
+          schema:
+            type: string
+      summary: Update permission schema
+      tags:
+      - Admin endpoint
+  /api-token:
+    get:
+      description: Retrieve all API tokens belonging to the authenticated user. Token
+        secrets are not included.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of API tokens
+          schema:
+            items:
+              $ref: '#/definitions/model.APIApiToken'
+            type: array
+        "400":
+          description: Invalid userId format
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: List API tokens
+      tags:
+      - api-token
+    post:
+      consumes:
+      - application/json
+      description: Create a new API token for the authenticated user. The plain-text
+        token is returned only once in the response.
+      parameters:
+      - description: Token creation payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/apiToken.createBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created token (plain-text, shown only once)
+          schema:
+            $ref: '#/definitions/apiToken.createResponse'
+        "400":
+          description: Invalid request (bad format or expired date)
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Create an API token
+      tags:
+      - api-token
+  /api-token/{tokenId}:
+    delete:
+      description: Revoke (delete) an existing API token. The token must belong to
+        the authenticated user.
+      parameters:
+      - description: Token ID (UUID)
+        in: path
+        name: tokenId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Token revoked successfully
+        "400":
+          description: Invalid tokenId format
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Token not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - Bearer: []
+      summary: Revoke an API token
+      tags:
+      - api-token
+  /billing/organization/{orgaId}:
+    get:
+      description: Get Organization Name by SPX Orga ID
+      parameters:
+      - description: Orga ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization Name
+          schema:
+            type: string
+        "400":
+          description: Error
+          schema:
+            type: string
+        "500":
+          description: Error
+          schema:
+            type: string
+      summary: Get Organization Name
+      tags:
+      - Admin endpoint
+      - Billing
+      - v1
+  /billing/project/{projectId}:
+    get:
+      description: Get Project Name by SPX Project ID
+      parameters:
+      - description: AZ Code to delete
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project Name
+          schema:
+            type: string
+        "400":
+          description: Error
+          schema:
+            type: string
+        "404":
+          description: Error
+          schema:
+            type: string
+      summary: Get Project Name
+      tags:
+      - Admin endpoint
+      - Billing
+      - v1
+  /v1/invite-code:
+    post:
+      description: Regenerate the invite code of the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New Invite Code
+          schema:
+            $ref: '#/definitions/user.RegenerateInviteCodeResponse'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Regenerate Invite Code
+      tags:
+      - v1
+      - user
+  /v1/logout:
+    get:
+      description: Invalidate the refresh token and redirect to default url
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Found
+      summary: Logout current user
+      tags:
+      - v1
+      - session
+  /v1/organization:
+    post:
+      description: Initialize a new organization, a default project and the associated
+        permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Created Organization
+          schema:
+            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Create an Organization
+      tags:
+      - v1
+      - organization
+  /v1/organization/{orgaId}:
+    delete:
+      description: Delete an Organization by id
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationWrite
+      summary: Delete an Organization
+      tags:
+      - v1
+      - organization
+    get:
+      description: Get an Organization by id
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization
+          schema:
+            $ref: '#/definitions/model.APIOrganization'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: Get an Organization
+      tags:
+      - v1
+      - organization
+    post:
+      consumes:
+      - application/json
+      description: Update an Organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Update Info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/organization.UpdateOrganizationBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization
+          schema:
+            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationWrite
+      summary: Update an Organization
+      tags:
+      - v1
+      - organization
+  /v1/organization/{orgaId}/az-list:
+    get:
+      description: List AZ from configuration
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: AZ List
+          schema:
+            items:
+              $ref: '#/definitions/model.APIAz'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: List AZ
+      tags:
+      - v1
+      - az
+  /v1/organization/{orgaId}/az-status:
+    get:
+      description: Fetch all available for the user and contact each AZ's /health
+        endpoint to determine availability
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Map of AZ code to status (up/down)
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error
+          schema:
+            type: string
+      summary: Check health of AZs
+      tags:
+      - v1
+      - az
+  /v1/organization/{orgaId}/iam/group:
+    delete:
+      description: Delete an IAM group
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Group ID
+        in: query
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMWrite
+      summary: Delete an IAM group
+      tags:
+      - v1
+      - iam
+    get:
+      description: List organization IAM groups
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Groups
+          schema:
+            items:
+              $ref: '#/definitions/model.APIGroup'
+            type: array
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMRead
+      summary: List organization IAM groups
+      tags:
+      - v1
+      - iam
+    post:
+      consumes:
+      - application/json
+      description: Create Or Update an IAM group
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Group
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/group.UpdateOrganizationGroupBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Group
+          schema:
+            $ref: '#/definitions/model.APIGroup'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMWrite
+      summary: Create Or Update an IAM group
+      tags:
+      - v1
+      - iam
+  /v1/organization/{orgaId}/iam/group/{groupId}:
+    get:
+      description: Get an IAM group by ID
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Group ID
+        in: path
+        name: groupId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Group
+          schema:
+            $ref: '#/definitions/model.APIGroup'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMRead
+      summary: Get an IAM group by ID
+      tags:
+      - v1
+      - iam
+  /v1/organization/{orgaId}/iam/invite:
+    delete:
+      description: Remove a user from an organization
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: User to Remove
+        in: query
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMWrite
+      summary: Remove User from Org
+      tags:
+      - v1
+      - iam
+    post:
+      consumes:
+      - application/json
+      description: Invite a user into organization with given roles (or update his
+        roles)
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Invite Info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/membership.InviteIntoOrganizationBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User Group Relation
+          schema:
+            $ref: '#/definitions/model.APIUserGroup'
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMWrite
+      summary: Invite User in Org
+      tags:
+      - v1
+      - iam
+  /v1/organization/{orgaId}/iam/permissionSets:
+    get:
+      description: List of permission sets
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permission Sets
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationIAMRead
+      summary: List permission sets
+      tags:
+      - v1
+      - iam
+  /v1/organization/{orgaId}/iam/permissions:
+    post:
+      consumes:
+      - application/json
+      description: Returns the list of permissions held by the logged-in user for
+        an entity
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Entity Info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/permission.ListPermissionBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Permissions List
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+      summary: List logged-in user permissions
+      tags:
+      - v1
+      - iam
+  /v1/organization/{orgaId}/project:
+    delete:
+      description: Delete Project
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project ID
+        in: query
+        name: projectId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationProjectManagement
+      summary: Delete Project
+      tags:
+      - v1
+      - project
+    post:
+      consumes:
+      - application/json
+      description: Create or Update Project
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Project Info
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/project.CreateOrUpdateProjectBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project
+          schema:
+            $ref: '#/definitions/model.APIProject'
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationProjectManagement
+      summary: Create or Update Project
+      tags:
+      - v1
+      - project
+  /v1/organization/{orgaId}/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Transfer organization ownership to another user
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgaId
+        required: true
+        type: string
+      - description: Transfer Body
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/organization.TransferOrganizationBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer:
+        - OrganizationRead
+        - OrganizationWrite
+      summary: Transfer organization ownership
+      tags:
+      - v1
+      - organization
+  /v1/project-manager/organizations:
+    get:
+      description: Retrieve all organizations with their associations. Requires super-admin
+        privileges.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organizations
+          schema:
+            items:
+              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve all organizations
+      tags:
+      - Project Manager
+  /v1/project-manager/products:
+    get:
+      description: Retrieve all products with their associations. Requires super-admin
+        privileges.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Products
+          schema:
+            items:
+              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Product'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve all products
+      tags:
+      - Project Manager
+  /v1/project-manager/projects:
+    get:
+      description: Retrieve all projects with their associations. Requires super-admin
+        privileges.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Projects
+          schema:
+            items:
+              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve all projects
+      tags:
+      - Project Manager
+  /v1/project-manager/users:
+    get:
+      description: Retrieve all users with their associations. Requires super-admin
+        privileges.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Users
+          schema:
+            items:
+              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.User'
+            type: array
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Retrieve all users
+      tags:
+      - Project Manager
+  /v1/session:
+    get:
+      description: Generates an access token based on refresh token
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: JWT
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+      security:
+      - RefreshToken: []
+      summary: Generates an access token
+      tags:
+      - v1
+      - session
+  /v1/session/token:
+    get:
+      description: Generates an access token and an associated refresh token
+      produces:
+      - text/plain
+      responses:
+        "302":
+          description: Found
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Generates access and refresh token
+      tags:
+      - v1
+      - session
+  /v1/whoami:
+    get:
+      description: Get current user information based on access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User
+          schema:
+            $ref: '#/definitions/model.APIUser'
+        "500":
+          description: Internal Server Error
+      security:
+      - Bearer: []
+      summary: Get current user information
+      tags:
+      - v1
+      - session
 securityDefinitions:
   Bearer:
     description: Access token used to check user access in Superphenix API.

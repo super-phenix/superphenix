@@ -33,6 +33,7 @@ func RunMigration(db *gorm.DB) error {
 	registerMigration(migration202606011530)
 	registerMigration(migration202606021000)
 	registerMigration(migration202606291100)
+	registerMigration(migration202607151600)
 
 	// Run migrations
 	m := gormigrate.New(db, &gormigrate.Options{

@@ -16,11 +16,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 )
 
 // reconcileHealth checks the connectivity of the cluster (local or remote).
-func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alpha1.Cluster) (string, int, ctrl.Result, error) {
+func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alpha1.Cluster) (string, int, map[string]apiextensionsv1.JSON, ctrl.Result, error) {
 	log := logf.FromContext(ctx)
 
 	var config *rest.Config
@@ -29,21 +30,26 @@ func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alp
 	config, err = r.getRESTConfigForCluster(ctx, cluster)
 	if err != nil {
 		log.Error(err, "Failed to build REST config for cluster")
-		return "", 0, ctrl.Result{RequeueAfter: time.Minute}, err
+		return "", 0, nil, ctrl.Result{RequeueAfter: time.Minute}, err
 	}
 
 	version, err := r.checkReachability(config)
 	if err != nil {
 		log.Error(err, "Cluster unreachable")
-		return "", 0, ctrl.Result{RequeueAfter: time.Minute}, err
+		return "", 0, nil, ctrl.Result{RequeueAfter: time.Minute}, err
 	}
 
 	nodeCount, err := r.getNodeCount(ctx, config)
 	if err != nil {
 		log.Error(err, "Failed to get node count")
 		// We don't fail the health check if node count fails, but we log it
-		// Actually, the requirement says "Update it on every health check", so maybe we should return it.
-		// If we can't get node count, we might still want to consider the cluster reachable.
+	}
+
+	var cephClusters map[string]apiextensionsv1.JSON
+	cephClusters, err = r.reconcileCephClusters(ctx, config)
+	if err != nil {
+		log.Error(err, "Failed to reconcile Ceph clusters")
+		// We don't fail the health check if Ceph clusters reconciliation fails, but we log it
 	}
 
 	log.Info("Cluster is reachable", "version", version, "nodeCount", nodeCount)
@@ -56,7 +62,7 @@ func (r *Reconciler) reconcileHealth(ctx context.Context, cluster *operatorv1alp
 		ObservedGeneration: cluster.Generation,
 	})
 
-	return version, nodeCount, ctrl.Result{}, nil
+	return version, nodeCount, cephClusters, ctrl.Result{}, nil
 }
 
 // getRESTConfigForCluster generates the configuration to connect to a Kubernetes cluster

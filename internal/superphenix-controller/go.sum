@@ -3656,3 +3656,6 @@ sigs.k8s.io/yaml v1.3.0/go.mod h1:GeOyir5tyXNByN85N/dRIT9es5UQNerPYEKK56eTBm8=
 sigs.k8s.io/yaml v1.4.0/go.mod h1:Ejl7/uTz7PSA4eKMyQCUTnhZYNmLIl+5c2lQPGR2BPY=
 sigs.k8s.io/yaml v1.6.0 h1:G8fkbMSAFqgEFgh4b1wmtzDnioxFCUgTZhlbj5P9QYs=
 sigs.k8s.io/yaml v1.6.0/go.mod h1:796bPqUfzR/0jLAl6XjHl3Ck7MiyVv8dbTdyT3/pMf4=
+github.com/kube-object-storage/lib-bucket-provisioner v0.0.0-20260420161730-5164e3746489 h1:Tnm8Vr9GmtuWNmhp+HZI1I8pMXuhyVomTlvgFT2TQpE=
+github.com/kube-object-storage/lib-bucket-provisioner v0.0.0-20260420161730-5164e3746489/go.mod h1:my+EVjOJLeQ9lUR9uVkxRvNNkhO2saSGIgzV8GZT9HY=
+k8s.io/klog/v2 v2.60.1/go.mod h1:y1WjHnz7Dj687irZUWR/WLkLc5N1YHtjLdmgWjndZn0=
