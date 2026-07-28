@@ -193,16 +193,16 @@ func GetKaaSConfig(w http.ResponseWriter, r *http.Request) {
 //	@Router			/{orgId}/{projectId}/s3-config [get]
 //	@Security		Bearer
 func GetS3Config(w http.ResponseWriter, r *http.Request) {
-	storageClasses := make([]string, 0, len(config.Global.S3.StorageClassMapping))
-	for k := range config.Global.S3.StorageClassMapping {
+	storageClasses := make([]string, 0, len(config.Global.ProductsConfig.S3.StorageClassMapping))
+	for k := range config.Global.ProductsConfig.S3.StorageClassMapping {
 		storageClasses = append(storageClasses, k)
 	}
 	sort.Strings(storageClasses)
 
 	s3Config := S3Config{
 		StorageClasses:   storageClasses,
-		MaxBucketSize:    config.Global.S3.MaxBucketSize,
-		MaxBucketObjects: config.Global.S3.MaxBucketObjects,
+		MaxBucketSize:    config.Global.ProductsConfig.S3.MaxBucketSize,
+		MaxBucketObjects: config.Global.ProductsConfig.S3.MaxBucketObjects,
 	}
 
 	b, _ := json.Marshal(s3Config)

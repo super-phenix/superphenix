@@ -94,14 +94,14 @@ type Config struct {
 		Blocks struct {
 			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
 		} `yaml:"blocks"`
-	} `yaml:"productsConfig"`
 
-	S3 struct {
-		StorageClassMapping map[string]string `yaml:"storageClassMapping"`
-		MaxBucketSize       string            `yaml:"maxBucketSize"`
-		MaxBucketObjects    uint64            `yaml:"maxBucketObjects"`
-		ExternalEndpoint    string            `yaml:"externalEndpoint"`
-	} `yaml:"s3"`
+		S3 struct {
+			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
+			MaxBucketSize       string            `yaml:"maxBucketSize"`
+			MaxBucketObjects    uint64            `yaml:"maxBucketObjects"`
+			ExternalEndpoint    string            `yaml:"externalEndpoint"`
+		} `yaml:"s3"`
+	} `yaml:"productsConfig"`
 
 	DisableEditionForResourcesByLabels map[string]string `yaml:"disableEditionForResourcesByLabels"`
 
@@ -166,6 +166,11 @@ productsConfig:
       "cdi.kubevirt.io/allowClaimAdoption": "true"
   blocks:
     storageClassMapping: {}
+  s3:
+    storageClassMapping: {}
+    maxBucketSize: "1Ti"
+    maxBucketObjects: 1000000
+    externalEndpoint: ""
 disableEditionForResourcesByLabels:
   "app.kubernetes.io/name": "sfs-kaas"
 garbageCollection:
@@ -177,32 +182,31 @@ garbageCollection:
 kubernetesConfig:
   qps: 100
   burst: 100
-s3:
-  storageClassMapping: {}
-  maxBucketSize: "1Ti"
-  maxBucketObjects: 1000000
-  externalEndpoint: ""
 `)
 
 // Global is the global configuration of this application, provisioned once LoadConfig is called
 var Global Config
+
+// v is a viper instance with a custom key delimiter to avoid treating dots
+// in YAML map keys (e.g. "cdi.kubevirt.io/allowClaimAdoption") as nested paths.
+var v = viper.NewWithOptions(viper.KeyDelimiter("::"))
 
 // LoadConfig loads the configuration from the file-system, environment variables and flags.
 // The retrieved configuration is merged with the defaults values defined in this package,
 // with user defined values taking priority over the hardcoded default values.
 func LoadConfig() error {
 	// Fetch configs from config.yaml
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	v.SetConfigName("config")
+	v.SetConfigType("yaml")
 
 	// Places where the config file can be stored
-	viper.AddConfigPath("/etc/" + AppName + "/")
-	viper.AddConfigPath(".")
+	v.AddConfigPath("/etc/" + AppName + "/")
+	v.AddConfigPath(".")
 
 	// Enable overriding values using env variables
-	viper.SetEnvPrefix(strings.ToUpper(AppName))
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
+	v.SetEnvPrefix(strings.ToUpper(AppName))
+	v.SetEnvKeyReplacer(strings.NewReplacer("::", "_"))
+	v.AutomaticEnv()
 
 	// Set the default configuration
 	if err := loadDefaults(); err != nil {
@@ -210,7 +214,7 @@ func LoadConfig() error {
 	}
 
 	// Find and read the config file supplied by the user
-	err := viper.ReadInConfig()
+	err := v.ReadInConfig()
 	if err != nil && errors.Is(err, err.(viper.ConfigFileNotFoundError)) {
 		return FileNotFound
 	}
@@ -219,15 +223,15 @@ func LoadConfig() error {
 		return fmt.Errorf("failed to read configuration file: %s", err.Error())
 	}
 
-	return viper.Unmarshal(&Global)
+	return v.Unmarshal(&Global)
 }
 
 // loadDefaults loads the default application configuration
 func loadDefaults() error {
-	err := viper.ReadConfig(bytes.NewBuffer(defaultConfig))
+	err := v.ReadConfig(bytes.NewBuffer(defaultConfig))
 	if err != nil {
 		return err
 	}
 
-	return viper.Unmarshal(&Global)
+	return v.Unmarshal(&Global)
 }

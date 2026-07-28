@@ -12,9 +12,9 @@ import (
 // setMaxMinifiedJSONLen overrides the configured cap
 func setMaxMinifiedJSONLen(t *testing.T, max int) {
 	t.Helper()
-	old := config.Global.S3.MaxMinifiedJSONLen
-	config.Global.S3.MaxMinifiedJSONLen = max
-	t.Cleanup(func() { config.Global.S3.MaxMinifiedJSONLen = old })
+	old := config.Global.ProductsConfig.S3.MaxMinifiedJSONLen
+	config.Global.ProductsConfig.S3.MaxMinifiedJSONLen = max
+	t.Cleanup(func() { config.Global.ProductsConfig.S3.MaxMinifiedJSONLen = old })
 }
 
 func TestValidateAndMinifyJSON(t *testing.T) {

@@ -107,7 +107,7 @@ func (h *Service) ListBuckets(w http.ResponseWriter, r *http.Request) {
 
 	urls := az.FindAll(orga.ID.String())
 
-	responses, err := proxy.SendBatchProxy(r, urls, h.cfg.Controller.ApiPrefix)
+	responses, err := proxy.SendBatchProxy(r, urls, config.ApiPrefix)
 	if err != nil {
 		log.Err(err).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Msg(consts.SpxProxyToAZFailure)
@@ -168,7 +168,7 @@ func (h *Service) ListAZBuckets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Error().Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -230,7 +230,7 @@ func (h *Service) GetBucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Error().Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 	} else if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
@@ -360,7 +360,7 @@ func (h *Service) CreateBucket(w http.ResponseWriter, r *http.Request) {
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
 		return
 	}
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, bytes.NewReader(marshal))
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, bytes.NewReader(marshal))
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -436,7 +436,7 @@ func (h *Service) UpdateBucket(w http.ResponseWriter, r *http.Request) {
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
 		return
 	}
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, bytes.NewReader(marshal))
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, bytes.NewReader(marshal))
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -483,7 +483,7 @@ func (h *Service) DeleteBucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := proxy.SendProxy(r, azDb, h.cfg.Controller.ApiPrefix, http.NoBody)
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -541,7 +541,7 @@ func (h *Service) GetBucketCredentials(w http.ResponseWriter, r *http.Request) {
 	effectiveId := chi.URLParam(r, "effectiveId")
 
 	url := fmt.Sprintf("%s/%s/%s/bucket/%s/credentials", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), effectiveId)
-	resp, err := proxy.SendRequest(r.Context(), url, "GET", http.NoBody, config.Global.Controller.AuthSecret)
+	resp, err := proxy.SendRequest(r.Context(), url, "GET", http.NoBody, azDb.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", effectiveId).Msg(consts.SpxProxyToAZFailure)

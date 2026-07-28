@@ -26,7 +26,7 @@ func newValidationError(format string, args ...interface{}) ValidationError {
 // resolveStorageClass maps a friendly class name to the real OBC storage class.
 // An empty mapping means S3 is not available in this AZ.
 func resolveStorageClass(friendly string) (string, error) {
-	fullname, ok := config.Global.S3.StorageClassMapping[friendly]
+	fullname, ok := config.Global.ProductsConfig.S3.StorageClassMapping[friendly]
 	if !ok || fullname == "" {
 		return "", newValidationError("no storage class found")
 	}
@@ -55,7 +55,7 @@ func (c *BucketConfig) validate() error {
 		if size.Sign() <= 0 {
 			return newValidationError("maxSize must be positive")
 		}
-		if capStr := config.Global.S3.MaxBucketSize; capStr != "" {
+		if capStr := config.Global.ProductsConfig.S3.MaxBucketSize; capStr != "" {
 			maxSize, err := resource.ParseQuantity(capStr)
 			if err != nil {
 				return fmt.Errorf("invalid s3.maxBucketSize in configuration: %w", err)
@@ -67,7 +67,7 @@ func (c *BucketConfig) validate() error {
 	}
 
 	if c.MaxObjects != nil {
-		if maxObjects := config.Global.S3.MaxBucketObjects; maxObjects > 0 && *c.MaxObjects > maxObjects {
+		if maxObjects := config.Global.ProductsConfig.S3.MaxBucketObjects; maxObjects > 0 && *c.MaxObjects > maxObjects {
 			return newValidationError("maxObjects exceeds the maximum allowed in this availability zone (%d)", maxObjects)
 		}
 	}

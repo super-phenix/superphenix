@@ -1,9 +1,10 @@
 package objectbucket
 
 import (
+	"testing"
+
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/informers"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
-	"testing"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
@@ -43,12 +44,12 @@ func testEffectiveId(t *testing.T) string {
 
 func setS3Config(t *testing.T, mapping map[string]string, maxBucketSize string, maxBucketObjects uint64, externalEndpoint string) {
 	t.Helper()
-	old := config.Global.S3
-	config.Global.S3.StorageClassMapping = mapping
-	config.Global.S3.MaxBucketSize = maxBucketSize
-	config.Global.S3.MaxBucketObjects = maxBucketObjects
-	config.Global.S3.ExternalEndpoint = externalEndpoint
-	t.Cleanup(func() { config.Global.S3 = old })
+	old := config.Global.ProductsConfig.S3
+	config.Global.ProductsConfig.S3.StorageClassMapping = mapping
+	config.Global.ProductsConfig.S3.MaxBucketSize = maxBucketSize
+	config.Global.ProductsConfig.S3.MaxBucketObjects = maxBucketObjects
+	config.Global.ProductsConfig.S3.ExternalEndpoint = externalEndpoint
+	t.Cleanup(func() { config.Global.ProductsConfig.S3 = old })
 }
 
 func setFakeDynamicClient(t *testing.T, objects ...runtime.Object) {

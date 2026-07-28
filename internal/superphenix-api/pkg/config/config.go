@@ -151,11 +151,6 @@ type Config struct {
 
 	AZs []AZConfig `yaml:"azs"`
 
-	S3 struct {
-		// MaxMinifiedJSONLen caps bucket policy/lifecycle JSON minified length
-		MaxMinifiedJSONLen int `yaml:"maxMinifiedJSONLen"`
-	} `yaml:"s3"`
-
 	SpxPrefix string `yaml:"spxPrefix"`
 	ArgoCdUrl string `yaml:"argoCdUrl"`
 
@@ -167,7 +162,7 @@ type Config struct {
 				KubeConfigDomain string              `yaml:"kubeConfigDomain"`
 				// AZ code -> domain, sent in KaaS helm values.
 				AzDomains map[string]string `yaml:"azDomains"`
-			}
+			} `yaml:"kubernetes"`
 
 			Backups struct {
 				Repo     RepoArgoAppConfig `yaml:"repo"`
@@ -175,7 +170,7 @@ type Config struct {
 					MinHour int `yaml:"minHour"`
 					MaxHour int `yaml:"maxHour"`
 				} `yaml:"schedule"`
-			}
+			} `yaml:"backups"`
 		} `yaml:"app"`
 
 		DefaultVPC struct {
@@ -197,6 +192,11 @@ type Config struct {
 			MinHour int `yaml:"minHour"`
 			MaxHour int `yaml:"maxHour"`
 		} `yaml:"snapshotSchedule"`
+
+		S3 struct {
+			// MaxMinifiedJSONLen caps bucket policy/lifecycle JSON minified length
+			MaxMinifiedJSONLen int `yaml:"maxMinifiedJSONLen"`
+		} `yaml:"s3"`
 	} `yaml:"productsConfig"`
 }
 
@@ -258,8 +258,6 @@ database:
   password: ""
   database: ""
 azs: []
-s3:
-  maxMinifiedJSONLen: 5000
 spxPrefix: "spx"
 argoCdUrl: "https://<argocd-host>"
 productsConfig:
@@ -287,11 +285,13 @@ productsConfig:
     ipv6: "fd00:10:10::/64"
     natGatewayEnabled: false
     private: false
-    dnsV4: ""
-    dnsV6: ""
+    dnsV4: "1.1.1.1"
+    dnsV6: "2606:4700:4700::1111"
   snapshotSchedule:
     minHour: 21
     maxHour: 23
+  s3:
+    maxMinifiedJSONLen: 5000
 `)
 
 // Global is the global configuration of this application, provisioned once LoadConfig is called

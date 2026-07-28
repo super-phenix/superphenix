@@ -60,11 +60,11 @@ func BucketToResource(obc *unstructured.Unstructured, endpoint string) Bucket {
 }
 
 func convertS3StorageClassName(storageClassName string) string {
-	for friendlyName, fullname := range config.Global.S3.StorageClassMapping {
+	for friendlyName, fullname := range config.Global.ProductsConfig.S3.StorageClassMapping {
 		if fullname == storageClassName {
 			return friendlyName
 		}
 	}
-	log.Warn().Str("storageClassName", storageClassName).Any("storageClassMapping", config.Global.S3.StorageClassMapping).Msg("Storage class name not found")
+	log.Warn().Str("storageClassName", storageClassName).Any("storageClassMapping", config.Global.ProductsConfig.S3.StorageClassMapping).Msg("Storage class name not found")
 	return "undefined-storage-class"
 }

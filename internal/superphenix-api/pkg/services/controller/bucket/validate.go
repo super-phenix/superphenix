@@ -16,7 +16,7 @@ const defaultMaxMinifiedJSONLen = 5 * 1000
 
 // maxMinifiedJSONLen returns the configured cap, or the default when unset.
 func maxMinifiedJSONLen() int {
-	if v := config.Global.S3.MaxMinifiedJSONLen; v > 0 {
+	if v := config.Global.ProductsConfig.S3.MaxMinifiedJSONLen; v > 0 {
 		return v
 	}
 	return defaultMaxMinifiedJSONLen
