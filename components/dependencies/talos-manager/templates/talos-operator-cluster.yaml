@@ -237,8 +237,10 @@ spec:
         {{- $version := trimPrefix "v" .Values.k8sVersion }}
         {{- if lt $version "1.34" }}
         runtime-config: "admissionregistration.k8s.io/v1alpha1=true"
-        {{- else }}
+        {{- else if eq $version "1.35" }}
         runtime-config: "admissionregistration.k8s.io/v1beta1=true"
+        {{- else }}
+        runtime-config: "admissionregistration.k8s.io/v1=true"
         {{- end }}
     {{- end }}
 {{- with .Values.machineGlobalOverrides }}
