@@ -25,7 +25,7 @@ import (
 // across resources. routes carries ungrouped routes (whose permission chain
 // doesn't fit a shared scope); groups carries permission-scoped route trees
 // built with Scope.
-func NewControllerModule(cfg *config.Config, name string, routes []router.Route, groups ...router.Group) router.Module {
+func NewControllerModule(name string, routes []router.Route, groups ...router.Group) router.Module {
 	return router.Module{
 		Name:        name,
 		Mount:       "/{orgaId}" + config.ApiPrefix,

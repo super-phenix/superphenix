@@ -34,7 +34,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		projectRead = controller.Perm(pwPermission.ProjectRead)
 		argoCdRead  = controller.Perm(pwPermission.ProjectArgoCdRead)
 	)
-	return controller.NewControllerModule(cfg, moduleName, []router.Route{
+	return controller.NewControllerModule(moduleName, []router.Route{
 		router.Get("/{az}/{projectId}/argo-link/{kind}/{effectiveId}", s.GetArgoCdLink, projectRead, argoCdRead),
 	})
 }

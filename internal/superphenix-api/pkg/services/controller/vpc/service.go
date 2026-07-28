@@ -40,7 +40,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		vpcWrite = controller.Perm(pwPermission.ProjectVPCWrite)
 		quota    = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{vpcRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/vpc", s.ListVPCs),

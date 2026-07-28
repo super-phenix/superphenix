@@ -42,7 +42,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		instanceWrite = controller.Perm(pwPermission.ProjectInstanceWrite)
 		quota         = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{snapshotRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/instance-snapshot", s.ListVmSnapshots),

@@ -39,7 +39,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		sshWrite = controller.Perm(pwPermission.ProjectSSHWrite)
 		quota    = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{sshRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/ssh", s.ListSSHs),

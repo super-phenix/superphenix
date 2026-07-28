@@ -40,7 +40,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		baasWrite = controller.Perm(pwPermission.ProjectBaaSWrite)
 		quota     = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{baasRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/baas", s.ListBaaS),

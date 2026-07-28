@@ -43,7 +43,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		instanceWrite = controller.Perm(pwPermission.ProjectInstanceWrite)
 		quota         = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName,
+	return controller.NewControllerModule(moduleName,
 		[]router.Route{
 			router.Get("/{az}/{projectId}/disk/{effectiveId}/unmount", s.Unmount, instanceRead, diskRead, instanceWrite),
 		},

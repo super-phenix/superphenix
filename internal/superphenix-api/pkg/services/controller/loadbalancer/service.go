@@ -40,7 +40,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		loadBalancerWrite = controller.Perm(pwPermission.ProjectLoadBalancerWrite)
 		quota             = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{loadBalancerRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/load-balancer", s.ListLoadBalancers),

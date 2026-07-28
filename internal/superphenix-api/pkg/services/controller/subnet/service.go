@@ -42,7 +42,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		eipRead     = controller.Perm(pwPermission.ProjectEipRead)
 		quota       = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{subnetRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/subnet", s.ListSubnets),

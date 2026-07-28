@@ -32,7 +32,7 @@ func New(cfg *config.Config) *Service { return &Service{cfg: cfg} }
 // Module builds the cluster-metadata routes for any API.
 // These routes carry no per-route permission beyond the shared chain.
 func Module(cfg *config.Config, s API) router.Module {
-	return controller.NewControllerModule(cfg, moduleName, []router.Route{
+	return controller.NewControllerModule(moduleName, []router.Route{
 		router.Get("/{az}/{projectId}/storage-class", s.StorageClass),
 		router.Get("/{az}/{projectId}/vm-type", s.VMType),
 		router.Get("/{az}/{projectId}/vm-type/{name}", s.VMTypeByName),

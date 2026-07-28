@@ -43,7 +43,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		bucketCredentials = controller.Perm(pwPermission.ProjectBucketCredentials)
 		quota             = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName,
+	return controller.NewControllerModule(moduleName,
 		nil,
 		router.Group{
 			Middlewares: []router.Middleware{bucketRead},

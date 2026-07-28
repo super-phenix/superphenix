@@ -49,7 +49,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		firewallRead   = controller.Perm(pwPermission.ProjectFirewallRead)
 		quota          = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName, nil, router.Group{
+	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{kaasRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/kaas", s.ListKaaS),

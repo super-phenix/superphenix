@@ -55,7 +55,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		diskWrite        = controller.Perm(pwPermission.ProjectDiskWrite)
 		quota            = controller.CheckCreationQuota
 	)
-	return controller.NewControllerModule(cfg, moduleName,
+	return controller.NewControllerModule(moduleName,
 		[]router.Route{
 			router.Get("/{az}/{projectId}/container-disks", s.ContainerDisks, diskRead),
 		},
