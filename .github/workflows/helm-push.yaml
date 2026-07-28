@@ -41,6 +41,15 @@ jobs:
         run: |
           set -x
           REGISTRY="oci://ghcr.io/${{ github.repository_owner }}/charts"
+          
+          # Determine SPX-VERSION
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
+            SPX_VERSION="${{ github.ref_name }}"
+            # Remove leading 'v' if present for Helm versioning
+            SPX_VERSION="${SPX_VERSION#v}"
+          else
+            SPX_VERSION="0.0.0"
+          fi
 
           # Identify changed files if not a manual trigger or new branch/tag
           ALL_CHANGED=false
@@ -93,18 +102,11 @@ jobs:
             CHART_VERSION_IN_FILE=$(yq -r '.version' "$chart_file")
 
             # Check for dependencies and update them if necessary
-            if yq -r '.dependencies | length > 0' "$chart_file" | grep -q "true"; then
+            if yq -e '.dependencies | length > 0' "$chart_file" >/dev/null 2>&1; then
               echo "Dependencies found for $CHART_NAME, updating..."
+              # Update dependencies versions if they are 0.0.0
+              yq -i "(.dependencies[] | select(.version == \"0.0.0\").version) = \"$SPX_VERSION\"" "$chart_file"
               helm dependency update "$chart_dir"
-            fi
-
-            # Determine SPX-VERSION
-            if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_type }}" == "tag" ]]; then
-              SPX_VERSION="${{ github.ref_name }}"
-              # Remove leading 'v' if present for Helm versioning
-              SPX_VERSION="${SPX_VERSION#v}"
-            else
-              SPX_VERSION="0.0.0"
             fi
 
             # Determine the final version to push

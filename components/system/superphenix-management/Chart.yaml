@@ -7,10 +7,10 @@ version: 0.0.0
 appVersion: "0.0.0"
 # Removed to temporarily satisfy CICD
 dependencies:
-#  - name: superphenix-console
-#    version: 0.0.0
-#    repository: "oci://ghcr.io/super-phenix/charts"
-#    condition: superphenix-console.enabled
+  - name: superphenix-console
+    version: 0.0.0 # This chart inherits the tag of the Git repository
+    repository: "oci://ghcr.io/super-phenix/charts"
+    condition: superphenix-console.enabled
   - name: talos-operator
     version: 0.6.1
     repository: "https://alperencelik.github.io/helm-charts"

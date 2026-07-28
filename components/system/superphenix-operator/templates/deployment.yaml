@@ -55,7 +55,7 @@ spec:
             - --management-chart-url={{ .Values.config.management.chart.url }}
             {{- end }}
             {{- if .Values.config.management.chart.version }}
-            - --management-chart-version={{ .Values.config.management.chart.version }}
+            - --management-chart-version={{ .Values.config.management.chart.version | default .Chart.AppVersion }}
             {{- end }}
             {{- end }}
             {{- if .Values.config.system.repoURL }}
@@ -65,7 +65,7 @@ spec:
             - --default-chart-name={{ .Values.config.system.chartName }}
             {{- end }}
             {{- if .Values.config.system.version }}
-            - --default-version={{ .Values.config.system.version }}
+            - --default-version={{ .Values.config.system.version | default .Chart.AppVersion }}
             {{- end }}
             {{- if .Values.config.talosManager.chart.url }}
             - --talos-manager-chart-url={{ .Values.config.talosManager.chart.url }}
