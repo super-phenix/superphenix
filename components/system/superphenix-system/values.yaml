@@ -19,6 +19,27 @@ cleanupOnDeletion: false
 
 # -- "Per application" settings
 apps:
+  # -- Superphenix Controller installed on the AZs
+  superphenix-controller:
+    enabled: true
+    wave: "-10"
+    modes: [Hyperconverged, DecoupledVirtualization]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions:
+        - SkipDryRunOnMissingResource=true
+    repoURL: ghcr.io/super-phenix/charts
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
+    namespace: superphenix-system
+    helm:
+      chart: superphenix-controller
+      releaseName: superphenix-controller
+      values: {}
+
   # -- CoreDNS used for DNS resolution within the Kubernetes clusters
   coredns:
     enabled: true

@@ -52,7 +52,7 @@ spec:
       {{- end }}
     {{- end }}
 
-    targetRevision: {{ $values.targetRevision | quote }}
+    targetRevision: {{ $values.targetRevision | default .Chart.AppVersion }}
 
     {{- with $values.helm }}
     helm:
