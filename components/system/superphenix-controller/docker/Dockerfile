@@ -1,6 +1,9 @@
 ARG PROJECT=superphenix-controller
 
-FROM golang:1.25-bookworm AS build
+FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS build
+
+ARG TARGETOS
+ARG TARGETARCH
 
 ARG PROJECT
 ARG USER=$PROJECT
@@ -29,7 +32,7 @@ COPY pkg/utils/go.mod* pkg/utils/go.sum* ./pkg/utils/
 
 RUN go mod download && go mod verify
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags '-w -s' -o /bin/main cmd/superphenix-controller/main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -installsuffix cgo -ldflags '-w -s' -o /bin/main cmd/superphenix-controller/main.go
 
 FROM scratch
 
