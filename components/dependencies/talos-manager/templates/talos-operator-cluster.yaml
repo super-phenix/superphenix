@@ -201,6 +201,7 @@ spec:
         path: /etc/cri/conf.d/20-customization.part
         op: create
     sysctls:
+      # Used by the migration tool to port VMs into SPX
       user.max_user_namespaces: "65535"
     kernel:
       modules:
