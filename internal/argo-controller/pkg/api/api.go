@@ -31,7 +31,7 @@ import (
 //	@securityDefinitions.apiKey				Bearer
 //	@in										header
 //	@name									Authorization
-//	@description							Auth Token to have access to Argo Ctrl. "Bearer [Auth Token]"
+//	@description							Auth Token to have access to Argo Controller. "Bearer [Auth Token]"
 //	@scope.OrganizationRead					Grants read access to organization
 //	@scope.OrganizationWrite				Grants write access to organization
 //	@scope.OrganizationIAMRead				Grants read access to organization IAM

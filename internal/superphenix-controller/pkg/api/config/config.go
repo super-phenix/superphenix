@@ -42,8 +42,8 @@ func storageClassKeys() []string {
 
 // GetStorageClass
 //
-//	@Summary		Get all Storage Class
-//	@Description	Get all Storage Class
+//	@Summary		Get all Storage Classes
+//	@Description	Get all Storage Classes
 //	@Tags			v1, Config
 //	@Produce		json
 //	@Param			orgId		path	string	true	"Organization ID"
@@ -59,8 +59,8 @@ func GetStorageClass(w http.ResponseWriter, r *http.Request) {
 
 // GetVMClusterPreference
 //
-//	@Summary		Get all VM Cluster Preference
-//	@Description	Get all VM Cluster Preference
+//	@Summary		Get all VM Cluster Preferences
+//	@Description	Get all VM Cluster Preferences
 //	@Tags			v1, Config
 //	@Produce		json
 //	@Param			orgId		path	string	true	"Organization ID"

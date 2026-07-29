@@ -54,13 +54,13 @@ func (h *Service) GetProjectName(w http.ResponseWriter, r *http.Request) {
 	ch.String(w, http.StatusOK, project.Name)
 }
 
-// GetOrgaName retrieve the organization name by SPX Orga ID
+// GetOrgaName retrieve the organization name by SPX Organization ID
 //
 //	@Summary		Get Organization Name
-//	@Description	Get Organization Name by SPX Orga ID
+//	@Description	Get Organization Name by SPX Organization ID
 //	@Tags			Admin endpoint, Billing, v1
 //	@Produce		json
-//	@Param			orgaId	path		string	true	"Orga ID"
+//	@Param			orgaId	path		string	true	"Organization ID"
 //	@Success		200		string		"Organization Name"
 //	@Failure		400		{string}	string	"Error"
 //	@Failure		500		{string}	string	"Error"

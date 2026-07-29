@@ -28,8 +28,8 @@ type InviteIntoOrganizationBody struct {
 
 // InviteIntoOrganization
 //
-//	@Summary		Invite User in Org
-//	@Description	Invite a user into organization with given roles (or update his roles)
+//	@Summary		Invite User to Organization
+//	@Description	Invite a user into an organization with given roles (or update their roles)
 //	@Tags			v1, iam
 //	@Accept			json
 //	@Produce		json
@@ -135,7 +135,7 @@ func (h *Service) InviteIntoOrganization(w http.ResponseWriter, r *http.Request)
 
 // RemoveFromOrganization
 //
-//	@Summary		Remove User from Org
+//	@Summary		Remove User from Organization
 //	@Description	Remove a user from an organization
 //	@Tags			v1, iam
 //	@Produce		json

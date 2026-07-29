@@ -18,6 +18,7 @@ func TestReverseProxy(t *testing.T) {
 	type args struct {
 		rawUrl       string
 		pattern      string
+		authSecret   string
 		proxyRequest httputil.ProxyRequest
 	}
 
@@ -94,7 +95,7 @@ func TestReverseProxy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ReverseProxy(tt.args.rawUrl, tt.args.pattern)
+			got, err := ReverseProxy(tt.args.rawUrl, tt.args.pattern, tt.args.authSecret)
 
 			// Check if we go expected err ouput
 			if (err != nil) != tt.wantErr {

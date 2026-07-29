@@ -19,35 +19,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/admin/az/health": {
-            "get": {
-                "description": "Contact each configured AZ's /health endpoint to determine availability",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Admin endpoint"
-                ],
-                "summary": "Check health of all AZs",
-                "responses": {
-                    "200": {
-                        "description": "Map of AZ code to status (up/down)",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/admin/permission/update-schema": {
             "post": {
                 "description": "Update permission schema in database and Permify",
@@ -252,7 +223,7 @@ const docTemplate = `{
         },
         "/billing/organization/{orgaId}": {
             "get": {
-                "description": "Get Organization Name by SPX Orga ID",
+                "description": "Get Organization Name by SPX Organization ID",
                 "produces": [
                     "application/json"
                 ],
@@ -265,7 +236,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Orga ID",
+                        "description": "Organization ID",
                         "name": "orgaId",
                         "in": "path",
                         "required": true
@@ -841,7 +812,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Invite a user into organization with given roles (or update his roles)",
+                "description": "Invite a user into an organization with given roles (or update their roles)",
                 "consumes": [
                     "application/json"
                 ],
@@ -852,7 +823,7 @@ const docTemplate = `{
                     "v1",
                     "iam"
                 ],
-                "summary": "Invite User in Org",
+                "summary": "Invite User to Organization",
                 "parameters": [
                     {
                         "type": "string",
@@ -909,7 +880,7 @@ const docTemplate = `{
                     "v1",
                     "iam"
                 ],
-                "summary": "Remove User from Org",
+                "summary": "Remove User from Organization",
                 "parameters": [
                     {
                         "type": "string",
@@ -2473,7 +2444,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Update an disk",
+                "description": "Update a disk",
                 "consumes": [
                     "application/json"
                 ],
@@ -2872,7 +2843,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Update a new EIP",
+                "description": "Update an EIP",
                 "consumes": [
                     "application/json"
                 ],

@@ -253,7 +253,7 @@ func updateEIP(w http.ResponseWriter, r *http.Request) {
 // deleteEIP
 //
 //	@Summary		Delete an EIP
-//	@Description	Delete an EIP by Effective ID - 200ms delay have been added to avoid kubeovn error (caused by the fip not deleted when we try to delete the eip)
+//	@Description	Delete an EIP by Effective ID - a 400ms delay has been added to avoid a KubeOVN error (caused by the FIP not being deleted when we try to delete the EIP)
 //	@Tags			v1, EIP
 //	@Produce		plain
 //	@Param			orgId		path	string	true	"Organization ID"

@@ -223,8 +223,8 @@ func updateVPC(w http.ResponseWriter, r *http.Request) {
 
 // deleteVPC
 //
-//	@Summary		Delete an VPC
-//	@Description	Delete an VPC by Effective ID
+//	@Summary		Delete a VPC
+//	@Description	Delete a VPC by Effective ID
 //	@Tags			v1, VPC
 //	@Produce		plain
 //	@Param			orgId		path	string	true	"Organization ID"

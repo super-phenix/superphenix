@@ -155,8 +155,8 @@ func getSubnet(w http.ResponseWriter, r *http.Request, effectiveId string) {
 
 // hasEIP
 //
-//	@Summary		Check if a Subnet have linked EIP
-//	@Description	Check if a Subnet have linked EIP
+//	@Summary		Check if a Subnet has a linked EIP
+//	@Description	Check if a Subnet has a linked EIP
 //	@Tags			v1, Subnet
 //	@Produce		json
 //	@Param			orgId		path		string				true	"Organization ID"

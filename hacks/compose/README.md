@@ -28,7 +28,7 @@ $EDITOR local/kratos/kratos.yml   # set secrets.default (e.g. `openssl rand -bas
 docker compose up -d
 
 # Or from root directory (and build option)
-docker compose -f deployment/docker-compose.yml up -d --build
+docker compose -f hacks/compose/docker-compose.yml up -d --build
 ```
 
 ## Docker Compose Profiles

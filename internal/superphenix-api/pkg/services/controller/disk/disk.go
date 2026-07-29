@@ -349,7 +349,7 @@ func (h *Service) CreateDisk(w http.ResponseWriter, r *http.Request) {
 // UpdateDisk
 //
 //	@Summary		Update disk
-//	@Description	Update an disk
+//	@Description	Update a disk
 //	@Tags			v1, Superphenix Controller
 //	@Accept			json
 //	@Produce		json

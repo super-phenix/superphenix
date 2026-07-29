@@ -1486,7 +1486,7 @@ const docTemplate = `{
     },
     "securityDefinitions": {
         "Bearer": {
-            "description": "Auth Token to have access to Argo Ctrl. \"Bearer [Auth Token]\"",
+            "description": "Auth Token to have access to Argo Controller. \"Bearer [Auth Token]\"",
             "type": "apiKey",
             "name": "Authorization",
             "in": "header",

@@ -137,8 +137,8 @@ func getLoadBalancer(w http.ResponseWriter, r *http.Request, effectiveId string)
 
 // createLoadBalancer
 //
-//	@Summary		Create an LoadBalancer
-//	@Description	Create an LoadBalancer
+//	@Summary		Create a LoadBalancer
+//	@Description	Create a LoadBalancer
 //	@Tags			v1, LoadBalancer
 //	@Accept			json
 //	@Produce		plain
@@ -225,8 +225,8 @@ func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 
 // deleteLoadBalancer
 //
-//	@Summary		Delete an LoadBalancer
-//	@Description	Delete an LoadBalancer by Effective ID
+//	@Summary		Delete a LoadBalancer
+//	@Description	Delete a LoadBalancer by Effective ID
 //	@Tags			v1, LoadBalancer
 //	@Produce		plain
 //	@Param			orgId		path		string	true	"Organization ID"

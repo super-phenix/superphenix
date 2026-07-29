@@ -326,7 +326,7 @@ func (h *Service) CreateEip(w http.ResponseWriter, r *http.Request) {
 // UpdateEip
 //
 //	@Summary		Update EIP
-//	@Description	Update a new EIP
+//	@Description	Update an EIP
 //	@Tags			v1, Superphenix Controller
 //	@Accept			json
 //	@Produce		json
