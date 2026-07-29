@@ -62,6 +62,7 @@ import (
 func StartAPI() {
 	log.Debug().Msg("Starting APIs")
 	go startAdminHTTP()
+	go startHealthHTTP()
 	startHTTP()
 }
 
@@ -84,5 +85,18 @@ func startAdminHTTP() {
 		if err := srv.Run(config.Global.AdminHTTP.Address); err != nil {
 			log.Fatal().Err(err).Msg("Failed to start Admin HTTP endpoint")
 		}
+	}
+}
+
+func startHealthHTTP() {
+	if !config.Global.ReadinessProbe.Enabled {
+		return
+	}
+	srv, err := server.InitializeHealthServer(&config.Global)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize Health HTTP server")
+	}
+	if err := srv.Run(config.Global.ReadinessProbe.Address); err != nil {
+		log.Fatal().Err(err).Msg("Failed to start Health HTTP endpoint")
 	}
 }

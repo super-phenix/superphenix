@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/adminHttp"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/healthHttp"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
@@ -71,4 +72,28 @@ func InitializeAdminServerWith(cfg *config.Config, p Providers) (*AdminServer, e
 func (s *AdminServer) Run(addr string) error {
 	log.Info().Str("address", addr).Msg("Starting Admin HTTP API")
 	return http.ListenAndServe(addr, s.admin)
+}
+
+// HealthServer holds the assembled health HTTP router.
+type HealthServer struct {
+	health chi.Router
+}
+
+// InitializeHealthServer builds the health Server with the default service set.
+func InitializeHealthServer(cfg *config.Config) (*HealthServer, error) {
+	return InitializeHealthServerWith(cfg, DefaultProviders())
+}
+
+// InitializeHealthServerWith builds the health Server from the given Providers.
+func InitializeHealthServerWith(cfg *config.Config, p Providers) (*HealthServer, error) {
+	reg := router.New()
+	healthHttp.RegisterModules(cfg, reg)
+	p.registerHealth(cfg, reg)
+	return &HealthServer{health: healthHttp.BuildHealthRouter(reg)}, nil
+}
+
+// Run serves the health API and blocks.
+func (s *HealthServer) Run(addr string) error {
+	log.Info().Str("address", addr).Msg("Starting Health HTTP API")
+	return http.ListenAndServe(addr, s.health)
 }

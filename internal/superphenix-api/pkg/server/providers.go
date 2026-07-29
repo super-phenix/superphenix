@@ -5,6 +5,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	adminBilling "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/billing"
 	adminPermission "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/permission"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/health"
 	apiToken "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/apitoken"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/session"
 	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
@@ -72,6 +73,9 @@ type Providers struct {
 	// admin
 	AdminPermission RegisterFunc
 	AdminBilling    RegisterFunc
+
+	// health
+	Health RegisterFunc
 }
 
 // DefaultProviders returns the default service set.
@@ -105,6 +109,8 @@ func DefaultProviders() Providers {
 
 		AdminPermission: adminPermission.ProvideService,
 		AdminBilling:    adminBilling.ProvideService,
+
+		Health: health.ProvideService,
 	}
 }
 
@@ -133,6 +139,20 @@ func (p Providers) registerAdmin(cfg *config.Config, reg *router.Registry) {
 	} {
 		if register == nil {
 			log.Debug().Msg("server: skipping nil admin provider")
+			continue
+		}
+		register(cfg, reg)
+	}
+}
+
+// registerHealth registers every health service on reg, in a fixed order. A nil
+// field is skipped, so an edition can drop a service by zeroing its slot.
+func (p Providers) registerHealth(cfg *config.Config, reg *router.Registry) {
+	for _, register := range []RegisterFunc{
+		p.Health,
+	} {
+		if register == nil {
+			log.Debug().Msg("server: skipping nil health provider")
 			continue
 		}
 		register(cfg, reg)

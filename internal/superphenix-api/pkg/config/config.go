@@ -80,6 +80,11 @@ type Config struct {
 		AuthSecret string
 	}
 
+	ReadinessProbe struct {
+		Enabled bool
+		Address string
+	} `yaml:"readinessProbe"`
+
 	SuperAdmins []string `yaml:"superAdmins"`
 
 	Tracing struct {
@@ -211,6 +216,9 @@ adminHttp:
   enabled: true
   address: ":7000"
   authSecret: ""
+readinessProbe:
+  enabled: true
+  address: ":9000"
 superAdmins: []
 tracing:
   enabled: true
