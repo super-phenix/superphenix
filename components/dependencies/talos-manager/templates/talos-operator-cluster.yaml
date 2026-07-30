@@ -396,11 +396,6 @@ spec:
     {{- end }}
 {{- end }}
 
-
-
-
-
-
 {{/*Virutalisation cluster feature-gate configuration*/}}
 {{- define "talos-manager.feature-gates" -}}
 {{- $version := trimPrefix "v" .Values.k8sVersion}}
@@ -409,7 +404,6 @@ spec:
         # Enable {{if lt $version "1.36"}}{{$MutatingAdmissionPolicy}} and {{ end  }}{{$UserNamespacesSupport}}
         feature-gates: "{{if lt $version "1.36"}}{{$MutatingAdmissionPolicy}}=true,{{ end }}{{$UserNamespacesSupport}}=true"
 {{- end}}
-
 
 {{/*Virutalisation cluster Runtime configuration*/}}
 {{- define "talos-manager.runtimeConfig" -}}
@@ -420,7 +414,3 @@ spec:
         runtime-config: "admissionregistration.k8s.io/v1beta1=true"
         {{- end }}
 {{- end}}
-
-
-
-
