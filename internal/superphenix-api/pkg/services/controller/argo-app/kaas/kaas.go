@@ -57,6 +57,12 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			log.Error().Any("spec", spec).Msgf("The name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
 			return "", nil, fmt.Errorf("the name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
 		}
+
+		if group.Replicas < minReplicas || group.Replicas > maxReplicas {
+			log.Error().Any("spec", spec).Msgf("Replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
+			return "", nil, fmt.Errorf("replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
+		}
+
 		// Groups have a version starting at 1. When updating, each group is matched by name
 		// against oldSpec: if unchanged the version is kept, otherwise it is incremented.
 		// Unmatched groups in oldSpec are tracked in mapGroupToRemove for cleanup.
@@ -256,6 +262,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 	}
 
 	valuesObj := Values{
+		AzDomains: config.Global.ArgoController.App.KaaS.AzDomains,
 		Clusters: map[string]Cluster{
 			localId: {
 				Name:        localId,
@@ -304,8 +311,7 @@ func CreateArgoApp(ctx context.Context, localId string, az config.AZConfig, spec
 	var helmParams strings.Builder
 	helmParams.WriteString(fmt.Sprintf("--set location=%s  --set organizationID=%s  --set projectID=%s", az.Code, metadata.OrgId, metadata.ProjectId))
 	for _, class := range kaasConfig.StorageClasses {
-		helmParams.WriteString(fmt.Sprintf("  --set storageClassMapping.%s.storageClassName=%s", class.Shortname, class.Fullname))
-		helmParams.WriteString(fmt.Sprintf("  --set storageClassMapping.%s.snapshotClassName=%s", class.Shortname, class.Fullname))
+		helmParams.WriteString(fmt.Sprintf("  --set storageClassMapping.%s=%s", class.Shortname, class.Fullname))
 	}
 
 	appName := fmt.Sprintf("%s-%s", KaasPrefix, metadata.GetResourceEffectiveID())

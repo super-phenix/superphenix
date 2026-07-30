@@ -96,7 +96,7 @@ spec:
 {{- $localID := printf "proxy.%s" $preID }}
 {{- $effectiveID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $localID) }}
 
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: TLSRoute
 metadata:
   name: {{ $effectiveID | quote }}
@@ -125,7 +125,7 @@ spec:
 {{- $localID := printf "fqdn.%s" $preID }}
 {{- $effectiveID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $localID) }}
 
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: TLSRoute
 metadata:
   name: {{ $effectiveID | quote }}
@@ -154,7 +154,7 @@ spec:
 {{- $localID := printf "konnectivity.%s" $preID }}
 {{- $effectiveID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $localID) }}
 
-apiVersion: gateway.networking.k8s.io/v1alpha2
+apiVersion: gateway.networking.k8s.io/v1
 kind: TLSRoute
 metadata:
   name: {{ $effectiveID | quote }}

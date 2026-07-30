@@ -157,6 +157,8 @@ type Config struct {
 				Repo             RepoArgoAppConfig   `yaml:"repo"`
 				KubeVersions     []KubeVersionConfig `yaml:"kubeVersions,omitempty"`
 				KubeConfigDomain string              `yaml:"kubeConfigDomain"`
+				// AZ code -> domain, sent in KaaS helm values.
+				AzDomains map[string]string `yaml:"azDomains"`
 			}
 
 			BaaS struct {
@@ -268,6 +270,7 @@ argoController:
     kaas:
       kubeConfigDomain: "<kube-config-domain>"
       kubeVersions: []
+      azDomains: {}
     baas:
       schedule:
         minHour: 20

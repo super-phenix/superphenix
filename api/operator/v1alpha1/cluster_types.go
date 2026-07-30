@@ -273,6 +273,11 @@ type ClusterStatus struct {
 	// LastSync is the last time a sync was performed on the cluster.
 	// +optional
 	LastSync *metav1.Time `json:"lastSync,omitempty"`
+
+	// PXESetupDone lists hostname of machines that have been set up for PXE
+	// when using TalosManagementModeFull.
+	// +optional
+	PXESetupDone []string `json:"pxeSetupDone,omitempty"`
 }
 
 // ClusterApp reports the observed state of a single application belonging to the

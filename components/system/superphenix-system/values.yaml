@@ -1197,7 +1197,7 @@ apps:
       syncOptions: {}
     namespace: "kaas-system"
     repoURL: "ghcr.io/super-phenix/charts"
-    targetRevision: "0.3.0"
+    targetRevision: ""
     helm:
       chart: "kaas-controller"
       releaseName: "kaas-controller"
@@ -1215,7 +1215,7 @@ apps:
       syncOptions: {}
     namespace: "kaas-datastore-system"
     repoURL: "ghcr.io/super-phenix/charts"
-    targetRevision: "0.3.0"
+    targetRevision: ""
     helm:
       chart: "kaas-datastore"
       releaseName: "kaas-datastore"
@@ -1236,13 +1236,13 @@ apps:
       syncOptions: {}
     namespace: "kamaji-system"
     repoURL: harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm
-    targetRevision: 26.5.7
+    targetRevision: 26.7.22
     helm:
       chart: "kamaji"
       releaseName: "kamaji"
       values:
         image:
-          tag: "26.5.2-edge" # https://github.com/clastix/kamaji/releases
+          tag: "26.7.3-edge" # https://github.com/clastix/kamaji/releases
         replicaCount: 3
         defaultDatastoreName: "" # Disable default DS (override in config.yaml)
         extraArgs:
@@ -1281,17 +1281,17 @@ apps:
       syncOptions: {}
     namespace: "capi-operator-system"
     repoURL: "https://kubernetes-sigs.github.io/cluster-api-operator"
-    targetRevision: "0.26.0" # https://github.com/kubernetes-sigs/cluster-api-operator/releases
+    targetRevision: "0.28.0" # https://github.com/kubernetes-sigs/cluster-api-operator/releases
     helm:
       chart: "cluster-api-operator"
       releaseName: "cluster-api-operator"
       values:
         core:
           cluster-api:
-            version: v1.12.7 # https://github.com/kubernetes-sigs/cluster-api/releases
+            version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
         bootstrap:
           kubeadm:
-            version: v1.12.7 # https://github.com/kubernetes-sigs/cluster-api/releases
+            version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
         infrastructure:
           kubevirt:
             version: v0.11.2 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
@@ -1313,7 +1313,7 @@ apps:
       syncOptions: {}
     namespace: "etcd-operator-system"
     repoURL: ghcr.io/cozystack/charts
-    targetRevision: "0.5.1"
+    targetRevision: "0.5.3" # https://github.com/cozystack/etcd-operator/releases
     helm:
       chart: "etcd-operator"
       releaseName: "etcd-operator"

@@ -1,17 +1,5 @@
 apiVersion: v2
-
 name: kaas-controller
-
-description: Installs KaaS system on a virtualization cluster (Kamaji, Traefik, CAPI-Operator, ETCD).
-
+description: Chart to install extra dependencies for the KaaS system (issuers, mutatingadmissionpolicies)
 type: application
-
-version: 0.3.0
-
-# The expermiental Gateway API CRDs can be found here:
-# https://github.com/kubernetes-sigs/gateway-api/blob/main/config/crd/experimental/gateway.networking.k8s.io_tcproutes.yaml
-# https://github.com/kubernetes-sigs/gateway-api/blob/main/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
-#
-# or wget-able version:
-# https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/refs/heads/main/config/crd/experimental/gateway.networking.k8s.io_tcproutes.yaml
-# https://raw.githubusercontent.com/kubernetes-sigs/gateway-api/refs/heads/main/config/crd/experimental/gateway.networking.k8s.io_tlsroutes.yaml
+version: 0.0.0

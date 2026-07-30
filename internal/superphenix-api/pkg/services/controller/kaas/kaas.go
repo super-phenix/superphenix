@@ -484,7 +484,7 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400
 //	@Failure		404
 //	@Failure		500
-//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials [post]
+//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials [get]
 //	@Security		Bearer[OrganizationRead, ProjectKaaSWrite]
 func (h *Service) ReinstallKaaSEssentials(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
