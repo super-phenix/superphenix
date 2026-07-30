@@ -105,7 +105,7 @@ jobs:
             if yq -e '.dependencies | length > 0' "$chart_file" >/dev/null 2>&1; then
               echo "Dependencies found for $CHART_NAME, updating..."
               # Update dependencies versions if they are 0.0.0
-              yq -i "(.dependencies[] | select(.version == \"0.0.0\").version) = \"$SPX_VERSION\"" "$chart_file"
+              yq -y -i "(.dependencies[] | select(.version == \"0.0.0\").version) = \"$SPX_VERSION\"" "$chart_file"
               helm dependency update "$chart_dir"
             fi
 
