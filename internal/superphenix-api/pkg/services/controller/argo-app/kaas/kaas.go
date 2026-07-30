@@ -256,6 +256,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 	}
 
 	valuesObj := Values{
+		AzDomains: config.Global.ArgoController.App.KaaS.AzDomains,
 		Clusters: map[string]Cluster{
 			localId: {
 				Name:        localId,

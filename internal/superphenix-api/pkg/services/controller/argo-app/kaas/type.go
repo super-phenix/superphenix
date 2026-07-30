@@ -68,7 +68,8 @@ type GroupSubnet struct {
 
 }
 type Values struct {
-	Clusters map[string]Cluster `yaml:"clusters,omitempty"`
+	AzDomains map[string]string  `yaml:"azDomains,omitempty"`
+	Clusters  map[string]Cluster `yaml:"clusters,omitempty"`
 }
 
 type Cluster struct {

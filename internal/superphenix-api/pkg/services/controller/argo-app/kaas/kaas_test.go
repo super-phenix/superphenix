@@ -603,6 +603,228 @@ func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 	}
 }
 
+func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
+	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	t.Cleanup(func() { config.Global.ArgoController.App.KaaS.AzDomains = nil })
+	ctx := context.Background()
+	localId := "test-cluster"
+	kaasConfig := KaaSConfig{
+		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
+	}
+	spec := KaaSSpec{
+		KubeVersion:   "1.35.0",
+		CPNetPol:      "default",
+		WorkersNetPol: "default",
+		Groups: []Group{
+			{Name: "group-1", Replicas: 3, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+		},
+	}
+
+	tests := []struct {
+		name      string
+		azDomains map[string]string
+		want      map[string]string
+		rawWant   string // empty means the azDomains key must be absent
+	}{
+		{
+			name:      "configured with two entries",
+			azDomains: map[string]string{"az01": "example.org", "az02": "example.net"},
+			want:      map[string]string{"az01": "example.org", "az02": "example.net"},
+			rawWant:   "az01: example.org",
+		},
+		{
+			name:      "configured with one entry",
+			azDomains: map[string]string{"az01": "example.org"},
+			want:      map[string]string{"az01": "example.org"},
+			rawWant:   "az01: example.org",
+		},
+		{
+			name:      "unconfigured omits the key",
+			azDomains: nil,
+			want:      map[string]string{},
+		},
+		{
+			name:      "empty map omits the key",
+			azDomains: map[string]string{},
+			want:      map[string]string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config.Global.ArgoController.App.KaaS.AzDomains = tt.azDomains
+			values, _, err := CreateKaaSAppValues(ctx, localId, "test-loc", spec, kaasConfig, nil)
+			if err != nil {
+				t.Fatalf("CreateKaaSAppValues() error = %v", err)
+			}
+			if tt.rawWant == "" {
+				if strings.Contains(values, "azDomains") {
+					t.Errorf("expected values to NOT contain azDomains.\nValues:\n%s", values)
+				}
+			} else if !strings.Contains(values, tt.rawWant) {
+				t.Errorf("expected values to contain %q.\nValues:\n%s", tt.rawWant, values)
+			}
+			var parsed Values
+			if err := yaml.Unmarshal([]byte(values), &parsed); err != nil {
+				t.Fatalf("failed to unmarshal values: %v", err)
+			}
+			if len(parsed.AzDomains) != len(tt.want) {
+				t.Fatalf("azDomains = %+v, want %+v", parsed.AzDomains, tt.want)
+			}
+			for k, v := range tt.want {
+				if parsed.AzDomains[k] != v {
+					t.Errorf("azDomains[%q] = %q, want %q", k, parsed.AzDomains[k], v)
+				}
+			}
+		})
+	}
+}
+
+// TestConvertAppToUpdateKaaSSpec_AzDomains checks the azDomains key in the
+// helm values never breaks the update re-parse path.
+func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
+	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	t.Cleanup(func() { config.Global.ArgoController.App.KaaS.AzDomains = nil })
+	ctx := context.Background()
+	kaasConfig := KaaSConfig{
+		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
+	}
+	group := Group{
+		Name:         "group-1",
+		Replicas:     3,
+		Cpu:          2,
+		Memory:       4,
+		BootDiskSize: 20,
+		StorageClass: "sc1",
+		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+	}
+
+	tests := []struct {
+		name      string
+		azDomains map[string]string
+	}{
+		{name: "populated map", azDomains: map[string]string{"az01": "example.org", "az02": "example.net"}},
+		{name: "empty map", azDomains: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config.Global.ArgoController.App.KaaS.AzDomains = tt.azDomains
+			spec := KaaSSpec{
+				KubeVersion:   "1.35.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups:        []Group{group},
+			}
+			values, _, err := CreateKaaSAppValues(ctx, "test-cluster", "test-loc", spec, kaasConfig, nil)
+			if err != nil {
+				t.Fatalf("CreateKaaSAppValues() error = %v", err)
+			}
+
+			app := map[string]interface{}{
+				"app": map[string]interface{}{
+					"spec": map[string]interface{}{
+						"source": map[string]interface{}{
+							"plugin": map[string]interface{}{
+								"env": []interface{}{
+									map[string]interface{}{"name": "HELM_VALUES", "value": values},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			got, err := ConvertAppToUpdateKaaSSpec(app)
+			if err != nil {
+				t.Fatalf("ConvertAppToUpdateKaaSSpec() error = %v", err)
+			}
+			if got.KubeVersion != spec.KubeVersion {
+				t.Errorf("KubeVersion = %q, want %q", got.KubeVersion, spec.KubeVersion)
+			}
+			if len(got.Groups) != 1 || got.Groups[0].Name != group.Name {
+				t.Errorf("Groups = %+v, want one group named %q", got.Groups, group.Name)
+			}
+		})
+	}
+}
+
+func TestCreateArgoApp_HelmParams(t *testing.T) {
+	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	group := Group{
+		Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20,
+		StorageClass: "default", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+	}
+	az := config.AZConfig{Code: "az01", Destination: "dest1"}
+	metadata := spxId.Metadata{OrgId: "org", ProjectId: "proj", ResourceEffectiveId: "cluster"}
+
+	tests := []struct {
+		name           string
+		storageClasses []ClassMapping
+		wantParams     []string
+		unwantedParams []string
+	}{
+		{
+			name:           "single class maps to flat storageClassMapping",
+			storageClasses: []ClassMapping{{Shortname: "default", Fullname: "az01-storage01.default"}},
+			wantParams:     []string{"--set storageClassMapping.default=az01-storage01.default"},
+			unwantedParams: []string{"storageClassName", "snapshotClassName"},
+		},
+		{
+			name: "multiple classes map to one entry each",
+			storageClasses: []ClassMapping{
+				{Shortname: "default", Fullname: "az01-storage01.default"},
+				{Shortname: "fast", Fullname: "az01-storage01.fast"},
+			},
+			wantParams: []string{
+				"--set storageClassMapping.default=az01-storage01.default",
+				"--set storageClassMapping.fast=az01-storage01.fast",
+			},
+			unwantedParams: []string{"storageClassName", "snapshotClassName"},
+		},
+		{
+			name:           "no classes keeps base params only",
+			storageClasses: nil,
+			wantParams:     []string{"--set location=az01", "--set organizationID=org", "--set projectID=proj"},
+			unwantedParams: []string{"storageClassMapping"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := KaaSSpec{
+				KubeVersion:   "1.35.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups:        []Group{group},
+			}
+			body, _, err := CreateArgoApp(context.Background(), "cluster", az, spec, metadata, KaaSConfig{StorageClasses: tt.storageClasses}, nil)
+			if err != nil {
+				t.Fatalf("CreateArgoApp() error = %v", err)
+			}
+			var helmParams string
+			for _, env := range body.Spec.Source.Plugin.Env {
+				if env.Name == "HELM_PARAMS" {
+					helmParams = env.Value
+				}
+			}
+			if helmParams == "" {
+				t.Fatal("HELM_PARAMS env not found or empty")
+			}
+			for _, want := range tt.wantParams {
+				if !strings.Contains(helmParams, want) {
+					t.Errorf("expected HELM_PARAMS to contain %q.\nHELM_PARAMS: %s", want, helmParams)
+				}
+			}
+			for _, unwanted := range tt.unwantedParams {
+				if strings.Contains(helmParams, unwanted) {
+					t.Errorf("expected HELM_PARAMS to NOT contain %q.\nHELM_PARAMS: %s", unwanted, helmParams)
+				}
+			}
+		})
+	}
+}
+
 func TestCreateArgoApp_Repo(t *testing.T) {
 	defaultRepo := config.RepoArgoAppConfig{
 		RepoURL:        "ghcr.io/super-phenix/charts",
@@ -656,101 +878,6 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 			if src.RepoURL != tt.want.RepoURL || src.TargetRevision != tt.want.TargetRevision || src.Chart != tt.want.Chart {
 				t.Errorf("source repo = {URL:%q Rev:%q Chart:%q}, want {URL:%q Rev:%q Chart:%q}",
 					src.RepoURL, src.TargetRevision, src.Chart, tt.want.RepoURL, tt.want.TargetRevision, tt.want.Chart)
-			}
-		})
-	}
-}
-
-func TestCreateArgoApp_HelmParams(t *testing.T) {
-	config.Global.ArgoController.App.KaaS.Repo = config.RepoArgoAppConfig{
-		RepoURL:        "ghcr.io/super-phenix/charts",
-		TargetRevision: "0.1.0",
-		Chart:          "sfs-kaas",
-	}
-	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "v1.34.8"}}
-
-	az := config.AZConfig{Code: "az1", Destination: "dest1"}
-	metadata := spxId.Metadata{OrgId: "org", ProjectId: "proj", ResourceEffectiveId: "cluster"}
-
-	tests := []struct {
-		name           string
-		storageClasses []ClassMapping
-		want           []string
-	}{
-		{
-			name:           "no storage class",
-			storageClasses: nil,
-			want:           nil,
-		},
-		{
-			name:           "single storage class",
-			storageClasses: []ClassMapping{{Shortname: "default", Fullname: "spx-aq01-test02-storage01.default"}},
-			want:           []string{"--set storageClassMapping.default=spx-aq01-test02-storage01.default"},
-		},
-		{
-			name: "multiple storage classes",
-			storageClasses: []ClassMapping{
-				{Shortname: "default", Fullname: "spx-aq01-test02-storage01.default"},
-				{Shortname: "fast", Fullname: "spx-aq01-test02-storage01.fast"},
-			},
-			want: []string{
-				"--set storageClassMapping.default=spx-aq01-test02-storage01.default",
-				"--set storageClassMapping.fast=spx-aq01-test02-storage01.fast",
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			kaasConfig := KaaSConfig{StorageClasses: tt.storageClasses}
-			// The first storage class is used as the default one for the boot disk, if any.
-			storageClass := ""
-			if len(tt.storageClasses) > 0 {
-				storageClass = tt.storageClasses[0].Shortname
-			}
-			spec := KaaSSpec{
-				KubeVersion:   "v1.34.8",
-				CPNetPol:      "default",
-				WorkersNetPol: "default",
-				Groups: []Group{{
-					Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20,
-					StorageClass: storageClass, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
-				}},
-			}
-
-			body, _, err := CreateArgoApp(context.Background(), "cluster", az, spec, metadata, kaasConfig, nil)
-			if err != nil {
-				t.Fatalf("CreateArgoApp() error = %v", err)
-			}
-
-			var helmParams string
-			found := false
-			for _, entry := range body.Spec.Source.Plugin.Env {
-				if entry.Name == "HELM_PARAMS" {
-					helmParams, found = entry.Value, true
-					break
-				}
-			}
-			if !found {
-				t.Fatalf("HELM_PARAMS not found in plugin env")
-			}
-
-			for _, want := range tt.want {
-				if !strings.Contains(helmParams, want) {
-					t.Errorf("HELM_PARAMS = %q, want it to contain %q", helmParams, want)
-				}
-			}
-
-			// The chart consumes storageClassMapping as a flat friendly -> fullname map,
-			// so the mapping must never carry nested storageClassName/snapshotClassName keys.
-			for _, unwanted := range []string{"storageClassName=", "snapshotClassName="} {
-				if strings.Contains(helmParams, unwanted) {
-					t.Errorf("HELM_PARAMS = %q, want it to not contain %q", helmParams, unwanted)
-				}
-			}
-
-			if tt.want == nil && strings.Contains(helmParams, "storageClassMapping") {
-				t.Errorf("HELM_PARAMS = %q, want no storageClassMapping override", helmParams)
 			}
 		})
 	}
