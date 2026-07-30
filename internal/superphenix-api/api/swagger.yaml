@@ -491,137 +491,6 @@ definitions:
             $ref: '#/definitions/firewall.LabelSelector'
         type: object
     type: object
-  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization:
-    properties:
-      administrativeContact:
-        type: string
-      billingContact:
-        type: string
-      createdAt:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      id:
-        type: string
-      name:
-        type: string
-      ownerId:
-        type: string
-      projects:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project'
-        type: array
-      technicalContact:
-        type: string
-      updatedAt:
-        type: string
-      userRoles:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.UserOrganization'
-        type: array
-      users:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.User'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Product:
-    properties:
-      codeAZ:
-        type: string
-      createdAt:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      effectiveID:
-        type: string
-      id:
-        type: string
-      productName:
-        type: string
-      productType:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.ProductType'
-      productTypeId:
-        type: string
-      project:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project'
-      projectId:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.ProductType:
-    properties:
-      createdAt:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      id:
-        type: string
-      name:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project:
-    properties:
-      createdAt:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      id:
-        type: string
-      name:
-        type: string
-      orgaId:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.User:
-    properties:
-      createdAt:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      email:
-        type: string
-      firstname:
-        type: string
-      guestOrg:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
-        type: array
-      id:
-        type: string
-      inviteCode:
-        type: string
-      inviteCodeRegeneratedAt:
-        type: string
-      isActive:
-        description: Default value defined by config
-        type: boolean
-      lastname:
-        type: string
-      personalOrg:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
-        type: array
-      provider:
-        type: string
-      providerId:
-        type: string
-      updatedAt:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.UserOrganization:
-    properties:
-      groupId:
-        type: string
-      organizationId:
-        type: string
-      userId:
-        type: string
-    type: object
   gorm.DeletedAt:
     properties:
       time:
@@ -1230,6 +1099,137 @@ definitions:
       inviteCode:
         type: string
       lastname:
+        type: string
+    type: object
+  model.Organization:
+    properties:
+      administrativeContact:
+        type: string
+      billingContact:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      ownerId:
+        type: string
+      projects:
+        items:
+          $ref: '#/definitions/model.Project'
+        type: array
+      technicalContact:
+        type: string
+      updatedAt:
+        type: string
+      userRoles:
+        items:
+          $ref: '#/definitions/model.UserOrganization'
+        type: array
+      users:
+        items:
+          $ref: '#/definitions/model.User'
+        type: array
+    type: object
+  model.Product:
+    properties:
+      codeAZ:
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      effectiveID:
+        type: string
+      id:
+        type: string
+      productName:
+        type: string
+      productType:
+        $ref: '#/definitions/model.ProductType'
+      productTypeId:
+        type: string
+      project:
+        $ref: '#/definitions/model.Project'
+      projectId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.ProductType:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.Project:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: string
+      name:
+        type: string
+      orgaId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      email:
+        type: string
+      firstname:
+        type: string
+      guestOrg:
+        items:
+          $ref: '#/definitions/model.Organization'
+        type: array
+      id:
+        type: string
+      inviteCode:
+        type: string
+      inviteCodeRegeneratedAt:
+        type: string
+      isActive:
+        description: Default value defined by config
+        type: boolean
+      lastname:
+        type: string
+      personalOrg:
+        items:
+          $ref: '#/definitions/model.Organization'
+        type: array
+      provider:
+        type: string
+      providerId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  model.UserOrganization:
+    properties:
+      groupId:
+        type: string
+      organizationId:
+        type: string
+      userId:
         type: string
     type: object
   organization.TransferOrganizationBody:
@@ -2354,6 +2354,10 @@ paths:
         name: effectiveId
         required: true
         type: string
+      - description: 'Temporary: force update of a gitops-managed disk'
+        in: query
+        name: force
+        type: boolean
       - description: Disk info
         in: body
         name: Body
@@ -6116,7 +6120,7 @@ paths:
         "200":
           description: Created Organization
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+            $ref: '#/definitions/model.Organization'
         "400":
           description: Bad Request
         "500":
@@ -6203,7 +6207,7 @@ paths:
         "200":
           description: Organization
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+            $ref: '#/definitions/model.Organization'
         "400":
           description: Bad Request
         "404":
@@ -6646,7 +6650,7 @@ paths:
           description: Organizations
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Organization'
+              $ref: '#/definitions/model.Organization'
             type: array
         "404":
           description: Not Found
@@ -6666,7 +6670,7 @@ paths:
           description: Products
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Product'
+              $ref: '#/definitions/model.Product'
             type: array
         "404":
           description: Not Found
@@ -6686,7 +6690,7 @@ paths:
           description: Projects
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.Project'
+              $ref: '#/definitions/model.Project'
             type: array
         "404":
           description: Not Found
@@ -6706,7 +6710,7 @@ paths:
           description: Users
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-api_internal_db_model.User'
+              $ref: '#/definitions/model.User'
             type: array
         "404":
           description: Not Found

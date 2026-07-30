@@ -43,6 +43,115 @@ definitions:
       name:
         type: string
     type: object
+  datavolume.CreateDiskInfo:
+    properties:
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          source:
+            $ref: '#/definitions/datavolume.Source'
+          storage:
+            description: Storage Size
+            type: string
+          storageClass:
+            type: string
+        type: object
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+    type: object
+  datavolume.Source:
+    properties:
+      clone:
+        type: string
+      snapshot:
+        type: string
+      type:
+        type: string
+      url:
+        type: string
+    type: object
+  dnat.InfoDNAT:
+    properties:
+      externalPort:
+        type: string
+      internalIP:
+        type: string
+      internalPort:
+        type: string
+      protocol:
+        type: string
+    type: object
+  eip.CreateEIPInfo:
+    properties:
+      general:
+        properties:
+          subnetEid:
+            type: string
+        type: object
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+      spec:
+        properties:
+          dnat:
+            items:
+              properties:
+                externalPort:
+                  type: string
+                internalIP:
+                  type: string
+                internalPort:
+                  type: string
+                protocol:
+                  type: string
+              type: object
+            type: array
+          internalIP:
+            type: string
+          snat:
+            items:
+              type: string
+            type: array
+        type: object
+    type: object
+  eip.UpdateEIPInfo:
+    properties:
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+      spec:
+        properties:
+          dnat:
+            items:
+              $ref: '#/definitions/dnat.InfoDNAT'
+            type: array
+          internalIP:
+            type: string
+          snat:
+            items:
+              type: string
+            type: array
+        type: object
+    type: object
   errors.ClusterStatusError:
     enum:
     - InvalidConfiguration
@@ -189,2357 +298,6 @@ definitions:
     - ConditionProgressing
     - ConditionDegraded
     - ConditionUpgradeable
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.CreateNetPolInfo:
-    properties:
-      description:
-        type: string
-      egress:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.EgressRule'
-        type: array
-      ingress:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.IngressRule'
-        type: array
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-      target:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.LabelSelector'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.EgressRule:
-    properties:
-      allowAll:
-        type: boolean
-      denyAll:
-        type: boolean
-      ports:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.FwPort'
-        type: array
-      to:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.Peer'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.FwPort:
-    properties:
-      endPort:
-        type: integer
-      port:
-        type: integer
-      protocol:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.IPBlock:
-    properties:
-      CIDR:
-        type: string
-      Except:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.IngressRule:
-    properties:
-      allowAll:
-        type: boolean
-      denyAll:
-        type: boolean
-      from:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.Peer'
-        type: array
-      ports:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.FwPort'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.LabelSelector:
-    properties:
-      matchExpressions:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.MatchExpression'
-        type: array
-      matchLabels:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.MatchLabel'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.MatchExpression:
-    properties:
-      key:
-        type: string
-      operator:
-        type: string
-      values:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.MatchLabel:
-    properties:
-      key:
-        type: string
-      value:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.Peer:
-    properties:
-      IPBlock:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.IPBlock'
-      podSelector:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.LabelSelector'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.UpdateNetPolInfo:
-    properties:
-      description:
-        type: string
-      egress:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.EgressRule'
-        type: array
-      ingress:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.IngressRule'
-        type: array
-      target:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.LabelSelector'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_pvc.UpdateDiskInfo:
-    properties:
-      general:
-        properties:
-          labels:
-            items:
-              type: string
-            type: array
-          storage:
-            description: Storage Size
-            type: string
-        type: object
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_ssh.CreateSSHInfo:
-    properties:
-      general:
-        properties:
-          publicKey:
-            type: string
-        type: object
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_eip.CreateEIPInfo:
-    properties:
-      general:
-        properties:
-          subnetEid:
-            type: string
-        type: object
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-      spec:
-        properties:
-          dnat:
-            items:
-              properties:
-                externalPort:
-                  type: string
-                internalIP:
-                  type: string
-                internalPort:
-                  type: string
-                protocol:
-                  type: string
-              type: object
-            type: array
-          internalIP:
-            type: string
-          snat:
-            items:
-              type: string
-            type: array
-        type: object
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_eip.UpdateEIPInfo:
-    properties:
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-      spec:
-        properties:
-          dnat:
-            items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_eip_dnat.InfoDNAT'
-            type: array
-          internalIP:
-            type: string
-          snat:
-            items:
-              type: string
-            type: array
-        type: object
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_eip_dnat.InfoDNAT:
-    properties:
-      externalPort:
-        type: string
-      internalIP:
-        type: string
-      internalPort:
-        type: string
-      protocol:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_load_balancer.CreateLoadBalancerInfo:
-    properties:
-      endpoints:
-        description: ip list
-        items:
-          type: string
-        type: array
-      orgID:
-        type: string
-      ports:
-        items:
-          properties:
-            port:
-              description: Name generated from other fields
-              type: integer
-            protocol:
-              type: string
-            targetPort:
-              type: integer
-          type: object
-        type: array
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-      selectors:
-        description: Selectors and Endpoints are mutually exclusives
-        items:
-          type: string
-        type: array
-      vip:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_subnet.CreateSubnetInfo:
-    properties:
-      general:
-        properties:
-          vpcEId:
-            type: string
-        type: object
-      natGateway:
-        properties:
-          enable:
-            type: boolean
-        type: object
-      network:
-        properties:
-          dnsV4:
-            type: string
-          dnsV6:
-            type: string
-          ipv4:
-            type: string
-          ipv6:
-            type: string
-          private:
-            type: boolean
-          protocol:
-            type: string
-        type: object
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_vpc.CreateVPCInfo:
-    properties:
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_vpc.UpdateVPCInfo:
-    properties:
-      staticRoutes:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.StaticRoute'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_datavolume.CreateDiskInfo:
-    properties:
-      general:
-        properties:
-          labels:
-            items:
-              type: string
-            type: array
-          source:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_datavolume.Source'
-          storage:
-            description: Storage Size
-            type: string
-          storageClass:
-            type: string
-        type: object
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_datavolume.Source:
-    properties:
-      clone:
-        type: string
-      snapshot:
-        type: string
-      type:
-        type: string
-      url:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedBootloader:
-    properties:
-      efi:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.EFIOptions'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedDevices:
-    properties:
-      tpm:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.TPMOptions'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedFirmware:
-    properties:
-      bootloader:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedBootloader'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedOptionsInput:
-    properties:
-      devices:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedDevices'
-      firmware:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedFirmware'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.CloudInit:
-    properties:
-      bus:
-        type: string
-      config:
-        type: string
-      custom:
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.ContainerDiskBatch:
-    properties:
-      ids:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.CreateVMInfo:
-    properties:
-      advanced:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedOptionsInput'
-        description: 'Advanced is optional: nil pushes no device/firmware override.'
-      cloudInit:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.CloudInit'
-      compute:
-        properties:
-          cpu:
-            type: integer
-          memory:
-            type: integer
-        type: object
-      containerDisks:
-        description: |-
-          ContainerDisks holds catalog IDs. Nil falls back to the recommended
-          catalog set for the VM preference; a non-nil slice (including empty) is
-          honoured verbatim. IDs are resolved against this AZ's config catalog.
-        items:
-          type: string
-        type: array
-      disks:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.Disk'
-        type: array
-      general:
-        properties:
-          labels:
-            items:
-              type: string
-            type: array
-          runStrategy:
-            type: string
-          vmType:
-            type: string
-        type: object
-      network:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.Network'
-        type: array
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-      sshKeys:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.Disk:
-    properties:
-      bus:
-        type: string
-      cdrom:
-        type: boolean
-      disk:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_datavolume.CreateDiskInfo'
-      eid:
-        type: string
-      order:
-        type: integer
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.EFIOptions:
-    properties:
-      enabled:
-        type: boolean
-      persistent:
-        description: persist EFI NVRAM across reboots
-        type: boolean
-      secureBoot:
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.Network:
-    properties:
-      ipv4:
-        type: string
-      ipv6:
-        type: string
-      model:
-        type: string
-      order:
-        type: integer
-      subnetEId:
-        description: Subnet Effective ID
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.TPMOptions:
-    properties:
-      enabled:
-        type: boolean
-      persistent:
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.UpdateVMInfo:
-    properties:
-      advanced:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.AdvancedOptionsInput'
-        description: 'Advanced is optional: nil leaves existing device/firmware overrides
-          untouched.'
-      cloudInit:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.CloudInit'
-      compute:
-        properties:
-          cpu:
-            type: integer
-          memory:
-            type: integer
-        type: object
-      containerDisks:
-        description: |-
-          ContainerDisks is the desired mount state as catalog IDs. Nil preserves
-          whatever is currently attached; non-nil sets it explicitly (empty
-          detaches all). IDs are resolved against this AZ's config catalog.
-        items:
-          type: string
-        type: array
-      disks:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.Disk'
-        type: array
-      general:
-        properties:
-          labels:
-            items:
-              type: string
-            type: array
-          runStrategy:
-            type: string
-          vmType:
-            type: string
-        type: object
-      network:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.Network'
-        type: array
-      sshKeys:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CloneVmSnapshotDisk:
-    properties:
-      eid:
-        type: string
-      id:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CloneVmSnapshotInfo:
-    properties:
-      id:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CloneVmSnapshotResponse:
-    properties:
-      disks:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CloneVmSnapshotDisk'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CreateVmSnapshotInfo:
-    properties:
-      general:
-        properties:
-          source:
-            type: string
-        type: object
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.CreateSnapshotInfo:
-    properties:
-      orgID:
-        type: string
-      projectID:
-        type: string
-      resourceEffectiveID:
-        type: string
-      resourceLocalID:
-        type: string
-      spec:
-        properties:
-          labelSelector:
-            items:
-              type: string
-            type: array
-          paused:
-            type: boolean
-          retention:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.RetentionPolicy'
-          schedule:
-            type: integer
-          scheduled:
-            type: boolean
-          source:
-            type: string
-        type: object
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.RetentionPolicy:
-    properties:
-      expiryTime:
-        type: integer
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.UpdateSnapshotInfo:
-    properties:
-      spec:
-        properties:
-          labelSelector:
-            items:
-              type: string
-            type: array
-          paused:
-            type: boolean
-          retention:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.RetentionPolicy'
-          schedule:
-            type: integer
-        type: object
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.AccessCredential:
-    properties:
-      sshPublicKey:
-        allOf:
-        - $ref: '#/definitions/v1.SSHPublicKeyAccessCredential'
-        description: |-
-          SSHPublicKey represents the source and method of applying a ssh public
-          key into a guest virtual machine.
-          +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.AdvancedOptions:
-    properties:
-      blocks:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ResolvedBlock'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BaaS:
-    properties:
-      backup:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BaasObject'
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BaasObject:
-    properties:
-      backup:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Backup'
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      orphan:
-        type: boolean
-      schedule:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Schedule'
-      standalone:
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Backup:
-    properties:
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BackupSpec'
-        description: +optional
-      status:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BackupStatus'
-        description: +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BackupProgress:
-    properties:
-      itemsBackedUp:
-        description: |-
-          ItemsBackedUp is the number of items that have actually been written to the
-          backup tarball so far.
-          +optional
-        type: integer
-      totalItems:
-        description: |-
-          TotalItems is the total number of items to be backed up. This number may change
-          throughout the execution of the backup due to plugins that return additional related
-          items to back up, the velero.io/exclude-from-backup label, and various other
-          filters that happen as items are processed.
-          +optional
-        type: integer
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BackupSpec:
-    properties:
-      labelSelector:
-        allOf:
-        - $ref: '#/definitions/v1.LabelSelector'
-        description: |-
-          LabelSelector is a metav1.LabelSelector to filter with
-          when adding individual objects to the backup. If empty
-          or nil, all objects are included. Optional.
-          +optional
-          +nullable
-      ttl:
-        allOf:
-        - $ref: '#/definitions/k8s_io_apimachinery_pkg_apis_meta_v1.Duration'
-        description: |-
-          TTL is a time.Duration-parseable string describing how long
-          the Backup should be retained for.
-          +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BackupStatus:
-    properties:
-      completionTimestamp:
-        type: string
-      errors:
-        description: |-
-          Errors is a count of all error messages that were generated during
-          execution of the backup.  The actual errors are in the backup's log
-          file in object storage.
-          +optional
-        type: integer
-      failureReason:
-        description: |-
-          FailureReason is an error that caused the entire backup to fail.
-          +optional
-        type: string
-      phase:
-        description: |-
-          Phase is the current state of the Backup.
-          +optional
-        type: string
-      progress:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BackupProgress'
-        description: |-
-          Progress contains information about the backup's execution progress. Note
-          that this information is best-effort only -- if Velero fails to update it
-          during a backup for any reason, it may be inaccurate/stale.
-          +optional
-          +nullable
-      warnings:
-        description: |-
-          Warnings is a count of all warning messages that were generated during
-          execution of the backup. The actual warnings are in the backup's log
-          file in object storage.
-          +optional
-        type: integer
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket:
-    properties:
-      bucket:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BucketView'
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BucketView:
-    properties:
-      creationTimestamp:
-        type: string
-      endpoint:
-        type: string
-      lifecycle:
-        type: string
-      maxObjects:
-        type: string
-      maxSize:
-        type: string
-      name:
-        description: S3 bucket name (spec.bucketName)
-        type: string
-      phase:
-        type: string
-      policy:
-        type: string
-      storageClass:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Cluster:
-    properties:
-      cluster:
-        $ref: '#/definitions/v1beta2.Cluster'
-      machineDeployments:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineDeployment'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DNATView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/v1.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1.IptablesDnatRuleSpec'
-      status:
-        $ref: '#/definitions/v1.IptablesDnatRuleStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DataVolumeSpec:
-    properties:
-      source:
-        allOf:
-        - $ref: '#/definitions/v1beta1.DataVolumeSource'
-        description: |-
-          Source is the src of the data for the requested DataVolume
-          +optional
-      storage:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.StorageSpec'
-        description: Storage is the requested storage specification
-      storageClassName:
-        description: StorageClassName is the name of the StorageClass required by
-          the DataVolume.
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DataVolumeStatus:
-    properties:
-      claimName:
-        description: ClaimName is the name of the underlying PVC used by the DataVolume.
-        type: string
-      conditions:
-        items:
-          $ref: '#/definitions/v1beta1.DataVolumeCondition'
-        type: array
-      phase:
-        allOf:
-        - $ref: '#/definitions/v1beta1.DataVolumePhase'
-        description: Phase is the current phase of the data volume
-      progress:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DataVolumeTemplate:
-    properties:
-      registryUrl:
-        type: string
-      storageSize:
-        type: string
-      volumeMode:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Disk:
-    properties:
-      codeAZ:
-        type: string
-      disk:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DiskView'
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      mountStatus:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MountStatus'
-      productName:
-        description: human-readable name
-        type: string
-      pvc:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PVCView'
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DiskView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DataVolumeSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DataVolumeStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DomainSpec:
-    properties:
-      cpu:
-        allOf:
-        - $ref: '#/definitions/v1.CPU'
-        description: |-
-          CPU allow specified the detailed CPU topology inside the vmi.
-          +optional
-      devices:
-        allOf:
-        - $ref: '#/definitions/v1.Devices'
-        description: Devices allows adding disks, network interfaces, and others
-      machine:
-        allOf:
-        - $ref: '#/definitions/v1.Machine'
-        description: |-
-          Machine type.
-          +optional
-      memory:
-        allOf:
-        - $ref: '#/definitions/v1.Memory'
-        description: |-
-          Memory allow specifying the VMI memory features.
-          +optional
-      resources:
-        allOf:
-        - $ref: '#/definitions/kubevirt_io_api_core_v1.ResourceRequirements'
-        description: Resources describes the Compute Resources required by this vmi.
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.EIP:
-    properties:
-      codeAZ:
-        type: string
-      dnat:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DNATView'
-        type: array
-      eid:
-        description: effective ID
-        type: string
-      eip:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.EIPView'
-      fip:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.FIPView'
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      snat:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SNATView'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.EIPView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/v1.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1.IptablesEIPSpec'
-      status:
-        $ref: '#/definitions/v1.IptablesEIPStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.FIPView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/v1.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1.IptablesFIPRuleSpec'
-      status:
-        $ref: '#/definitions/v1.IptablesFIPRuleStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Firewall:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      firewall:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.NetPolView'
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Instance:
-    properties:
-      cloudInit:
-        type: string
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      vm:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineView'
-      vmi:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceView'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.KaaS:
-    properties:
-      cluster:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Cluster'
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.KubevirtMachineTemplateSimplified:
-    properties:
-      dataVolumeTemplates:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DataVolumeTemplate'
-        type: array
-      machineTemplate:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplate'
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBRulePort:
-    properties:
-      name:
-        type: string
-      port:
-        type: integer
-      protocol:
-        type: string
-      targetPort:
-        type: integer
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBSpec:
-    properties:
-      endpoints:
-        items:
-          type: string
-        type: array
-      namespace:
-        type: string
-      ports:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBRulePort'
-        type: array
-      selector:
-        items:
-          type: string
-        type: array
-      sessionAffinity:
-        type: string
-      vip:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBStatus:
-    properties:
-      conditions:
-        description: |-
-          Conditions represents the latest state of the object
-          +optional
-          +patchMergeKey=type
-          +patchStrategy=merge
-        items:
-          $ref: '#/definitions/github_com_kubeovn_kube-ovn_pkg_apis_kubeovn_v1.Condition'
-        type: array
-      ports:
-        type: string
-      service:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LoadBalancer:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      loadBalancer:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LBView'
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineDeployment:
-    properties:
-      machineDeployment:
-        $ref: '#/definitions/v1beta2.MachineDeployment'
-      machineTemplate:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.KubevirtMachineTemplateSimplified'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplate:
-    properties:
-      cpu:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplateCPU'
-      memory:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplateMemory'
-      preference:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplatePreference'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplateCPU:
-    properties:
-      cores:
-        type: integer
-      sockets:
-        type: integer
-      threads:
-        type: integer
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplateMemory:
-    properties:
-      guest:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MachineTemplatePreference:
-    properties:
-      name:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.MountStatus:
-    properties:
-      by:
-        type: string
-      isMounted:
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.NatGwView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VpcNatSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VpcNatStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.NetPolView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      description:
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1.NetworkPolicySpec'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta:
-    properties:
-      annotations:
-        additionalProperties:
-          type: string
-        type: object
-      creationTimestamp:
-        type: string
-      generateName:
-        type: string
-      labels:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      namespace:
-        type: string
-      ownerReferences:
-        items:
-          $ref: '#/definitions/v1.OwnerReference'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PVCSpec:
-    properties:
-      accessModes:
-        description: |-
-          accessModes contains the desired access modes the volume should have.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
-          +optional
-          +listType=atomic
-        items:
-          $ref: '#/definitions/v1.PersistentVolumeAccessMode'
-        type: array
-      dataSource:
-        allOf:
-        - $ref: '#/definitions/v1.TypedLocalObjectReference'
-        description: |-
-          dataSource field can be used to specify either:
-          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
-          * An existing PVC (PersistentVolumeClaim)
-          If the provisioner or an external controller can support the specified data source,
-          it will create a new volume based on the contents of the specified data source.
-          When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
-          and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
-          If the namespace is specified, then dataSourceRef will not be copied to dataSource.
-          +optional
-      resources:
-        allOf:
-        - $ref: '#/definitions/v1.VolumeResourceRequirements'
-        description: |-
-          resources represents the minimum resources the volume should have.
-          If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
-          that are lower than previous value but must still be higher than capacity recorded in the
-          status field of the claim.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
-          +optional
-      storageClassName:
-        description: |-
-          storageClassName is the name of the StorageClass required by the claim.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1
-          +optional
-        type: string
-      volumeMode:
-        allOf:
-        - $ref: '#/definitions/v1.PersistentVolumeMode'
-        description: |-
-          volumeMode defines what type of volume is required by the claim.
-          Value of Filesystem is implied when not included in claim spec.
-          +optional
-      volumeName:
-        description: |-
-          volumeName is the binding reference to the PersistentVolume backing this claim.
-          +optional
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PVCStatus:
-    properties:
-      accessModes:
-        description: |-
-          accessModes contains the actual access modes the volume backing the PVC has.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
-          +optional
-          +listType=atomic
-        items:
-          $ref: '#/definitions/v1.PersistentVolumeAccessMode'
-        type: array
-      capacity:
-        allOf:
-        - $ref: '#/definitions/v1.ResourceList'
-        description: |-
-          capacity represents the actual resources of the underlying volume.
-          +optional
-      phase:
-        allOf:
-        - $ref: '#/definitions/v1.PersistentVolumeClaimPhase'
-        description: |-
-          phase represents the current phase of PersistentVolumeClaim.
-          +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PVCView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PVCSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PVCStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PreferenceMatcher:
-    properties:
-      name:
-        description: |-
-          Name is the name of the VirtualMachinePreference or VirtualMachineClusterPreference
-
-          +optional
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ResolvedBlock:
-    properties:
-      description:
-        type: string
-      enabled:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ResolvedBool'
-      fields:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ResolvedField'
-        type: array
-      key:
-        type: string
-      label:
-        type: string
-      offLabel:
-        type: string
-      onLabel:
-        type: string
-      path:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ResolvedBool:
-    properties:
-      default:
-        description: kubevirt default this field takes when its block is active (e.g.
-          Secure Boot is true once EFI is on)
-        type: boolean
-      live:
-        description: value on the running VMI, nil if stopped
-        type: boolean
-      source:
-        description: '"vm", "preference" or "default"'
-        type: string
-      stale:
-        description: Live differs from Value (restart required)
-        type: boolean
-      value:
-        description: effective value, nil if not set anywhere
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ResolvedField:
-    properties:
-      default:
-        description: kubevirt default this field takes when its block is active (e.g.
-          Secure Boot is true once EFI is on)
-        type: boolean
-      description:
-        type: string
-      key:
-        type: string
-      label:
-        type: string
-      live:
-        description: value on the running VMI, nil if stopped
-        type: boolean
-      source:
-        description: '"vm", "preference" or "default"'
-        type: string
-      stale:
-        description: Live differs from Value (restart required)
-        type: boolean
-      value:
-        description: effective value, nil if not set anywhere
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SNATView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      legacy:
-        description: Property use to detect legacy SNAT - meant to be deleted
-        type: boolean
-      metadata:
-        $ref: '#/definitions/v1.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1.IptablesSnatRuleSpec'
-      status:
-        $ref: '#/definitions/v1.IptablesSnatRuleStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SSH:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      ssh:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SSHView'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SSHView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      data:
-        additionalProperties:
-          items:
-            format: int32
-            type: integer
-          type: array
-        description: |-
-          Data contains the secret data. Each key must consist of alphanumeric
-          characters, '-', '_' or '.'. The serialized form of the secret data is a
-          base64 encoded string, representing the arbitrary (possibly non-string)
-          data value here. Described in https://tools.ietf.org/html/rfc4648#section-4
-          +optional
-        type: object
-      immutable:
-        description: |-
-          Immutable, if set to true, ensures that data stored in the Secret cannot
-          be updated (only object metadata can be modified).
-          If not set to true, the field can be modified at any time.
-          Defaulted to nil.
-          +optional
-        type: boolean
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      stringData:
-        additionalProperties:
-          type: string
-        description: |-
-          stringData allows specifying non-binary secret data in string form.
-          It is provided as a write-only input field for convenience.
-          All keys and values are merged into the data field on write, overwriting any existing values.
-          The stringData field is never output when reading from the API.
-          +k8s:conversion-gen=false
-          +optional
-        type: object
-      type:
-        description: |-
-          Used to facilitate programmatic handling of secret data.
-          More info: https://kubernetes.io/docs/concepts/configuration/secret/#secret-types
-          +optional
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Schedule:
-    properties:
-      backups:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Backup'
-        type: array
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ScheduleSpec'
-        description: +optional
-      status:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ScheduleStatus'
-        description: +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ScheduleSpec:
-    properties:
-      labelSelector:
-        allOf:
-        - $ref: '#/definitions/v1.LabelSelector'
-        description: |-
-          LabelSelector is a metav1.LabelSelector to filter with
-          when adding individual objects to the backup. If empty
-          or nil, all objects are included. Optional.
-          +optional
-          +nullable
-      paused:
-        description: |-
-          Paused specifies whether the schedule is paused or not
-          +optional
-        type: boolean
-      schedule:
-        description: |-
-          Schedule is a Cron expression defining when to run
-          the Backup.
-        type: string
-      ttl:
-        allOf:
-        - $ref: '#/definitions/k8s_io_apimachinery_pkg_apis_meta_v1.Duration'
-        description: |-
-          TTL is a time.Duration-parseable string describing how long
-          the Backup should be retained for.
-          +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ScheduleStatus:
-    properties:
-      lastBackup:
-        description: |-
-          LastBackup is the last time a Backup was run for this
-          Schedule schedule
-          +optional
-          +nullable
-        type: string
-      phase:
-        description: |-
-          Phase is the current phase of the Schedule
-          +optional
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Snapshot:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      snapshot:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SnapshotView'
-      snapshotSchedule:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SnapshotScheduleView'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SnapshotScheduleView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      children:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SnapshotView'
-        type: array
-      childrenCount:
-        type: integer
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1.SnapshotScheduleSpec'
-      status:
-        $ref: '#/definitions/v1.SnapshotScheduleStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SnapshotView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VolumeSnapshotSpec'
-      status:
-        $ref: '#/definitions/github_com_kubernetes-csi_external-snapshotter_client_v4_apis_volumesnapshot_v1.VolumeSnapshotStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.StaticRoute:
-    properties:
-      autoGenerated:
-        type: boolean
-      cidr:
-        type: string
-      isOverriden:
-        type: boolean
-      nextHopIP:
-        type: string
-      policy:
-        $ref: '#/definitions/v1.RoutePolicy'
-      routeTable:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.StorageSpec:
-    properties:
-      accessModes:
-        description: |-
-          AccessModes contains the desired access modes the volume should have.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
-          +optional
-        items:
-          $ref: '#/definitions/v1.PersistentVolumeAccessMode'
-        type: array
-      resources:
-        allOf:
-        - $ref: '#/definitions/v1.VolumeResourceRequirements'
-        description: |-
-          Resources represents the minimum resources the volume should have.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
-          +optional
-      volumeMode:
-        allOf:
-        - $ref: '#/definitions/v1.PersistentVolumeMode'
-        description: |-
-          volumeMode defines what type of volume is required by the claim.
-          Value of Filesystem is implied when not included in claim spec.
-          +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Subnet:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      natGateway:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.NatGwView'
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      subnet:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SubnetView'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SubnetSpec:
-    properties:
-      cidrBlock:
-        type: string
-      default:
-        type: boolean
-      dhcpV4Options:
-        type: string
-      dhcpV6Options:
-        type: string
-      excludeIps:
-        items:
-          type: string
-        type: array
-      gateway:
-        type: string
-      gatewayNode:
-        type: string
-      gatewayType:
-        type: string
-      namespaces:
-        items:
-          type: string
-        type: array
-      natOutgoing:
-        type: boolean
-      natOutgoingPolicyRules:
-        items:
-          $ref: '#/definitions/v1.NatOutgoingPolicyRule'
-        type: array
-      private:
-        type: boolean
-      protocol:
-        type: string
-      vpc:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SubnetStatus:
-    properties:
-      activateGateway:
-        type: string
-      conditions:
-        description: |-
-          Conditions represents the latest state of the object
-          +optional
-          +patchMergeKey=type
-          +patchStrategy=merge
-        items:
-          $ref: '#/definitions/github_com_kubeovn_kube-ovn_pkg_apis_kubeovn_v1.Condition'
-        type: array
-      natOutgoingPolicyRules:
-        items:
-          $ref: '#/definitions/v1.NatOutgoingPolicyRuleStatus'
-        type: array
-      v4availableIPrange:
-        type: string
-      v4availableIPs:
-        type: number
-      v4usingIPrange:
-        type: string
-      v4usingIPs:
-        type: number
-      v6availableIPrange:
-        type: string
-      v6availableIPs:
-        type: number
-      v6usingIPrange:
-        type: string
-      v6usingIPs:
-        type: number
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SubnetView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      isShared:
-        type: boolean
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SubnetSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SubnetStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPC:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      vpc:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPCView'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPCSpec:
-    properties:
-      staticRoutes:
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.StaticRoute'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPCStatus:
-    properties:
-      conditions:
-        description: |-
-          Conditions represents the latest state of the object
-          +optional
-          +patchMergeKey=type
-          +patchStrategy=merge
-        items:
-          $ref: '#/definitions/github_com_kubeovn_kube-ovn_pkg_apis_kubeovn_v1.Condition'
-        type: array
-      subnets:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPCView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPCSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPCStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceNetworkInterface:
-    properties:
-      ipAddresses:
-        description: List of all IP addresses of a Virtual Machine interface
-        items:
-          type: string
-        type: array
-      mac:
-        description: Hardware address of a Virtual Machine interface
-        type: string
-      name:
-        description: Name of the interface, corresponds to name of the network assigned
-          to the interface
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceSpec:
-    properties:
-      accessCredentials:
-        description: |-
-          Specifies a set of public keys to inject into the vm guest
-          +listType=atomic
-          +optional
-          +kubebuilder:validation:MaxItems:=256
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.AccessCredential'
-        type: array
-      architecture:
-        description: |-
-          AccessCredentials []AccessCredential `json:"accessCredentials,omitempty"`
-          Specifies the architecture of the vm guest you are attempting to run. Defaults to the compiled architecture of the KubeVirt components
-        type: string
-      domain:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.DomainSpec'
-        description: Specification of the desired behavior of the VirtualMachineInstance
-          on the host.
-      hostname:
-        description: |-
-          Specifies the hostname of the vmi
-          If not specified, the hostname will be set to the name of the vmi, if dhcp or cloud-init is configured properly.
-          +optional
-        type: string
-      networks:
-        description: |-
-          List of networks that can be attached to a vm's virtual interface.
-          +kubebuilder:validation:MaxItems:=256
-        items:
-          $ref: '#/definitions/v1.Network'
-        type: array
-      volumes:
-        description: List of volumes that can be mounted by disks belonging to the
-          vmi.
-        items:
-          $ref: '#/definitions/kubevirt_io_api_core_v1.Volume'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceStatus:
-    properties:
-      conditions:
-        description: Conditions are specific points in VirtualMachineInstance's pod
-          runtime.
-        items:
-          $ref: '#/definitions/v1.VirtualMachineInstanceCondition'
-        type: array
-      currentCPUTopology:
-        allOf:
-        - $ref: '#/definitions/v1.CPUTopology'
-        description: |-
-          CurrentCPUTopology specifies the current CPU topology used by the VM workload.
-          Current topology may differ from the desired topology in the spec while CPU hotplug
-          takes place.
-      interfaces:
-        description: Interfaces represent the details of available network interfaces.
-        items:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceNetworkInterface'
-        type: array
-      memory:
-        allOf:
-        - $ref: '#/definitions/v1.MemoryStatus'
-        description: |-
-          Memory shows various information about the VirtualMachine memory.
-          +optional
-      nodeName:
-        description: NodeName is the name where the VirtualMachineInstance is currently
-          running.
-        type: string
-      phase:
-        allOf:
-        - $ref: '#/definitions/v1.VirtualMachineInstancePhase'
-        description: Phase is the status of the VirtualMachineInstance in kubernetes
-          world. It is not the VirtualMachineInstance status, but partially correlates
-          to it.
-      phaseTransitionTimestamps:
-        description: |-
-          PhaseTransitionTimestamp is the timestamp of when the last phase change occurred
-          +listType=atomic
-          +optional
-        items:
-          $ref: '#/definitions/v1.VirtualMachineInstancePhaseTransitionTimestamp'
-        type: array
-      volumeStatus:
-        description: |-
-          VolumeStatus contains the statuses of all the volumes
-          +optional
-          +listType=atomic
-        items:
-          $ref: '#/definitions/v1.VolumeStatus'
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceSpec'
-        description: VirtualMachineInstance Spec contains the VirtualMachineInstance
-          specification.
-      status:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineInstanceStatus'
-        description: Status is the high level overview of how the VirtualMachineInstance
-          is doing. It contains information available to controllers and users.
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachinePreferenceView:
-    properties:
-      clock:
-        allOf:
-        - $ref: '#/definitions/v1beta1.ClockPreferences'
-        description: |-
-          Clock optionally defines preferences associated with the Clock attribute
-          +optional
-      cpu:
-        allOf:
-        - $ref: '#/definitions/v1beta1.CPUPreferences'
-        description: |-
-          CPU optionally defines preferences associated with the CPU attribute
-          +optional
-      devices:
-        allOf:
-        - $ref: '#/definitions/v1beta1.DevicePreferences'
-        description: |-
-          Devices optionally defines preferences associated with the Devices attribute
-          +optional
-      features:
-        allOf:
-        - $ref: '#/definitions/v1beta1.FeaturePreferences'
-        description: |-
-          Features optionally defines preferences associated with the Features attribute
-          +optional
-      firmware:
-        allOf:
-        - $ref: '#/definitions/v1beta1.FirmwarePreferences'
-        description: |-
-          Firmware optionally defines preferences associated with the Firmware attribute
-          +optional
-      machine:
-        allOf:
-        - $ref: '#/definitions/v1beta1.MachinePreferences'
-        description: |-
-          Machine optionally defines preferences associated with the Machine attribute
-          +optional
-      name:
-        description: Name is the name of the VirtualMachineClusterPreference
-        type: string
-      volumes:
-        allOf:
-        - $ref: '#/definitions/v1beta1.VolumePreferences'
-        description: |-
-          Volumes optionally defines preferences associated with the Volumes attribute
-          +optional
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineSpec:
-    properties:
-      preference:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.PreferenceMatcher'
-        description: PreferenceMatcher references a set of preference that is used
-          to fill fields in Template
-      runStrategy:
-        allOf:
-        - $ref: '#/definitions/v1.VirtualMachineRunStrategy'
-        description: |-
-          Running state indicates the requested running state of the VirtualMachineInstance
-          mutually exclusive with Running
-      running:
-        description: |-
-          Running controls whether the associated VirtualMachineInstance is created or not
-          Mutually exclusive with RunStrategy
-        type: boolean
-      template:
-        allOf:
-        - $ref: '#/definitions/v1.VirtualMachineInstanceTemplateSpec'
-        description: Template is the direct specification of VirtualMachineInstance
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineStatus:
-    properties:
-      created:
-        description: |-
-          RestoreInProgress *string `json:"restoreInProgress,omitempty"`
-          Created indicates if the virtual machine is created in the cluster
-        type: boolean
-      printableStatus:
-        allOf:
-        - $ref: '#/definitions/v1.VirtualMachinePrintableStatus'
-        description: |-
-          PrintableStatus is a human-readable, high-level representation of the status of the virtual machine
-          +kubebuilder:default=Stopped
-      ready:
-        description: Ready indicates if the virtual machine is running and ready
-        type: boolean
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineSpec'
-        description: Spec contains the specification of VirtualMachineInstance created
-      status:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachineStatus'
-        description: |-
-          Status holds the current state of the controller and brief information
-          about its associated VirtualMachineInstance
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshot:
-    properties:
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      productName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-      vmSnapshot:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshotView'
-      vmSnapshotContent:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshotContentView'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshotContentView:
-    properties:
-      vm:
-        properties:
-          effectiveId:
-            type: string
-          localId:
-            type: string
-        type: object
-      volumesSnapshot:
-        items:
-          type: string
-        type: array
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshotView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.ObjectMeta'
-      spec:
-        $ref: '#/definitions/v1beta1.VirtualMachineSnapshotSpec'
-      status:
-        $ref: '#/definitions/v1beta1.VirtualMachineSnapshotStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VolumeSnapshotSpec:
-    properties:
-      source:
-        allOf:
-        - $ref: '#/definitions/v1.VolumeSnapshotSource'
-        description: |-
-          source specifies where a snapshot will be created from.
-          This field is immutable after creation.
-          Required.
-      volumeSnapshotClassName:
-        description: |-
-          VolumeSnapshotClassName is the name of the VolumeSnapshotClass
-          requested by the VolumeSnapshot.
-          VolumeSnapshotClassName may be left nil to indicate that the default
-          SnapshotClass should be used.
-          A given cluster may have multiple default Volume SnapshotClasses: one
-          default per CSI Driver. If a VolumeSnapshot does not specify a SnapshotClass,
-          VolumeSnapshotSource will be checked to figure out what the associated
-          CSI Driver is, and the default VolumeSnapshotClass associated with that
-          CSI Driver will be used. If more than one VolumeSnapshotClass exist for
-          a given CSI Driver and more than one have been marked as default,
-          CreateSnapshot will fail and generate an event.
-          Empty string is not allowed for this field.
-          +optional
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VpcNatSpec:
-    properties:
-      externalSubnets:
-        items:
-          type: string
-        type: array
-      lanIp:
-        type: string
-      qosPolicy:
-        type: string
-      subnet:
-        type: string
-      vpc:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VpcNatStatus:
-    properties:
-      externalSubnets:
-        items:
-          type: string
-        type: array
-      qosPolicy:
-        type: string
-    type: object
   intstr.IntOrString:
     properties:
       intVal:
@@ -3315,6 +1073,163 @@ definitions:
     - ConditionReady
     - ConditionProgressing
     - ConditionFailure
+  loadBalancer.CreateLoadBalancerInfo:
+    properties:
+      endpoints:
+        description: ip list
+        items:
+          type: string
+        type: array
+      orgID:
+        type: string
+      ports:
+        items:
+          properties:
+            port:
+              description: Name generated from other fields
+              type: integer
+            protocol:
+              type: string
+            targetPort:
+              type: integer
+          type: object
+        type: array
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+      selectors:
+        description: Selectors and Endpoints are mutually exclusives
+        items:
+          type: string
+        type: array
+      vip:
+        type: string
+    type: object
+  netpol.CreateNetPolInfo:
+    properties:
+      description:
+        type: string
+      egress:
+        items:
+          $ref: '#/definitions/netpol.EgressRule'
+        type: array
+      ingress:
+        items:
+          $ref: '#/definitions/netpol.IngressRule'
+        type: array
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+      target:
+        $ref: '#/definitions/netpol.LabelSelector'
+    type: object
+  netpol.EgressRule:
+    properties:
+      allowAll:
+        type: boolean
+      denyAll:
+        type: boolean
+      ports:
+        items:
+          $ref: '#/definitions/netpol.FwPort'
+        type: array
+      to:
+        items:
+          $ref: '#/definitions/netpol.Peer'
+        type: array
+    type: object
+  netpol.FwPort:
+    properties:
+      endPort:
+        type: integer
+      port:
+        type: integer
+      protocol:
+        type: string
+    type: object
+  netpol.IPBlock:
+    properties:
+      CIDR:
+        type: string
+      Except:
+        items:
+          type: string
+        type: array
+    type: object
+  netpol.IngressRule:
+    properties:
+      allowAll:
+        type: boolean
+      denyAll:
+        type: boolean
+      from:
+        items:
+          $ref: '#/definitions/netpol.Peer'
+        type: array
+      ports:
+        items:
+          $ref: '#/definitions/netpol.FwPort'
+        type: array
+    type: object
+  netpol.LabelSelector:
+    properties:
+      matchExpressions:
+        items:
+          $ref: '#/definitions/netpol.MatchExpression'
+        type: array
+      matchLabels:
+        items:
+          $ref: '#/definitions/netpol.MatchLabel'
+        type: array
+    type: object
+  netpol.MatchExpression:
+    properties:
+      key:
+        type: string
+      operator:
+        type: string
+      values:
+        items:
+          type: string
+        type: array
+    type: object
+  netpol.MatchLabel:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
+  netpol.Peer:
+    properties:
+      IPBlock:
+        $ref: '#/definitions/netpol.IPBlock'
+      podSelector:
+        $ref: '#/definitions/netpol.LabelSelector'
+    type: object
+  netpol.UpdateNetPolInfo:
+    properties:
+      description:
+        type: string
+      egress:
+        items:
+          $ref: '#/definitions/netpol.EgressRule'
+        type: array
+      ingress:
+        items:
+          $ref: '#/definitions/netpol.IngressRule'
+        type: array
+      target:
+        $ref: '#/definitions/netpol.LabelSelector'
+    type: object
   objectbucket.BucketConfig:
     properties:
       lifecycle:
@@ -3375,6 +1290,19 @@ definitions:
           type: string
         type: array
     type: object
+  pvc.UpdateDiskInfo:
+    properties:
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          storage:
+            description: Storage Size
+            type: string
+        type: object
+    type: object
   resource.Quantity:
     properties:
       Format:
@@ -3395,6 +1323,58 @@ definitions:
         - DecimalExponent
         - BinarySI
         - DecimalSI
+    type: object
+  ssh.CreateSSHInfo:
+    properties:
+      general:
+        properties:
+          publicKey:
+            type: string
+        type: object
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+    type: object
+  subnet.CreateSubnetInfo:
+    properties:
+      general:
+        properties:
+          vpcEId:
+            type: string
+        type: object
+      natGateway:
+        properties:
+          enable:
+            type: boolean
+        type: object
+      network:
+        properties:
+          dnsV4:
+            type: string
+          dnsV6:
+            type: string
+          ipv4:
+            type: string
+          ipv6:
+            type: string
+          private:
+            type: boolean
+          protocol:
+            type: string
+        type: object
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
     type: object
   v1.ACPI:
     properties:
@@ -10217,6 +8197,2035 @@ definitions:
           $ref: '#/definitions/v1beta2.MachinePoolTopology'
         type: array
     type: object
+  view.AccessCredential:
+    properties:
+      sshPublicKey:
+        allOf:
+        - $ref: '#/definitions/v1.SSHPublicKeyAccessCredential'
+        description: |-
+          SSHPublicKey represents the source and method of applying a ssh public
+          key into a guest virtual machine.
+          +optional
+    type: object
+  view.AdvancedOptions:
+    properties:
+      blocks:
+        items:
+          $ref: '#/definitions/view.ResolvedBlock'
+        type: array
+    type: object
+  view.BaaS:
+    properties:
+      backup:
+        $ref: '#/definitions/view.BaasObject'
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  view.BaasObject:
+    properties:
+      backup:
+        $ref: '#/definitions/view.Backup'
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      orphan:
+        type: boolean
+      schedule:
+        $ref: '#/definitions/view.Schedule'
+      standalone:
+        type: boolean
+    type: object
+  view.Backup:
+    properties:
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        allOf:
+        - $ref: '#/definitions/view.BackupSpec'
+        description: +optional
+      status:
+        allOf:
+        - $ref: '#/definitions/view.BackupStatus'
+        description: +optional
+    type: object
+  view.BackupProgress:
+    properties:
+      itemsBackedUp:
+        description: |-
+          ItemsBackedUp is the number of items that have actually been written to the
+          backup tarball so far.
+          +optional
+        type: integer
+      totalItems:
+        description: |-
+          TotalItems is the total number of items to be backed up. This number may change
+          throughout the execution of the backup due to plugins that return additional related
+          items to back up, the velero.io/exclude-from-backup label, and various other
+          filters that happen as items are processed.
+          +optional
+        type: integer
+    type: object
+  view.BackupSpec:
+    properties:
+      labelSelector:
+        allOf:
+        - $ref: '#/definitions/v1.LabelSelector'
+        description: |-
+          LabelSelector is a metav1.LabelSelector to filter with
+          when adding individual objects to the backup. If empty
+          or nil, all objects are included. Optional.
+          +optional
+          +nullable
+      ttl:
+        allOf:
+        - $ref: '#/definitions/k8s_io_apimachinery_pkg_apis_meta_v1.Duration'
+        description: |-
+          TTL is a time.Duration-parseable string describing how long
+          the Backup should be retained for.
+          +optional
+    type: object
+  view.BackupStatus:
+    properties:
+      completionTimestamp:
+        type: string
+      errors:
+        description: |-
+          Errors is a count of all error messages that were generated during
+          execution of the backup.  The actual errors are in the backup's log
+          file in object storage.
+          +optional
+        type: integer
+      failureReason:
+        description: |-
+          FailureReason is an error that caused the entire backup to fail.
+          +optional
+        type: string
+      phase:
+        description: |-
+          Phase is the current state of the Backup.
+          +optional
+        type: string
+      progress:
+        allOf:
+        - $ref: '#/definitions/view.BackupProgress'
+        description: |-
+          Progress contains information about the backup's execution progress. Note
+          that this information is best-effort only -- if Velero fails to update it
+          during a backup for any reason, it may be inaccurate/stale.
+          +optional
+          +nullable
+      warnings:
+        description: |-
+          Warnings is a count of all warning messages that were generated during
+          execution of the backup. The actual warnings are in the backup's log
+          file in object storage.
+          +optional
+        type: integer
+    type: object
+  view.Bucket:
+    properties:
+      bucket:
+        $ref: '#/definitions/view.BucketView'
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  view.BucketView:
+    properties:
+      creationTimestamp:
+        type: string
+      endpoint:
+        type: string
+      lifecycle:
+        type: string
+      maxObjects:
+        type: string
+      maxSize:
+        type: string
+      name:
+        description: S3 bucket name (spec.bucketName)
+        type: string
+      phase:
+        type: string
+      policy:
+        type: string
+      storageClass:
+        type: string
+    type: object
+  view.Cluster:
+    properties:
+      cluster:
+        $ref: '#/definitions/v1beta2.Cluster'
+      machineDeployments:
+        items:
+          $ref: '#/definitions/view.MachineDeployment'
+        type: array
+    type: object
+  view.DNATView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/v1.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1.IptablesDnatRuleSpec'
+      status:
+        $ref: '#/definitions/v1.IptablesDnatRuleStatus'
+    type: object
+  view.DataVolumeSpec:
+    properties:
+      source:
+        allOf:
+        - $ref: '#/definitions/v1beta1.DataVolumeSource'
+        description: |-
+          Source is the src of the data for the requested DataVolume
+          +optional
+      storage:
+        allOf:
+        - $ref: '#/definitions/view.StorageSpec'
+        description: Storage is the requested storage specification
+      storageClassName:
+        description: StorageClassName is the name of the StorageClass required by
+          the DataVolume.
+        type: string
+    type: object
+  view.DataVolumeStatus:
+    properties:
+      claimName:
+        description: ClaimName is the name of the underlying PVC used by the DataVolume.
+        type: string
+      conditions:
+        items:
+          $ref: '#/definitions/v1beta1.DataVolumeCondition'
+        type: array
+      phase:
+        allOf:
+        - $ref: '#/definitions/v1beta1.DataVolumePhase'
+        description: Phase is the current phase of the data volume
+      progress:
+        type: string
+    type: object
+  view.DataVolumeTemplate:
+    properties:
+      registryUrl:
+        type: string
+      storageSize:
+        type: string
+      volumeMode:
+        type: string
+    type: object
+  view.Disk:
+    properties:
+      codeAZ:
+        type: string
+      disk:
+        $ref: '#/definitions/view.DiskView'
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      mountStatus:
+        $ref: '#/definitions/view.MountStatus'
+      productName:
+        description: human-readable name
+        type: string
+      pvc:
+        $ref: '#/definitions/view.PVCView'
+      resourceTypeId:
+        type: string
+    type: object
+  view.DiskView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.DataVolumeSpec'
+      status:
+        $ref: '#/definitions/view.DataVolumeStatus'
+    type: object
+  view.DomainSpec:
+    properties:
+      cpu:
+        allOf:
+        - $ref: '#/definitions/v1.CPU'
+        description: |-
+          CPU allow specified the detailed CPU topology inside the vmi.
+          +optional
+      devices:
+        allOf:
+        - $ref: '#/definitions/v1.Devices'
+        description: Devices allows adding disks, network interfaces, and others
+      machine:
+        allOf:
+        - $ref: '#/definitions/v1.Machine'
+        description: |-
+          Machine type.
+          +optional
+      memory:
+        allOf:
+        - $ref: '#/definitions/v1.Memory'
+        description: |-
+          Memory allow specifying the VMI memory features.
+          +optional
+      resources:
+        allOf:
+        - $ref: '#/definitions/kubevirt_io_api_core_v1.ResourceRequirements'
+        description: Resources describes the Compute Resources required by this vmi.
+    type: object
+  view.EIP:
+    properties:
+      codeAZ:
+        type: string
+      dnat:
+        items:
+          $ref: '#/definitions/view.DNATView'
+        type: array
+      eid:
+        description: effective ID
+        type: string
+      eip:
+        $ref: '#/definitions/view.EIPView'
+      fip:
+        $ref: '#/definitions/view.FIPView'
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      snat:
+        items:
+          $ref: '#/definitions/view.SNATView'
+        type: array
+    type: object
+  view.EIPView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/v1.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1.IptablesEIPSpec'
+      status:
+        $ref: '#/definitions/v1.IptablesEIPStatus'
+    type: object
+  view.FIPView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/v1.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1.IptablesFIPRuleSpec'
+      status:
+        $ref: '#/definitions/v1.IptablesFIPRuleStatus'
+    type: object
+  view.Firewall:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      firewall:
+        $ref: '#/definitions/view.NetPolView'
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  view.Instance:
+    properties:
+      cloudInit:
+        type: string
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      vm:
+        $ref: '#/definitions/view.VirtualMachineView'
+      vmi:
+        $ref: '#/definitions/view.VirtualMachineInstanceView'
+    type: object
+  view.KaaS:
+    properties:
+      cluster:
+        $ref: '#/definitions/view.Cluster'
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  view.KubevirtMachineTemplateSimplified:
+    properties:
+      dataVolumeTemplates:
+        items:
+          $ref: '#/definitions/view.DataVolumeTemplate'
+        type: array
+      machineTemplate:
+        $ref: '#/definitions/view.MachineTemplate'
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+    type: object
+  view.LBRulePort:
+    properties:
+      name:
+        type: string
+      port:
+        type: integer
+      protocol:
+        type: string
+      targetPort:
+        type: integer
+    type: object
+  view.LBSpec:
+    properties:
+      endpoints:
+        items:
+          type: string
+        type: array
+      namespace:
+        type: string
+      ports:
+        items:
+          $ref: '#/definitions/view.LBRulePort'
+        type: array
+      selector:
+        items:
+          type: string
+        type: array
+      sessionAffinity:
+        type: string
+      vip:
+        type: string
+    type: object
+  view.LBStatus:
+    properties:
+      conditions:
+        description: |-
+          Conditions represents the latest state of the object
+          +optional
+          +patchMergeKey=type
+          +patchStrategy=merge
+        items:
+          $ref: '#/definitions/github_com_kubeovn_kube-ovn_pkg_apis_kubeovn_v1.Condition'
+        type: array
+      ports:
+        type: string
+      service:
+        type: string
+    type: object
+  view.LBView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.LBSpec'
+      status:
+        $ref: '#/definitions/view.LBStatus'
+    type: object
+  view.LoadBalancer:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      loadBalancer:
+        $ref: '#/definitions/view.LBView'
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  view.MachineDeployment:
+    properties:
+      machineDeployment:
+        $ref: '#/definitions/v1beta2.MachineDeployment'
+      machineTemplate:
+        $ref: '#/definitions/view.KubevirtMachineTemplateSimplified'
+    type: object
+  view.MachineTemplate:
+    properties:
+      cpu:
+        $ref: '#/definitions/view.MachineTemplateCPU'
+      memory:
+        $ref: '#/definitions/view.MachineTemplateMemory'
+      preference:
+        $ref: '#/definitions/view.MachineTemplatePreference'
+    type: object
+  view.MachineTemplateCPU:
+    properties:
+      cores:
+        type: integer
+      sockets:
+        type: integer
+      threads:
+        type: integer
+    type: object
+  view.MachineTemplateMemory:
+    properties:
+      guest:
+        type: string
+    type: object
+  view.MachineTemplatePreference:
+    properties:
+      name:
+        type: string
+    type: object
+  view.MountStatus:
+    properties:
+      by:
+        type: string
+      isMounted:
+        type: boolean
+    type: object
+  view.NatGwView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.VpcNatSpec'
+      status:
+        $ref: '#/definitions/view.VpcNatStatus'
+    type: object
+  view.NetPolView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      description:
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1.NetworkPolicySpec'
+    type: object
+  view.ObjectMeta:
+    properties:
+      annotations:
+        additionalProperties:
+          type: string
+        type: object
+      creationTimestamp:
+        type: string
+      generateName:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      namespace:
+        type: string
+      ownerReferences:
+        items:
+          $ref: '#/definitions/v1.OwnerReference'
+        type: array
+    type: object
+  view.PVCSpec:
+    properties:
+      accessModes:
+        description: |-
+          accessModes contains the desired access modes the volume should have.
+          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
+          +optional
+          +listType=atomic
+        items:
+          $ref: '#/definitions/v1.PersistentVolumeAccessMode'
+        type: array
+      dataSource:
+        allOf:
+        - $ref: '#/definitions/v1.TypedLocalObjectReference'
+        description: |-
+          dataSource field can be used to specify either:
+          * An existing VolumeSnapshot object (snapshot.storage.k8s.io/VolumeSnapshot)
+          * An existing PVC (PersistentVolumeClaim)
+          If the provisioner or an external controller can support the specified data source,
+          it will create a new volume based on the contents of the specified data source.
+          When the AnyVolumeDataSource feature gate is enabled, dataSource contents will be copied to dataSourceRef,
+          and dataSourceRef contents will be copied to dataSource when dataSourceRef.namespace is not specified.
+          If the namespace is specified, then dataSourceRef will not be copied to dataSource.
+          +optional
+      resources:
+        allOf:
+        - $ref: '#/definitions/v1.VolumeResourceRequirements'
+        description: |-
+          resources represents the minimum resources the volume should have.
+          If RecoverVolumeExpansionFailure feature is enabled users are allowed to specify resource requirements
+          that are lower than previous value but must still be higher than capacity recorded in the
+          status field of the claim.
+          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+          +optional
+      storageClassName:
+        description: |-
+          storageClassName is the name of the StorageClass required by the claim.
+          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#class-1
+          +optional
+        type: string
+      volumeMode:
+        allOf:
+        - $ref: '#/definitions/v1.PersistentVolumeMode'
+        description: |-
+          volumeMode defines what type of volume is required by the claim.
+          Value of Filesystem is implied when not included in claim spec.
+          +optional
+      volumeName:
+        description: |-
+          volumeName is the binding reference to the PersistentVolume backing this claim.
+          +optional
+        type: string
+    type: object
+  view.PVCStatus:
+    properties:
+      accessModes:
+        description: |-
+          accessModes contains the actual access modes the volume backing the PVC has.
+          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
+          +optional
+          +listType=atomic
+        items:
+          $ref: '#/definitions/v1.PersistentVolumeAccessMode'
+        type: array
+      capacity:
+        allOf:
+        - $ref: '#/definitions/v1.ResourceList'
+        description: |-
+          capacity represents the actual resources of the underlying volume.
+          +optional
+      phase:
+        allOf:
+        - $ref: '#/definitions/v1.PersistentVolumeClaimPhase'
+        description: |-
+          phase represents the current phase of PersistentVolumeClaim.
+          +optional
+    type: object
+  view.PVCView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.PVCSpec'
+      status:
+        $ref: '#/definitions/view.PVCStatus'
+    type: object
+  view.PreferenceMatcher:
+    properties:
+      name:
+        description: |-
+          Name is the name of the VirtualMachinePreference or VirtualMachineClusterPreference
+
+          +optional
+        type: string
+    type: object
+  view.ResolvedBlock:
+    properties:
+      description:
+        type: string
+      enabled:
+        $ref: '#/definitions/view.ResolvedBool'
+      fields:
+        items:
+          $ref: '#/definitions/view.ResolvedField'
+        type: array
+      key:
+        type: string
+      label:
+        type: string
+      offLabel:
+        type: string
+      onLabel:
+        type: string
+      path:
+        type: string
+    type: object
+  view.ResolvedBool:
+    properties:
+      default:
+        description: kubevirt default this field takes when its block is active (e.g.
+          Secure Boot is true once EFI is on)
+        type: boolean
+      live:
+        description: value on the running VMI, nil if stopped
+        type: boolean
+      source:
+        description: '"vm", "preference" or "default"'
+        type: string
+      stale:
+        description: Live differs from Value (restart required)
+        type: boolean
+      value:
+        description: effective value, nil if not set anywhere
+        type: boolean
+    type: object
+  view.ResolvedField:
+    properties:
+      default:
+        description: kubevirt default this field takes when its block is active (e.g.
+          Secure Boot is true once EFI is on)
+        type: boolean
+      description:
+        type: string
+      key:
+        type: string
+      label:
+        type: string
+      live:
+        description: value on the running VMI, nil if stopped
+        type: boolean
+      source:
+        description: '"vm", "preference" or "default"'
+        type: string
+      stale:
+        description: Live differs from Value (restart required)
+        type: boolean
+      value:
+        description: effective value, nil if not set anywhere
+        type: boolean
+    type: object
+  view.SNATView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      legacy:
+        description: Property use to detect legacy SNAT - meant to be deleted
+        type: boolean
+      metadata:
+        $ref: '#/definitions/v1.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1.IptablesSnatRuleSpec'
+      status:
+        $ref: '#/definitions/v1.IptablesSnatRuleStatus'
+    type: object
+  view.SSH:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      ssh:
+        $ref: '#/definitions/view.SSHView'
+    type: object
+  view.SSHView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      data:
+        additionalProperties:
+          items:
+            format: int32
+            type: integer
+          type: array
+        description: |-
+          Data contains the secret data. Each key must consist of alphanumeric
+          characters, '-', '_' or '.'. The serialized form of the secret data is a
+          base64 encoded string, representing the arbitrary (possibly non-string)
+          data value here. Described in https://tools.ietf.org/html/rfc4648#section-4
+          +optional
+        type: object
+      immutable:
+        description: |-
+          Immutable, if set to true, ensures that data stored in the Secret cannot
+          be updated (only object metadata can be modified).
+          If not set to true, the field can be modified at any time.
+          Defaulted to nil.
+          +optional
+        type: boolean
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      stringData:
+        additionalProperties:
+          type: string
+        description: |-
+          stringData allows specifying non-binary secret data in string form.
+          It is provided as a write-only input field for convenience.
+          All keys and values are merged into the data field on write, overwriting any existing values.
+          The stringData field is never output when reading from the API.
+          +k8s:conversion-gen=false
+          +optional
+        type: object
+      type:
+        description: |-
+          Used to facilitate programmatic handling of secret data.
+          More info: https://kubernetes.io/docs/concepts/configuration/secret/#secret-types
+          +optional
+        type: string
+    type: object
+  view.Schedule:
+    properties:
+      backups:
+        items:
+          $ref: '#/definitions/view.Backup'
+        type: array
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        allOf:
+        - $ref: '#/definitions/view.ScheduleSpec'
+        description: +optional
+      status:
+        allOf:
+        - $ref: '#/definitions/view.ScheduleStatus'
+        description: +optional
+    type: object
+  view.ScheduleSpec:
+    properties:
+      labelSelector:
+        allOf:
+        - $ref: '#/definitions/v1.LabelSelector'
+        description: |-
+          LabelSelector is a metav1.LabelSelector to filter with
+          when adding individual objects to the backup. If empty
+          or nil, all objects are included. Optional.
+          +optional
+          +nullable
+      paused:
+        description: |-
+          Paused specifies whether the schedule is paused or not
+          +optional
+        type: boolean
+      schedule:
+        description: |-
+          Schedule is a Cron expression defining when to run
+          the Backup.
+        type: string
+      ttl:
+        allOf:
+        - $ref: '#/definitions/k8s_io_apimachinery_pkg_apis_meta_v1.Duration'
+        description: |-
+          TTL is a time.Duration-parseable string describing how long
+          the Backup should be retained for.
+          +optional
+    type: object
+  view.ScheduleStatus:
+    properties:
+      lastBackup:
+        description: |-
+          LastBackup is the last time a Backup was run for this
+          Schedule schedule
+          +optional
+          +nullable
+        type: string
+      phase:
+        description: |-
+          Phase is the current phase of the Schedule
+          +optional
+        type: string
+    type: object
+  view.Snapshot:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      snapshot:
+        $ref: '#/definitions/view.SnapshotView'
+      snapshotSchedule:
+        $ref: '#/definitions/view.SnapshotScheduleView'
+    type: object
+  view.SnapshotScheduleView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      children:
+        items:
+          $ref: '#/definitions/view.SnapshotView'
+        type: array
+      childrenCount:
+        type: integer
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1.SnapshotScheduleSpec'
+      status:
+        $ref: '#/definitions/v1.SnapshotScheduleStatus'
+    type: object
+  view.SnapshotView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.VolumeSnapshotSpec'
+      status:
+        $ref: '#/definitions/github_com_kubernetes-csi_external-snapshotter_client_v4_apis_volumesnapshot_v1.VolumeSnapshotStatus'
+    type: object
+  view.StaticRoute:
+    properties:
+      autoGenerated:
+        type: boolean
+      cidr:
+        type: string
+      isOverriden:
+        type: boolean
+      nextHopIP:
+        type: string
+      policy:
+        $ref: '#/definitions/v1.RoutePolicy'
+      routeTable:
+        type: string
+    type: object
+  view.StorageSpec:
+    properties:
+      accessModes:
+        description: |-
+          AccessModes contains the desired access modes the volume should have.
+          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes-1
+          +optional
+        items:
+          $ref: '#/definitions/v1.PersistentVolumeAccessMode'
+        type: array
+      resources:
+        allOf:
+        - $ref: '#/definitions/v1.VolumeResourceRequirements'
+        description: |-
+          Resources represents the minimum resources the volume should have.
+          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+          +optional
+      volumeMode:
+        allOf:
+        - $ref: '#/definitions/v1.PersistentVolumeMode'
+        description: |-
+          volumeMode defines what type of volume is required by the claim.
+          Value of Filesystem is implied when not included in claim spec.
+          +optional
+    type: object
+  view.Subnet:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      natGateway:
+        $ref: '#/definitions/view.NatGwView'
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      subnet:
+        $ref: '#/definitions/view.SubnetView'
+    type: object
+  view.SubnetSpec:
+    properties:
+      cidrBlock:
+        type: string
+      default:
+        type: boolean
+      dhcpV4Options:
+        type: string
+      dhcpV6Options:
+        type: string
+      excludeIps:
+        items:
+          type: string
+        type: array
+      gateway:
+        type: string
+      gatewayNode:
+        type: string
+      gatewayType:
+        type: string
+      namespaces:
+        items:
+          type: string
+        type: array
+      natOutgoing:
+        type: boolean
+      natOutgoingPolicyRules:
+        items:
+          $ref: '#/definitions/v1.NatOutgoingPolicyRule'
+        type: array
+      private:
+        type: boolean
+      protocol:
+        type: string
+      vpc:
+        type: string
+    type: object
+  view.SubnetStatus:
+    properties:
+      activateGateway:
+        type: string
+      conditions:
+        description: |-
+          Conditions represents the latest state of the object
+          +optional
+          +patchMergeKey=type
+          +patchStrategy=merge
+        items:
+          $ref: '#/definitions/github_com_kubeovn_kube-ovn_pkg_apis_kubeovn_v1.Condition'
+        type: array
+      natOutgoingPolicyRules:
+        items:
+          $ref: '#/definitions/v1.NatOutgoingPolicyRuleStatus'
+        type: array
+      v4availableIPrange:
+        type: string
+      v4availableIPs:
+        type: number
+      v4usingIPrange:
+        type: string
+      v4usingIPs:
+        type: number
+      v6availableIPrange:
+        type: string
+      v6availableIPs:
+        type: number
+      v6usingIPrange:
+        type: string
+      v6usingIPs:
+        type: number
+    type: object
+  view.SubnetView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      isShared:
+        type: boolean
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.SubnetSpec'
+      status:
+        $ref: '#/definitions/view.SubnetStatus'
+    type: object
+  view.VPC:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      vpc:
+        $ref: '#/definitions/view.VPCView'
+    type: object
+  view.VPCSpec:
+    properties:
+      staticRoutes:
+        items:
+          $ref: '#/definitions/view.StaticRoute'
+        type: array
+    type: object
+  view.VPCStatus:
+    properties:
+      conditions:
+        description: |-
+          Conditions represents the latest state of the object
+          +optional
+          +patchMergeKey=type
+          +patchStrategy=merge
+        items:
+          $ref: '#/definitions/github_com_kubeovn_kube-ovn_pkg_apis_kubeovn_v1.Condition'
+        type: array
+      subnets:
+        items:
+          type: string
+        type: array
+    type: object
+  view.VPCView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/view.VPCSpec'
+      status:
+        $ref: '#/definitions/view.VPCStatus'
+    type: object
+  view.VirtualMachineInstanceNetworkInterface:
+    properties:
+      ipAddresses:
+        description: List of all IP addresses of a Virtual Machine interface
+        items:
+          type: string
+        type: array
+      mac:
+        description: Hardware address of a Virtual Machine interface
+        type: string
+      name:
+        description: Name of the interface, corresponds to name of the network assigned
+          to the interface
+        type: string
+    type: object
+  view.VirtualMachineInstanceSpec:
+    properties:
+      accessCredentials:
+        description: |-
+          Specifies a set of public keys to inject into the vm guest
+          +listType=atomic
+          +optional
+          +kubebuilder:validation:MaxItems:=256
+        items:
+          $ref: '#/definitions/view.AccessCredential'
+        type: array
+      architecture:
+        description: |-
+          AccessCredentials []AccessCredential `json:"accessCredentials,omitempty"`
+          Specifies the architecture of the vm guest you are attempting to run. Defaults to the compiled architecture of the KubeVirt components
+        type: string
+      domain:
+        allOf:
+        - $ref: '#/definitions/view.DomainSpec'
+        description: Specification of the desired behavior of the VirtualMachineInstance
+          on the host.
+      hostname:
+        description: |-
+          Specifies the hostname of the vmi
+          If not specified, the hostname will be set to the name of the vmi, if dhcp or cloud-init is configured properly.
+          +optional
+        type: string
+      networks:
+        description: |-
+          List of networks that can be attached to a vm's virtual interface.
+          +kubebuilder:validation:MaxItems:=256
+        items:
+          $ref: '#/definitions/v1.Network'
+        type: array
+      volumes:
+        description: List of volumes that can be mounted by disks belonging to the
+          vmi.
+        items:
+          $ref: '#/definitions/kubevirt_io_api_core_v1.Volume'
+        type: array
+    type: object
+  view.VirtualMachineInstanceStatus:
+    properties:
+      conditions:
+        description: Conditions are specific points in VirtualMachineInstance's pod
+          runtime.
+        items:
+          $ref: '#/definitions/v1.VirtualMachineInstanceCondition'
+        type: array
+      currentCPUTopology:
+        allOf:
+        - $ref: '#/definitions/v1.CPUTopology'
+        description: |-
+          CurrentCPUTopology specifies the current CPU topology used by the VM workload.
+          Current topology may differ from the desired topology in the spec while CPU hotplug
+          takes place.
+      interfaces:
+        description: Interfaces represent the details of available network interfaces.
+        items:
+          $ref: '#/definitions/view.VirtualMachineInstanceNetworkInterface'
+        type: array
+      memory:
+        allOf:
+        - $ref: '#/definitions/v1.MemoryStatus'
+        description: |-
+          Memory shows various information about the VirtualMachine memory.
+          +optional
+      nodeName:
+        description: NodeName is the name where the VirtualMachineInstance is currently
+          running.
+        type: string
+      phase:
+        allOf:
+        - $ref: '#/definitions/v1.VirtualMachineInstancePhase'
+        description: Phase is the status of the VirtualMachineInstance in kubernetes
+          world. It is not the VirtualMachineInstance status, but partially correlates
+          to it.
+      phaseTransitionTimestamps:
+        description: |-
+          PhaseTransitionTimestamp is the timestamp of when the last phase change occurred
+          +listType=atomic
+          +optional
+        items:
+          $ref: '#/definitions/v1.VirtualMachineInstancePhaseTransitionTimestamp'
+        type: array
+      volumeStatus:
+        description: |-
+          VolumeStatus contains the statuses of all the volumes
+          +optional
+          +listType=atomic
+        items:
+          $ref: '#/definitions/v1.VolumeStatus'
+        type: array
+    type: object
+  view.VirtualMachineInstanceView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        allOf:
+        - $ref: '#/definitions/view.VirtualMachineInstanceSpec'
+        description: VirtualMachineInstance Spec contains the VirtualMachineInstance
+          specification.
+      status:
+        allOf:
+        - $ref: '#/definitions/view.VirtualMachineInstanceStatus'
+        description: Status is the high level overview of how the VirtualMachineInstance
+          is doing. It contains information available to controllers and users.
+    type: object
+  view.VirtualMachinePreferenceView:
+    properties:
+      clock:
+        allOf:
+        - $ref: '#/definitions/v1beta1.ClockPreferences'
+        description: |-
+          Clock optionally defines preferences associated with the Clock attribute
+          +optional
+      cpu:
+        allOf:
+        - $ref: '#/definitions/v1beta1.CPUPreferences'
+        description: |-
+          CPU optionally defines preferences associated with the CPU attribute
+          +optional
+      devices:
+        allOf:
+        - $ref: '#/definitions/v1beta1.DevicePreferences'
+        description: |-
+          Devices optionally defines preferences associated with the Devices attribute
+          +optional
+      features:
+        allOf:
+        - $ref: '#/definitions/v1beta1.FeaturePreferences'
+        description: |-
+          Features optionally defines preferences associated with the Features attribute
+          +optional
+      firmware:
+        allOf:
+        - $ref: '#/definitions/v1beta1.FirmwarePreferences'
+        description: |-
+          Firmware optionally defines preferences associated with the Firmware attribute
+          +optional
+      machine:
+        allOf:
+        - $ref: '#/definitions/v1beta1.MachinePreferences'
+        description: |-
+          Machine optionally defines preferences associated with the Machine attribute
+          +optional
+      name:
+        description: Name is the name of the VirtualMachineClusterPreference
+        type: string
+      volumes:
+        allOf:
+        - $ref: '#/definitions/v1beta1.VolumePreferences'
+        description: |-
+          Volumes optionally defines preferences associated with the Volumes attribute
+          +optional
+    type: object
+  view.VirtualMachineSpec:
+    properties:
+      preference:
+        allOf:
+        - $ref: '#/definitions/view.PreferenceMatcher'
+        description: PreferenceMatcher references a set of preference that is used
+          to fill fields in Template
+      runStrategy:
+        allOf:
+        - $ref: '#/definitions/v1.VirtualMachineRunStrategy'
+        description: |-
+          Running state indicates the requested running state of the VirtualMachineInstance
+          mutually exclusive with Running
+      running:
+        description: |-
+          Running controls whether the associated VirtualMachineInstance is created or not
+          Mutually exclusive with RunStrategy
+        type: boolean
+      template:
+        allOf:
+        - $ref: '#/definitions/v1.VirtualMachineInstanceTemplateSpec'
+        description: Template is the direct specification of VirtualMachineInstance
+    type: object
+  view.VirtualMachineStatus:
+    properties:
+      created:
+        description: |-
+          RestoreInProgress *string `json:"restoreInProgress,omitempty"`
+          Created indicates if the virtual machine is created in the cluster
+        type: boolean
+      printableStatus:
+        allOf:
+        - $ref: '#/definitions/v1.VirtualMachinePrintableStatus'
+        description: |-
+          PrintableStatus is a human-readable, high-level representation of the status of the virtual machine
+          +kubebuilder:default=Stopped
+      ready:
+        description: Ready indicates if the virtual machine is running and ready
+        type: boolean
+    type: object
+  view.VirtualMachineView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        allOf:
+        - $ref: '#/definitions/view.VirtualMachineSpec'
+        description: Spec contains the specification of VirtualMachineInstance created
+      status:
+        allOf:
+        - $ref: '#/definitions/view.VirtualMachineStatus'
+        description: |-
+          Status holds the current state of the controller and brief information
+          about its associated VirtualMachineInstance
+    type: object
+  view.VmSnapshot:
+    properties:
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      productName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+      vmSnapshot:
+        $ref: '#/definitions/view.VmSnapshotView'
+      vmSnapshotContent:
+        $ref: '#/definitions/view.VmSnapshotContentView'
+    type: object
+  view.VmSnapshotContentView:
+    properties:
+      vm:
+        properties:
+          effectiveId:
+            type: string
+          localId:
+            type: string
+        type: object
+      volumesSnapshot:
+        items:
+          type: string
+        type: array
+    type: object
+  view.VmSnapshotView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      spec:
+        $ref: '#/definitions/v1beta1.VirtualMachineSnapshotSpec'
+      status:
+        $ref: '#/definitions/v1beta1.VirtualMachineSnapshotStatus'
+    type: object
+  view.VolumeSnapshotSpec:
+    properties:
+      source:
+        allOf:
+        - $ref: '#/definitions/v1.VolumeSnapshotSource'
+        description: |-
+          source specifies where a snapshot will be created from.
+          This field is immutable after creation.
+          Required.
+      volumeSnapshotClassName:
+        description: |-
+          VolumeSnapshotClassName is the name of the VolumeSnapshotClass
+          requested by the VolumeSnapshot.
+          VolumeSnapshotClassName may be left nil to indicate that the default
+          SnapshotClass should be used.
+          A given cluster may have multiple default Volume SnapshotClasses: one
+          default per CSI Driver. If a VolumeSnapshot does not specify a SnapshotClass,
+          VolumeSnapshotSource will be checked to figure out what the associated
+          CSI Driver is, and the default VolumeSnapshotClass associated with that
+          CSI Driver will be used. If more than one VolumeSnapshotClass exist for
+          a given CSI Driver and more than one have been marked as default,
+          CreateSnapshot will fail and generate an event.
+          Empty string is not allowed for this field.
+          +optional
+        type: string
+    type: object
+  view.VpcNatSpec:
+    properties:
+      externalSubnets:
+        items:
+          type: string
+        type: array
+      lanIp:
+        type: string
+      qosPolicy:
+        type: string
+      subnet:
+        type: string
+      vpc:
+        type: string
+    type: object
+  view.VpcNatStatus:
+    properties:
+      externalSubnets:
+        items:
+          type: string
+        type: array
+      qosPolicy:
+        type: string
+    type: object
+  vm.AdvancedBootloader:
+    properties:
+      efi:
+        $ref: '#/definitions/vm.EFIOptions'
+    type: object
+  vm.AdvancedDevices:
+    properties:
+      tpm:
+        $ref: '#/definitions/vm.TPMOptions'
+    type: object
+  vm.AdvancedFirmware:
+    properties:
+      bootloader:
+        $ref: '#/definitions/vm.AdvancedBootloader'
+      smbios:
+        $ref: '#/definitions/vm.AdvancedSMBIOS'
+    type: object
+  vm.AdvancedOptionsInput:
+    properties:
+      devices:
+        $ref: '#/definitions/vm.AdvancedDevices'
+      firmware:
+        $ref: '#/definitions/vm.AdvancedFirmware'
+    type: object
+  vm.AdvancedSMBIOS:
+    properties:
+      serial:
+        type: string
+      uuid:
+        type: string
+    type: object
+  vm.CloudInit:
+    properties:
+      bus:
+        type: string
+      config:
+        type: string
+      custom:
+        type: boolean
+    type: object
+  vm.ContainerDiskBatch:
+    properties:
+      ids:
+        items:
+          type: string
+        type: array
+    type: object
+  vm.CreateVMInfo:
+    properties:
+      advanced:
+        allOf:
+        - $ref: '#/definitions/vm.AdvancedOptionsInput'
+        description: 'Advanced is optional: nil pushes no device/firmware override.'
+      cloudInit:
+        $ref: '#/definitions/vm.CloudInit'
+      compute:
+        properties:
+          cpu:
+            type: integer
+          memory:
+            type: integer
+        type: object
+      containerDisks:
+        description: |-
+          ContainerDisks holds catalog IDs. Nil falls back to the recommended
+          catalog set for the VM preference; a non-nil slice (including empty) is
+          honoured verbatim. IDs are resolved against this AZ's config catalog.
+        items:
+          type: string
+        type: array
+      disks:
+        items:
+          $ref: '#/definitions/vm.Disk'
+        type: array
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          runStrategy:
+            type: string
+          vmType:
+            type: string
+        type: object
+      network:
+        items:
+          $ref: '#/definitions/vm.Network'
+        type: array
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+      sshKeys:
+        items:
+          type: string
+        type: array
+    type: object
+  vm.Disk:
+    properties:
+      bus:
+        type: string
+      cdrom:
+        type: boolean
+      disk:
+        $ref: '#/definitions/datavolume.CreateDiskInfo'
+      eid:
+        type: string
+      order:
+        type: integer
+    type: object
+  vm.EFIOptions:
+    properties:
+      enabled:
+        type: boolean
+      persistent:
+        description: persist EFI NVRAM across reboots
+        type: boolean
+      secureBoot:
+        type: boolean
+    type: object
+  vm.Network:
+    properties:
+      ipv4:
+        type: string
+      ipv6:
+        type: string
+      model:
+        type: string
+      order:
+        type: integer
+      subnetEId:
+        description: Subnet Effective ID
+        type: string
+    type: object
+  vm.TPMOptions:
+    properties:
+      enabled:
+        type: boolean
+      persistent:
+        type: boolean
+    type: object
+  vm.UpdateVMInfo:
+    properties:
+      advanced:
+        allOf:
+        - $ref: '#/definitions/vm.AdvancedOptionsInput'
+        description: 'Advanced is optional: nil leaves existing device/firmware overrides
+          untouched.'
+      cloudInit:
+        $ref: '#/definitions/vm.CloudInit'
+      compute:
+        properties:
+          cpu:
+            type: integer
+          memory:
+            type: integer
+        type: object
+      containerDisks:
+        description: |-
+          ContainerDisks is the desired mount state as catalog IDs. Nil preserves
+          whatever is currently attached; non-nil sets it explicitly (empty
+          detaches all). IDs are resolved against this AZ's config catalog.
+        items:
+          type: string
+        type: array
+      disks:
+        items:
+          $ref: '#/definitions/vm.Disk'
+        type: array
+      general:
+        properties:
+          labels:
+            items:
+              type: string
+            type: array
+          runStrategy:
+            type: string
+          vmType:
+            type: string
+        type: object
+      network:
+        items:
+          $ref: '#/definitions/vm.Network'
+        type: array
+      sshKeys:
+        items:
+          type: string
+        type: array
+    type: object
+  vmSnapshot.CloneVmSnapshotDisk:
+    properties:
+      eid:
+        type: string
+      id:
+        type: string
+    type: object
+  vmSnapshot.CloneVmSnapshotInfo:
+    properties:
+      id:
+        type: string
+    type: object
+  vmSnapshot.CloneVmSnapshotResponse:
+    properties:
+      disks:
+        items:
+          $ref: '#/definitions/vmSnapshot.CloneVmSnapshotDisk'
+        type: array
+    type: object
+  vmSnapshot.CreateVmSnapshotInfo:
+    properties:
+      general:
+        properties:
+          source:
+            type: string
+        type: object
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+    type: object
+  volumeSnapshot.CreateSnapshotInfo:
+    properties:
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+      spec:
+        properties:
+          labelSelector:
+            items:
+              type: string
+            type: array
+          paused:
+            type: boolean
+          retention:
+            $ref: '#/definitions/volumeSnapshot.RetentionPolicy'
+          schedule:
+            type: integer
+          scheduled:
+            type: boolean
+          source:
+            type: string
+        type: object
+    type: object
+  volumeSnapshot.RetentionPolicy:
+    properties:
+      expiryTime:
+        type: integer
+    type: object
+  volumeSnapshot.UpdateSnapshotInfo:
+    properties:
+      spec:
+        properties:
+          labelSelector:
+            items:
+              type: string
+            type: array
+          paused:
+            type: boolean
+          retention:
+            $ref: '#/definitions/volumeSnapshot.RetentionPolicy'
+          schedule:
+            type: integer
+        type: object
+    type: object
+  vpc.CreateVPCInfo:
+    properties:
+      orgID:
+        type: string
+      projectID:
+        type: string
+      resourceEffectiveID:
+        type: string
+      resourceLocalID:
+        type: string
+    type: object
+  vpc.UpdateVPCInfo:
+    properties:
+      staticRoutes:
+        items:
+          $ref: '#/definitions/view.StaticRoute'
+        type: array
+    type: object
 info:
   contact:
     email: contact@superphenix.net
@@ -10247,7 +10256,7 @@ paths:
           description: BaaS List
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BaaS'
+              $ref: '#/definitions/view.BaaS'
             type: array
         "500":
           description: Internal Server Error
@@ -10311,7 +10320,7 @@ paths:
         "200":
           description: BaaS
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BaaS'
+            $ref: '#/definitions/view.BaaS'
         "400":
           description: Bad Request
         "404":
@@ -10374,7 +10383,7 @@ paths:
         "200":
           description: BaaS
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.BaaS'
+            $ref: '#/definitions/view.BaaS'
         "400":
           description: Bad Request
         "500":
@@ -10404,7 +10413,7 @@ paths:
           description: Buckets
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket'
+              $ref: '#/definitions/view.Bucket'
             type: array
         "500":
           description: Internal Server Error
@@ -10502,7 +10511,7 @@ paths:
         "200":
           description: Bucket
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket'
+            $ref: '#/definitions/view.Bucket'
         "400":
           description: Bad Request
         "404":
@@ -10613,7 +10622,7 @@ paths:
         "200":
           description: Bucket
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Bucket'
+            $ref: '#/definitions/view.Bucket'
         "400":
           description: Bad Request
         "500":
@@ -10675,7 +10684,7 @@ paths:
           description: Disks
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Disk'
+              $ref: '#/definitions/view.Disk'
             type: array
         "500":
           description: Internal Server Error
@@ -10703,7 +10712,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_datavolume.CreateDiskInfo'
+          $ref: '#/definitions/datavolume.CreateDiskInfo'
       produces:
       - text/plain
       responses:
@@ -10771,7 +10780,7 @@ paths:
         "200":
           description: Disk
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Disk'
+            $ref: '#/definitions/view.Disk'
         "400":
           description: Bad Request
         "500":
@@ -10800,12 +10809,16 @@ paths:
         name: effectiveId
         required: true
         type: string
+      - description: 'Temporary: force update of a gitops-managed disk'
+        in: query
+        name: force
+        type: boolean
       - description: Disk info
         in: body
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_pvc.UpdateDiskInfo'
+          $ref: '#/definitions/pvc.UpdateDiskInfo'
       produces:
       - text/plain
       responses:
@@ -10874,7 +10887,7 @@ paths:
         "200":
           description: Disk
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Disk'
+            $ref: '#/definitions/view.Disk'
         "400":
           description: Bad Request
         "500":
@@ -10939,7 +10952,7 @@ paths:
           description: EIPs
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.EIP'
+              $ref: '#/definitions/view.EIP'
             type: array
         "500":
           description: Internal Server Error
@@ -10967,7 +10980,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_eip.UpdateEIPInfo'
+          $ref: '#/definitions/eip.UpdateEIPInfo'
       produces:
       - text/plain
       responses:
@@ -11006,7 +11019,7 @@ paths:
         "200":
           description: EIP
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.EIP'
+            $ref: '#/definitions/view.EIP'
         "400":
           description: Bad Request
         "404":
@@ -11042,7 +11055,7 @@ paths:
         "200":
           description: EIP
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.EIP'
+            $ref: '#/definitions/view.EIP'
         "400":
           description: Bad Request
         "404":
@@ -11107,7 +11120,7 @@ paths:
           description: Network Policies
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Firewall'
+              $ref: '#/definitions/view.Firewall'
             type: array
         "500":
           description: Internal Server Error
@@ -11135,7 +11148,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.CreateNetPolInfo'
+          $ref: '#/definitions/netpol.CreateNetPolInfo'
       produces:
       - text/plain
       responses:
@@ -11174,7 +11187,7 @@ paths:
         "200":
           description: Network Policy
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Firewall'
+            $ref: '#/definitions/view.Firewall'
         "400":
           description: Bad Request
         "404":
@@ -11205,7 +11218,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_netpol.UpdateNetPolInfo'
+          $ref: '#/definitions/netpol.UpdateNetPolInfo'
       produces:
       - text/plain
       responses:
@@ -11244,7 +11257,7 @@ paths:
         "200":
           description: Network Policy
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Firewall'
+            $ref: '#/definitions/view.Firewall'
         "400":
           description: Bad Request
         "404":
@@ -11276,7 +11289,7 @@ paths:
           description: Instances
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Instance'
+              $ref: '#/definitions/view.Instance'
             type: array
         "500":
           description: Internal Server Error
@@ -11304,7 +11317,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.CreateVMInfo'
+          $ref: '#/definitions/vm.CreateVMInfo'
       produces:
       - text/plain
       responses:
@@ -11339,7 +11352,7 @@ paths:
           description: VmSnapshots
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshot'
+              $ref: '#/definitions/view.VmSnapshot'
             type: array
         "500":
           description: Internal Server Error
@@ -11367,7 +11380,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CreateVmSnapshotInfo'
+          $ref: '#/definitions/vmSnapshot.CreateVmSnapshotInfo'
       produces:
       - text/plain
       responses:
@@ -11441,7 +11454,7 @@ paths:
         "200":
           description: VmSnapshot
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshot'
+            $ref: '#/definitions/view.VmSnapshot'
         "400":
           description: Bad Request
         "404":
@@ -11478,14 +11491,14 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CloneVmSnapshotInfo'
+          $ref: '#/definitions/vmSnapshot.CloneVmSnapshotInfo'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vmSnapshot.CloneVmSnapshotResponse'
+            $ref: '#/definitions/vmSnapshot.CloneVmSnapshotResponse'
         "400":
           description: Bad Request
         "500":
@@ -11548,7 +11561,7 @@ paths:
         "200":
           description: VmSnapshot
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VmSnapshot'
+            $ref: '#/definitions/view.VmSnapshot'
         "400":
           description: Bad Request
         "404":
@@ -11617,7 +11630,7 @@ paths:
         "200":
           description: Instance
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Instance'
+            $ref: '#/definitions/view.Instance'
         "400":
           description: Bad Request
         "404":
@@ -11653,7 +11666,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.UpdateVMInfo'
+          $ref: '#/definitions/vm.UpdateVMInfo'
       produces:
       - text/plain
       responses:
@@ -11693,7 +11706,7 @@ paths:
         "200":
           description: Advanced options
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.AdvancedOptions'
+            $ref: '#/definitions/view.AdvancedOptions'
         "400":
           description: Bad Request
         "404":
@@ -11729,7 +11742,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.ContainerDiskBatch'
+          $ref: '#/definitions/vm.ContainerDiskBatch'
       produces:
       - text/plain
       responses:
@@ -11770,7 +11783,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_vm.ContainerDiskBatch'
+          $ref: '#/definitions/vm.ContainerDiskBatch'
       produces:
       - text/plain
       responses:
@@ -12007,7 +12020,7 @@ paths:
         "200":
           description: Instance
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Instance'
+            $ref: '#/definitions/view.Instance'
         "400":
           description: Bad Request
         "500":
@@ -12037,7 +12050,7 @@ paths:
           description: Clusters
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.KaaS'
+              $ref: '#/definitions/view.KaaS'
             type: array
         "500":
           description: Internal Server Error
@@ -12099,7 +12112,7 @@ paths:
         "200":
           description: Cluster
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.KaaS'
+            $ref: '#/definitions/view.KaaS'
         "400":
           description: Bad Request
         "404":
@@ -12176,7 +12189,7 @@ paths:
           description: Instances
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Instance'
+              $ref: '#/definitions/view.Instance'
             type: array
         "400":
           description: Bad Request
@@ -12246,7 +12259,7 @@ paths:
           description: NetPols
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Firewall'
+              $ref: '#/definitions/view.Firewall'
             type: array
         "400":
           description: Bad Request
@@ -12281,7 +12294,7 @@ paths:
         "200":
           description: Cluster
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.KaaS'
+            $ref: '#/definitions/view.KaaS'
         "400":
           description: Bad Request
         "500":
@@ -12346,7 +12359,7 @@ paths:
           description: LoadBalancers
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LoadBalancer'
+              $ref: '#/definitions/view.LoadBalancer'
             type: array
         "500":
           description: Internal Server Error
@@ -12374,7 +12387,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_load_balancer.CreateLoadBalancerInfo'
+          $ref: '#/definitions/loadBalancer.CreateLoadBalancerInfo'
       produces:
       - text/plain
       responses:
@@ -12413,7 +12426,7 @@ paths:
         "200":
           description: LoadBalancer
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LoadBalancer'
+            $ref: '#/definitions/view.LoadBalancer'
         "400":
           description: Bad Request
         "404":
@@ -12444,7 +12457,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_load_balancer.CreateLoadBalancerInfo'
+          $ref: '#/definitions/loadBalancer.CreateLoadBalancerInfo'
       produces:
       - text/plain
       responses:
@@ -12483,7 +12496,7 @@ paths:
         "200":
           description: LoadBalancer
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.LoadBalancer'
+            $ref: '#/definitions/view.LoadBalancer'
         "400":
           description: Bad Request
         "404":
@@ -12573,7 +12586,7 @@ paths:
           description: Snapshots
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Snapshot'
+              $ref: '#/definitions/view.Snapshot'
             type: array
         "500":
           description: Internal Server Error
@@ -12601,7 +12614,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.CreateSnapshotInfo'
+          $ref: '#/definitions/volumeSnapshot.CreateSnapshotInfo'
       produces:
       - text/plain
       responses:
@@ -12673,7 +12686,7 @@ paths:
         "200":
           description: Snapshot
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Snapshot'
+            $ref: '#/definitions/view.Snapshot'
         "400":
           description: Bad Request
         "404":
@@ -12709,7 +12722,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubevirt_volumeSnapshot.UpdateSnapshotInfo'
+          $ref: '#/definitions/volumeSnapshot.UpdateSnapshotInfo'
       produces:
       - text/plain
       responses:
@@ -12750,7 +12763,7 @@ paths:
         "200":
           description: Snapshot
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Snapshot'
+            $ref: '#/definitions/view.Snapshot'
         "400":
           description: Bad Request
         "404":
@@ -12815,7 +12828,7 @@ paths:
           description: SSHs
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SSH'
+              $ref: '#/definitions/view.SSH'
             type: array
         "500":
           description: Internal Server Error
@@ -12843,7 +12856,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_k8s_ssh.CreateSSHInfo'
+          $ref: '#/definitions/ssh.CreateSSHInfo'
       produces:
       - text/plain
       responses:
@@ -12882,7 +12895,7 @@ paths:
         "200":
           description: SSH
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SSH'
+            $ref: '#/definitions/view.SSH'
         "400":
           description: Bad Request
         "404":
@@ -12918,7 +12931,7 @@ paths:
         "200":
           description: SSH
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.SSH'
+            $ref: '#/definitions/view.SSH'
         "400":
           description: Bad Request
         "404":
@@ -13014,7 +13027,7 @@ paths:
           description: Subnets
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Subnet'
+              $ref: '#/definitions/view.Subnet'
             type: array
         "500":
           description: Internal Server Error
@@ -13042,7 +13055,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_subnet.CreateSubnetInfo'
+          $ref: '#/definitions/subnet.CreateSubnetInfo'
       produces:
       - text/plain
       responses:
@@ -13081,7 +13094,7 @@ paths:
         "200":
           description: Subnet
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Subnet'
+            $ref: '#/definitions/view.Subnet'
         "400":
           description: Bad Request
         "404":
@@ -13112,7 +13125,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_subnet.CreateSubnetInfo'
+          $ref: '#/definitions/subnet.CreateSubnetInfo'
       produces:
       - text/plain
       responses:
@@ -13185,7 +13198,7 @@ paths:
         "200":
           description: Subnet
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.Subnet'
+            $ref: '#/definitions/view.Subnet'
         "400":
           description: Bad Request
         "500":
@@ -13250,7 +13263,7 @@ paths:
         "200":
           description: VM Cluster Preference
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VirtualMachinePreferenceView'
+            $ref: '#/definitions/view.VirtualMachinePreferenceView'
         "404":
           description: Not Found
         "500":
@@ -13287,7 +13300,7 @@ paths:
         "200":
           description: Advanced options
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.AdvancedOptions'
+            $ref: '#/definitions/view.AdvancedOptions'
         "404":
           description: Not Found
         "500":
@@ -13352,7 +13365,7 @@ paths:
           description: VPCs
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPC'
+              $ref: '#/definitions/view.VPC'
             type: array
         "500":
           description: Internal Server Error
@@ -13380,7 +13393,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_kubeovn_vpc.UpdateVPCInfo'
+          $ref: '#/definitions/vpc.UpdateVPCInfo'
       produces:
       - text/plain
       responses:
@@ -13419,7 +13432,7 @@ paths:
         "200":
           description: VPC
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPC'
+            $ref: '#/definitions/view.VPC'
         "400":
           description: Bad Request
         "404":
@@ -13455,7 +13468,7 @@ paths:
         "200":
           description: VPC
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_superphenix-controller_internal_models_view.VPC'
+            $ref: '#/definitions/view.VPC'
         "400":
           description: Bad Request
         "500":

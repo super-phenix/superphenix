@@ -356,6 +356,7 @@ func (h *Service) CreateDisk(w http.ResponseWriter, r *http.Request) {
 //	@Param			az			path	string			true	"AZ Code"
 //	@Param			projectId	path	string			true	"Project ID"
 //	@Param			effectiveId	path	string			true	"Instance EID"
+//	@Param			force		query	boolean			false	"Temporary: force update of a gitops-managed disk"
 //	@Param			Body		body	UpdateDiskBody	true	"Disk info"
 //	@Success		200
 //	@Failure		400

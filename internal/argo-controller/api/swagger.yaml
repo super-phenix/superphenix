@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.AppSource:
+  argoApp.AppSource:
     properties:
       chart:
         type: string
@@ -15,7 +15,7 @@ definitions:
       targetRevision:
         type: string
     type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.CreateAppInfo:
+  argoApp.CreateAppInfo:
     properties:
       general:
         properties:
@@ -39,152 +39,17 @@ definitions:
               $ref: '#/definitions/v1alpha1.ResourceIgnoreDifferences'
             type: array
           source:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.AppSource'
+            $ref: '#/definitions/argoApp.AppSource'
         type: object
     type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.UpdateAppInfo:
+  argoApp.UpdateAppInfo:
     properties:
       ignoreDifferences:
         items:
           $ref: '#/definitions/v1alpha1.ResourceIgnoreDifferences'
         type: array
       source:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.AppSource'
-    type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.AppView:
-    properties:
-      apiVersion:
-        description: |-
-          APIVersion defines the versioned schema of this representation of an object.
-          Servers should convert recognized schemas to the latest internal value, and
-          may reject unrecognized values.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-          +optional
-        type: string
-      kind:
-        description: |-
-          Kind is a string value representing the REST resource this object represents.
-          Servers may infer this from the endpoint the client submits requests to.
-          Cannot be updated.
-          In CamelCase.
-          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-          +optional
-        type: string
-      metadata:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ObjectMeta'
-      operation:
-        $ref: '#/definitions/v1.Operation'
-      spec:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSpec'
-      status:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationStatus'
-    type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application:
-    properties:
-      app:
-        $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.AppView'
-      codeAZ:
-        type: string
-      eid:
-        description: effective ID
-        type: string
-      gitops:
-        type: string
-      id:
-        description: local ID
-        type: string
-      resourceName:
-        description: human-readable name
-        type: string
-      resourceTypeId:
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSource:
-    properties:
-      chart:
-        description: Chart is a Helm chart name, and must be specified for applications
-          sourced from a Helm repo.
-        type: string
-      helm:
-        allOf:
-        - $ref: '#/definitions/v1alpha1.ApplicationSourceHelm'
-        description: Helm holds helm specific options
-      name:
-        description: Name is used to refer to a source and is displayed in the UI.
-          It is used in multi-source Applications.
-        type: string
-      path:
-        description: Path is a directory path within the Git repository, and is only
-          valid for applications sourced from Git.
-        type: string
-      plugin:
-        allOf:
-        - $ref: '#/definitions/v1alpha1.ApplicationSourcePlugin'
-        description: Plugin holds config management plugin specific options
-      ref:
-        description: Ref is reference to another source within sources field. This
-          field will not be used if used with a `source` tag.
-        type: string
-      repoURL:
-        description: RepoURL is the URL to the repository (Git or Helm) that contains
-          the application manifests
-        type: string
-      targetRevision:
-        description: |-
-          TargetRevision defines the revision of the source to sync the application to.
-          In case of Git, this can be commit, tag, or branch. If omitted, will equal to HEAD.
-          In case of Helm, this is a semver tag for the Chart's version.
-        type: string
-    type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSpec:
-    properties:
-      source:
-        allOf:
-        - $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSource'
-        description: Source is a reference to the location of the application's manifests
-          or chart
-    type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationStatus:
-    properties:
-      conditions:
-        description: Conditions is a list of currently observed application conditions
-        items:
-          $ref: '#/definitions/v1alpha1.ApplicationCondition'
-        type: array
-      health:
-        allOf:
-        - $ref: '#/definitions/v1alpha1.AppHealthStatus'
-        description: Health contains information about the application's current health
-          status
-      resources:
-        description: Resources is a list of Kubernetes resources managed by this application
-        items:
-          $ref: '#/definitions/v1.ResourceStatus'
-        type: array
-      sync:
-        allOf:
-        - $ref: '#/definitions/v1alpha1.SyncStatus'
-        description: Sync contains information about the application's current sync
-          status
-    type: object
-  github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ObjectMeta:
-    properties:
-      creationTimestamp:
-        type: string
-      generateName:
-        type: string
-      labels:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      namespace:
-        type: string
-      ownerReferences:
-        items:
-          $ref: '#/definitions/v1.OwnerReference'
-        type: array
+        $ref: '#/definitions/argoApp.AppSource'
     type: object
   health.HealthStatusCode:
     enum:
@@ -856,6 +721,141 @@ definitions:
     - SyncStatusCodeUnknown
     - SyncStatusCodeSynced
     - SyncStatusCodeOutOfSync
+  view.AppView:
+    properties:
+      apiVersion:
+        description: |-
+          APIVersion defines the versioned schema of this representation of an object.
+          Servers should convert recognized schemas to the latest internal value, and
+          may reject unrecognized values.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+          +optional
+        type: string
+      kind:
+        description: |-
+          Kind is a string value representing the REST resource this object represents.
+          Servers may infer this from the endpoint the client submits requests to.
+          Cannot be updated.
+          In CamelCase.
+          More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+          +optional
+        type: string
+      metadata:
+        $ref: '#/definitions/view.ObjectMeta'
+      operation:
+        $ref: '#/definitions/v1.Operation'
+      spec:
+        $ref: '#/definitions/view.ApplicationSpec'
+      status:
+        $ref: '#/definitions/view.ApplicationStatus'
+    type: object
+  view.Application:
+    properties:
+      app:
+        $ref: '#/definitions/view.AppView'
+      codeAZ:
+        type: string
+      eid:
+        description: effective ID
+        type: string
+      gitops:
+        type: string
+      id:
+        description: local ID
+        type: string
+      resourceName:
+        description: human-readable name
+        type: string
+      resourceTypeId:
+        type: string
+    type: object
+  view.ApplicationSource:
+    properties:
+      chart:
+        description: Chart is a Helm chart name, and must be specified for applications
+          sourced from a Helm repo.
+        type: string
+      helm:
+        allOf:
+        - $ref: '#/definitions/v1alpha1.ApplicationSourceHelm'
+        description: Helm holds helm specific options
+      name:
+        description: Name is used to refer to a source and is displayed in the UI.
+          It is used in multi-source Applications.
+        type: string
+      path:
+        description: Path is a directory path within the Git repository, and is only
+          valid for applications sourced from Git.
+        type: string
+      plugin:
+        allOf:
+        - $ref: '#/definitions/v1alpha1.ApplicationSourcePlugin'
+        description: Plugin holds config management plugin specific options
+      ref:
+        description: Ref is reference to another source within sources field. This
+          field will not be used if used with a `source` tag.
+        type: string
+      repoURL:
+        description: RepoURL is the URL to the repository (Git or Helm) that contains
+          the application manifests
+        type: string
+      targetRevision:
+        description: |-
+          TargetRevision defines the revision of the source to sync the application to.
+          In case of Git, this can be commit, tag, or branch. If omitted, will equal to HEAD.
+          In case of Helm, this is a semver tag for the Chart's version.
+        type: string
+    type: object
+  view.ApplicationSpec:
+    properties:
+      source:
+        allOf:
+        - $ref: '#/definitions/view.ApplicationSource'
+        description: Source is a reference to the location of the application's manifests
+          or chart
+    type: object
+  view.ApplicationStatus:
+    properties:
+      conditions:
+        description: Conditions is a list of currently observed application conditions
+        items:
+          $ref: '#/definitions/v1alpha1.ApplicationCondition'
+        type: array
+      health:
+        allOf:
+        - $ref: '#/definitions/v1alpha1.AppHealthStatus'
+        description: Health contains information about the application's current health
+          status
+      resources:
+        description: Resources is a list of Kubernetes resources managed by this application
+        items:
+          $ref: '#/definitions/v1.ResourceStatus'
+        type: array
+      sync:
+        allOf:
+        - $ref: '#/definitions/v1alpha1.SyncStatus'
+        description: Sync contains information about the application's current sync
+          status
+    type: object
+  view.ObjectMeta:
+    properties:
+      creationTimestamp:
+        type: string
+      generateName:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      namespace:
+        type: string
+      ownerReferences:
+        items:
+          $ref: '#/definitions/v1.OwnerReference'
+        type: array
+    type: object
 info:
   contact:
     email: contact@superphenix.net
@@ -886,7 +886,7 @@ paths:
           description: Applications
           schema:
             items:
-              $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application'
+              $ref: '#/definitions/view.Application'
             type: array
         "400":
           description: Bad Request
@@ -917,7 +917,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.CreateAppInfo'
+          $ref: '#/definitions/argoApp.CreateAppInfo'
       produces:
       - application/json
       responses:
@@ -995,7 +995,7 @@ paths:
         "200":
           description: Application
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application'
+            $ref: '#/definitions/view.Application'
         "400":
           description: Bad Request
         "500":
@@ -1030,7 +1030,7 @@ paths:
         name: Body
         required: true
         schema:
-          $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.UpdateAppInfo'
+          $ref: '#/definitions/argoApp.UpdateAppInfo'
       produces:
       - application/json
       responses:
@@ -1072,7 +1072,7 @@ paths:
         "200":
           description: Application
           schema:
-            $ref: '#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application'
+            $ref: '#/definitions/view.Application'
         "400":
           description: Bad Request
         "500":

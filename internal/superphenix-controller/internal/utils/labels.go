@@ -37,7 +37,19 @@ func CheckProjectLabel(obj metav1.Object, namespace string) error {
 }
 
 func IsEditAllowed(labels map[string]string) error {
-	if labels[spxId.SpxLabelGitops] == "true" {
+	return isEditAllowed(labels, false)
+}
+
+// IsEditAllowedForceGitops skips only the gitops check; the generated and
+// operator-configured blocks still apply.
+// TODO: TEMPORARY, we should remove it once gitops can resize disks by itself
+// that tooling exists. Used only by pvc update.
+func IsEditAllowedForceGitops(labels map[string]string) error {
+	return isEditAllowed(labels, true)
+}
+
+func isEditAllowed(labels map[string]string, forceGitops bool) error {
+	if !forceGitops && labels[spxId.SpxLabelGitops] == "true" {
 		return fmt.Errorf("cannot update/delete gitops resources")
 	}
 

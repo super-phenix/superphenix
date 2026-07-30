@@ -170,7 +170,7 @@ func TestUpdatePVC_CustomLabels(t *testing.T) {
 			info.General.Storage = storage
 			info.General.Labels = tt.inputLabels
 
-			err := info.UpdatePVC(context.Background(), namespace, name)
+			err := info.UpdatePVC(context.Background(), namespace, name, false)
 
 			if tt.wantErr {
 				if err == nil {
@@ -198,6 +198,111 @@ func TestUpdatePVC_CustomLabels(t *testing.T) {
 				} else if gotV != wantV {
 					t.Errorf("label %q = %q, want %q", k, gotV, wantV)
 				}
+			}
+		})
+	}
+}
+
+func TestUpdatePVC_GitopsForce(t *testing.T) {
+	const (
+		namespace = "prj-test"
+		name      = "disk-1"
+	)
+
+	newPVC := func(extraLabels map[string]string) *corev1.PersistentVolumeClaim {
+		labels := map[string]string{
+			spxId.SpxLabelProjectID: namespace,
+		}
+		for k, v := range extraLabels {
+			labels[k] = v
+		}
+		return &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+				Labels:    labels,
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{
+				Resources: corev1.VolumeResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: resource.MustParse("10Gi"),
+					},
+				},
+			},
+			Status: corev1.PersistentVolumeClaimStatus{
+				Capacity: corev1.ResourceList{
+					corev1.ResourceStorage: resource.MustParse("10Gi"),
+				},
+			},
+		}
+	}
+
+	tests := []struct {
+		name           string
+		existingLabels map[string]string
+		force          bool
+		wantErr        bool
+	}{
+		{
+			name:           "gitops disk blocked without force",
+			existingLabels: map[string]string{spxId.SpxLabelGitops: "true"},
+			force:          false,
+			wantErr:        true,
+		},
+		{
+			name:           "gitops disk updated with force",
+			existingLabels: map[string]string{spxId.SpxLabelGitops: "true"},
+			force:          true,
+			wantErr:        false,
+		},
+		{
+			name:           "generated disk still blocked with force",
+			existingLabels: map[string]string{"superphenix.net/generated": "true"},
+			force:          true,
+			wantErr:        true,
+		},
+		{
+			name:           "unmanaged disk updated without force",
+			existingLabels: map[string]string{},
+			force:          false,
+			wantErr:        false,
+		},
+		{
+			name:           "unmanaged disk updated with force",
+			existingLabels: map[string]string{},
+			force:          true,
+			wantErr:        false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pvc := newPVC(tt.existingLabels)
+			fakeClient := fake.NewClientset(pvc)
+			config.K8sClient = fakeClient
+
+			info := &UpdateDiskInfo{}
+			info.General.Storage = "20"
+
+			err := info.UpdatePVC(context.Background(), namespace, name, tt.force)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("expected an error but got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("expected no error but got: %v", err)
+			}
+
+			updated, err := fakeClient.CoreV1().PersistentVolumeClaims(namespace).Get(context.Background(), name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("failed to get updated PVC: %v", err)
+			}
+			want := resource.MustParse("20Gi")
+			if got := updated.Spec.Resources.Requests[corev1.ResourceStorage]; got.Cmp(want) != 0 {
+				t.Errorf("storage request = %s, want %s", got.String(), want.String())
 			}
 		})
 	}

@@ -59,7 +59,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application"
+                                "$ref": "#/definitions/view.Application"
                             }
                         }
                     },
@@ -109,7 +109,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.CreateAppInfo"
+                            "$ref": "#/definitions/argoApp.CreateAppInfo"
                         }
                     }
                 ],
@@ -171,7 +171,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Application",
                         "schema": {
-                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application"
+                            "$ref": "#/definitions/view.Application"
                         }
                     },
                     "400": {
@@ -228,7 +228,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Application",
                         "schema": {
-                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application"
+                            "$ref": "#/definitions/view.Application"
                         }
                     },
                     "400": {
@@ -284,7 +284,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.UpdateAppInfo"
+                            "$ref": "#/definitions/argoApp.UpdateAppInfo"
                         }
                     }
                 ],
@@ -402,7 +402,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.AppSource": {
+        "argoApp.AppSource": {
             "type": "object",
             "properties": {
                 "chart": {
@@ -425,7 +425,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.CreateAppInfo": {
+        "argoApp.CreateAppInfo": {
             "type": "object",
             "properties": {
                 "general": {
@@ -461,13 +461,13 @@ const docTemplate = `{
                             }
                         },
                         "source": {
-                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.AppSource"
+                            "$ref": "#/definitions/argoApp.AppSource"
                         }
                     }
                 }
             }
         },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.UpdateAppInfo": {
+        "argoApp.UpdateAppInfo": {
             "type": "object",
             "properties": {
                 "ignoreDifferences": {
@@ -477,183 +477,7 @@ const docTemplate = `{
                     }
                 },
                 "source": {
-                    "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_argo_app.AppSource"
-                }
-            }
-        },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.AppView": {
-            "type": "object",
-            "properties": {
-                "apiVersion": {
-                    "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources\n+optional",
-                    "type": "string"
-                },
-                "kind": {
-                    "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds\n+optional",
-                    "type": "string"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ObjectMeta"
-                },
-                "operation": {
-                    "$ref": "#/definitions/v1.Operation"
-                },
-                "spec": {
-                    "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSpec"
-                },
-                "status": {
-                    "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationStatus"
-                }
-            }
-        },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.Application": {
-            "type": "object",
-            "properties": {
-                "app": {
-                    "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.AppView"
-                },
-                "codeAZ": {
-                    "type": "string"
-                },
-                "eid": {
-                    "description": "effective ID",
-                    "type": "string"
-                },
-                "gitops": {
-                    "type": "string"
-                },
-                "id": {
-                    "description": "local ID",
-                    "type": "string"
-                },
-                "resourceName": {
-                    "description": "human-readable name",
-                    "type": "string"
-                },
-                "resourceTypeId": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSource": {
-            "type": "object",
-            "properties": {
-                "chart": {
-                    "description": "Chart is a Helm chart name, and must be specified for applications sourced from a Helm repo.",
-                    "type": "string"
-                },
-                "helm": {
-                    "description": "Helm holds helm specific options",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1alpha1.ApplicationSourceHelm"
-                        }
-                    ]
-                },
-                "name": {
-                    "description": "Name is used to refer to a source and is displayed in the UI. It is used in multi-source Applications.",
-                    "type": "string"
-                },
-                "path": {
-                    "description": "Path is a directory path within the Git repository, and is only valid for applications sourced from Git.",
-                    "type": "string"
-                },
-                "plugin": {
-                    "description": "Plugin holds config management plugin specific options",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1alpha1.ApplicationSourcePlugin"
-                        }
-                    ]
-                },
-                "ref": {
-                    "description": "Ref is reference to another source within sources field. This field will not be used if used with a ` + "`" + `source` + "`" + ` tag.",
-                    "type": "string"
-                },
-                "repoURL": {
-                    "description": "RepoURL is the URL to the repository (Git or Helm) that contains the application manifests",
-                    "type": "string"
-                },
-                "targetRevision": {
-                    "description": "TargetRevision defines the revision of the source to sync the application to.\nIn case of Git, this can be commit, tag, or branch. If omitted, will equal to HEAD.\nIn case of Helm, this is a semver tag for the Chart's version.",
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSpec": {
-            "type": "object",
-            "properties": {
-                "source": {
-                    "description": "Source is a reference to the location of the application's manifests or chart",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationSource"
-                        }
-                    ]
-                }
-            }
-        },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ApplicationStatus": {
-            "type": "object",
-            "properties": {
-                "conditions": {
-                    "description": "Conditions is a list of currently observed application conditions",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1alpha1.ApplicationCondition"
-                    }
-                },
-                "health": {
-                    "description": "Health contains information about the application's current health status",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1alpha1.AppHealthStatus"
-                        }
-                    ]
-                },
-                "resources": {
-                    "description": "Resources is a list of Kubernetes resources managed by this application",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.ResourceStatus"
-                    }
-                },
-                "sync": {
-                    "description": "Sync contains information about the application's current sync status",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1alpha1.SyncStatus"
-                        }
-                    ]
-                }
-            }
-        },
-        "github_com_super-phenix_superphenix_internal_argo-controller_internal_v1_models_view.ObjectMeta": {
-            "type": "object",
-            "properties": {
-                "creationTimestamp": {
-                    "type": "string"
-                },
-                "generateName": {
-                    "type": "string"
-                },
-                "labels": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "namespace": {
-                    "type": "string"
-                },
-                "ownerReferences": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/v1.OwnerReference"
-                    }
+                    "$ref": "#/definitions/argoApp.AppSource"
                 }
             }
         },
@@ -1482,6 +1306,182 @@ const docTemplate = `{
                 "SyncStatusCodeSynced",
                 "SyncStatusCodeOutOfSync"
             ]
+        },
+        "view.AppView": {
+            "type": "object",
+            "properties": {
+                "apiVersion": {
+                    "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources\n+optional",
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds\n+optional",
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/view.ObjectMeta"
+                },
+                "operation": {
+                    "$ref": "#/definitions/v1.Operation"
+                },
+                "spec": {
+                    "$ref": "#/definitions/view.ApplicationSpec"
+                },
+                "status": {
+                    "$ref": "#/definitions/view.ApplicationStatus"
+                }
+            }
+        },
+        "view.Application": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "$ref": "#/definitions/view.AppView"
+                },
+                "codeAZ": {
+                    "type": "string"
+                },
+                "eid": {
+                    "description": "effective ID",
+                    "type": "string"
+                },
+                "gitops": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "local ID",
+                    "type": "string"
+                },
+                "resourceName": {
+                    "description": "human-readable name",
+                    "type": "string"
+                },
+                "resourceTypeId": {
+                    "type": "string"
+                }
+            }
+        },
+        "view.ApplicationSource": {
+            "type": "object",
+            "properties": {
+                "chart": {
+                    "description": "Chart is a Helm chart name, and must be specified for applications sourced from a Helm repo.",
+                    "type": "string"
+                },
+                "helm": {
+                    "description": "Helm holds helm specific options",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1alpha1.ApplicationSourceHelm"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name is used to refer to a source and is displayed in the UI. It is used in multi-source Applications.",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "Path is a directory path within the Git repository, and is only valid for applications sourced from Git.",
+                    "type": "string"
+                },
+                "plugin": {
+                    "description": "Plugin holds config management plugin specific options",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1alpha1.ApplicationSourcePlugin"
+                        }
+                    ]
+                },
+                "ref": {
+                    "description": "Ref is reference to another source within sources field. This field will not be used if used with a ` + "`" + `source` + "`" + ` tag.",
+                    "type": "string"
+                },
+                "repoURL": {
+                    "description": "RepoURL is the URL to the repository (Git or Helm) that contains the application manifests",
+                    "type": "string"
+                },
+                "targetRevision": {
+                    "description": "TargetRevision defines the revision of the source to sync the application to.\nIn case of Git, this can be commit, tag, or branch. If omitted, will equal to HEAD.\nIn case of Helm, this is a semver tag for the Chart's version.",
+                    "type": "string"
+                }
+            }
+        },
+        "view.ApplicationSpec": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "description": "Source is a reference to the location of the application's manifests or chart",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/view.ApplicationSource"
+                        }
+                    ]
+                }
+            }
+        },
+        "view.ApplicationStatus": {
+            "type": "object",
+            "properties": {
+                "conditions": {
+                    "description": "Conditions is a list of currently observed application conditions",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1alpha1.ApplicationCondition"
+                    }
+                },
+                "health": {
+                    "description": "Health contains information about the application's current health status",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1alpha1.AppHealthStatus"
+                        }
+                    ]
+                },
+                "resources": {
+                    "description": "Resources is a list of Kubernetes resources managed by this application",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.ResourceStatus"
+                    }
+                },
+                "sync": {
+                    "description": "Sync contains information about the application's current sync status",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1alpha1.SyncStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "view.ObjectMeta": {
+            "type": "object",
+            "properties": {
+                "creationTimestamp": {
+                    "type": "string"
+                },
+                "generateName": {
+                    "type": "string"
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "ownerReferences": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/v1.OwnerReference"
+                    }
+                }
+            }
         }
     },
     "securityDefinitions": {

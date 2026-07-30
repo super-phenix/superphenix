@@ -8,6 +8,7 @@ import (
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
+	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	v1 "k8s.io/api/core/v1"
@@ -24,7 +25,7 @@ type UpdateDiskInfo struct {
 
 const storageFormat = "%sGi"
 
-func (info *UpdateDiskInfo) UpdatePVC(ctx context.Context, namespace, name string) error {
+func (info *UpdateDiskInfo) UpdatePVC(ctx context.Context, namespace, name string, force bool) error {
 	log := logger.GetLogger(ctx)
 	pvcToUpdate, err := config.K8sClient.CoreV1().PersistentVolumeClaims(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
@@ -37,9 +38,16 @@ func (info *UpdateDiskInfo) UpdatePVC(ctx context.Context, namespace, name strin
 		return err
 	}
 
-	if err := utils.IsEditAllowed(pvcToUpdate.GetLabels()); err != nil {
+	isEditAllowed := utils.IsEditAllowed
+	if force {
+		isEditAllowed = utils.IsEditAllowedForceGitops
+	}
+	if err := isEditAllowed(pvcToUpdate.GetLabels()); err != nil {
 		log.Error().Err(err).Any("info", info).Str("namespace", namespace).Str("name", name).Msg("Edit not allowed on this resource")
 		return err
+	}
+	if force && pvcToUpdate.GetLabels()[spxId.SpxLabelGitops] == "true" {
+		log.Warn().Str("namespace", namespace).Str("name", name).Msg("Gitops guard bypassed with force for disk update")
 	}
 
 	oldStorage := pvcToUpdate.Status.Capacity.Storage()

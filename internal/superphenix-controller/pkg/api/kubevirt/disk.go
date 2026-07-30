@@ -239,6 +239,7 @@ func createDisk(w http.ResponseWriter, r *http.Request) {
 //	@Param			orgId		path	string				true	"Organization ID"
 //	@Param			projectId	path	string				true	"Project ID"
 //	@Param			effectiveId	path	string				true	"Instance Effective ID"
+//	@Param			force		query	boolean				false	"Temporary: force update of a gitops-managed disk"
 //	@Param			Body		body	pvc.UpdateDiskInfo	true	"Disk info"
 //	@Success		200
 //	@Failure		400
@@ -271,7 +272,8 @@ func updateDisk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = body.UpdatePVC(r.Context(), namespace, effectiveId); err != nil {
+	force := r.URL.Query().Get("force") == "true"
+	if err = body.UpdatePVC(r.Context(), namespace, effectiveId, force); err != nil {
 		if errors.IsNotFound(err) {
 			log.Err(err).Msg("Resource not found")
 			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
