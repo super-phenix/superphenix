@@ -660,3 +660,98 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateArgoApp_HelmParams(t *testing.T) {
+	config.Global.ArgoController.App.KaaS.Repo = config.RepoArgoAppConfig{
+		RepoURL:        "ghcr.io/super-phenix/charts",
+		TargetRevision: "0.1.0",
+		Chart:          "sfs-kaas",
+	}
+	config.Global.ArgoController.App.KaaS.KubeVersions = []config.KubeVersionConfig{{Version: "v1.34.8"}}
+
+	az := config.AZConfig{Code: "az1", Destination: "dest1"}
+	metadata := spxId.Metadata{OrgId: "org", ProjectId: "proj", ResourceEffectiveId: "cluster"}
+
+	tests := []struct {
+		name           string
+		storageClasses []ClassMapping
+		want           []string
+	}{
+		{
+			name:           "no storage class",
+			storageClasses: nil,
+			want:           nil,
+		},
+		{
+			name:           "single storage class",
+			storageClasses: []ClassMapping{{Shortname: "default", Fullname: "spx-aq01-test02-storage01.default"}},
+			want:           []string{"--set storageClassMapping.default=spx-aq01-test02-storage01.default"},
+		},
+		{
+			name: "multiple storage classes",
+			storageClasses: []ClassMapping{
+				{Shortname: "default", Fullname: "spx-aq01-test02-storage01.default"},
+				{Shortname: "fast", Fullname: "spx-aq01-test02-storage01.fast"},
+			},
+			want: []string{
+				"--set storageClassMapping.default=spx-aq01-test02-storage01.default",
+				"--set storageClassMapping.fast=spx-aq01-test02-storage01.fast",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kaasConfig := KaaSConfig{StorageClasses: tt.storageClasses}
+			// The first storage class is used as the default one for the boot disk, if any.
+			storageClass := ""
+			if len(tt.storageClasses) > 0 {
+				storageClass = tt.storageClasses[0].Shortname
+			}
+			spec := KaaSSpec{
+				KubeVersion:   "v1.34.8",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{{
+					Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20,
+					StorageClass: storageClass, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+				}},
+			}
+
+			body, _, err := CreateArgoApp(context.Background(), "cluster", az, spec, metadata, kaasConfig, nil)
+			if err != nil {
+				t.Fatalf("CreateArgoApp() error = %v", err)
+			}
+
+			var helmParams string
+			found := false
+			for _, entry := range body.Spec.Source.Plugin.Env {
+				if entry.Name == "HELM_PARAMS" {
+					helmParams, found = entry.Value, true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("HELM_PARAMS not found in plugin env")
+			}
+
+			for _, want := range tt.want {
+				if !strings.Contains(helmParams, want) {
+					t.Errorf("HELM_PARAMS = %q, want it to contain %q", helmParams, want)
+				}
+			}
+
+			// The chart consumes storageClassMapping as a flat friendly -> fullname map,
+			// so the mapping must never carry nested storageClassName/snapshotClassName keys.
+			for _, unwanted := range []string{"storageClassName=", "snapshotClassName="} {
+				if strings.Contains(helmParams, unwanted) {
+					t.Errorf("HELM_PARAMS = %q, want it to not contain %q", helmParams, unwanted)
+				}
+			}
+
+			if tt.want == nil && strings.Contains(helmParams, "storageClassMapping") {
+				t.Errorf("HELM_PARAMS = %q, want no storageClassMapping override", helmParams)
+			}
+		})
+	}
+}

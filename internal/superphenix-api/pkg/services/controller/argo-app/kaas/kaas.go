@@ -304,8 +304,7 @@ func CreateArgoApp(ctx context.Context, localId string, az config.AZConfig, spec
 	var helmParams strings.Builder
 	helmParams.WriteString(fmt.Sprintf("--set location=%s  --set organizationID=%s  --set projectID=%s", az.Code, metadata.OrgId, metadata.ProjectId))
 	for _, class := range kaasConfig.StorageClasses {
-		helmParams.WriteString(fmt.Sprintf("  --set storageClassMapping.%s.storageClassName=%s", class.Shortname, class.Fullname))
-		helmParams.WriteString(fmt.Sprintf("  --set storageClassMapping.%s.snapshotClassName=%s", class.Shortname, class.Fullname))
+		helmParams.WriteString(fmt.Sprintf("  --set storageClassMapping.%s=%s", class.Shortname, class.Fullname))
 	}
 
 	appName := fmt.Sprintf("%s-%s", KaasPrefix, metadata.GetResourceEffectiveID())

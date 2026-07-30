@@ -172,9 +172,3 @@ type StorageClass struct {
 	TenantClass    string `yaml:"tenantClass,omitempty"`
 	InfraClass     string `yaml:"infraClass,omitempty"`
 }
-
-type SnapshotClass struct {
-	IsDefaultClass bool   `yaml:"isDefaultClass,omitempty"`
-	TenantClass    string `yaml:"tenantClass,omitempty"`
-	InfraClass     string `yaml:"infraClass,omitempty"`
-}
