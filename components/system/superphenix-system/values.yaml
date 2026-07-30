@@ -945,7 +945,7 @@ apps:
           - /data/mapping
     repoURL: "oci://ghcr.io/super-phenix/charts/spx-rook-connection"
     path: "."
-    targetRevision: "0.1.1"
+    targetRevision: "0.2.0"
     helm:
       chart: "spx-rook-connection"
       releaseName: "spx-rook-connection"
