@@ -68,7 +68,8 @@ type GroupSubnet struct {
 
 }
 type Values struct {
-	Clusters map[string]Cluster `yaml:"clusters,omitempty"`
+	AzDomains map[string]string  `yaml:"azDomains,omitempty"`
+	Clusters  map[string]Cluster `yaml:"clusters,omitempty"`
 }
 
 type Cluster struct {
@@ -168,12 +169,6 @@ type EssentialsValues struct {
 }
 
 type StorageClass struct {
-	IsDefaultClass bool   `yaml:"isDefaultClass,omitempty"`
-	TenantClass    string `yaml:"tenantClass,omitempty"`
-	InfraClass     string `yaml:"infraClass,omitempty"`
-}
-
-type SnapshotClass struct {
 	IsDefaultClass bool   `yaml:"isDefaultClass,omitempty"`
 	TenantClass    string `yaml:"tenantClass,omitempty"`
 	InfraClass     string `yaml:"infraClass,omitempty"`

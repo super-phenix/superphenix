@@ -332,6 +332,13 @@ spec:
                 - Paused
                 - Unknown
                 type: string
+              pxeSetupDone:
+                description: |-
+                  PXESetupDone lists hostname of machines that have been set up for PXE
+                  when using TalosManagementModeFull.
+                items:
+                  type: string
+                type: array
               superphenixVersion:
                 description: SuperphenixVersion is the actual Superphenix version
                   currently running on the cluster.

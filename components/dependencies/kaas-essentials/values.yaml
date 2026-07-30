@@ -34,14 +34,17 @@ kubevirtCsi:
       csiLivenessprobeVersion: v2.18.0
       snapshotControllerVersion: v8.5.0
       csiDriverVersion: latest
+    v1.36:
+      nodeDriverRegistrarVersion: v2.17.0
+      csiLivenessprobeVersion: v2.19.0
+      snapshotControllerVersion: v8.6.0
+      csiDriverVersion: latest
 
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # %          Metrics server           %
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 metrics-server:
   fullnameOverride: "metrics-server"
-  image:
-    tag: v0.8.1
   args:
     - --kubelet-insecure-tls=true
     - --kubelet-preferred-address-types=InternalIP
