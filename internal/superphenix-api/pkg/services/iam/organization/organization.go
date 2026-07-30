@@ -47,7 +47,7 @@ type TransferOrganizationBody struct {
 	NewOwnerInviteCode uuid.UUID `json:"newOwnerInviteCode"`
 }
 
-// GetOrganization Get organization by id
+// Get organization by id
 //
 //	@Summary		Get an Organization
 //	@Description	Get an Organization by id
@@ -126,7 +126,7 @@ func (e *Service) Get(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(marshal)
 }
 
-// UpdateOrganization Update an organization
+// Update an organization
 //
 //	@Summary		Update an Organization
 //	@Description	Update an Organization
@@ -182,7 +182,7 @@ func (e *Service) Update(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(marshal)
 }
 
-// CreateOrganization initialize a new organization, a default project and the associated permissions
+// Create initialize a new organization, a default project and the associated permissions
 //
 //	@Summary		Create an Organization
 //	@Description	Initialize a new organization, a default project and the associated permissions
@@ -278,7 +278,7 @@ func InitOrganization(ctx context.Context, organization model.Organization, user
 	return nil
 }
 
-// DeleteOrganization Delete an organization
+// Delete an organization
 //
 //	@Summary		Delete an Organization
 //	@Description	Delete an Organization by id
@@ -356,7 +356,7 @@ func (e *Service) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// TransferOrganization Transfer organization ownership to another user
+// Transfer organization ownership to another user
 //
 //	@Summary		Transfer organization ownership
 //	@Description	Transfer organization ownership to another user

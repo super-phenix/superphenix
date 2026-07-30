@@ -11,6 +11,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/gc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
 	"github.com/super-phenix/superphenix/pkg/utils/decoder"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
@@ -187,8 +188,10 @@ func InitializeProject(ctx context.Context, userId, orgaId uuid.UUID, name strin
 		return model.APIProject{}, err
 	}
 
-	if err := controller.InitializeProjectDefaultResources(ctx, orgaId, projectEntity.ID); err != nil {
-		log.Err(err).Str("userId", userId.String()).Any("project", projectEntity).Msg("Failed to initialize default resources in project")
+	if config.Global.UserSettings.EnableProjectDefaultResources {
+		if err := controller.InitializeProjectDefaultResources(ctx, orgaId, projectEntity.ID); err != nil {
+			log.Err(err).Str("userId", userId.String()).Any("project", projectEntity).Msg("Failed to initialize default resources in project")
+		}
 	}
 
 	var cast model.APIProject

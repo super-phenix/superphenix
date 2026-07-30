@@ -67,7 +67,7 @@ func validate(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
 
 // RetrieveAccessToken creates a new JWT Access Token
 //
-//	@Summary		Generates an access token
+//	@Summary		Generate an Access Token
 //	@Description	Generates an access token based on refresh token
 //	@Tags			v1, session
 //	@Produce		plain
@@ -127,7 +127,7 @@ func (h *Service) RetrieveAccessToken(w http.ResponseWriter, r *http.Request) {
 
 // GenerateTokens creates a JWT Access Token and a JWT Refresh Token
 //
-//	@Summary		Generates access and refresh token
+//	@Summary		Generate Access and Refresh Tokens
 //	@Description	Generates an access token and an associated refresh token
 //	@Tags			v1, session
 //	@Produce		plain
@@ -185,7 +185,7 @@ func (h *Service) GenerateTokens(writer http.ResponseWriter, request *http.Reque
 
 // Logout invalidate a refresh cookie and redirect to default url
 //
-//	@Summary		Logout current user
+//	@Summary		Logout Current User
 //	@Description	Invalidate the refresh token and redirect to default url
 //	@Tags			v1, session
 //	@Produce		json
@@ -208,7 +208,7 @@ func (h *Service) Logout(w http.ResponseWriter, r *http.Request) {
 
 // WhoAmI return the currently logged user
 //
-//	@Summary		Get current user information
+//	@Summary		Get Current User Information
 //	@Description	Get current user information based on access token
 //	@Tags			v1, session
 //	@Produce		json

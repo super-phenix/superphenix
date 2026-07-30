@@ -133,7 +133,8 @@ type Config struct {
 	}
 
 	UserSettings struct {
-		UserIsActiveOnCreate           bool          `json:"userIsActiveOnCreate"` // If false, need manual activation in database
+		UserIsActiveOnCreate           bool          `yaml:"userIsActiveOnCreate"` // If false, need manual activation in database
+		EnableProjectDefaultResources  bool          `yaml:"enableProjectDefaultResources"`
 		InviteCodeRegenerationCooldown time.Duration `yaml:"inviteCodeRegenerationCooldown"`
 	} `yaml:"userSettings"`
 
@@ -241,6 +242,7 @@ swagger:
   baseURL: "localhost:8080"
 userSettings:
   userIsActiveOnCreate: false
+  enableProjectDefaultResources: true
   inviteCodeRegenerationCooldown: 2h
 session:
   defaultReturnUrl: "http://localhost:4200/callback"

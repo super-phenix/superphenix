@@ -18,7 +18,7 @@ type ArgoCdLinkResponse struct {
 
 // GetArgoCdLink returns the Argo CD application link for a given resource
 //
-//	@Summary		Get Argo CD application link
+//	@Summary		Get Argo CD Application Link
 //	@Description	Returns the Argo CD UI link for a KaaS, BaaS or IaaS resource
 //	@Tags			v1, Argo CD
 //	@Produce		json

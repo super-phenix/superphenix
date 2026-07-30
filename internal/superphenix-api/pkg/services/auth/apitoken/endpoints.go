@@ -33,7 +33,7 @@ type createResponse struct {
 
 // CreateAPIToken creates a new API token for the authenticated user.
 //
-//	@Summary		Create an API token
+//	@Summary		Create an API Token
 //	@Description	Create a new API token for the authenticated user. The plain-text token is returned only once in the response.
 //	@Tags			api-token
 //	@Accept			json
@@ -103,7 +103,7 @@ func (h *Service) CreateAPIToken(w http.ResponseWriter, r *http.Request) {
 
 // RevokeAPIToken deletes an API token owned by the authenticated user.
 //
-//	@Summary		Revoke an API token
+//	@Summary		Revoke an API Token
 //	@Description	Revoke (delete) an existing API token. The token must belong to the authenticated user.
 //	@Tags			api-token
 //	@Produce		json
@@ -156,7 +156,7 @@ func (h *Service) RevokeAPIToken(w http.ResponseWriter, r *http.Request) {
 
 // ListAPIToken returns all API tokens for the authenticated user.
 //
-//	@Summary		List API tokens
+//	@Summary		List API Tokens
 //	@Description	Retrieve all API tokens belonging to the authenticated user. Token secrets are not included.
 //	@Tags			api-token
 //	@Produce		json
