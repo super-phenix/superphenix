@@ -57,6 +57,12 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			log.Error().Any("spec", spec).Msgf("The name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
 			return "", nil, fmt.Errorf("the name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
 		}
+
+		if group.Replicas < minReplicas || group.Replicas > maxReplicas {
+			log.Error().Any("spec", spec).Msgf("Replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
+			return "", nil, fmt.Errorf("replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
+		}
+
 		// Groups have a version starting at 1. When updating, each group is matched by name
 		// against oldSpec: if unchanged the version is kept, otherwise it is incremented.
 		// Unmatched groups in oldSpec are tracked in mapGroupToRemove for cleanup.

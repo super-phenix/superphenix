@@ -15,6 +15,9 @@ const (
 	quantityFormat = "%dGi"
 	maxnodeGroup   = 5
 
+	minReplicas = 1
+	maxReplicas = 10
+
 	// Disaster recovery (dedicated control plane datastore) requires Kubernetes >= 1.35.
 	dataStoreMinMajor = 1
 	dataStoreMinMinor = 35
