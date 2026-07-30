@@ -5165,7 +5165,7 @@ const docTemplate = `{
             }
         },
         "/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "Bearer": [

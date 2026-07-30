@@ -66,7 +66,7 @@ func Module(cfg *config.Config, s API) router.Module {
 				router.Post("/{az}/{projectId}/kaas/{effectiveId}", s.UpdateKaaS),
 				router.Delete("/{az}/{projectId}/kaas/{effectiveId}", s.DeleteKaaS),
 				router.Get("/{az}/{projectId}/kaas/{effectiveId}/app", s.GetForUpdateKaaS),
-				router.Post("/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials", s.ReinstallKaaSEssentials),
+				router.Get("/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials", s.ReinstallKaaSEssentials),
 			},
 		}},
 	})

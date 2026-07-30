@@ -4087,7 +4087,7 @@ paths:
       - v1
       - Superphenix Controller
   /{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials:
-    post:
+    get:
       description: Reinstall KaaS Essentials by incrementing the kaasEssentials revision
       parameters:
       - description: Organization ID
