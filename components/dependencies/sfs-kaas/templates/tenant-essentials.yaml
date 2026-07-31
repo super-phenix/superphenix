@@ -85,6 +85,12 @@ data:
       {{- end }}
     {{- end }}
 
+    # Cluster information to be written in the spx-cluster-info configmap
+    cluster:
+      clusterID: {{ $clusterID }}
+      friendlyName: {{ $cluster.kaasEssentials.clusterFriendlyName | default $cluster.name | quote }}
+      name: {{ $cluster.name | quote }}
+
     # Values from clusters.<cluster>.kaasEssentials.values are imported here
     {{- if hasKey $cluster.kaasEssentials "values" }}
     {{- $cluster.kaasEssentials.values | toYaml | nindent 4 }}

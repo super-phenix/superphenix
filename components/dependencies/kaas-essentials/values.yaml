@@ -1,6 +1,9 @@
 # -- Specification of the target cluster
 # These parameters cannot be overriden by the user.
 cluster:
+  clusterID: ""
+  friendlyName: ""
+  name: ""
   kubeVersion: ""
 
 controlPlane:
