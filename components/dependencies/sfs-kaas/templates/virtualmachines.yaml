@@ -185,7 +185,7 @@ spec:
                         topologyKey: kubernetes.io/hostname
                         labelSelector:
                           matchLabels:
-                            capk.cluster.x-k8s.io/kubevirt-machine-namespace: {{ $.Release.Namespace }}
+                            cluster.x-k8s.io/cluster-name: {{ $clusterID }}
                       weight: 1
               architecture: amd64
               domain:
