@@ -1,9 +1,9 @@
-from python:alpine
+FROM python:alpine
 
-copy mac-finder.py run.py
+COPY mac-finder.py run.py
 
-copy requirements.txt .
+COPY requirements.txt .
 
-run pip install -r requirements.txt && pip cache purge
+RUN pip install -r requirements.txt && pip cache purge
 
-cmd python run.py
+CMD python run.py
