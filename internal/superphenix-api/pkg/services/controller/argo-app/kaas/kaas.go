@@ -101,7 +101,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		}
 	}
 
-	if _, supported := config.ResolveKubeVersionRepo(config.Global.ProductsConfig.App.Kubernetes.KubeVersions, config.Global.ProductsConfig.App.Kubernetes.Repo, spec.KubeVersion); !supported {
+	if _, supported := config.ResolveKubeVersionRepo(config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions, config.Global.ProductsConfig.ArgoApp.Kubernetes.Repo, spec.KubeVersion); !supported {
 		log.Error().Str("kubeVersion", spec.KubeVersion).Msg("KubeVersion not supported")
 		return "", nil, fmt.Errorf("KubeVersion not supported")
 	}
@@ -262,7 +262,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 	}
 
 	valuesObj := Values{
-		AzDomains: config.Global.ArgoController.App.KaaS.AzDomains,
+		AzDomains: config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains,
 		Clusters: map[string]Cluster{
 			localId: {
 				Name:        localId,
@@ -317,7 +317,7 @@ func CreateArgoApp(ctx context.Context, localId string, az config.AZConfig, spec
 	appName := fmt.Sprintf("%s-%s", KaasPrefix, metadata.GetResourceEffectiveID())
 
 	// Version support was already validated in CreateKaaSAppValues, so the repo is always resolved here.
-	repo, _ := config.ResolveKubeVersionRepo(config.Global.ProductsConfig.App.Kubernetes.KubeVersions, config.Global.ProductsConfig.App.Kubernetes.Repo, spec.KubeVersion)
+	repo, _ := config.ResolveKubeVersionRepo(config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions, config.Global.ProductsConfig.ArgoApp.Kubernetes.Repo, spec.KubeVersion)
 
 	return argoApp.AppArgoCtrlBody{
 		Metadata: metadata,

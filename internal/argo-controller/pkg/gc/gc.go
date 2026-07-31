@@ -79,7 +79,7 @@ func garbageCollection(ctx context.Context, processDone chan<- bool) {
 
 	// Level 2 - Clean App Projects after applications are gone
 	cleanersLvl2 := []utils.Cleaner{
-		&appproject.Cleaner{ResourceType: "App Project", Logger: logger},
+		&appproject.Cleaner{ResourceType: "ArgoApp Project", Logger: logger},
 	}
 
 	for _, cleaner := range cleanersLvl2 {

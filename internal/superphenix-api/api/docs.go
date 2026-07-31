@@ -1731,7 +1731,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Get BaaS App for update form",
+                "description": "Get BaaS ArgoApp for update form",
                 "produces": [
                     "application/json"
                 ],
@@ -1739,7 +1739,7 @@ const docTemplate = `{
                     "v1",
                     "SPX Argo Ctrl"
                 ],
-                "summary": "Get BaaS App",
+                "summary": "Get BaaS ArgoApp",
                 "parameters": [
                     {
                         "type": "string",
@@ -4897,7 +4897,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Get KaaS App for update form",
+                "description": "Get KaaS ArgoApp for update form",
                 "produces": [
                     "application/json"
                 ],
@@ -4905,7 +4905,7 @@ const docTemplate = `{
                     "v1",
                     "SPX Argo Ctrl"
                 ],
-                "summary": "Get KaaS App",
+                "summary": "Get KaaS ArgoApp",
                 "parameters": [
                     {
                         "type": "string",

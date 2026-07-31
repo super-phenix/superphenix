@@ -645,7 +645,7 @@ func (h *Service) DeleteKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Router			/{orgaId}/api/spx-ctrl/{projectId}/kaas/kube-versions [get]
 //	@Security		Bearer[OrganizationRead]
 func (h *Service) GetKubeVersion(w http.ResponseWriter, r *http.Request) {
-	kubeVersions := h.cfg.ProductsConfig.App.Kubernetes.KubeVersions
+	kubeVersions := h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeVersions
 	versions := make([]string, 0, len(kubeVersions))
 	for _, v := range kubeVersions {
 		versions = append(versions, v.Version)
@@ -717,8 +717,8 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if argokaas.ShouldRewriteFQDN(h.cfg.ProductsConfig.App.Kubernetes.KubeVersions, spec.KubeVersion) {
-		body, err = argokaas.RewriteFQDN(body, effectiveId, azDb.Code, h.cfg.ProductsConfig.App.Kubernetes.KubeConfigDomain)
+	if argokaas.ShouldRewriteFQDN(h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeVersions, spec.KubeVersion) {
+		body, err = argokaas.RewriteFQDN(body, effectiveId, azDb.Code, h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeConfigDomain)
 		if err != nil {
 			log.Err(err).Str("eid", effectiveId).Msg("Failed to rewrite kubeconfig server endpoint")
 			httpError.Http(w, r, http.StatusInternalServerError).Str("eid", effectiveId).Msg(consts.SpxResponseParseFailure)

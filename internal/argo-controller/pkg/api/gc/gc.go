@@ -53,7 +53,7 @@ func deletionLabeling(ctx context.Context, namespaceValue string) error {
 
 	cleaners := []utils.Cleaner{
 		&argoapp.Cleaner{ResourceType: "Argo Application", Logger: logger},
-		&appproject.Cleaner{ResourceType: "App Project", Logger: logger},
+		&appproject.Cleaner{ResourceType: "ArgoApp Project", Logger: logger},
 	}
 
 	errWg, ctxWg := errgroup.WithContext(ctx)

@@ -66,7 +66,6 @@ func LaunchEndpoint(address string) {
 
 	router.Route("/{orgId}/{projectId}", func(r chi.Router) {
 		r.Use(authentication.BearerAuth())
-		r.Use(utils.CheckOrganizationWhitelist())
 
 		r.Get("/mark", gc.MarkForDeletion)
 		r.Get("/storage-class", configApi.GetStorageClass)

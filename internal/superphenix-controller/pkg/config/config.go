@@ -62,8 +62,6 @@ type Config struct {
 
 	SpxPrefix string `yaml:"spxPrefix"`
 
-	OrganizationWhitelist []string `yaml:"organizationWhitelist"`
-
 	ProductsConfig struct {
 		NatGatewayDefault struct {
 			ExternalSubnets []string `yaml:"externalSubnets"`
@@ -139,7 +137,6 @@ metrics:
 swagger:
   baseURL: "localhost:8080"
 spxPrefix: "spx"
-organizationWhitelist: []
 containerDiskCatalog: []
 productsConfig:
   natGatewayDefault:
@@ -149,7 +146,7 @@ productsConfig:
       - cidr: 198.18.0.0/16
         nextHopIP: gateway
     bgpSpeaker:
-      enabled: true
+      enabled: false
       asn: 65500
       remoteAsn: 65000
       neighbors:
@@ -159,7 +156,7 @@ productsConfig:
         - -v5
         - --graceful-restart
   eipDefault:
-    externalSubnet: skala-subnet
+    externalSubnet: external-subnet
   datavolume:
     defaultAnnotations:
       "v1.multus-cni.io/default-network": "kube-system/system-isolated-egress"

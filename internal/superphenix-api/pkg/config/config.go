@@ -161,7 +161,7 @@ type Config struct {
 	ArgoCdUrl string `yaml:"argoCdUrl"`
 
 	ProductsConfig struct {
-		App struct {
+		ArgoApp struct {
 			Kubernetes struct {
 				Repo             RepoArgoAppConfig   `yaml:"repo"`
 				KubeVersions     []KubeVersionConfig `yaml:"kubeVersions,omitempty"`
@@ -170,14 +170,14 @@ type Config struct {
 				AzDomains map[string]string `yaml:"azDomains"`
 			} `yaml:"kubernetes"`
 
-			Backups struct {
+			Backup struct {
 				Repo     RepoArgoAppConfig `yaml:"repo"`
 				Schedule struct {
 					MinHour int `yaml:"minHour"`
 					MaxHour int `yaml:"maxHour"`
 				} `yaml:"schedule"`
-			} `yaml:"backups"`
-		} `yaml:"app"`
+			} `yaml:"backup"`
+		} `yaml:"argoApp"`
 
 		DefaultVPC struct {
 			ProductName string `yaml:"productName"`
@@ -271,7 +271,7 @@ azs: []
 spxPrefix: "spx"
 argoCdUrl: "https://<argocd-host>"
 productsConfig:
-  app:
+  argoApp:
     kubernetes:
       repo:
         repoURL: ""
@@ -279,7 +279,7 @@ productsConfig:
       kubeVersions: []
       kubeConfigDomain: "<kube-config-domain>"
       azDomains: {}
-    backups:
+    backup:
       repo:
         repoURL: ""
         targetRevision: ""
