@@ -7,3 +7,7 @@ talos-operator:
   enabled: false
   featureFlags:
     enablePxeBootStack: true
+
+# -- iDRAC Exporter configuration
+idrac-exporter:
+  enabled: false

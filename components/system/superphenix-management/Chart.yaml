@@ -14,3 +14,7 @@ dependencies:
     version: 0.6.1
     repository: "https://alperencelik.github.io/helm-charts"
     condition: talos-operator.enabled
+  - name: idrac-exporter
+    version: 2.6.1
+    repository: "https://mrlhansen.github.io/idrac_exporter"
+    condition: idrac-exporter.enabled
