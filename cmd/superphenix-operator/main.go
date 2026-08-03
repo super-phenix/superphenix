@@ -64,11 +64,9 @@ func main() {
 	var argocdDefaultConfig string
 	var argocdHAConfig string
 	var haEnabled bool
-	var managementChartURL string
-	var managementChartVersion string
-	var defaultRepoURL string
-	var defaultChartName string
-	var defaultVersion string
+	var systemChartURL string
+	var systemChartName string
+	var systemChartVersion string
 	var syncPeriod time.Duration
 	var syncTimeout time.Duration
 	var talosManagerChartURL string
@@ -99,11 +97,9 @@ func main() {
 	flag.StringVar(&argocdDefaultConfig, "argocd-default-config", "/etc/superphenix/argocd/default/values.yaml", "Path to the default ArgoCD configuration file")
 	flag.StringVar(&argocdHAConfig, "argocd-ha-config", "/etc/superphenix/argocd/ha/values.yaml", "Path to the HA ArgoCD configuration file")
 	flag.BoolVar(&haEnabled, "ha-enabled", false, "Whether to enable HA for ArgoCD")
-	flag.StringVar(&managementChartURL, "management-chart-url", "ghcr.io/super-phenix/charts", "The OCI registry URL for the superphenix-management chart")
-	flag.StringVar(&managementChartVersion, "management-chart-version", "0.0.0", "The version of the superphenix-management chart")
-	flag.StringVar(&defaultRepoURL, "default-repo-url", "ghcr.io/super-phenix/charts/superphenix-system", "The default repository URL for the Superphenix system chart")
-	flag.StringVar(&defaultChartName, "default-chart-name", "superphenix-system", "The default chart name for the Superphenix system chart")
-	flag.StringVar(&defaultVersion, "default-version", "0.0.0", "The default version for the Superphenix system chart")
+	flag.StringVar(&systemChartURL, "system-chart-url", "oci://ghcr.io/super-phenix/charts", "The URL of the Superphenix system chart repository")
+	flag.StringVar(&systemChartName, "system-chart-name", "superphenix-system", "The name of the Superphenix system chart")
+	flag.StringVar(&systemChartVersion, "system-chart-version", "0.0.0", "The version of the Superphenix system chart")
 	flag.DurationVar(&syncPeriod, "sync-period", 5*time.Minute, "The interval at which to periodically resync sub-applications")
 	flag.DurationVar(&syncTimeout, "sync-timeout", 15*time.Minute, "The duration after which an in-progress sub-application sync is considered stuck, aborted, and restarted")
 	flag.StringVar(&talosManagerChartURL, "talos-manager-chart-url", "ghcr.io/super-phenix/charts", "The repository URL for the talos-manager chart")
@@ -242,9 +238,9 @@ func main() {
 		Scheme:                   mgr.GetScheme(),
 		OperatorNamespace:        operatorNamespace,
 		ClustersConfigMapName:    clustersConfigMapName,
-		DefaultRepoURL:           defaultRepoURL,
-		DefaultChartName:         defaultChartName,
-		DefaultVersion:           defaultVersion,
+		SystemChartURL:           systemChartURL,
+		SystemChartName:          systemChartName,
+		SystemChartVersion:       systemChartVersion,
 		SyncPeriod:               syncPeriod,
 		SyncTimeout:              syncTimeout,
 		TalosManagerChartURL:     talosManagerChartURL,
@@ -257,18 +253,19 @@ func main() {
 	if isManagementCluster {
 		setupLog.Info("Setting up management components reconciler")
 		if err := (&management.Reconciler{
-			Client:                 mgr.GetClient(),
-			Scheme:                 mgr.GetScheme(),
-			Config:                 mgr.GetConfig(),
-			OperatorNamespace:      operatorNamespace,
-			ValuesConfigMapName:    valuesConfigMapName,
-			HAEnabled:              haEnabled,
-			ArgoCDChartURL:         argocdChartURL,
-			ArgoCDChartVersion:     argocdChartVersion,
-			ArgoCDDefaultConfig:    argocdDefaultConfig,
-			ArgoCDHAConfig:         argocdHAConfig,
-			ManagementChartURL:     managementChartURL,
-			ManagementChartVersion: managementChartVersion,
+			Client:              mgr.GetClient(),
+			Scheme:              mgr.GetScheme(),
+			Config:              mgr.GetConfig(),
+			OperatorNamespace:   operatorNamespace,
+			ValuesConfigMapName: valuesConfigMapName,
+			HAEnabled:           haEnabled,
+			ArgoCDChartURL:      argocdChartURL,
+			ArgoCDChartVersion:  argocdChartVersion,
+			ArgoCDDefaultConfig: argocdDefaultConfig,
+			ArgoCDHAConfig:      argocdHAConfig,
+			SystemChartURL:      systemChartURL,
+			SystemChartName:     systemChartName,
+			SystemChartVersion:  systemChartVersion,
 		}).SetupWithManager(mgr); err != nil {
 			setupLog.Error(err, "Failed to create management controller")
 			os.Exit(1)
@@ -279,11 +276,11 @@ func main() {
 	if !disableTelemetry {
 		runner := &telemetry.Runner{
 			Collector: &telemetry.Collector{
-				Client:            mgr.GetClient(),
-				OperatorVersion:   version.OperatorVersion,
-				Namespace:         operatorNamespace,
-				ManagementVersion: managementChartVersion,
-				ArgoCDVersion:     argocdChartVersion,
+				Client:          mgr.GetClient(),
+				OperatorVersion: version.OperatorVersion,
+				Namespace:       operatorNamespace,
+				SystemVersion:   systemChartVersion,
+				ArgoCDVersion:   argocdChartVersion,
 			},
 			Client: telemetry.NewClient(telemetryEndpoint),
 		}

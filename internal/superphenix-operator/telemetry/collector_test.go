@@ -79,9 +79,9 @@ func TestCollector_Collect(t *testing.T) {
 	c := &Collector{
 		Client:            fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cluster1, cluster2, cluster3, cluster4, kubeSystem).Build(),
 		OperatorVersion:   "v1.0.0",
-		Namespace:         "operator-ns",
-		ManagementVersion: "v2.0.0",
-		ArgoCDVersion:     "v9.7.0",
+		Namespace:       "operator-ns",
+		SystemVersion:   "v2.0.0",
+		ArgoCDVersion:   "v9.7.0",
 	}
 
 	report, err := c.Collect(context.Background())
@@ -177,7 +177,7 @@ func TestCollector_Collect(t *testing.T) {
 	// Check component_info for superphenix-system
 	systemComponentsFound := 0
 	for _, m := range report.Metrics {
-		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-system" {
+		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-system" && m.Labels["management"] != "true" {
 			systemComponentsFound++
 			switch m.Labels["cluster"] {
 			case testAnonymize("uid-1"):
@@ -198,14 +198,14 @@ func TestCollector_Collect(t *testing.T) {
 	// Check management component info
 	mgmtFound := false
 	for _, m := range report.Metrics {
-		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-management" {
+		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-system" && m.Labels["management"] == "true" {
 			mgmtFound = true
 			assert.Equal(t, "v2.0.0", m.Labels["version"])
 			_, clusterPresent := m.Labels["cluster"]
-			assert.False(t, clusterPresent, "cluster label should not be present for superphenix-management")
+			assert.False(t, clusterPresent, "cluster label should not be present for management system info")
 		}
 	}
-	assert.True(t, mgmtFound, "superphenix-management component info missing")
+	assert.True(t, mgmtFound, "management system info missing")
 
 	// Check argocd component info
 	argocdFound := false

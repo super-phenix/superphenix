@@ -339,7 +339,7 @@ var _ = Describe("Management Controller", func() {
 			mgmtReconciler := &Reconciler{
 				Client:                 k8sClient,
 				OperatorNamespace:      "default",
-				ManagementChartVersion: "1.1.0",
+				SystemChartVersion: "1.1.0",
 			}
 
 			By("Creating an incompatible cluster")
@@ -372,7 +372,7 @@ var _ = Describe("Management Controller", func() {
 			mgmtReconciler := &Reconciler{
 				Client:                 k8sClient,
 				OperatorNamespace:      "default",
-				ManagementChartVersion: "1.1.0",
+				SystemChartVersion: "1.1.0",
 			}
 
 			By("Creating a compatible cluster")
@@ -412,7 +412,7 @@ var _ = Describe("Management Controller", func() {
 					"apiVersion": "argoproj.io/v1alpha1",
 					"kind":       "Application",
 					"metadata": map[string]interface{}{
-						"name":      SuperphenixManagementApp,
+						"name":      SuperphenixSystemApp,
 						"namespace": "default",
 					},
 					"spec": map[string]interface{}{
@@ -450,7 +450,7 @@ var _ = Describe("Management Controller", func() {
 					"apiVersion": "argoproj.io/v1alpha1",
 					"kind":       "Application",
 					"metadata": map[string]interface{}{
-						"name":      SuperphenixManagementApp,
+						"name":      SuperphenixSystemApp,
 						"namespace": "default",
 					},
 					"spec": map[string]interface{}{

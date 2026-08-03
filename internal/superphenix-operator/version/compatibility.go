@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	// ManagementSuperphenixName is the ArgoCD Application name for the superphenix-management chart.
-	ManagementSuperphenixName = "superphenix-management"
+	// ManagementSystemAppName is the ArgoCD Application name for the superphenix-system chart.
+	ManagementSystemAppName = "superphenix-system"
 
 	// ClusterSystemChartName is the default name of the cluster system chart.
 	ClusterSystemChartName = "superphenix-system"
@@ -104,7 +104,7 @@ func IsClusterCompatibleWithManagement(clusterVersion, managementVersion string)
 // by looking at the existing ArgoCD Application in the given namespace.
 // Returns an empty string if the application is not found or the version cannot be determined.
 func GetCurrentManagementVersion(ctx context.Context, c client.Reader, operatorNamespace string) (string, error) {
-	return GetApplicationVersion(ctx, c, ManagementSuperphenixName, operatorNamespace)
+	return GetApplicationVersion(ctx, c, ManagementSystemAppName, operatorNamespace)
 }
 
 // GetCurrentClusterVersion attempts to retrieve the current version of the cluster

@@ -53,8 +53,6 @@ serviceMonitor:
   metricRelabelings: []
 
 
-# Configuration values must be under `.superphenix-api.config`
-# All superphenix-api configurations are documented in `/docs/config/README.md`
 superphenixApi: {}
 
 ingress:

@@ -128,7 +128,7 @@ func TestGetCurrentManagementVersion(t *testing.T) {
 				"apiVersion": "argoproj.io/v1alpha1",
 				"kind":       "Application",
 				"metadata": map[string]any{
-					"name":      ManagementSuperphenixName,
+					"name":      ManagementSystemAppName,
 					"namespace": "spx-system",
 				},
 				"spec": map[string]any{

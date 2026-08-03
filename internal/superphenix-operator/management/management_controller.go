@@ -40,12 +40,12 @@ const (
 
 	// ArgoCDApp is the Helm release name and ArgoCD Application name for the management ArgoCD instance.
 	ArgoCDApp = "superphenix-argocd"
-	// SuperphenixManagementApp is the ArgoCD Application name for the superphenix-management chart.
-	SuperphenixManagementApp = "superphenix-management"
+	// SuperphenixSystemApp is the ArgoCD Application name for the superphenix-system chart.
+	SuperphenixSystemApp = "superphenix-system"
 
 	// ConfigMapKeyArgoCD is the key in the management ConfigMap holding ArgoCD Helm values.
 	ConfigMapKeyArgoCD = "argocd"
-	// ConfigMapKeySuperphenix is the key in the management ConfigMap holding superphenix-management Helm values.
+	// ConfigMapKeySuperphenix is the key in the management ConfigMap holding superphenix-system Helm values.
 	ConfigMapKeySuperphenix = "superphenix"
 )
 
@@ -72,9 +72,10 @@ type Reconciler struct {
 	ArgoCDDefaultConfig string
 	ArgoCDHAConfig      string
 
-	// Management (superphenix-management) chart configuration.
-	ManagementChartURL      string
-	ManagementChartVersion  string
+	// Management (superphenix-system) chart configuration.
+	SystemChartURL          string
+	SystemChartName         string
+	SystemChartVersion      string
 	ManagementDefaultConfig string
 	ManagementHAConfig      string
 }
@@ -100,7 +101,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Info("Reconciling management components")
 
 	// Validate management chart upgrade path and cluster compatibility.
-	if err := r.validateManagementUpgrade(ctx, r.ManagementChartVersion); err != nil {
+	if err := r.validateManagementUpgrade(ctx, r.SystemChartVersion); err != nil {
 		log.Error(err, "Validation of management upgrade failed")
 		return reconcile.Result{RequeueAfter: 5 * time.Minute}, nil
 	}
@@ -178,7 +179,7 @@ func (r *Reconciler) reconcileManagementArgoCD(ctx context.Context) error {
 	return nil
 }
 
-// reconcileManagementStack creates or updates the ArgoCD Application for the superphenix-management chart,
+// reconcileManagementStack creates or updates the ArgoCD Application for the superphenix-system chart,
 // which deploys the management console, authentication, and related services.
 func (r *Reconciler) reconcileManagementStack(ctx context.Context) error {
 	log := logf.FromContext(ctx)
@@ -381,10 +382,10 @@ func (r *Reconciler) buildArgoCDApplication(vals map[string]interface{}) *unstru
 	return r.buildApplication(ArgoCDApp, r.ArgoCDChartURL, "argo-cd", r.ArgoCDChartVersion, vals)
 }
 
-// buildManagementApplication constructs the ArgoCD Application manifest for the superphenix-management chart,
+// buildManagementApplication constructs the ArgoCD Application manifest for the superphenix-system chart,
 // which deploys the management console, authentication, and related services.
 func (r *Reconciler) buildManagementApplication(vals map[string]interface{}) *unstructured.Unstructured {
-	return r.buildApplication(SuperphenixManagementApp, r.ManagementChartURL, "superphenix-management", r.ManagementChartVersion, vals)
+	return r.buildApplication(SuperphenixSystemApp, r.SystemChartURL, r.SystemChartName, r.SystemChartVersion, vals)
 }
 
 // createOrUpdateArgoCDApplication creates the ArgoCD Application if it does not exist, or updates it otherwise.
@@ -496,9 +497,22 @@ func (r *Reconciler) mergeArgoCDValues(ctx context.Context) (map[string]interfac
 	return r.mergeValues(ctx, r.ArgoCDDefaultConfig, r.ArgoCDHAConfig, ConfigMapKeyArgoCD)
 }
 
-// mergeManagementValues builds the final Helm values for the superphenix-management chart.
+// mergeManagementValues builds the final Helm values for the superphenix-system chart.
 func (r *Reconciler) mergeManagementValues(ctx context.Context) (map[string]interface{}, error) {
-	return r.mergeValues(ctx, r.ManagementDefaultConfig, r.ManagementHAConfig, ConfigMapKeySuperphenix)
+	vals, err := r.mergeValues(ctx, r.ManagementDefaultConfig, r.ManagementHAConfig, ConfigMapKeySuperphenix)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure management mode is enabled in the cluster configuration
+	if vals["cluster"] == nil {
+		vals["cluster"] = make(map[string]interface{})
+	}
+	if cluster, ok := vals["cluster"].(map[string]interface{}); ok {
+		cluster["management"] = true
+	}
+
+	return vals, nil
 }
 
 // mergeValues builds a Helm values map by layering, in order:

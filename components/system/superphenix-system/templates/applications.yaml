@@ -3,13 +3,27 @@
 {{ $disableAll := .Values.disableAll }}
 {{ $forceManual := .Values.forceManual }}
 {{ $labels := include "superphenix-system.labels" . }}
+{{ $isManagementCluster := default false .Values.cluster.management }}
+
+{{- $currentMode := .Values.cluster.deploymentTopology }}
+{{- if eq .Values.cluster.deploymentTopology "Decoupled" }}
+  {{- $currentMode = printf "%s%s" .Values.cluster.deploymentTopology .Values.cluster.type }}
+{{- end }}
 
 {{- range $app, $values := .Values.apps }}
-{{- $currentMode := $.Values.cluster.deploymentTopology }}
-{{- if eq $.Values.cluster.deploymentTopology "Decoupled" }}
-{{- $currentMode = printf "%s%s" $.Values.cluster.deploymentTopology $.Values.cluster.type }}
+{{- $isManagementApp := default false $values.management }}
+{{- $shouldDeploy := false }}
+{{- if $isManagementCluster }}
+  {{- if and $isManagementApp (eq $values.enabled true) (eq $disableAll false) }}
+    {{- $shouldDeploy = true }}
+  {{- end }}
+{{- else }}
+  {{- $modeMatch := has $currentMode (default (list) $values.modes) }}
+  {{- if and (eq $values.enabled true) (eq $disableAll false) $modeMatch }}
+    {{- $shouldDeploy = true }}
+  {{- end }}
 {{- end }}
-{{- if and (eq $values.enabled true) (eq $disableAll false) (has $currentMode (default (list) $values.modes)) }}
+{{- if $shouldDeploy }}
 
 ---
 apiVersion: {{ $argocd.appVersion }}

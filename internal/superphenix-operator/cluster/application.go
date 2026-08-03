@@ -94,17 +94,17 @@ func (r *Reconciler) setApplicationOwnership(cluster *operatorv1alpha1.Cluster, 
 
 // buildApplicationSpec creates the specs of the cluster application.
 func (r *Reconciler) buildApplicationSpec(cluster *operatorv1alpha1.Cluster) map[string]interface{} {
-	repoURL := r.DefaultRepoURL
+	repoURL := r.SystemChartURL
 	if cluster.Spec.RepoURL != "" {
 		repoURL = cluster.Spec.RepoURL
 	}
 
-	chartName := r.DefaultChartName
+	chartName := r.SystemChartName
 	if cluster.Spec.ChartName != "" {
 		chartName = cluster.Spec.ChartName
 	}
 
-	targetRevision := r.DefaultVersion
+	targetRevision := r.SystemChartVersion
 	if cluster.Spec.Version != "" {
 		targetRevision = cluster.Spec.Version
 	}
@@ -169,8 +169,8 @@ func (r *Reconciler) generateApplicationValues(cluster *operatorv1alpha1.Cluster
 	if cluster.Spec.Type != nil {
 		values["cluster"].(map[string]interface{})["type"] = string(*cluster.Spec.Type)
 	}
-
-	version := r.DefaultVersion
+	
+	version := r.SystemChartVersion
 	if cluster.Spec.Version != "" {
 		version = cluster.Spec.Version
 	}

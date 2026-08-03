@@ -51,9 +51,9 @@ type Reconciler struct {
 	Scheme                *runtime.Scheme
 	OperatorNamespace     string
 	ClustersConfigMapName string
-	DefaultRepoURL        string
-	DefaultChartName      string
-	DefaultVersion        string
+	SystemChartURL        string
+	SystemChartName       string
+	SystemChartVersion    string
 	SyncPeriod            time.Duration
 	SyncTimeout           time.Duration
 

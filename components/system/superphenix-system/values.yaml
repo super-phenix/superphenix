@@ -1,11 +1,15 @@
 # -- Cluster on which the applications should be deployed
 cluster:
   name: "in-cluster"
+  region: ""
+  availabilityZone: ""
+  deploymentTopology: ""
+  management: false
 
 # -- ArgoCD application parameters
 argocd:
   appVersion: "argoproj.io/v1alpha1"
-  namespace: "argocd-system"
+  namespace: "superphenix-system"
   project: "default"
 
 # -- Disable all applications and override "per application" setting
@@ -1488,3 +1492,127 @@ apps:
             watchIngressWithoutClass: true
           kubernetesGateway:
             enabled: true
+
+  ###########################################################################
+  #                            MANAGEMENT COMPONENTS                        #
+  ###########################################################################
+
+  # -- Superphenix Console configuration
+  superphenix-console:
+    enabled: true
+    management: true
+    repoURL: "oci://ghcr.io/super-phenix/charts"
+    targetRevision: "0.2.1"
+    namespace: "superphenix-system"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: "superphenix-console"
+      releaseName: "superphenix-console"
+      values: {}
+
+  # -- Superphenix API configuration
+  superphenix-api:
+    enabled: true
+    management: true
+    repoURL: "oci://ghcr.io/super-phenix/charts"
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
+    namespace: "superphenix-system"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: "superphenix-api"
+      releaseName: "superphenix-api"
+      values: {}
+
+  # -- Kratos configuration
+  kratos:
+    enabled: true
+    management: true
+    repoURL: "https://k8s.ory.sh/helm/charts"
+    targetRevision: "0.43.1"
+    namespace: "superphenix-system"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: "kratos"
+      releaseName: "kratos"
+      values:
+        deployment:
+          extraEnv:
+            - name: DSN
+              valueFrom:
+                secretKeyRef:
+                  name: kratos-dsn
+                  key: dsn
+        job:
+          extraEnv:
+            - name: DSN
+              valueFrom:
+                secretKeyRef:
+                  name: kratos-dsn
+                  key: dsn
+
+  # -- Postgres configuration
+  postgres:
+    enabled: true
+    management: true
+    repoURL: "oci://registry-1.docker.io/cloudpirates"
+    targetRevision: "0.19.12"
+    namespace: "superphenix-system"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: "postgres"
+      releaseName: "postgres"
+      values:
+        fullnameOverride: postgres
+        auth:
+          database: superphenix
+          username: superphenix
+          password: "changeme!"
+        initdb:
+          scriptsConfigMap: postgres-init-scripts
+
+  # -- Talos Operator configuration
+  talos-operator:
+    enabled: false
+    management: true
+    repoURL: "https://alperencelik.github.io/helm-charts"
+    targetRevision: "0.6.1"
+    namespace: "superphenix-system"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: "talos-operator"
+      releaseName: "talos-operator"
+      values:
+        featureFlags:
+          enablePxeBootStack: true
+
+  # -- iDRAC Exporter configuration
+  idrac-exporter:
+    enabled: false
+    management: true
+    repoURL: "https://mrlhansen.github.io/idrac_exporter"
+    targetRevision: "2.6.1"
+    namespace: "superphenix-system"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: "idrac-exporter"
+      releaseName: "idrac-exporter"
+      values: {}
