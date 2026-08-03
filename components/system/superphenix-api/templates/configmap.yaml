@@ -6,10 +6,4 @@ metadata:
     {{- include "superphenix-api.labels" . | nindent 4 }}
 data:
   config.yaml: |-
-    {{- $config := deepCopy .Values.superphenixApi.config | default dict -}}
-    {{- if not $config.database -}}
-      {{- $_ := set $config "database" dict -}}
-    {{- end -}}
-    {{- $_ := set $config.database "host" (include "superphenix-api.databaseHost" .) -}}
-    {{- $_ := set $config.database "port" (include "superphenix-api.databasePort" . | int) -}}
-    {{- toYaml $config | nindent 4 }}
+    {{- toYaml .Values.superphenixApi.config | nindent 4 }}
