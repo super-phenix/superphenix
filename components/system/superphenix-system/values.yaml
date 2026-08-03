@@ -1081,7 +1081,7 @@ apps:
           # CSI feature is used for CSI-Movement backups
           features: "EnableCSI"
           # S3 where we're sending the backups
-          backupStorageLocation: {}
+          backupStorageLocation: []
           # How long a backup can run for before being terminated
           defaultItemOperationTimeout: 8h
           # Priorities for the restoring order
