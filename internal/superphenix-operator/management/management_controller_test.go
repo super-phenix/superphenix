@@ -167,6 +167,21 @@ var _ = Describe("Management Controller", func() {
 			Expect(additional["key"]).To(Equal("value"))
 		})
 
+		It("should inject cluster.type in mergeManagementValues", func() {
+			mgmtReconciler := &Reconciler{
+				Client:            k8sClient,
+				Scheme:            k8sClient.Scheme(),
+				OperatorNamespace: "default",
+			}
+
+			vals, err := mgmtReconciler.mergeManagementValues(context.Background())
+			Expect(err).NotTo(HaveOccurred())
+
+			cluster, ok := vals["cluster"].(map[string]interface{})
+			Expect(ok).To(BeTrue())
+			Expect(cluster["type"]).To(Equal("Management"))
+		})
+
 		It("should trigger reconciliation on ConfigMap update", func() {
 			const argoNamespace = "argocd-trigger-ns"
 			const cmName = "argocd-trigger-values"

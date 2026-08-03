@@ -1,0 +1,30 @@
+# {{ template "chart.name" . }}
+
+{{ template "chart.versionBadge" . }} {{ template "chart.typeBadge" . }} {{ template "chart.appVersionBadge" . }}
+
+{{ template "chart.description" . }}
+
+## Deployment Model
+
+This chart is designed to be flexible and supports different deployment scenarios based on the cluster's purpose.
+
+### Application Modes
+
+Each application defined in the `apps` section can have a `modes` list. This list specifies which `deploymentTopology` modes (such as "Hyperconverged", "DecoupledWorkload", "DecoupledStorage", etc.) the application should be deployed in.
+
+- If an application's `modes` list is empty or not specified, it is considered eligible for deployment in any mode, provided it is enabled.
+- If a list is provided, the application will only be deployed if the cluster's `deploymentTopology` matches one of the specified modes.
+
+### Management Clusters
+
+Special logic applies when a cluster is designated as a management cluster by setting `.Values.cluster.type` to `Management`.
+
+- In a management cluster, the effective deployment mode is forced to `Management`.
+- Only applications with `Management` included in their `modes` list are considered for deployment. All other applications are ignored.
+- For an application to be deployed in a management cluster, it must also be enabled (`enabled: true`).
+
+In non-management clusters, all enabled applications are evaluated based on their `modes` configuration. Applications without specified modes are deployed in all non-management cluster topologies.
+
+{{ template "chart.valuesSectionHtml" . }}
+
+{{ template "helm-docs.versionFooter" . }}

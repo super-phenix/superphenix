@@ -509,7 +509,7 @@ func (r *Reconciler) mergeManagementValues(ctx context.Context) (map[string]inte
 		vals["cluster"] = make(map[string]interface{})
 	}
 	if cluster, ok := vals["cluster"].(map[string]interface{}); ok {
-		cluster["management"] = true
+		cluster["type"] = "Management"
 	}
 
 	return vals, nil

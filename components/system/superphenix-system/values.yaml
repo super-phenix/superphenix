@@ -4,7 +4,7 @@ cluster:
   region: ""
   availabilityZone: ""
   deploymentTopology: ""
-  management: false
+  type: ""
 
 # -- ArgoCD application parameters
 argocd:
@@ -1500,7 +1500,7 @@ apps:
   # -- Superphenix Console configuration
   superphenix-console:
     enabled: true
-    management: true
+    modes: [Management]
     repoURL: "oci://ghcr.io/super-phenix/charts"
     targetRevision: "0.2.1"
     namespace: "superphenix-system"
@@ -1516,7 +1516,7 @@ apps:
   # -- Superphenix API configuration
   superphenix-api:
     enabled: true
-    management: true
+    modes: [Management]
     repoURL: "oci://ghcr.io/super-phenix/charts"
     # Will be overridden by the chart version to achieve version parity
     targetRevision: ""
@@ -1533,7 +1533,7 @@ apps:
   # -- Kratos configuration
   kratos:
     enabled: true
-    management: true
+    modes: [Management]
     repoURL: "https://k8s.ory.sh/helm/charts"
     targetRevision: "0.43.1"
     namespace: "superphenix-system"
@@ -1545,25 +1545,11 @@ apps:
       chart: "kratos"
       releaseName: "kratos"
       values:
-        deployment:
-          extraEnv:
-            - name: DSN
-              valueFrom:
-                secretKeyRef:
-                  name: kratos-dsn
-                  key: dsn
-        job:
-          extraEnv:
-            - name: DSN
-              valueFrom:
-                secretKeyRef:
-                  name: kratos-dsn
-                  key: dsn
 
   # -- Postgres configuration
   postgres:
     enabled: true
-    management: true
+    modes: [Management]
     repoURL: "oci://registry-1.docker.io/cloudpirates"
     targetRevision: "0.19.12"
     namespace: "superphenix-system"
@@ -1574,19 +1560,12 @@ apps:
     helm:
       chart: "postgres"
       releaseName: "postgres"
-      values:
-        fullnameOverride: postgres
-        auth:
-          database: superphenix
-          username: superphenix
-          password: "changeme!"
-        initdb:
-          scriptsConfigMap: postgres-init-scripts
+      values: {}
 
   # -- Talos Operator configuration
   talos-operator:
     enabled: false
-    management: true
+    modes: [Management]
     repoURL: "https://alperencelik.github.io/helm-charts"
     targetRevision: "0.6.1"
     namespace: "superphenix-system"
@@ -1604,7 +1583,7 @@ apps:
   # -- iDRAC Exporter configuration
   idrac-exporter:
     enabled: false
-    management: true
+    modes: [Management]
     repoURL: "https://mrlhansen.github.io/idrac_exporter"
     targetRevision: "2.6.1"
     namespace: "superphenix-system"
