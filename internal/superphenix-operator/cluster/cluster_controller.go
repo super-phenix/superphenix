@@ -279,8 +279,16 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 	if cluster.Spec.TalosManagementMode != operatorv1alpha1.TalosManagementUnmanaged {
 		// Reconcile talos-manager application:
 		if err := r.reconcileTalosManager(ctx, cluster); err != nil {
-			log.Error(err, "talos-manager reconciliation failed")
+			log.Error(err, "Failed to reconcile talos-manager Application")
 			reconcileErr = err
+		}
+
+		if cluster.Spec.Connection.Mode == operatorv1alpha1.ConnectionModeRemote {
+			// Generate cluster connection secret:
+			if err := r.generateConnectionSecret(ctx, cluster); err != nil {
+				log.Error(err, "Failed to create cluster connection secret")
+				reconcileErr = err
+			}
 		}
 	} else {
 		// We have to check if there is an existing talos-manager Application, because in that case, it should be deleted:
