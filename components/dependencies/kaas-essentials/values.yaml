@@ -1,8 +1,10 @@
 # -- Specification of the target cluster
 # These parameters cannot be overriden by the user.
 cluster:
+  # -- SPXID
   clusterID: ""
   friendlyName: ""
+  # -- Console clusters: random uuidv4 -- Gitops clusters: friendly name
   name: ""
   kubeVersion: ""
 
