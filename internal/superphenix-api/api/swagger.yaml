@@ -1627,7 +1627,7 @@ paths:
       - Bearer:
         - OrganizationRead
         - ProjectArgoCdRead
-      summary: Get Argo CD application link
+      summary: Get Argo CD Application Link
       tags:
       - v1
       - Argo CD
@@ -5926,7 +5926,7 @@ paths:
             type: string
       security:
       - Bearer: []
-      summary: List API tokens
+      summary: List API Tokens
       tags:
       - api-token
     post:
@@ -5962,7 +5962,7 @@ paths:
             type: string
       security:
       - Bearer: []
-      summary: Create an API token
+      summary: Create an API Token
       tags:
       - api-token
   /api-token/{tokenId}:
@@ -5998,7 +5998,7 @@ paths:
             type: string
       security:
       - Bearer: []
-      summary: Revoke an API token
+      summary: Revoke an API Token
       tags:
       - api-token
   /billing/organization/{orgaId}:
@@ -6059,6 +6059,27 @@ paths:
       - Admin endpoint
       - Billing
       - v1
+  /readyz:
+    get:
+      description: Check that both public and admin HTTP servers are reachable
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All servers are up
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "503":
+          description: One or more servers are down
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Kubernetes readiness probe
+      tags:
+      - Health
   /v1/invite-code:
     post:
       description: Regenerate the invite code of the authenticated user
@@ -6087,7 +6108,7 @@ paths:
       responses:
         "302":
           description: Found
-      summary: Logout current user
+      summary: Logout Current User
       tags:
       - v1
       - session
@@ -6714,7 +6735,7 @@ paths:
           description: Internal Server Error
       security:
       - RefreshToken: []
-      summary: Generates an access token
+      summary: Generate an Access Token
       tags:
       - v1
       - session
@@ -6730,7 +6751,7 @@ paths:
           description: Internal Server Error
       security:
       - Bearer: []
-      summary: Generates access and refresh token
+      summary: Generate Access and Refresh Tokens
       tags:
       - v1
       - session
@@ -6748,7 +6769,7 @@ paths:
           description: Internal Server Error
       security:
       - Bearer: []
-      summary: Get current user information
+      summary: Get Current User Information
       tags:
       - v1
       - session

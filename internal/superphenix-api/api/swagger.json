@@ -72,7 +72,7 @@
                 "tags": [
                     "api-token"
                 ],
-                "summary": "List API tokens",
+                "summary": "List API Tokens",
                 "responses": {
                     "200": {
                         "description": "List of API tokens",
@@ -119,7 +119,7 @@
                 "tags": [
                     "api-token"
                 ],
-                "summary": "Create an API token",
+                "summary": "Create an API Token",
                 "parameters": [
                     {
                         "description": "Token creation payload",
@@ -173,7 +173,7 @@
                 "tags": [
                     "api-token"
                 ],
-                "summary": "Revoke an API token",
+                "summary": "Revoke an API Token",
                 "parameters": [
                     {
                         "type": "string",
@@ -300,6 +300,38 @@
                 }
             }
         },
+        "/readyz": {
+            "get": {
+                "description": "Check that both public and admin HTTP servers are reachable",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Kubernetes readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "All servers are up",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "One or more servers are down",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/invite-code": {
             "post": {
                 "security": [
@@ -342,7 +374,7 @@
                     "v1",
                     "session"
                 ],
-                "summary": "Logout current user",
+                "summary": "Logout Current User",
                 "responses": {
                     "302": {
                         "description": "Found"
@@ -1297,7 +1329,7 @@
                     "v1",
                     "session"
                 ],
-                "summary": "Generates an access token",
+                "summary": "Generate an Access Token",
                 "responses": {
                     "200": {
                         "description": "JWT",
@@ -1326,7 +1358,7 @@
                     "v1",
                     "session"
                 ],
-                "summary": "Generates access and refresh token",
+                "summary": "Generate Access and Refresh Tokens",
                 "responses": {
                     "302": {
                         "description": "Found"
@@ -1352,7 +1384,7 @@
                     "v1",
                     "session"
                 ],
-                "summary": "Get current user information",
+                "summary": "Get Current User Information",
                 "responses": {
                     "200": {
                         "description": "User",
@@ -1384,7 +1416,7 @@
                     "v1",
                     "Argo CD"
                 ],
-                "summary": "Get Argo CD application link",
+                "summary": "Get Argo CD Application Link",
                 "parameters": [
                     {
                         "type": "string",

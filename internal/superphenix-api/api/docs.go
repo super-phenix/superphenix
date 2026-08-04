@@ -79,7 +79,7 @@ const docTemplate = `{
                 "tags": [
                     "api-token"
                 ],
-                "summary": "List API tokens",
+                "summary": "List API Tokens",
                 "responses": {
                     "200": {
                         "description": "List of API tokens",
@@ -126,7 +126,7 @@ const docTemplate = `{
                 "tags": [
                     "api-token"
                 ],
-                "summary": "Create an API token",
+                "summary": "Create an API Token",
                 "parameters": [
                     {
                         "description": "Token creation payload",
@@ -180,7 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "api-token"
                 ],
-                "summary": "Revoke an API token",
+                "summary": "Revoke an API Token",
                 "parameters": [
                     {
                         "type": "string",
@@ -307,6 +307,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/readyz": {
+            "get": {
+                "description": "Check that both public and admin HTTP servers are reachable",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Kubernetes readiness probe",
+                "responses": {
+                    "200": {
+                        "description": "All servers are up",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "One or more servers are down",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/invite-code": {
             "post": {
                 "security": [
@@ -349,7 +381,7 @@ const docTemplate = `{
                     "v1",
                     "session"
                 ],
-                "summary": "Logout current user",
+                "summary": "Logout Current User",
                 "responses": {
                     "302": {
                         "description": "Found"
@@ -1304,7 +1336,7 @@ const docTemplate = `{
                     "v1",
                     "session"
                 ],
-                "summary": "Generates an access token",
+                "summary": "Generate an Access Token",
                 "responses": {
                     "200": {
                         "description": "JWT",
@@ -1333,7 +1365,7 @@ const docTemplate = `{
                     "v1",
                     "session"
                 ],
-                "summary": "Generates access and refresh token",
+                "summary": "Generate Access and Refresh Tokens",
                 "responses": {
                     "302": {
                         "description": "Found"
@@ -1359,7 +1391,7 @@ const docTemplate = `{
                     "v1",
                     "session"
                 ],
-                "summary": "Get current user information",
+                "summary": "Get Current User Information",
                 "responses": {
                     "200": {
                         "description": "User",
@@ -1391,7 +1423,7 @@ const docTemplate = `{
                     "v1",
                     "Argo CD"
                 ],
-                "summary": "Get Argo CD application link",
+                "summary": "Get Argo CD Application Link",
                 "parameters": [
                     {
                         "type": "string",
@@ -1731,7 +1763,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Get BaaS ArgoApp for update form",
+                "description": "Get BaaS App for update form",
                 "produces": [
                     "application/json"
                 ],
@@ -1739,7 +1771,7 @@ const docTemplate = `{
                     "v1",
                     "SPX Argo Ctrl"
                 ],
-                "summary": "Get BaaS ArgoApp",
+                "summary": "Get BaaS App",
                 "parameters": [
                     {
                         "type": "string",
@@ -4897,7 +4929,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Get KaaS ArgoApp for update form",
+                "description": "Get KaaS App for update form",
                 "produces": [
                     "application/json"
                 ],
@@ -4905,7 +4937,7 @@ const docTemplate = `{
                     "v1",
                     "SPX Argo Ctrl"
                 ],
-                "summary": "Get KaaS ArgoApp",
+                "summary": "Get KaaS App",
                 "parameters": [
                     {
                         "type": "string",

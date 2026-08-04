@@ -1084,7 +1084,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an EIP by Effective ID - 200ms delay have been added to avoid kubeovn error (caused by the fip not deleted when we try to delete the eip)",
+                "description": "Delete an EIP by Effective ID - a 400ms delay has been added to avoid a KubeOVN error (caused by the FIP not being deleted when we try to delete the EIP)",
                 "produces": [
                     "text/plain"
                 ],
@@ -3099,7 +3099,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create an LoadBalancer",
+                "description": "Create a LoadBalancer",
                 "consumes": [
                     "application/json"
                 ],
@@ -3110,7 +3110,7 @@ const docTemplate = `{
                     "v1",
                     "LoadBalancer"
                 ],
-                "summary": "Create an LoadBalancer",
+                "summary": "Create a LoadBalancer",
                 "parameters": [
                     {
                         "type": "string",
@@ -3149,7 +3149,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an LoadBalancer by Effective ID",
+                "description": "Delete a LoadBalancer by Effective ID",
                 "produces": [
                     "text/plain"
                 ],
@@ -3157,7 +3157,7 @@ const docTemplate = `{
                     "v1",
                     "LoadBalancer"
                 ],
-                "summary": "Delete an LoadBalancer",
+                "summary": "Delete a LoadBalancer",
                 "parameters": [
                     {
                         "type": "string",
@@ -4006,7 +4006,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Get all Storage Class",
+                "description": "Get all Storage Classes",
                 "produces": [
                     "application/json"
                 ],
@@ -4014,7 +4014,7 @@ const docTemplate = `{
                     "v1",
                     "Config"
                 ],
-                "summary": "Get all Storage Class",
+                "summary": "Get all Storage Classes",
                 "parameters": [
                     {
                         "type": "string",
@@ -4343,7 +4343,7 @@ const docTemplate = `{
         },
         "/{orgId}/{projectId}/subnet/{effectiveId}/has-eip": {
             "get": {
-                "description": "Check if a Subnet have linked EIP",
+                "description": "Check if a Subnet has a linked EIP",
                 "produces": [
                     "application/json"
                 ],
@@ -4351,7 +4351,7 @@ const docTemplate = `{
                     "v1",
                     "Subnet"
                 ],
-                "summary": "Check if a Subnet have linked EIP",
+                "summary": "Check if a Subnet has a linked EIP",
                 "parameters": [
                     {
                         "type": "string",
@@ -4398,7 +4398,7 @@ const docTemplate = `{
                         "Bearer": []
                     }
                 ],
-                "description": "Get all VM Cluster Preference",
+                "description": "Get all VM Cluster Preferences",
                 "produces": [
                     "application/json"
                 ],
@@ -4406,7 +4406,7 @@ const docTemplate = `{
                     "v1",
                     "Config"
                 ],
-                "summary": "Get all VM Cluster Preference",
+                "summary": "Get all VM Cluster Preferences",
                 "parameters": [
                     {
                         "type": "string",
@@ -4642,7 +4642,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete an VPC by Effective ID",
+                "description": "Delete a VPC by Effective ID",
                 "produces": [
                     "text/plain"
                 ],
@@ -4650,7 +4650,7 @@ const docTemplate = `{
                     "v1",
                     "VPC"
                 ],
-                "summary": "Delete an VPC",
+                "summary": "Delete a VPC",
                 "parameters": [
                     {
                         "type": "string",
@@ -15388,6 +15388,9 @@ const docTemplate = `{
                 "resourceLocalID": {
                     "type": "string"
                 },
+                "snapshotSchedule": {
+                    "$ref": "#/definitions/volumeSnapshot.SnapshotScheduleConfig"
+                },
                 "spec": {
                     "type": "object",
                     "properties": {
@@ -15424,9 +15427,23 @@ const docTemplate = `{
                 }
             }
         },
+        "volumeSnapshot.SnapshotScheduleConfig": {
+            "type": "object",
+            "properties": {
+                "maxHour": {
+                    "type": "integer"
+                },
+                "minHour": {
+                    "type": "integer"
+                }
+            }
+        },
         "volumeSnapshot.UpdateSnapshotInfo": {
             "type": "object",
             "properties": {
+                "snapshotSchedule": {
+                    "$ref": "#/definitions/volumeSnapshot.SnapshotScheduleConfig"
+                },
                 "spec": {
                     "type": "object",
                     "properties": {
