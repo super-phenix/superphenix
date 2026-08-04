@@ -274,10 +274,14 @@ type ClusterStatus struct {
 	// +optional
 	LastSync *metav1.Time `json:"lastSync,omitempty"`
 
-	// PXESetupDone lists hostname of machines that have been set up for PXE
+	// PXESetupDone lists hostname of machines that have been set up for PXE.
 	// when using TalosManagementModeFull.
 	// +optional
 	PXESetupDone []string `json:"pxeSetupDone,omitempty"`
+
+	// Nodes lists nodes' name, Kubernetes version and hardware specifications (CPU, RAM, disks).
+	// +optional
+	Nodes map[string]NodeSpec `json:"nodes,omitempty"`
 }
 
 // ClusterApp reports the observed state of a single application belonging to the
@@ -301,6 +305,21 @@ type ClusterApp struct {
 	// Version is the target revision of the Application source.
 	// +optional
 	Version string `json:"version,omitempty"`
+}
+
+// NodeSpec defines the software and hardware specs of a node.
+type NodeSpec struct {
+	// KubeVersion is the version of kubelet.
+	KubeVersion string `json:"kubeVersion,omitempty"`
+
+	// CPUNumber is the total number of CPU, cores and threads combined.
+	CPUNumber int `json:"cpuNumber,omitempty"`
+
+	// RAMCapacity is the total amount of RAM.
+	RAMCapacity string `json:"memory,omitempty"`
+
+	// DiskCapacity is the capacity of the disk.
+	DiskCapacity string `json:"diskCapacity,omitempty"`
 }
 
 // +kubebuilder:object:root=true

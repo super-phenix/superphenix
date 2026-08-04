@@ -317,6 +317,28 @@ spec:
               nodeCount:
                 description: NodeCount is the number of nodes in the cluster.
                 type: integer
+              nodes:
+                additionalProperties:
+                  description: NodeSpec defines the software and hardware specs of
+                    a node.
+                  properties:
+                    cpuNumber:
+                      description: CPUNumber is the total number of CPU, cores and
+                        threads combined.
+                      type: integer
+                    diskCapacity:
+                      description: DiskCapacity is the capacity of the disk.
+                      type: string
+                    kubeVersion:
+                      description: KubeVersion is the version of kubelet.
+                      type: string
+                    memory:
+                      description: RAMCapacity is the total amount of RAM.
+                      type: string
+                  type: object
+                description: Nodes lists nodes' name, Kubernetes version and hardware
+                  specifications (CPU, RAM, disks).
+                type: object
               observedGeneration:
                 description: ObservedGeneration reflects the generation of the most
                   recently observed Cluster.
@@ -334,7 +356,7 @@ spec:
                 type: string
               pxeSetupDone:
                 description: |-
-                  PXESetupDone lists hostname of machines that have been set up for PXE
+                  PXESetupDone lists hostname of machines that have been set up for PXE.
                   when using TalosManagementModeFull.
                 items:
                   type: string
