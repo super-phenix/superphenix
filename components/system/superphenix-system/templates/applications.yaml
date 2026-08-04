@@ -24,8 +24,8 @@
     {{- end }}
   {{- end }}
 {{- end }}
-{{- if $shouldDeploy }}
 
+{{- if $shouldDeploy }}
 ---
 apiVersion: {{ $argocd.appVersion }}
 kind: Application
@@ -82,7 +82,7 @@ spec:
     {{- end }}
   destination:
     name: {{ $cluster.name | quote }}
-    namespace: {{ $values.namespace | quote }}
+    namespace: {{ $values.namespace | default $.Release.Namespace | quote }}
   {{- with $values.ignoreDifferences }}
   ignoreDifferences:
   {{- . | toYaml | nindent 4 }}
@@ -109,7 +109,6 @@ spec:
         {{- with $values.nsLabels }}
         {{- . | toYaml | nindent 8 }}
         {{- end }}
-
 {{- end }}
 {{- end }}
 

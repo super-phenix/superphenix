@@ -88,7 +88,7 @@ var _ = Describe("Cluster Validation", func() {
 				Version: "v1alpha1",
 				Kind:    "Application",
 			})
-			_ = k8sClient.Get(ctx, types.NamespacedName{Name: version.ManagementSystemAppName, Namespace: operatorNamespace}, app)
+			_ = k8sClient.Get(ctx, types.NamespacedName{Name: version.ManagementAppName, Namespace: operatorNamespace}, app)
 			if app.GetResourceVersion() != "" {
 				_ = k8sClient.Delete(ctx, app)
 			}
@@ -106,7 +106,7 @@ var _ = Describe("Cluster Validation", func() {
 					"apiVersion": "argoproj.io/v1alpha1",
 					"kind":       "Application",
 					"metadata": map[string]interface{}{
-						"name":      version.ManagementSystemAppName,
+						"name":      version.ManagementAppName,
 						"namespace": operatorNamespace,
 					},
 					"spec": map[string]interface{}{
@@ -147,7 +147,7 @@ var _ = Describe("Cluster Validation", func() {
 					"apiVersion": "argoproj.io/v1alpha1",
 					"kind":       "Application",
 					"metadata": map[string]interface{}{
-						"name":      version.ManagementSystemAppName,
+						"name":      version.ManagementAppName,
 						"namespace": operatorNamespace,
 					},
 					"spec": map[string]interface{}{

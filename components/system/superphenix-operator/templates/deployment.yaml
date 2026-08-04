@@ -50,22 +50,14 @@ spec:
             - --operator-namespace=$(OPERATOR_NAMESPACE)
             - --argocd-default-config=/etc/superphenix/argocd/default/values.yaml
             - --argocd-ha-config=/etc/superphenix/argocd/ha/values.yaml
-            {{- if .Values.config.management.chart }}
-            {{- if .Values.config.management.chart.url }}
-            - --management-chart-url={{ .Values.config.management.chart.url }}
-            {{- end }}
-            {{- if .Values.config.management.chart.version }}
-            - --management-chart-version={{ .Values.config.management.chart.version | default .Chart.AppVersion }}
-            {{- end }}
-            {{- end }}
             {{- if .Values.config.system.repoURL }}
-            - --default-repo-url={{ .Values.config.system.repoURL }}
+            - --system-chart-url={{ .Values.config.system.repoURL }}
             {{- end }}
             {{- if .Values.config.system.chartName }}
-            - --default-chart-name={{ .Values.config.system.chartName }}
+            - --system-chart-name={{ .Values.config.system.chartName }}
             {{- end }}
             {{- if .Values.config.system.version }}
-            - --default-version={{ .Values.config.system.version | default .Chart.AppVersion }}
+            - --system-chart-version={{ .Values.config.system.version | default .Chart.AppVersion }}
             {{- end }}
             {{- if .Values.config.talosManager.chart.url }}
             - --talos-manager-chart-url={{ .Values.config.talosManager.chart.url }}
@@ -73,11 +65,23 @@ spec:
             {{- if .Values.config.talosManager.chart.version }}
             - --talos-manager-chart-version={{ .Values.config.talosManager.chart.version }}
             {{- end }}
+            {{- if .Values.config.syncPeriod }}
+            - --sync-period={{ .Values.config.syncPeriod }}
+            {{- end }}
+            {{- if .Values.config.syncTimeout }}
+            - --sync-timeout={{ .Values.config.syncTimeout }}
+            {{- end }}
+            {{- if .Values.config.telemetry.disabled }}
+            - --disable-telemetry
+            {{- end }}
+            {{- if .Values.config.telemetry.endpoint }}
+            - --telemetry-endpoint={{ .Values.config.telemetry.endpoint }}
+            {{- end }}
+            {{- if .Values.config.enableHTTP2 }}
+            - --enable-http2
+            {{- end }}
             {{- if .Values.config.argocd.ha.enabled }}
             - --ha-enabled=true
-            {{- end }}
-            {{- if .Values.config.isManagementCluster }}
-            - --is-management-cluster
             {{- end }}
             {{- if .Values.leaderElection.enabled }}
             - --leader-elect

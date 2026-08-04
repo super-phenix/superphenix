@@ -1501,34 +1501,44 @@ apps:
   superphenix-console:
     enabled: true
     modes: [Management]
-    repoURL: "oci://ghcr.io/super-phenix/charts"
+    repoURL: "oci://ghcr.io/super-phenix/charts/superphenix-console"
     targetRevision: "0.2.1"
-    namespace: "superphenix-system"
     automation:
       enabled: true
       prune: true
       selfHeal: true
     helm:
-      chart: "superphenix-console"
-      releaseName: "superphenix-console"
+      chart: superphenix-console
+      releaseName: superphenix-console
       values: {}
 
   # -- Superphenix API configuration
   superphenix-api:
     enabled: true
     modes: [Management]
-    repoURL: "oci://ghcr.io/super-phenix/charts"
+    repoURL: "oci://ghcr.io/super-phenix/charts/superphenix-api"
     # Will be overridden by the chart version to achieve version parity
     targetRevision: ""
-    namespace: "superphenix-system"
     automation:
       enabled: true
       prune: true
       selfHeal: true
     helm:
-      chart: "superphenix-api"
-      releaseName: "superphenix-api"
-      values: {}
+      chart: superphenix-api
+      releaseName: superphenix-api
+      values:
+        config:
+          # -- Database used by the Superphenix API for storing users, organizations, projects and more
+          database:
+            host: "postgres.{{ $.Release.Namespace }}.svc"
+            port: 5432
+            database: superphenix
+            username: superphenix
+            password: "{{ .Values.apps.postgres.helm.values.auth.password | quote }}"
+
+          # -- Permify endpoint used to handle permissions
+          permify:
+            url: "permify.{{ $.Release.Namespace }}.svc:3478"
 
   # -- Kratos configuration
   kratos:
@@ -1536,31 +1546,248 @@ apps:
     modes: [Management]
     repoURL: "https://k8s.ory.sh/helm/charts"
     targetRevision: "0.43.1"
-    namespace: "superphenix-system"
     automation:
       enabled: true
       prune: true
       selfHeal: true
     helm:
-      chart: "kratos"
-      releaseName: "kratos"
+      chart: kratos
+      releaseName: kratos
       values:
+        kratos:
+          config:
+            # -- Database used by Kratos to store users, sessions, recovery codes, ...
+            dsn: postgres://superphenix:{{ .Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
+
+            secrets:
+              default:
+                - "base64=="
+
+            # -- Kratos exposition settings
+            serve:
+              public:
+                base_url: https://auth.console.agoracalyce.com
+                cors:
+                  enabled: true
+                  allow_credentials: true
+                  allowed_origins:
+                    - "https://*.console.agoracalyce.com"
+                    - "https://*.api.agoracalyce.com"
+                  allowed_methods:
+                    - POST
+                    - GET
+                    - PUT
+                    - PATCH
+                    - DELETE
+                  allowed_headers:
+                    - Authorization
+                    - Cookie
+                    - Content-Type
+                    - Max-Age
+                    - X-Session-Token
+                    - X-XSRF-TOKEN
+                    - X-CSRF-TOKEN
+                  exposed_headers:
+                    - Content-Type
+                    - Set-Cookie
+                request_log:
+                  disable_for_health: true
+
+            # -- Identity schemas used to register users
+            identity:
+              default_schema_id: default
+              schemas:
+                - id: default
+                  url: file:///etc/config/identity.default.schema.json
+
+            selfservice:
+              # -- Enable code based authentication
+              methods:
+                code:
+                  enabled: true
+                  config:
+                    lifespan: "15m"
+
+              # -- Where Kratos redirects us by default
+              default_browser_return_url: https://console.agoracalyce.com/
+
+              # -- Where Kratos is allowed to redirect us
+              allowed_return_urls:
+                - "https://*.agoracalyce.com/"
+
+              # -- Kratos flows configuration
+              flows:
+                recovery:
+                  enabled: true
+                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/recovery"
+                  after:
+                    hooks:
+                      - hook: revoke_active_sessions
+                verification:
+                  enabled: true
+                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/verification"
+                  use: code
+                  lifespan: "1h"
+                  notify_unknown_recipients: false
+                registration:
+                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/registration"
+                  after:
+                    password:
+                      hooks:
+                        - hook: show_verification_ui
+                    code:
+                      hooks:
+                        - hook: show_verification_ui
+                    webauthn:
+                      hooks:
+                        - hook: show_verification_ui
+                login:
+                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/login"
+                  after:
+                    hooks:
+                      - hook: require_verified_address
+                error:
+                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/error"
+                settings:
+                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/settings"
+                  # Sessions older than 15 minute requires the user to sign in again before the password is changed
+                  privileged_session_max_age: 15m
+
+            # -- Cookie configuration
+            cookies:
+              domain: agoracalyce.com
+              same_site: Strict
+
+          # -- Auto migrate on Kratos updates
+          automigration:
+            enabled: true
+
+          # -- Definition of the schemas used in .config.identity.schemas
+          identitySchemas:
+            "identity.default.schema.json": |
+              {
+                "$id": "https://schemas.ory.sh/presets/kratos/identity.email.schema.json",
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": "Person",
+                "type": "object",
+                "properties": {
+                  "traits": {
+                    "type": "object",
+
+                    "properties": {
+                      "email": {
+                        "type": "string",
+                        "format": "email",
+                        "title": "Email",
+                        "ory.sh/kratos": {
+                          "credentials": {
+                            "password": {
+                              "identifier": true
+                            }
+                          },
+                          "recovery": {
+                            "via": "email"
+                          },
+                          "verification": {
+                            "via": "email"
+                          }
+                        }
+                      },
+                      "name": {
+                        "type": "object",
+                        "properties": {
+                          "first": {
+                            "type": "string",
+                            "title": "First name"
+                          },
+                          "last": {
+                            "type": "string",
+                            "title": "Last name"
+                          }
+                        }
+                      }
+                    },
+                    "required": ["email"],
+                    "additionalProperties": false
+                  }
+                }
+              }
+
+        ingress:
+          public:
+            enabled: true
+            className: ""
+            annotations: {}
+            #  cert-manager.io/cluster-issuer: letsencrypt
+            hosts:
+              - host: auth.console.agoracalyce.com
+                paths:
+                  - path: /
+                    pathType: ImplementationSpecific
+            tls:
+              - secretName: kratos-public-tls
+                hosts:
+                  - auth.console.agoracalyce.com
+
+  # -- Permify configuration, handles permissions for the Superphenix API
+  permify:
+    enabled: true
+    modes: [Management]
+    repoURL: "https://permify.github.io/helm-charts"
+    targetRevision: "0.3.*"
+    automation:
+      enabled: true
+      prune: true
+      selfHeal: true
+    helm:
+      chart: permify
+      releaseName: permify
+      values:
+        app:
+          # -- Database connection to store permissions
+          database:
+            engine: postgres
+            uri: postgres://superphenix:{{ .Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify
+            garbage_collection:
+              enabled: false
+
+          distributed:
+            enabled: false
+            address: "permify.{{ $.Release.Namespace }}.svc:5000"
+            port: 5000
 
   # -- Postgres configuration
   postgres:
     enabled: true
     modes: [Management]
-    repoURL: "oci://registry-1.docker.io/cloudpirates"
+    repoURL: "oci://registry-1.docker.io/cloudpirates/postgres"
     targetRevision: "0.19.12"
-    namespace: "superphenix-system"
     automation:
       enabled: true
       prune: true
       selfHeal: true
     helm:
-      chart: "postgres"
-      releaseName: "postgres"
-      values: {}
+      chart: postgres
+      releaseName: postgres
+      values:
+        # -- Credentials used by the management stack to connect to the database
+        auth:
+          database: superphenix
+          username: superphenix
+          password: "changeme!"
+
+        # -- Size of the database, should be enough for most deployments
+        persistence:
+          size: 8Gi
+
+        # -- Additional databases
+        initdb:
+          scripts:
+            setup.sql: |
+              CREATE DATABASE kratos;
+              CREATE DATABASE permify;
+              GRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;
+              GRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;
 
   # -- Talos Operator configuration
   talos-operator:
@@ -1568,7 +1795,6 @@ apps:
     modes: [Management]
     repoURL: "https://alperencelik.github.io/helm-charts"
     targetRevision: "0.6.1"
-    namespace: "superphenix-system"
     automation:
       enabled: true
       prune: true
@@ -1586,7 +1812,6 @@ apps:
     modes: [Management]
     repoURL: "https://mrlhansen.github.io/idrac_exporter"
     targetRevision: "2.6.1"
-    namespace: "superphenix-system"
     automation:
       enabled: true
       prune: true

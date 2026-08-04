@@ -1,106 +1,144 @@
-replicaCount: 1
-
-image:
-  repository: ghcr.io/super-phenix/superphenix-operator
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
-
-imagePullSecrets: []
+# -- String to partially override fullname template.
 nameOverride: ""
+# -- String to fully override fullname template.
 fullnameOverride: ""
 
+# -- Number of replicas for the operator deployment.
+replicaCount: 1
+
+leaderElection:
+  # -- Enable leader election for the operator, necessary if running multiple replicas.
+  enabled: false
+
+# -- Metrics and Health configuration.
+metrics:
+  # -- The address the metric endpoint binds to. Use "0" to disable.
+  bindAddress: "0" # Disable by default
+  # -- Whether to secure the metrics endpoint with TLS.
+  secure: true
+
+health:
+  # -- The address the health probe endpoint binds to.
+  probeBindAddress: ":8081"
+
+image:
+  # -- Repository for the operator image.
+  repository: ghcr.io/super-phenix/superphenix-operator
+  # -- Pull policy for the operator image.
+  pullPolicy: IfNotPresent
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+# -- Secrets for pulling the operator image.
+imagePullSecrets: []
+
 serviceAccount:
-  # Specifies whether a service account should be created
+  # -- Specifies whether a service account should be created.
   create: true
-  # Annotations to add to the service account
+  # -- Annotations to add to the service account.
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
   name: ""
 
+# -- Annotations for the operator pods.
 podAnnotations: {}
 
+# -- Pod-level security context.
 podSecurityContext:
+  # -- Whether to run as a non-root user.
   runAsNonRoot: true
   seccompProfile:
+    # -- Type of seccomp profile to use.
     type: RuntimeDefault
 
+# -- Container-level security context.
 securityContext:
+  # -- Whether to mount the container's root filesystem as read-only.
   readOnlyRootFilesystem: true
+  # -- Whether to allow privilege escalation.
   allowPrivilegeEscalation: false
   capabilities:
     drop:
     - ALL
 
+# -- Resource limits and requests for the operator container.
 resources:
   limits:
+    # -- CPU limit for the operator.
     cpu: 500m
+    # -- Memory limit for the operator.
     memory: 256Mi
   requests:
+    # -- CPU request for the operator.
     cpu: 10m
+    # -- Memory request for the operator.
     memory: 64Mi
 
+# -- Node selector for pod assignment.
 nodeSelector: {}
-
+# -- Tolerations for pod assignment.
 tolerations: []
-
+# -- Affinity rules for pod assignment.
 affinity: {}
 
-# Operator configuration
+# -- Superphenix operator configuration
 config:
-  isManagementCluster: true
-
-  # General ConfigMap holding Helm values overrides for all management components.
+  # -- General ConfigMap holding Helm values overrides for all management components.
   valuesConfigMap:
     name: superphenix-mgmt-values
 
-  # ConfigMap where all clusters will append their configuration.
+  # -- ConfigMap where all clusters will append their configuration.
   clustersConfigMap:
     name: superphenix-clusters-config
 
+  # -- Interval at which to periodically resync sub-applications.
+  syncPeriod: 5m
+  # -- Duration after which an in-progress sub-application sync is considered stuck.
+  syncTimeout: 15m
+
+  # -- Telemetry settings.
+  telemetry:
+    # -- Disable sending anonymous telemetry.
+    disabled: false
+    # -- URL of the telemetry ingest endpoint.
+    # endpoint: ""
+
+  # -- Enable HTTP/2 for the metrics and webhook servers.
+  enableHTTP2: false
+
   argocd:
-    # chart:
-    #  url: https://argoproj.github.io/argo-helm
-    #  version: 9.7.0
+    # -- ArgoCD configuration.
     ha:
+      # -- Enable HA mode for ArgoCD deployment.
       enabled: false
-    # Arbitrary Helm values merged under the "argocd" ConfigMap key.
+    # -- Arbitrary Helm values merged under the "argocd" ConfigMap key.
     values: {}
 
   management:
-    chart:
-      url: ghcr.io/super-phenix/charts
-      # If none provided, inherits the version from the superphenix-operator chart
-      version: ""
-    # Arbitrary Helm values merged under the "superphenix" ConfigMap key.
+    # -- Arbitrary Helm values merged under the "superphenix" ConfigMap key.
     values: {}
 
-  # System chart deployed by the cluster controller on every managed cluster.
+  # -- Default system chart deployed by the cluster controller on every managed cluster.
+  # This can be overridden per cluster in the Cluster CR.
   system:
+    # -- Repository URL for the system chart.
     repoURL: ghcr.io/super-phenix/charts
+    # -- Name of the system chart.
     chartName: superphenix-system
-    # If none provided, inherits the version from the superphenix-operator chart
+    # -- Version of the system chart. If none provided, inherits from the operator chart.
     version: ""
 
-  # talos-manager chart deployed by the cluster controller for every managed cluster.
+  # -- talos-manager chart deployed by the cluster controller for every managed cluster.
   talosManager:
     chart:
+      # -- Repository URL for the talos-manager chart.
       url: ghcr.io/super-phenix/charts
+      # -- Version of the talos-manager chart.
       version: 0.1.0
 
-# Metrics and Health
-metrics:
-  bindAddress: "0" # Disable by default
-  secure: true
-
-health:
-  probeBindAddress: ":8081"
-
-leaderElection:
-  enabled: false
-
-# Superphenix clusters to be managed by this operator.
+# -- Superphenix clusters to be managed by this operator.
+# You can either create the Cluster CRs by hand or use this field to define your clusters from the chart.
 clusters: {}
 #  example-cluster:
 #    # DeploymentTopology defines whether the cluster is part of an hyperconverged or decoupled deployment.
@@ -111,7 +149,7 @@ clusters: {}
 #    # type: Storage
 #
 #    # TalosManagementMode specifies how Talos configuration should be managed.
-#    # Unmanaged - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
+#    # Unmanaged (default) - The Talos cluster is not managed by the operator. This requires an externally managed installation and configuration of Talos.
 #    # Import - The operator imports an already installed Talos cluster and manages its configuration.
 #    # Full - The Talos cluster is fully installed and configured by the operator.
 #    # Accepted values: Unmanaged, Import, Full

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -10,15 +11,18 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -30,6 +34,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/management"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/telemetry"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
+	"github.com/super-phenix/superphenix/pkg/argocd"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -58,7 +63,6 @@ func main() {
 	var argocdChartVersion string
 	var valuesConfigMapName string
 	var clustersConfigMapName string
-	var isManagementCluster bool
 	var operatorNamespace string
 	var tlsOpts []func(*tls.Config)
 	var argocdDefaultConfig string
@@ -105,7 +109,6 @@ func main() {
 	flag.StringVar(&talosManagerChartURL, "talos-manager-chart-url", "ghcr.io/super-phenix/charts", "The repository URL for the talos-manager chart")
 	flag.StringVar(&talosManagerChartVersion, "talos-manager-chart-version", "0.1.0", "The version for the talos-manager chart")
 	flag.StringVar(&operatorNamespace, "operator-namespace", os.Getenv("OPERATOR_NAMESPACE"), "The namespace where the operator is deployed")
-	flag.BoolVar(&isManagementCluster, "is-management-cluster", false, "Whether this operator is running on a management cluster and should reconcile management components")
 	flag.BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable sending anonymous telemetry to the Superphenix open-source project")
 	flag.StringVar(&telemetryEndpoint, "telemetry-endpoint", telemetry.DefaultEndpoint, "URL of the telemetry ingest endpoint")
 	opts := zap.Options{
@@ -184,7 +187,7 @@ func main() {
 	}
 
 	// Restrict the ArgoCD Application informer to Applications the operator manages:
-	// root cluster Apps, superphenix-system child Apps, and management Apps. All three
+	// root cluster Apps, superphenix-system child Apps, and management stack Apps. All three
 	// cohorts carry the operator.superphenix.net/managed=true label and live in the
 	// operator's namespace. Without this filter the informer LIST/WATCHes every
 	// Application in the cluster.
@@ -204,18 +207,30 @@ func main() {
 		argoAppByObject.Namespaces = map[string]cache.Config{operatorNamespace: {}}
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	// On a brand new cluster the ArgoCD CRDs are not yet installed, so we cannot
+	// register a ByObject filter for Applications (controller-runtime would fail
+	// to look up the type's REST scope during manager construction). Skip the
+	// filter for now; a background goroutine polls for the CRDs and exits the
+	// process when they appear so Kubernetes restarts us with the filter applied.
+	cfg := ctrl.GetConfigOrDie()
+	cacheOpts := cache.Options{}
+	if argoCDCRDsPresent(cfg) {
+		cacheOpts.ByObject = map[client.Object]cache.ByObject{
+			argoApp: argoAppByObject,
+		}
+	} else {
+		setupLog.Info("ArgoCD CRDs not yet installed; starting without the ArgoCD Application cache filter. The operator will restart once the CRDs are available.")
+		go waitForArgoCDCRDsThenExit(cfg)
+	}
+
+	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "d19ca498.superphenix.net",
-		Cache: cache.Options{
-			ByObject: map[client.Object]cache.ByObject{
-				argoApp: argoAppByObject,
-			},
-		},
+		//Cache:                  cacheOpts,
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -250,26 +265,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	if isManagementCluster {
-		setupLog.Info("Setting up management components reconciler")
-		if err := (&management.Reconciler{
-			Client:              mgr.GetClient(),
-			Scheme:              mgr.GetScheme(),
-			Config:              mgr.GetConfig(),
-			OperatorNamespace:   operatorNamespace,
-			ValuesConfigMapName: valuesConfigMapName,
-			HAEnabled:           haEnabled,
-			ArgoCDChartURL:      argocdChartURL,
-			ArgoCDChartVersion:  argocdChartVersion,
-			ArgoCDDefaultConfig: argocdDefaultConfig,
-			ArgoCDHAConfig:      argocdHAConfig,
-			SystemChartURL:      systemChartURL,
-			SystemChartName:     systemChartName,
-			SystemChartVersion:  systemChartVersion,
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "Failed to create management controller")
-			os.Exit(1)
-		}
+	setupLog.Info("Setting up management components reconciler")
+	if err := (&management.Reconciler{
+		Client:              mgr.GetClient(),
+		Scheme:              mgr.GetScheme(),
+		Config:              mgr.GetConfig(),
+		OperatorNamespace:   operatorNamespace,
+		ValuesConfigMapName: valuesConfigMapName,
+		HAEnabled:           haEnabled,
+		ArgoCDChartURL:      argocdChartURL,
+		ArgoCDChartVersion:  argocdChartVersion,
+		ArgoCDDefaultConfig: argocdDefaultConfig,
+		ArgoCDHAConfig:      argocdHAConfig,
+		SystemChartURL:      systemChartURL,
+		SystemChartName:     systemChartName,
+		SystemChartVersion:  systemChartVersion,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create management controller")
+		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
 
@@ -307,4 +320,44 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
+}
+
+// argoCDCRDsPresent reports whether the ArgoCD Application and AppProject CRDs
+// are already registered on the API server.
+func argoCDCRDsPresent(cfg *rest.Config) bool {
+	mapper, err := newRESTMapper(cfg)
+	if err != nil {
+		setupLog.Error(err, "Failed to build REST mapper for ArgoCD CRD check")
+		return false
+	}
+	return argocd.CheckCRDs(context.Background(), mapper) == nil
+}
+
+// waitForArgoCDCRDsThenExit polls until the ArgoCD CRDs become available,
+// then exits so that Kubernetes restarts the pod with the ArgoCD Application
+// cache filter properly applied.
+func waitForArgoCDCRDsThenExit(cfg *rest.Config) {
+	const pollInterval = 30 * time.Second
+	for {
+		time.Sleep(pollInterval)
+		mapper, err := newRESTMapper(cfg)
+		if err != nil {
+			continue
+		}
+		if err := argocd.CheckCRDs(context.Background(), mapper); err == nil {
+			setupLog.Info("ArgoCD CRDs are now available, exiting so the pod restarts with the Application cache filter applied")
+			os.Exit(0)
+		}
+	}
+}
+
+// newRESTMapper builds a fresh REST mapper against the API server. A new mapper
+// is created for each check so cached negative lookups do not mask CRDs that
+// were installed after the previous attempt.
+func newRESTMapper(cfg *rest.Config) (meta.RESTMapper, error) {
+	httpClient, err := rest.HTTPClientFor(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return apiutil.NewDynamicRESTMapper(cfg, httpClient)
 }

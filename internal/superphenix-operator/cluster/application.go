@@ -169,7 +169,7 @@ func (r *Reconciler) generateApplicationValues(cluster *operatorv1alpha1.Cluster
 	if cluster.Spec.Type != nil {
 		values["cluster"].(map[string]interface{})["type"] = string(*cluster.Spec.Type)
 	}
-	
+
 	version := r.SystemChartVersion
 	if cluster.Spec.Version != "" {
 		version = cluster.Spec.Version

@@ -78,14 +78,14 @@ var _ = Describe("Cluster Controller", func() {
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -454,14 +454,14 @@ var _ = Describe("Cluster Controller", func() {
 
 			By("Reconciling the cluster")
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -520,14 +520,14 @@ var _ = Describe("Cluster Controller", func() {
 
 			By("Reconciling the cluster")
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -602,14 +602,14 @@ var _ = Describe("Cluster Controller", func() {
 
 			By("Reconciling the cluster")
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -643,14 +643,14 @@ var _ = Describe("Cluster Controller", func() {
 
 		It("should validate version upgrades and downgrades", func() {
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			// Use a different name to avoid conflicts with other tests if they are running in parallel or if BeforeEach/AfterEach is tricky
@@ -952,14 +952,14 @@ var _ = Describe("Cluster Controller", func() {
 			}()
 
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			By("Reconciling the cluster in another namespace")
@@ -1015,14 +1015,14 @@ var _ = Describe("Cluster Controller", func() {
 			}()
 
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -1112,14 +1112,14 @@ var _ = Describe("Cluster Controller", func() {
 			}()
 
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
@@ -1171,14 +1171,14 @@ var _ = Describe("Cluster Controller", func() {
 			}()
 
 			controllerReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-				SystemChartURL:    "git@github.com:super-phenix/superphenix.git",
-				SystemChartName:   "superphenix-system",
+				Client:             k8sClient,
+				Scheme:             k8sClient.Scheme(),
+				OperatorNamespace:  "default",
+				SystemChartURL:     "git@github.com:super-phenix/superphenix.git",
+				SystemChartName:    "superphenix-system",
 				SystemChartVersion: "1.0.0",
-				SyncPeriod:        5 * time.Minute,
-				SyncTimeout:       15 * time.Minute,
+				SyncPeriod:         5 * time.Minute,
+				SyncTimeout:        15 * time.Minute,
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{

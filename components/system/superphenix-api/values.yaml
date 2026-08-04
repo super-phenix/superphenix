@@ -52,8 +52,7 @@ serviceMonitor:
   relabelings: []
   metricRelabelings: []
 
-
-superphenixApi: {}
+config: {}
 
 ingress:
   enabled: false

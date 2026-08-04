@@ -182,6 +182,22 @@ var _ = Describe("Management Controller", func() {
 			Expect(cluster["type"]).To(Equal("Management"))
 		})
 
+		It("should inject argocd.namespace in mergeManagementValues", func() {
+			const operatorNamespace = "my-operator-ns"
+			mgmtReconciler := &Reconciler{
+				Client:            k8sClient,
+				Scheme:            k8sClient.Scheme(),
+				OperatorNamespace: operatorNamespace,
+			}
+
+			vals, err := mgmtReconciler.mergeManagementValues(context.Background())
+			Expect(err).NotTo(HaveOccurred())
+
+			argocd, ok := vals["argocd"].(map[string]interface{})
+			Expect(ok).To(BeTrue(), "argocd key should exist")
+			Expect(argocd["namespace"]).To(Equal(operatorNamespace))
+		})
+
 		It("should trigger reconciliation on ConfigMap update", func() {
 			const argoNamespace = "argocd-trigger-ns"
 			const cmName = "argocd-trigger-values"
@@ -352,8 +368,8 @@ var _ = Describe("Management Controller", func() {
 
 		It("should fail if cluster version is not supported by management version", func() {
 			mgmtReconciler := &Reconciler{
-				Client:                 k8sClient,
-				OperatorNamespace:      "default",
+				Client:             k8sClient,
+				OperatorNamespace:  "default",
 				SystemChartVersion: "1.1.0",
 			}
 
@@ -385,8 +401,8 @@ var _ = Describe("Management Controller", func() {
 
 		It("should succeed if all cluster versions are supported", func() {
 			mgmtReconciler := &Reconciler{
-				Client:                 k8sClient,
-				OperatorNamespace:      "default",
+				Client:             k8sClient,
+				OperatorNamespace:  "default",
 				SystemChartVersion: "1.1.0",
 			}
 
@@ -427,7 +443,7 @@ var _ = Describe("Management Controller", func() {
 					"apiVersion": "argoproj.io/v1alpha1",
 					"kind":       "Application",
 					"metadata": map[string]interface{}{
-						"name":      SuperphenixSystemApp,
+						"name":      SuperphenixManagementApp,
 						"namespace": "default",
 					},
 					"spec": map[string]interface{}{
@@ -465,7 +481,7 @@ var _ = Describe("Management Controller", func() {
 					"apiVersion": "argoproj.io/v1alpha1",
 					"kind":       "Application",
 					"metadata": map[string]interface{}{
-						"name":      SuperphenixSystemApp,
+						"name":      SuperphenixManagementApp,
 						"namespace": "default",
 					},
 					"spec": map[string]interface{}{

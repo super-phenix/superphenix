@@ -36,7 +36,7 @@ func TestCollector_Collect(t *testing.T) {
 		},
 		Status: operatorv1alpha1.ClusterStatus{
 			SuperphenixVersion: "v1.2.3",
-			NodeCount:      3,
+			NodeCount:          3,
 		},
 	}
 	cluster2 := &operatorv1alpha1.Cluster{
@@ -49,7 +49,7 @@ func TestCollector_Collect(t *testing.T) {
 		},
 		Status: operatorv1alpha1.ClusterStatus{
 			SuperphenixVersion: "v1.2.4",
-			NodeCount:      5,
+			NodeCount:          5,
 		},
 	}
 	cluster3 := &operatorv1alpha1.Cluster{
@@ -77,8 +77,8 @@ func TestCollector_Collect(t *testing.T) {
 	}
 
 	c := &Collector{
-		Client:            fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cluster1, cluster2, cluster3, cluster4, kubeSystem).Build(),
-		OperatorVersion:   "v1.0.0",
+		Client:          fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cluster1, cluster2, cluster3, cluster4, kubeSystem).Build(),
+		OperatorVersion: "v1.0.0",
 		Namespace:       "operator-ns",
 		SystemVersion:   "v2.0.0",
 		ArgoCDVersion:   "v9.7.0",
@@ -198,7 +198,7 @@ func TestCollector_Collect(t *testing.T) {
 	// Check management component info
 	mgmtFound := false
 	for _, m := range report.Metrics {
-		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-system" && m.Labels["management"] == "true" {
+		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-management" && m.Labels["management"] == "true" {
 			mgmtFound = true
 			assert.Equal(t, "v2.0.0", m.Labels["version"])
 			_, clusterPresent := m.Labels["cluster"]
