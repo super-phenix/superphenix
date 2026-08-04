@@ -10,7 +10,6 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
 	github.com/super-phenix/superphenix-telemetry v0.0.0-20260705081709-439fee9fefc6
-	github.com/super-phenix/superphenix/internal/argo-controller v0.0.0
 	github.com/super-phenix/superphenix/internal/superphenix-api v0.0.0
 	github.com/super-phenix/superphenix/internal/superphenix-controller v0.0.0
 	github.com/super-phenix/superphenix/pkg/superphenix-id v0.0.0
@@ -25,7 +24,6 @@ require (
 )
 
 replace (
-	github.com/super-phenix/superphenix/internal/argo-controller => ./internal/argo-controller
 	github.com/super-phenix/superphenix/internal/superphenix-api => ./internal/superphenix-api
 	github.com/super-phenix/superphenix/internal/superphenix-controller => ./internal/superphenix-controller
 	github.com/super-phenix/superphenix/pkg/chi-helper => ./pkg/chi-helper

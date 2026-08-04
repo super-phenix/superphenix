@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"strings"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
@@ -15,6 +16,8 @@ import (
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 	// Use v2 because v3 indent with 4 spaces instead of 2
 	"gopkg.in/yaml.v2"
+
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 )
 
 func CreateAppValues(ctx context.Context, localId, location string, spec BaaSSpec, oldSpec *BaaSSpec) (string, error) {
@@ -89,12 +92,12 @@ func CreateAppValues(ctx context.Context, localId, location string, spec BaaSSpe
 }
 
 // CreateArgoApp builds an AppArgoCtrlBody for creating/updating an ArgoCD application.
-func CreateArgoApp(ctx context.Context, localId string, az config.AZConfig, spec BaaSSpec, metadata spxId.Metadata, oldSpec *BaaSSpec) (argoApp.AppArgoCtrlBody, error) {
+func CreateArgoApp(ctx context.Context, localId string, az config.AZConfig, spec BaaSSpec, metadata spxId.Metadata, oldSpec *BaaSSpec) (argo.CreateAppInfo, error) {
 	log := logger.GetLogger(ctx)
 	values, err := CreateAppValues(ctx, localId, az.Code, spec, oldSpec)
 	if err != nil {
 		log.Err(err).Msg("Failed to create app values")
-		return argoApp.AppArgoCtrlBody{}, fmt.Errorf("failed to create app values")
+		return argo.CreateAppInfo{}, fmt.Errorf("failed to create app values")
 	}
 
 	var helmParams strings.Builder
@@ -102,27 +105,21 @@ func CreateArgoApp(ctx context.Context, localId string, az config.AZConfig, spec
 
 	appName := fmt.Sprintf("%s-%s", AppPrefix, metadata.GetResourceEffectiveID())
 
-	return argoApp.AppArgoCtrlBody{
+	return argo.CreateAppInfo{
 		Metadata: metadata,
-		General: struct {
-			AppName     string `json:"appName"`
-			Destination string `json:"destination"`
-		}{
+		General: argo.AppGeneral{
 			AppName:     appName,
 			Destination: az.Destination,
 		},
-		Spec: struct {
-			Source            argoApp.AppSource         `json:"source"`
-			IgnoreDifferences argoApp.IgnoreDifferences `json:"ignoreDifferences"`
-		}{
-			Source: argoApp.AppSource{
+		Spec: argo.AppSpec{
+			Source: argo.AppSource{
 				RepoURL:        config.Global.ProductsConfig.ArgoApp.Backup.Repo.RepoURL,
 				TargetRevision: config.Global.ProductsConfig.ArgoApp.Backup.Repo.TargetRevision,
 				Chart:          config.Global.ProductsConfig.ArgoApp.Backup.Repo.Chart,
 				Path:           config.Global.ProductsConfig.ArgoApp.Backup.Repo.Path,
-				Plugin: argoApp.ApplicationSourcePlugin{
+				Plugin: v1alpha1.ApplicationSourcePlugin{
 					Name: "uuidv5",
-					Env: argoApp.Env{
+					Env: v1alpha1.Env{
 						{Name: "RELEASE", Value: appName},
 						{Name: "REPO", Value: ""},
 						{Name: "HELM_PARAMS", Value: helmParams.String()},

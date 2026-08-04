@@ -1,7 +1,0 @@
-apiVersion: v2
-name: argo-controller
-description: Helm chart to deploy the Argo CD controller
-# This chart inherits the tag of the Git repository
-type: application
-version: 0.0.0
-appVersion: "0.0.0"

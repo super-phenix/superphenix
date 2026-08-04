@@ -14,9 +14,18 @@ fullnameOverride: ""
 # -- Domain on which the API is exposed
 domain: &apiDomain api.superphenix.net
 
+rbac:
+  # ClusterRole/Binding letting superphenix-api manage the Argo CD Applications
+  # and AppProjects backing KaaS/BaaS, and create per-project namespaces.
+  # Required unless the argoController features are unused.
+  create: true
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
+  # Automatically mount the ServiceAccount's API credentials.
+  # in-cluster connection to Argo CD is built from this token.
+  automount: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -55,6 +64,28 @@ serviceMonitor:
   relabelings: []
   metricRelabelings: []
 
+# Configuration values must be under `.config`
+# All superphenix-api configurations are documented in `/docs/config/README.md`
+#
+# superphenix-api drives Argo CD directly (the standalone argo-controller is
+# gone). `argoController.url` and `argoController.authSecret` no longer exist;
+# the cluster connection comes from the pod ServiceAccount, so `rbac.create`
+# and `serviceAccount.automount` above must stay on. Expected shape:
+#
+#   config:
+#     argoController:
+#       kubeconfig: ""                       # empty = in-cluster
+#       appProjectNamespace: self-service-argocd
+#       garbageCollection:
+#         enabled: true                      # only one replica sweeps (advisory lock)
+#         interval: 15m
+#         timeout: 10m
+#         labelMarkKey: superphenix.net/markedForDeletion
+#         delay: 48h
+#         debug: false                       # true = dry run, logs instead of deleting
+#
+# The KaaS/BaaS repos, kubeVersions and schedules live under
+# `config.productsConfig.argoApp.{kubernetes,backup}`.
 config: {}
 
 ingress:

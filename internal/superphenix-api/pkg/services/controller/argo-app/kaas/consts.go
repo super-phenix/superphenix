@@ -1,6 +1,6 @@
 package kaas
 
-import argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
+import "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 
 var (
 	CpuValueList    = []int{1, 2, 4, 8, 16, 32}
@@ -26,8 +26,8 @@ const (
 	defaultDataStoreStorageGi = 8
 )
 
-var ignoreDifferences = argoApp.IgnoreDifferences{
-	argoApp.ResourceIgnoreDifferences{
+var ignoreDifferences = v1alpha1.IgnoreDifferences{
+	v1alpha1.ResourceIgnoreDifferences{
 		Group: "batch",
 		Kind:  "Job",
 		JSONPointers: []string{
@@ -39,7 +39,7 @@ var ignoreDifferences = argoApp.IgnoreDifferences{
 			"/spec/template/metadata/labels/superphenix.net~1gitops",
 		},
 	},
-	argoApp.ResourceIgnoreDifferences{
+	v1alpha1.ResourceIgnoreDifferences{
 		Group: "infrastructure.cluster.x-k8s.io",
 		Kind:  "KubevirtMachineTemplate",
 		JSONPointers: []string{

@@ -143,8 +143,19 @@ type Config struct {
 	}
 
 	ArgoController struct {
-		Url        string
-		AuthSecret string
+		// Kubeconfig is an explicit path to a kubeconfig; empty means the
+		// default loading rules then in-cluster config.
+		Kubeconfig          string `yaml:"kubeconfig"`
+		AppProjectNamespace string `yaml:"appProjectNamespace"`
+
+		GarbageCollection struct {
+			Enabled      bool          `yaml:"enabled"`
+			Interval     time.Duration `yaml:"interval"`
+			Timeout      time.Duration `yaml:"timeout"`
+			LabelMarkKey string        `yaml:"labelMarkKey"`
+			Delay        time.Duration `yaml:"delay"`
+			Debug        bool          `yaml:"debug"`
+		} `yaml:"garbageCollection"`
 	}
 
 	Database struct {
@@ -259,8 +270,15 @@ session:
 permify:
   url: <permify-host>:<permify-port>
 argoController:
-  url: "argo-url"
-  authSecret: "secret"
+  kubeconfig: ""
+  appProjectNamespace: "self-service-argocd"
+  garbageCollection:
+    enabled: true
+    interval: 15m
+    timeout: 10m
+    labelMarkKey: "superphenix.net/markedForDeletion"
+    delay: 48h
+    debug: false
 database:
   host: ""
   port: ""

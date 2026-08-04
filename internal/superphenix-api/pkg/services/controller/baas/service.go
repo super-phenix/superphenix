@@ -3,9 +3,11 @@ package baas
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
+	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
 
 	pwPermission "github.com/super-phenix/superphenix/pkg/permify-wrapper/pkg/base/v1/permission"
 )
@@ -25,13 +27,17 @@ type API interface {
 
 // Service is the default implementation of API.
 type Service struct {
-	cfg *config.Config
+	cfg  *config.Config
+	argo argoApp.Client
 }
 
 var _ API = (*Service)(nil)
 
-// New constructs the default service. It has no side effects.
-func New(cfg *config.Config) *Service { return &Service{cfg: cfg} }
+// New constructs the default service. It has no side effects; the Argo client is
+// injected so tests can fake it, and may be nil when no cluster is reachable.
+func New(cfg *config.Config, argoClient argoApp.Client) *Service {
+	return &Service{cfg: cfg, argo: argoClient}
+}
 
 // Module builds the BaaS routes for any API.
 func Module(cfg *config.Config, s API) router.Module {
@@ -60,6 +66,6 @@ func Module(cfg *config.Config, s API) router.Module {
 
 // ProvideService constructs the default service and registers its routes on reg.
 func ProvideService(cfg *config.Config, reg *router.Registry) {
-	h := New(cfg)
+	h := New(cfg, app.ProvideArgo(cfg))
 	reg.Register(Module(cfg, h))
 }

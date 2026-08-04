@@ -1,7 +1,6 @@
 package baas
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/view"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
@@ -26,6 +26,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // ListBaaS
@@ -257,32 +258,13 @@ func (h *Service) CreateBaaS(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// update body
-	marshal, err := json.Marshal(newBody)
-	if err != nil {
+	if err := h.argo.CreateApp(r.Context(), newBody); err != nil {
 		ctrlutils.CleanDb(r.Context(), baasDb.ID)
-		log.Err(err).Msg("Failed to marshal body")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+		ctrlutils.HandleArgoError(w, r, err, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
 		return
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/argo", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String())
-	resp, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(marshal), h.cfg.ArgoController.AuthSecret)
-	if err != nil {
-		ctrlutils.CleanDb(r.Context(), baasDb.ID)
-		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 200 {
-		controller.WriteCreateResponse(w, baasDb.EffectiveID)
-	} else {
-		ctrlutils.CleanDb(r.Context(), baasDb.ID)
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
-		return
-	}
+	controller.WriteCreateResponse(w, baasDb.EffectiveID)
 }
 
 // GetForUpdateBaaS
@@ -301,7 +283,7 @@ func (h *Service) CreateBaaS(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer[OrganizationRead, ProjectBaaSRead]
 func (h *Service) GetForUpdateBaaS(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
-	azDb, orgDb, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
+	azDb, _, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
 	if code != 0 {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
@@ -314,7 +296,7 @@ func (h *Service) GetForUpdateBaaS(w http.ResponseWriter, r *http.Request) {
 	resourceEId := chi.URLParam(r, "effectiveId")
 	dbProduct, dbErr := product.FindByEId(resourceEId)
 
-	spec, isGitops, appFound, err := fetchBaaSApp(r.Context(), h.cfg, orgDb.ID.String(), projectDb.ID.String(), resourceEId)
+	spec, isGitops, appFound, err := h.fetchBaaSApp(r.Context(), projectDb.ID.String(), resourceEId)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch app")
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", resourceEId).Msg(consts.SpxProxyToAZFailure)
@@ -397,7 +379,7 @@ func (h *Service) UpdateBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spec, _, appFound, err := fetchBaaSApp(r.Context(), h.cfg, orgDb.ID.String(), projectDb.ID.String(), productEid)
+	spec, _, appFound, err := h.fetchBaaSApp(r.Context(), projectDb.ID.String(), productEid)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch app")
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", productEid).Msg(consts.SpxProxyToAZFailure)
@@ -417,33 +399,14 @@ func (h *Service) UpdateBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update body - we only send spec part
-	marshal, err := json.Marshal(newBody.Spec)
-	if err != nil {
-		log.Err(err).Msg("Failed to marshal body")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+	// We only apply the spec part
+	appName := fmt.Sprintf("%s-%s", argobaas.AppPrefix, baasDb.EffectiveID)
+	if err := h.argo.UpdateApp(r.Context(), appName, h.argo.Namespace(projectDb.ID.String()), newBody.Spec); err != nil {
+		ctrlutils.HandleArgoError(w, r, err, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
 		return
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String(), argobaas.AppPrefix, baasDb.EffectiveID)
-	resp, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(marshal), h.cfg.ArgoController.AuthSecret)
-	if err != nil {
-		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		return
-	}
-	defer resp.Body.Close()
-
-	// If the update is successful
-	if resp.StatusCode == 200 {
-		w.WriteHeader(http.StatusOK)
-	} else if resp.StatusCode == http.StatusNotFound {
-		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
-		return
-	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
-		return
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // DeleteBaaS
@@ -476,51 +439,44 @@ func (h *Service) DeleteBaaS(w http.ResponseWriter, r *http.Request) {
 
 	productEId := chi.URLParam(r, "effectiveId")
 
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String(), argobaas.AppPrefix, productEId)
-	resp, err := proxy.SendRequest(r.Context(), url, "DELETE", http.NoBody, h.cfg.ArgoController.AuthSecret)
+	appName := fmt.Sprintf("%s-%s", argobaas.AppPrefix, productEId)
+	// A missing app is not an error: the backup and the DB row still have to go.
+	deleteErr := h.argo.DeleteApp(r.Context(), appName, h.argo.Namespace(projectDb.ID.String()))
+	if deleteErr != nil && !k8serrors.IsNotFound(deleteErr) {
+		ctrlutils.HandleArgoError(w, r, deleteErr, consts.SpxResourceDeletionFailureCode, consts.SpxResourceDeletionFailure)
+		return
+	}
+
+	// We need to ask Controller to clean remaining backup
+	url := fmt.Sprintf("%s/%s/%s/baas/%s", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), productEId)
+	resp2, err := proxy.SendRequest(r.Context(), url, "DELETE", http.NoBody, azDb.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
+		httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
 		return
 	}
-	defer resp.Body.Close()
-
-	// If the product was deleted by the controller or no longer exists.
-	if resp.StatusCode == 200 || resp.StatusCode == 404 {
-		// We need to ask Controller to clean remaining backup
-		url := fmt.Sprintf("%s/%s/%s/baas/%s", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), productEId)
-		resp2, err := proxy.SendRequest(r.Context(), url, "DELETE", http.NoBody, azDb.AuthSecret)
-		if err != nil {
-			log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-			httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
-			return
-		}
-		defer resp2.Body.Close()
-		if resp2.StatusCode != 200 && resp2.StatusCode != 404 {
-			log.Err(err).
-				Str("az", azDb.Code).
-				Str("status", resp2.Status).
-				Int("statusCode", resp2.StatusCode).
-				Msg("Failed to delete baas on controller AZ")
-			httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
-			return
-		}
-
-		rowsAffected, err := product.DeleteByEIdAndAZCodeAndProject(productEId, azDb.Code, projectDb.ID)
-		if err != nil {
-			log.Err(err).Msg(consts.SpxResourceDeletionFailure)
-			httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
-			return
-		}
-		if resp.StatusCode == http.StatusNotFound && rowsAffected == 0 {
-			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceDeletionFailureCode, consts.SpxResourceDeletionFailure)
+	defer resp2.Body.Close()
+	if resp2.StatusCode != 200 && resp2.StatusCode != 404 {
+		log.Err(err).
+			Str("az", azDb.Code).
+			Str("status", resp2.Status).
+			Int("statusCode", resp2.StatusCode).
+			Msg("Failed to delete baas on controller AZ")
+		httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
 		return
 	}
+
+	rowsAffected, err := product.DeleteByEIdAndAZCodeAndProject(productEId, azDb.Code, projectDb.ID)
+	if err != nil {
+		log.Err(err).Msg(consts.SpxResourceDeletionFailure)
+		httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
+		return
+	}
+	if k8serrors.IsNotFound(deleteErr) && rowsAffected == 0 {
+		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // fetchBaaSApp fetch the application status and spec from argo controller
@@ -530,36 +486,28 @@ func (h *Service) DeleteBaaS(w http.ResponseWriter, r *http.Request) {
 //   - isGitops: A string ("true" or "false") indicating if the application is managed via GitOps.
 //   - found: A boolean indicating if the application was found in the Argo controller.
 //   - err: An error object if the request failed.
-func fetchBaaSApp(ctx context.Context, cfg *config.Config, orgId, projectId, resourceEId string) (spec argobaas.BaaSSpec, isGitops string, found bool, err error) {
+func (h *Service) fetchBaaSApp(ctx context.Context, projectId, resourceEId string) (spec argobaas.BaaSSpec, isGitops string, found bool, err error) {
 	log := logger.GetLogger(ctx)
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", cfg.ArgoController.Url, orgId, projectId, argobaas.AppPrefix, resourceEId)
-	resp, err := proxy.SendRequest(ctx, url, "GET", http.NoBody, cfg.ArgoController.AuthSecret)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to s‹end request to Argo Ctrl")
-		return argobaas.BaaSSpec{}, "false", false, fmt.Errorf("failed to send request to Argo Ctrl")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		// If the request is not OK or NotFound then log it
-		log.Error().Str("path", resp.Request.URL.Path).Msg("Request on Argo Ctrl failed")
-		return argobaas.BaaSSpec{}, "false", false, fmt.Errorf("request on Argo Ctrl failed")
-	}
 
-	if resp.StatusCode == http.StatusNotFound {
+	appName := fmt.Sprintf("%s-%s", argobaas.AppPrefix, resourceEId)
+	appView, err := h.argo.GetApp(ctx, appName, h.argo.Namespace(projectId))
+	if k8serrors.IsNotFound(err) {
 		return argobaas.BaaSSpec{}, "", false, nil
 	}
+	if err != nil {
+		log.Error().Err(err).Str("effectiveId", resourceEId).Msg("Failed to get argo app")
+		return argobaas.BaaSSpec{}, "false", false, fmt.Errorf("failed to get argo app")
+	}
 
-	mapResult := ctrlutils.ReadResponse(resp).(map[string]interface{})
-
-	spec, err = argobaas.ConvertAppToUpdateBaaSSpec(mapResult)
+	spec, err = argobaas.ConvertAppToUpdateBaaSSpec(appView)
 	if err != nil {
 		log.Error().Str("effectiveId", resourceEId).Msg("Failed to read app spec")
 		return argobaas.BaaSSpec{}, "", true, err
 	}
 
-	isGitops = "false"
-	if g, ok := mapResult["gitops"].(string); ok {
-		isGitops = g
+	isGitops = view.AppToResource(appView).Gitops
+	if isGitops == "" {
+		isGitops = "false"
 	}
 
 	return spec, isGitops, true, nil

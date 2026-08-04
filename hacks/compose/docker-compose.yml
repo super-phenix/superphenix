@@ -119,13 +119,14 @@ services:
       - SUPERPHENIX-API_PERMIFY_URL=permify:3478
       - SUPERPHENIX-API_ADMINHTTP_AUTHSECRET=${SUPERPHENIX_API_ADMIN_SECRET:-local}
       - SUPERPHENIX-API_CONTROLLER_AUTHSECRET=${SUPERPHENIX_API_CONTROLLER_SECRET:-local}
-      - SUPERPHENIX-API_ARGOCONTROLLER_URL=${ARGO_CONTROLLER_URL:-http://localhost:8081/v1}
-      - SUPERPHENIX-API_ARGOCONTROLLER_AUTHSECRET=${ARGO_CONTROLLER_SECRET:-local}
+      - SUPERPHENIX-API_ARGOCONTROLLER_KUBECONFIG=/etc/superphenix-api/kubeconfig
+      - SUPERPHENIX-API_ARGOCONTROLLER_GARBAGECOLLECTION_ENABLED=${ARGO_GC_ENABLED:-false}
       - SUPERPHENIX-API_ARGOCDURL=${ARGOCD_URL:-https://argocd.example.com}
     volumes:
       # Structured config (incl. argoController.app KaaS/BaaS repos + kubeVersions).
       # Env vars above still override matching keys.
       - ./local/superphenix-api.config.yaml:/etc/superphenix-api/config.yaml:ro
+      - ${KUBECONFIG_PATH:?KUBECONFIG_PATH is required, see .env.example}:/etc/superphenix-api/kubeconfig:ro
     networks:
       - intranet
   spx-panel:

@@ -246,7 +246,7 @@ $(GOLANGCI_LINT): $(LOCALBIN)
 		mv -f $(LOCALBIN)/golangci-lint-custom $(GOLANGCI_LINT); \
 	} || true
 
-INTERNAL_PROJECTS := internal/superphenix-api internal/superphenix-controller internal/argo-controller
+INTERNAL_PROJECTS := internal/superphenix-api internal/superphenix-controller
 # You need swag installed: go install github.com/swaggo/swag/cmd/swag
 .PHONY: swagger
 swagger:

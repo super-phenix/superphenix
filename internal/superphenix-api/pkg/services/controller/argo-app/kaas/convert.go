@@ -6,30 +6,28 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/view"
+
 	// Use v2 because v3 indent with 4 spaces instead of 2
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var numericRegex = regexp.MustCompile(`[^\p{N}]+`)
 
 // ConvertAppToUpdateKaaSSpec convert kaas helm chart values to KaaSSPec used for updating KaaS product
-func ConvertAppToUpdateKaaSSpec(app map[string]interface{}) (KaaSSpec, error) {
-	slice, b, err := unstructured.NestedSlice(app, "app", "spec", "source", "plugin", "env")
-	if err != nil || !b {
+func ConvertAppToUpdateKaaSSpec(app view.AppView) (KaaSSpec, error) {
+	if app.Spec.Source == nil || app.Spec.Source.Plugin == nil {
 		return KaaSSpec{}, fmt.Errorf("failed to convert app to KaasSpec")
 	}
 
 	var helmValues Values
-	for _, item := range slice {
-		name, _, _ := unstructured.NestedString(item.(map[string]interface{}), "name")
-		if name == "HELM_VALUES" {
-			value, _, _ := unstructured.NestedString(item.(map[string]interface{}), "value")
-			err := yaml.Unmarshal([]byte(value), &helmValues)
-			if err != nil {
-				return KaaSSpec{}, err
-			}
+	for _, entry := range app.Spec.Source.Plugin.Env {
+		if entry == nil || entry.Name != "HELM_VALUES" {
+			continue
+		}
+		if err := yaml.Unmarshal([]byte(entry.Value), &helmValues); err != nil {
+			return KaaSSpec{}, err
 		}
 	}
 

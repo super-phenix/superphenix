@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/metrics"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/opentelemetry/tracing"
@@ -28,6 +29,7 @@ func main() {
 	startTracing()
 	startMetrics()
 	spxId.SetFrameworkPrefix(config.Global.SpxPrefix)
+	app.StartGarbageCollection(ctx, &config.Global)
 
 	api.StartAPI()
 }

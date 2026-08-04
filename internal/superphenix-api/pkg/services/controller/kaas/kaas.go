@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/view"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // ListKaaS
@@ -252,32 +254,13 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// update body
-	marshal, err := json.Marshal(newBody)
-	if err != nil {
+	if err := h.argo.CreateApp(r.Context(), newBody); err != nil {
 		ctrlutils.CleanDb(r.Context(), kaasDb.ID)
-		log.Err(err).Msg("Failed to marshal body")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+		ctrlutils.HandleArgoError(w, r, err, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
 		return
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/argo", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String())
-	resp, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(marshal), h.cfg.ArgoController.AuthSecret)
-	if err != nil {
-		ctrlutils.CleanDb(r.Context(), kaasDb.ID)
-		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 200 {
-		controller.WriteCreateResponse(w, kaasDb.EffectiveID)
-	} else {
-		ctrlutils.CleanDb(r.Context(), kaasDb.ID)
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
-		return
-	}
+	controller.WriteCreateResponse(w, kaasDb.EffectiveID)
 }
 
 // GetForUpdateKaaS
@@ -296,7 +279,7 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer[OrganizationRead, ProjectKaaSRead]
 func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
-	azDb, orgDb, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
+	azDb, _, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
 	if code != 0 {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
@@ -309,7 +292,7 @@ func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
 	resourceEId := chi.URLParam(r, "effectiveId")
 	dbProduct, dbErr := product.FindByEId(resourceEId)
 
-	spec, isGitops, appFound, err := fetchKaaSApp(r.Context(), h.cfg, orgDb.ID.String(), projectDb.ID.String(), resourceEId)
+	spec, isGitops, appFound, err := h.fetchKaaSApp(r.Context(), projectDb.ID.String(), resourceEId)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch app")
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", resourceEId).Msg(consts.SpxProxyToAZFailure)
@@ -399,7 +382,7 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	spec, _, appFound, err := fetchKaaSApp(r.Context(), h.cfg, orgDb.ID.String(), projectDb.ID.String(), productEid)
+	spec, _, appFound, err := h.fetchKaaSApp(r.Context(), projectDb.ID.String(), productEid)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch app")
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", productEid).Msg(consts.SpxProxyToAZFailure)
@@ -419,55 +402,35 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update body - we only send spec part
-	marshal, err := json.Marshal(newBody.Spec)
-	if err != nil {
-		log.Err(err).Msg("Failed to marshal body")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+	// We only apply the spec part
+	appName := fmt.Sprintf("%s-%s", argokaas.KaasPrefix, kaasDb.EffectiveID)
+	if err := h.argo.UpdateApp(r.Context(), appName, h.argo.Namespace(projectDb.ID.String()), newBody.Spec); err != nil {
+		ctrlutils.HandleArgoError(w, r, err, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
 		return
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String(), argokaas.KaasPrefix, kaasDb.EffectiveID)
-	resp, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(marshal), h.cfg.ArgoController.AuthSecret)
-	if err != nil {
-		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		return
-	}
-	defer resp.Body.Close()
+	// Check for group to remove and send request to delete them to the Superphenix Controller
+	// We have to do this manually because ArgoCD cannot clean them because they have a OwnerReference
+	if len(gtr) > 0 {
+		url := fmt.Sprintf("%s/%s/%s/kaas/%s/delete-group", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), productEid)
 
-	// If the update is successful
-	if resp.StatusCode == 200 {
-		// Check for group to remove and send request to delete them to the Superphenix Controller
-		// We have to do this manually because ArgoCD cannot clean them because they have a OwnerReference
-		if len(gtr) > 0 {
-			url := fmt.Sprintf("%s/%s/%s/kaas/%s/delete-group", azDb.ControllerUrl, orgDb.ID.String(), projectDb.ID.String(), productEid)
-
-			gdBody, err := json.Marshal(argokaas.GroupDeletion{GroupName: gtr})
+		gdBody, err := json.Marshal(argokaas.GroupDeletion{GroupName: gtr})
+		if err != nil {
+			log.Err(err).Msg("Failed to marshal group deletion body")
+		} else {
+			resp2, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(gdBody), azDb.AuthSecret)
 			if err != nil {
-				log.Err(err).Msg("Failed to marshal group deletion body")
-			} else {
-				resp2, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(gdBody), azDb.AuthSecret)
-				if err != nil {
-					log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-					return
-				}
-				defer resp2.Body.Close()
-				if resp2.StatusCode != 200 {
-					log.Err(err).Str("az", azDb.Code).Str("status", resp2.Status).Int("statusCode", resp2.StatusCode).Msg(consts.SpxProxyToAZFailure)
-				}
-
+				log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
+				return
+			}
+			defer resp2.Body.Close()
+			if resp2.StatusCode != 200 {
+				log.Err(err).Str("az", azDb.Code).Str("status", resp2.Status).Int("statusCode", resp2.StatusCode).Msg(consts.SpxProxyToAZFailure)
 			}
 		}
-
-		w.WriteHeader(http.StatusOK)
-	} else if resp.StatusCode == http.StatusNotFound {
-		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
-		return
-	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
-		return
 	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 // ReinstallKaaSEssentials
@@ -524,7 +487,7 @@ func (h *Service) ReinstallKaaSEssentials(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	spec, _, appFound, err := fetchKaaSApp(r.Context(), h.cfg, orgDb.ID.String(), projectDb.ID.String(), productEid)
+	spec, _, appFound, err := h.fetchKaaSApp(r.Context(), projectDb.ID.String(), productEid)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch app")
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", productEid).Msg(consts.SpxProxyToAZFailure)
@@ -547,31 +510,13 @@ func (h *Service) ReinstallKaaSEssentials(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	marshal, err := json.Marshal(newBody.Spec)
-	if err != nil {
-		log.Err(err).Msg("Failed to marshal body")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+	appName := fmt.Sprintf("%s-%s", argokaas.KaasPrefix, kaasDb.EffectiveID)
+	if err := h.argo.UpdateApp(r.Context(), appName, h.argo.Namespace(projectDb.ID.String()), newBody.Spec); err != nil {
+		ctrlutils.HandleArgoError(w, r, err, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
 		return
 	}
 
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String(), argokaas.KaasPrefix, kaasDb.EffectiveID)
-	resp, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(marshal), h.cfg.ArgoController.AuthSecret)
-	if err != nil {
-		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		w.WriteHeader(http.StatusOK)
-	} else if resp.StatusCode == http.StatusNotFound {
-		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
-		return
-	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
-		return
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // DeleteKaaS
@@ -592,7 +537,7 @@ func (h *Service) ReinstallKaaSEssentials(w http.ResponseWriter, r *http.Request
 //	@Security		Bearer[OrganizationRead, ProjectKaaSWrite]
 func (h *Service) DeleteKaaS(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
-	azDb, orgDb, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
+	azDb, _, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
 	if code != 0 {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
@@ -604,32 +549,25 @@ func (h *Service) DeleteKaaS(w http.ResponseWriter, r *http.Request) {
 
 	productEId := chi.URLParam(r, "effectiveId")
 
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", h.cfg.ArgoController.Url, orgDb.ID.String(), projectDb.ID.String(), argokaas.KaasPrefix, productEId)
-	resp, err := proxy.SendRequest(r.Context(), url, "DELETE", http.NoBody, h.cfg.ArgoController.AuthSecret)
-	if err != nil {
-		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
+	appName := fmt.Sprintf("%s-%s", argokaas.KaasPrefix, productEId)
+	// A missing app is not an error: the DB row still has to go.
+	deleteErr := h.argo.DeleteApp(r.Context(), appName, h.argo.Namespace(projectDb.ID.String()))
+	if deleteErr != nil && !k8serrors.IsNotFound(deleteErr) {
+		ctrlutils.HandleArgoError(w, r, deleteErr, consts.SpxResourceDeletionFailureCode, consts.SpxResourceDeletionFailure)
 		return
 	}
-	defer resp.Body.Close()
 
-	// If the product was deleted by the controller or no longer exists.
-	if resp.StatusCode == 200 || resp.StatusCode == 404 {
-		rowsAffected, err := product.DeleteByEIdAndAZCodeAndProject(productEId, azDb.Code, projectDb.ID)
-		if err != nil {
-			log.Err(err).Msg(consts.SpxResourceDeletionFailure)
-			httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
-			return
-		}
-		if resp.StatusCode == http.StatusNotFound && rowsAffected == 0 {
-			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceDeletionFailureCode, consts.SpxResourceDeletionFailure)
+	rowsAffected, err := product.DeleteByEIdAndAZCodeAndProject(productEId, azDb.Code, projectDb.ID)
+	if err != nil {
+		log.Err(err).Msg(consts.SpxResourceDeletionFailure)
+		httpError.Http(w, r, consts.SpxResourceDeletionFailureCode).Msg(consts.SpxResourceDeletionFailure)
 		return
 	}
+	if k8serrors.IsNotFound(deleteErr) && rowsAffected == 0 {
+		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetKubeVersion
@@ -706,7 +644,7 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// The kube version is authoritative on the Argo app, not the served kubeconfig.
-	spec, _, appFound, err := fetchKaaSApp(r.Context(), h.cfg, orgDb.ID.String(), projectDb.ID.String(), effectiveId)
+	spec, _, appFound, err := h.fetchKaaSApp(r.Context(), projectDb.ID.String(), effectiveId)
 	if err != nil {
 		log.Err(err).Msg("Failed to fetch app")
 		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("eid", effectiveId).Msg(consts.SpxProxyToAZFailure)
@@ -774,36 +712,28 @@ func getKaaSConfig(ctx context.Context, az config.AZConfig, orgId, projectId str
 //   - isGitops: A string ("true" or "false") indicating if the application is managed via GitOps.
 //   - found: A boolean indicating if the application was found in the Argo controller.
 //   - err: An error object if the request failed.
-func fetchKaaSApp(ctx context.Context, cfg *config.Config, orgId, projectId, resourceEId string) (spec argokaas.KaaSSpec, isGitops string, found bool, err error) {
+func (h *Service) fetchKaaSApp(ctx context.Context, projectId, resourceEId string) (spec argokaas.KaaSSpec, isGitops string, found bool, err error) {
 	log := logger.GetLogger(ctx)
-	url := fmt.Sprintf("%s/%s/%s/argo/%s-%s", cfg.ArgoController.Url, orgId, projectId, argokaas.KaasPrefix, resourceEId)
-	resp, err := proxy.SendRequest(ctx, url, "GET", http.NoBody, cfg.ArgoController.AuthSecret)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to send request to Argo Ctrl")
-		return argokaas.KaaSSpec{}, "false", false, fmt.Errorf("failed to send request to Argo Ctrl")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNotFound {
-		// If the request is not OK or NotFound then log it
-		log.Error().Str("path", resp.Request.URL.Path).Msg("Request on Argo Ctrl failed")
-		return argokaas.KaaSSpec{}, "false", false, fmt.Errorf("request on Argo Ctrl failed")
-	}
 
-	if resp.StatusCode == http.StatusNotFound {
+	appName := fmt.Sprintf("%s-%s", argokaas.KaasPrefix, resourceEId)
+	appView, err := h.argo.GetApp(ctx, appName, h.argo.Namespace(projectId))
+	if k8serrors.IsNotFound(err) {
 		return argokaas.KaaSSpec{}, "", false, nil
 	}
+	if err != nil {
+		log.Error().Err(err).Str("effectiveId", resourceEId).Msg("Failed to get argo app")
+		return argokaas.KaaSSpec{}, "false", false, fmt.Errorf("failed to get argo app")
+	}
 
-	mapResult := ctrlutils.ReadResponse(resp).(map[string]interface{})
-
-	spec, err = argokaas.ConvertAppToUpdateKaaSSpec(mapResult)
+	spec, err = argokaas.ConvertAppToUpdateKaaSSpec(appView)
 	if err != nil {
 		log.Error().Str("effectiveId", resourceEId).Msg("Failed to read app spec")
 		return argokaas.KaaSSpec{}, "", true, err
 	}
 
-	isGitops = "false"
-	if g, ok := mapResult["gitops"].(string); ok {
-		isGitops = g
+	isGitops = view.AppToResource(appView).Gitops
+	if isGitops == "" {
+		isGitops = "false"
 	}
 
 	return spec, isGitops, true, nil

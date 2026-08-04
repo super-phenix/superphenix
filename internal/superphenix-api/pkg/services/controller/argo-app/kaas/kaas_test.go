@@ -5,10 +5,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/view"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"gopkg.in/yaml.v2"
 )
 
@@ -557,6 +559,20 @@ func TestCreateKaaSAppValues_DataStore(t *testing.T) {
 
 // TestConvertAppToUpdateKaaSSpec_DataStore round-trips a DR-enabled cluster:
 // build the helm values, wrap them in the argo app shape, then convert back.
+// appViewWithHelmValues wraps rendered helm values in the argo app shape the
+// converter reads, mirroring what GetApp returns for a plugin-sourced app.
+func appViewWithHelmValues(values string) view.AppView {
+	return view.AppView{
+		Spec: view.ApplicationSpec{
+			Source: &view.ApplicationSource{
+				Plugin: &v1alpha1.ApplicationSourcePlugin{
+					Env: v1alpha1.Env{{Name: "HELM_VALUES", Value: values}},
+				},
+			},
+		},
+	}
+}
+
 func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	ctx := context.Background()
@@ -604,19 +620,7 @@ func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 				t.Fatalf("CreateKaaSAppValues() error = %v", err)
 			}
 
-			app := map[string]interface{}{
-				"app": map[string]interface{}{
-					"spec": map[string]interface{}{
-						"source": map[string]interface{}{
-							"plugin": map[string]interface{}{
-								"env": []interface{}{
-									map[string]interface{}{"name": "HELM_VALUES", "value": values},
-								},
-							},
-						},
-					},
-				},
-			}
+			app := appViewWithHelmValues(values)
 
 			got, err := ConvertAppToUpdateKaaSSpec(app)
 			if err != nil {
@@ -747,19 +751,7 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 				t.Fatalf("CreateKaaSAppValues() error = %v", err)
 			}
 
-			app := map[string]interface{}{
-				"app": map[string]interface{}{
-					"spec": map[string]interface{}{
-						"source": map[string]interface{}{
-							"plugin": map[string]interface{}{
-								"env": []interface{}{
-									map[string]interface{}{"name": "HELM_VALUES", "value": values},
-								},
-							},
-						},
-					},
-				},
-			}
+			app := appViewWithHelmValues(values)
 
 			got, err := ConvertAppToUpdateKaaSSpec(app)
 			if err != nil {

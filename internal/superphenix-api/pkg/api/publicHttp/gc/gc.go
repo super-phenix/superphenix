@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
+	argogc "github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/gc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/proxy"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 )
@@ -44,17 +46,10 @@ func MarkResources(ctx context.Context, orgId, projectId string) error {
 		}
 	}
 
-	// Mark resources on the Argo Controller
-	argoUrl := config.Global.ArgoController.Url
-	if argoUrl == "" {
-		log := logger.GetLogger(ctx)
-		log.Warn().Msg("Argo Controller URL not configured, skipping argo GC marking")
-		return nil
-	}
+	// Mark Argo resources in-process. Marking is not gated on
+	// garbageCollection.enabled: a project must still be marked on deletion even
+	// where the sweep loop is off.
+	argoClient := app.ProvideArgo(&config.Global)
 
-	if err := callMarkEndpoint(ctx, argoUrl, orgId, projectId, config.Global.ArgoController.AuthSecret, "argo-controller"); err != nil {
-		return err
-	}
-
-	return nil
+	return argogc.Mark(ctx, argoClient, argoClient.Namespace(projectId))
 }
