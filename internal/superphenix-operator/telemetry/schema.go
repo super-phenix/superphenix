@@ -44,10 +44,10 @@ const (
 
 // Allowed values for the cluster_info "type" label.
 const (
-	TypeStorage        = "storage"
-	TypeVirtualization = "virtualization"
-	TypeManagement     = "management"
-	TypeNone           = "none"
+	TypeStorage    = "storage"
+	TypeWorkload   = "workload"
+	TypeManagement = "management"
+	TypeNone       = "none"
 )
 
 // Report is the top-level body posted to the ingest endpoint.

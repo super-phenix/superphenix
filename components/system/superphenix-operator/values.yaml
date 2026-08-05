@@ -181,7 +181,7 @@ clusters: {}
 #    # Accepted values: Hyperconverged, Decoupled
 #    deploymentTopology: Hyperconverged
 #
-#    # Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
+#    # Type specifies the cluster type (Storage or Workload) when DeploymentTopology is Decoupled.
 #    # type: Storage
 #
 #    # TalosManagementMode specifies how Talos configuration should be managed.

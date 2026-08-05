@@ -7,9 +7,9 @@
 This chart is the central piece of the Superphenix system installation. It is responsible for installing and configuring all the necessary components on **all Superphenix clusters**, regardless of their role:
 
 - **Management clusters**: host the Superphenix control plane (console, API, identity, database, ...).
-- **Hyperconverged clusters**: combine storage and virtualization on the same nodes.
+- **Hyperconverged clusters**: combine storage and workload on the same nodes.
 - **Storage clusters**: dedicated to storage workloads (Rook / Ceph).
-- **Workload (virtualization) clusters**: dedicated to running virtualized workloads (KubeVirt).
+- **Workload clusters**: dedicated to running virtualized workloads (KubeVirt).
 
 For more information about the different deployment topologies and cluster types, please refer to the official [Superphenix Deployment Topology documentation](https://docs.superphenix.net/architecture/deployment-topology/).
 
@@ -27,7 +27,7 @@ The effective mode is the concatenation of `.Values.cluster.deploymentTopology` 
 | ------------------ | ----------------- | --------------------------- |
 | `Hyperconverged`   | *(empty)*         | `Hyperconverged`            |
 | `Decoupled`        | `Storage`         | `DecoupledStorage`          |
-| `Decoupled`        | `Virtualization`  | `DecoupledVirtualization`   |
+| `Decoupled`        | `Workload`        | `DecoupledWorkload`         |
 | *(empty)*          | `Management`      | `Management`                |
 
 - If an application's `modes` list is empty or not specified, it is considered eligible for deployment in any effective mode (as long as it is enabled).

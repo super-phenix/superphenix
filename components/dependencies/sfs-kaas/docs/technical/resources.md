@@ -59,7 +59,7 @@ Can be disabled to allow for stricter user-defined policies.
 ## Kubevirt CSI
 
 Provides Storage and snapshot functionalities to the tenant cluster by interfacing with the  
-virtualization cluster's storage solution.
+workload cluster's storage solution.
 
 - ServiceAccount
 - Role

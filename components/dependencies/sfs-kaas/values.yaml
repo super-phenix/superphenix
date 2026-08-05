@@ -305,7 +305,7 @@ clusters: {}
   #         # @default -- ""
   #         tenantClass: my-sc
 
-  #         # -- Friendly name of the corresponding storage class on the virtualization cluster 
+  #         # -- Friendly name of the corresponding storage class on the workload cluster 
   #         # @section -- Storage class
   #         # @default -- ""
   #         infraClass: default
@@ -327,7 +327,7 @@ clusters: {}
   #         # @default -- ""
   #         tenantClass: ssc-a
 
-  #         # -- Friendly name of the corresponding snapshot class on the virtualization cluster 
+  #         # -- Friendly name of the corresponding snapshot class on the workload cluster 
   #         # @section -- Snapshot class
   #         # @default -- ""
   #         infraClass: default

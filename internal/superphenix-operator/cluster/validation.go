@@ -38,8 +38,8 @@ func (r *Reconciler) validateTopology(cluster *v1alpha1.Cluster) error {
 			return fmt.Errorf("cluster type must be Management when topology is empty")
 		}
 	} else if topology == v1alpha1.DeploymentTopologyDecoupled {
-		if clusterType == nil || (*clusterType != v1alpha1.ClusterTypeStorage && *clusterType != v1alpha1.ClusterTypeVirtualization) {
-			return fmt.Errorf("cluster type must be Storage or Virtualization when topology is Decoupled")
+		if clusterType == nil || (*clusterType != v1alpha1.ClusterTypeStorage && *clusterType != v1alpha1.ClusterTypeWorkload) {
+			return fmt.Errorf("cluster type must be Storage or Workload when topology is Decoupled")
 		}
 	}
 

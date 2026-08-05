@@ -194,8 +194,8 @@ func typeLabel(topo operatorv1alpha1.DeploymentTopology, t *operatorv1alpha1.Clu
 	switch *t {
 	case operatorv1alpha1.ClusterTypeStorage:
 		return TypeStorage
-	case operatorv1alpha1.ClusterTypeVirtualization:
-		return TypeVirtualization
+	case operatorv1alpha1.ClusterTypeWorkload:
+		return TypeWorkload
 	default:
 		return TypeNone
 	}

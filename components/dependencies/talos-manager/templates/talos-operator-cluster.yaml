@@ -396,13 +396,13 @@ spec:
     {{- end }}
 {{- end }}
 
-{{/* virtualization cluster feature-gates configuration*/}}
+{{/* workload cluster feature-gates configuration*/}}
 {{- define "talos-manager.featureGates" -}}
 {{- $version := trimPrefix "v" .Values.k8sVersion}}
 feature-gates: "{{- if lt $version "1.36"}}MutatingAdmissionPolicy=true,{{- end }}UserNamespacesSupport=true"
 {{- end}}
 
-{{/* virtualization cluster runtime configuration*/}}
+{{/* workload cluster runtime configuration*/}}
 {{- define "talos-manager.runtimeConfig" -}}
 {{- $version := trimPrefix "v" .Values.k8sVersion }}
 {{- if lt $version "1.34.0" }}

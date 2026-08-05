@@ -11,7 +11,7 @@ cluster:
   availabilityZone: ""
   # -- Deployment topology. One of: "Hyperconverged", "Decoupled".
   deploymentTopology: ""
-  # -- Cluster role. One of: "Storage", "Virtualization", "Management".
+  # -- Cluster role. One of: "Storage", "Workload", "Management".
   type: ""
 
 # -- Argo CD application parameters shared by every generated Application.
@@ -42,7 +42,7 @@ apps:
   superphenix-controller:
     enabled: true
     wave: "-10"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -63,7 +63,7 @@ apps:
   coredns:
     enabled: true
     wave: "-100"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -96,11 +96,11 @@ apps:
           monitor:
             enabled: true
 
-  # -- Kube-OVN is used as the CNI for the virtualization layer
+  # -- Kube-OVN is used as the CNI for the workload layer
   kubeovn:
     enabled: true
     wave: "-100"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -283,7 +283,7 @@ apps:
   multus:
     enabled: true
     wave: "-100"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -383,7 +383,7 @@ apps:
   metrics-server:
     enabled: true
     wave: "-10"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -468,7 +468,7 @@ apps:
   cert-manager:
     enabled: true
     wave: "-10"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -513,7 +513,7 @@ apps:
   prometheus-stack:
     enabled: true
     wave: "-5"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -605,7 +605,7 @@ apps:
   promtail:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -632,7 +632,7 @@ apps:
   loki:
     enabled: true
     wave: "-5"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -723,7 +723,7 @@ apps:
   kubevirt:
     enabled: true
     wave: "5"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -741,7 +741,7 @@ apps:
   cdi:
     enabled: true
     wave: "5"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -756,13 +756,13 @@ apps:
       releaseName: "cdi"
 
   # -- Rook operator, required on any cluster that interacts with Ceph/Rook.
-  # Virtualization clusters need it to provision an external connection to a centralized
+  # Workload clusters need it to provision an external connection to a centralized
   # storage cluster; centralized storage clusters need it to provision a local Ceph cluster
   # that acts as the remote backend for "client" clusters.
   rook-operator:
     enabled: true
     wave: "-5"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -945,11 +945,11 @@ apps:
                 - discard
 
   # -- Rook connection to an external (decoupled) Ceph cluster.
-  # Deployed on virtualization clusters that consume storage from a remote storage cluster.
+  # Deployed on workload clusters that consume storage from a remote storage cluster.
   rook-connection:
     enabled: true
     wave: "0"
-    modes: [DecoupledVirtualization]
+    modes: [DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -978,7 +978,7 @@ apps:
   # -- volume-replicator: Kubernetes controller that automates RBD mirroring between Ceph clusters (disaster-recovery).
   volume-replicator:
     enabled: true
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -997,7 +997,7 @@ apps:
   # -- spx-policies: Kyverno policies that enforce Superphenix RFCs and protect against known bugs and attacks.
   policies:
     enabled: true
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1014,7 +1014,7 @@ apps:
   # -- talos-backup: CronJob that periodically pushes etcd snapshots to S3 for disaster recovery.
   talos-backup:
     enabled: true
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1032,7 +1032,7 @@ apps:
   velero:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1125,7 +1125,7 @@ apps:
   csi-addons:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1144,7 +1144,7 @@ apps:
   csi-snapshotter:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1165,7 +1165,7 @@ apps:
   kyverno:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1188,7 +1188,7 @@ apps:
   snapscheduler:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1218,7 +1218,7 @@ apps:
   kaas-controller:
     enabled: true
     wave: "15"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1236,7 +1236,7 @@ apps:
   kaas-datastore:
     enabled: true
     wave: "5"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1250,14 +1250,14 @@ apps:
       chart: "kaas-datastore"
       releaseName: "kaas-datastore"
       # No datastores are deployed by default; they must be declared in the
-      # config.yaml of each virtualization cluster.
+      # config.yaml of each workload cluster.
       values: {}
 
   # -- Kamaji: hosted Kubernetes control-plane provider used by the KaaS stack.
   kamaji:
     enabled: true
     wave: "10"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1303,7 +1303,7 @@ apps:
   cluster-api-operator:
     enabled: true
     wave: "15"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1335,7 +1335,7 @@ apps:
   etcd-operator:
     enabled: true
     wave: "5"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1361,7 +1361,7 @@ apps:
   tuned:
     enabled: false
     wave: "0"
-    modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1381,7 +1381,7 @@ apps:
   gateway-api:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true
@@ -1399,7 +1399,7 @@ apps:
   traefik:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledVirtualization]
+    modes: [Hyperconverged, DecoupledWorkload]
     automation:
       enabled: true
       selfHeal: true

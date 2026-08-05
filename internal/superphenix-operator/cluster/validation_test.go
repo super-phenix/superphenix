@@ -214,7 +214,7 @@ var _ = Describe("Cluster Validation", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should fail if topology is Decoupled and type is not Storage or Virtualization", func() {
+		It("should fail if topology is Decoupled and type is not Storage or Workload", func() {
 			cluster := &operatorv1alpha1.Cluster{
 				Spec: operatorv1alpha1.ClusterSpec{
 					DeploymentTopology: operatorv1alpha1.DeploymentTopologyDecoupled,
@@ -223,7 +223,7 @@ var _ = Describe("Cluster Validation", func() {
 			}
 			err := r.validateTopology(cluster)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("cluster type must be Storage or Virtualization when topology is Decoupled"))
+			Expect(err.Error()).To(ContainSubstring("cluster type must be Storage or Workload when topology is Decoupled"))
 		})
 
 		It("should succeed if topology is Decoupled and type is Storage", func() {
@@ -237,11 +237,11 @@ var _ = Describe("Cluster Validation", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should succeed if topology is Decoupled and type is Virtualization", func() {
+		It("should succeed if topology is Decoupled and type is Workload", func() {
 			cluster := &operatorv1alpha1.Cluster{
 				Spec: operatorv1alpha1.ClusterSpec{
 					DeploymentTopology: operatorv1alpha1.DeploymentTopologyDecoupled,
-					Type:               ptr(operatorv1alpha1.ClusterTypeVirtualization),
+					Type:               ptr(operatorv1alpha1.ClusterTypeWorkload),
 				},
 			}
 			err := r.validateTopology(cluster)

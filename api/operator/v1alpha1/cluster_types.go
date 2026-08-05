@@ -74,23 +74,23 @@ const (
 type DeploymentTopology string
 
 const (
-	// DeploymentTopologyHyperconverged - Storage and virtualization run on the same cluster.
+	// DeploymentTopologyHyperconverged - Storage and workload run on the same cluster.
 	DeploymentTopologyHyperconverged DeploymentTopology = "Hyperconverged"
 
-	// DeploymentTopologyDecoupled - Storage and virtualization run on separate clusters.
+	// DeploymentTopologyDecoupled - Storage and workload run on separate clusters.
 	DeploymentTopologyDecoupled DeploymentTopology = "Decoupled"
 )
 
 // ClusterType defines the type of cluster.
-// +kubebuilder:validation:Enum=Storage;Virtualization;Management
+// +kubebuilder:validation:Enum=Storage;Workload;Management
 type ClusterType string
 
 const (
 	// ClusterTypeStorage - Dedicated storage cluster.
 	ClusterTypeStorage ClusterType = "Storage"
 
-	// ClusterTypeVirtualization - Dedicated virtualization/hypervisor cluster.
-	ClusterTypeVirtualization ClusterType = "Virtualization"
+	// ClusterTypeWorkload - Dedicated workload/hypervisor cluster.
+	ClusterTypeWorkload ClusterType = "Workload"
 
 	// ClusterTypeManagement - Dedicated management cluster.
 	ClusterTypeManagement ClusterType = "Management"
@@ -112,8 +112,8 @@ const (
 )
 
 // ClusterSpec defines the desired state of Cluster.
-// +kubebuilder:validation:XValidation:rule="!has(self.deploymentTopology) || self.deploymentTopology == '' ? has(self.type) && string(self.type) == 'Management' : true",message="Type must be Management when topology is empty"
-// +kubebuilder:validation:XValidation:rule="has(self.deploymentTopology) && self.deploymentTopology == 'Decoupled' ? has(self.type) && (string(self.type) == 'Storage' || string(self.type) == 'Virtualization') : true",message="Type must be Storage or Virtualization when topology is Decoupled"
+// +kubebuilder:validation:XValidation:rule="!has(self.deploymentTopology) || self.deploymentTopology == ” ? has(self.type) && string(self.type) == 'Management' : true",message="Type must be Management when topology is empty"
+// +kubebuilder:validation:XValidation:rule="has(self.deploymentTopology) && self.deploymentTopology == 'Decoupled' ? has(self.type) && (string(self.type) == 'Storage' || string(self.type) == 'Workload') : true",message="Type must be Storage or Workload when topology is Decoupled"
 type ClusterSpec struct {
 	// DeploymentTopology defines whether the cluster is hyperconverged or decoupled.
 	// +optional
