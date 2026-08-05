@@ -14,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
 )
 
@@ -165,37 +164,6 @@ var _ = Describe("Management Controller", func() {
 			additional, ok := server["additional"].(map[string]interface{})
 			Expect(ok).To(BeTrue(), "server.additional key should exist")
 			Expect(additional["key"]).To(Equal("value"))
-		})
-
-		It("should inject cluster.type in mergeManagementValues", func() {
-			mgmtReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: "default",
-			}
-
-			vals, err := mgmtReconciler.mergeManagementValues(context.Background())
-			Expect(err).NotTo(HaveOccurred())
-
-			cluster, ok := vals["cluster"].(map[string]interface{})
-			Expect(ok).To(BeTrue())
-			Expect(cluster["type"]).To(Equal("Management"))
-		})
-
-		It("should inject argocd.namespace in mergeManagementValues", func() {
-			const operatorNamespace = "my-operator-ns"
-			mgmtReconciler := &Reconciler{
-				Client:            k8sClient,
-				Scheme:            k8sClient.Scheme(),
-				OperatorNamespace: operatorNamespace,
-			}
-
-			vals, err := mgmtReconciler.mergeManagementValues(context.Background())
-			Expect(err).NotTo(HaveOccurred())
-
-			argocd, ok := vals["argocd"].(map[string]interface{})
-			Expect(ok).To(BeTrue(), "argocd key should exist")
-			Expect(argocd["namespace"]).To(Equal(operatorNamespace))
 		})
 
 		It("should trigger reconciliation on ConfigMap update", func() {
@@ -360,150 +328,6 @@ var _ = Describe("Management Controller", func() {
 			Expect(hasTopLevel).To(BeFalse(), "topLevel should be removed because it was null in override")
 
 			Expect(vals["otherKey"]).To(Equal("otherValue"))
-		})
-	})
-
-	Context("Validation", func() {
-		ctx := context.Background()
-
-		It("should fail if cluster version is not supported by management version", func() {
-			mgmtReconciler := &Reconciler{
-				Client:             k8sClient,
-				OperatorNamespace:  "default",
-				SystemChartVersion: "1.1.0",
-			}
-
-			By("Creating an incompatible cluster")
-			cluster := &operatorv1alpha1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "incompatible-cluster",
-					Namespace: "default",
-				},
-				Spec: operatorv1alpha1.ClusterSpec{
-					Version:            "0.9.0", // 1.1.0 requires >= 1.0.0
-					Region:             "us-east-1",
-					AvailabilityZone:   "us-east-1a",
-					DeploymentTopology: operatorv1alpha1.DeploymentTopologyHyperconverged,
-					Connection: &operatorv1alpha1.ClusterConnectionSpec{
-						Mode: operatorv1alpha1.ConnectionModeLocal,
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, cluster)).To(Succeed())
-			defer func() {
-				_ = k8sClient.Delete(ctx, cluster)
-			}()
-
-			err := mgmtReconciler.validateManagementUpgrade(ctx, "1.1.0")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("is not supported by management version 1.1.0"))
-		})
-
-		It("should succeed if all cluster versions are supported", func() {
-			mgmtReconciler := &Reconciler{
-				Client:             k8sClient,
-				OperatorNamespace:  "default",
-				SystemChartVersion: "1.1.0",
-			}
-
-			By("Creating a compatible cluster")
-			cluster := &operatorv1alpha1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "compatible-cluster",
-					Namespace: "default",
-				},
-				Spec: operatorv1alpha1.ClusterSpec{
-					Version:            "1.0.0", // 1.1.0 requires >= 1.0.0
-					Region:             "us-east-1",
-					AvailabilityZone:   "us-east-1a",
-					DeploymentTopology: operatorv1alpha1.DeploymentTopologyHyperconverged,
-					Connection: &operatorv1alpha1.ClusterConnectionSpec{
-						Mode: operatorv1alpha1.ConnectionModeLocal,
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, cluster)).To(Succeed())
-			defer func() {
-				_ = k8sClient.Delete(ctx, cluster)
-			}()
-
-			err := mgmtReconciler.validateManagementUpgrade(ctx, "1.1.0")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("should fail if management upgrade path is not supported", func() {
-			mgmtReconciler := &Reconciler{
-				Client:            k8sClient,
-				OperatorNamespace: "default",
-			}
-
-			By("Creating an existing ArgoCD Application with an old version")
-			app := &unstructured.Unstructured{
-				Object: map[string]interface{}{
-					"apiVersion": "argoproj.io/v1alpha1",
-					"kind":       "Application",
-					"metadata": map[string]interface{}{
-						"name":      SuperphenixManagementApp,
-						"namespace": "default",
-					},
-					"spec": map[string]interface{}{
-						"project": "default",
-						"source": map[string]interface{}{
-							"repoURL":        "https://example.com/charts",
-							"targetRevision": "0.9.0", // 1.1.0 requires >= 1.0.0
-						},
-						"destination": map[string]interface{}{
-							"server":    "https://kubernetes.default.svc",
-							"namespace": "default",
-						},
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, app)).To(Succeed())
-			defer func() {
-				_ = k8sClient.Delete(ctx, app)
-			}()
-
-			err := mgmtReconciler.validateManagementUpgrade(ctx, "1.1.0")
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("management upgrade from 0.9.0 to 1.1.0 is not supported"))
-		})
-
-		It("should succeed if management upgrade path is supported", func() {
-			mgmtReconciler := &Reconciler{
-				Client:            k8sClient,
-				OperatorNamespace: "default",
-			}
-
-			By("Creating an existing ArgoCD Application with a compatible version")
-			app := &unstructured.Unstructured{
-				Object: map[string]interface{}{
-					"apiVersion": "argoproj.io/v1alpha1",
-					"kind":       "Application",
-					"metadata": map[string]interface{}{
-						"name":      SuperphenixManagementApp,
-						"namespace": "default",
-					},
-					"spec": map[string]interface{}{
-						"project": "default",
-						"source": map[string]interface{}{
-							"repoURL":        "https://example.com/charts",
-							"targetRevision": "1.0.0", // 1.1.0 requires >= 1.0.0
-						},
-						"destination": map[string]interface{}{
-							"server":    "https://kubernetes.default.svc",
-							"namespace": "default",
-						},
-					},
-				},
-			}
-			Expect(k8sClient.Create(ctx, app)).To(Succeed())
-			defer func() {
-				_ = k8sClient.Delete(ctx, app)
-			}()
-
-			err := mgmtReconciler.validateManagementUpgrade(ctx, "1.1.0")
-			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

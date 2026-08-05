@@ -185,6 +185,9 @@ func topologyLabel(t operatorv1alpha1.DeploymentTopology) string {
 }
 
 func typeLabel(topo operatorv1alpha1.DeploymentTopology, t *operatorv1alpha1.ClusterType) string {
+	if t != nil && *t == operatorv1alpha1.ClusterTypeManagement {
+		return TypeManagement
+	}
 	if topo == operatorv1alpha1.DeploymentTopologyHyperconverged || t == nil {
 		return TypeNone
 	}

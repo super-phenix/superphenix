@@ -26,15 +26,17 @@
 {{- end }}
 
 {{- if $shouldDeploy }}
-
 ---
 apiVersion: {{ $argocd.appVersion }}
 kind: Application
 metadata:
-  name: {{ $cluster.name }}-{{ $app | lower }}
+  {{- $appName := $app | lower }}
+  {{- if ne $currentMode "Management" }}
+    {{- $appName = printf "%s-%s" $cluster.name $appName }}
+  {{- end }}
+  name: {{ $appName }}
   namespace: {{ $argocd.namespace }}
-  {{- $cleanup := or $.Values.cleanupOnDeletion (default false $values.automation.cleanupOnDeletion) }}
-  {{- if $cleanup }}
+  {{- if or $.Values.cleanupOnDeletion (default false $values.automation.cleanupOnDeletion) }}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   {{- end }}
@@ -83,7 +85,11 @@ spec:
       {{- end }}
     {{- end }}
   destination:
-    name: {{ $cluster.name | quote }}
+    {{- $destination := $cluster.name }}
+    {{- if eq $cluster.name "superphenix-management" }}
+    {{- $destination = "in-cluster" }}
+    {{- end }}
+    name: {{ $destination | quote }}
     namespace: {{ $values.namespace | default $.Release.Namespace | quote }}
   {{- with $values.ignoreDifferences }}
   ignoreDifferences:

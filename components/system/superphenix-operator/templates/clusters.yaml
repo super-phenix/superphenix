@@ -16,7 +16,7 @@ metadata:
   {{- end }}
 spec:
   deploymentTopology: {{ $cluster.deploymentTopology | default "Hyperconverged" }}
-  {{- if eq $cluster.deploymentTopology "Decoupled" }}
+  {{- if $cluster.type }}
   type: {{ $cluster.type }}
   {{- end }}
   talosManagementMode: {{ $cluster.talosManagementMode | default "Unmanaged" }}

@@ -277,9 +277,6 @@ func main() {
 		ArgoCDChartVersion:  argocdChartVersion,
 		ArgoCDDefaultConfig: argocdDefaultConfig,
 		ArgoCDHAConfig:      argocdHAConfig,
-		SystemChartURL:      systemChartURL,
-		SystemChartName:     systemChartName,
-		SystemChartVersion:  systemChartVersion,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create management controller")
 		os.Exit(1)

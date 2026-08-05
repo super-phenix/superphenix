@@ -81,8 +81,8 @@ const (
 	DeploymentTopologyDecoupled DeploymentTopology = "Decoupled"
 )
 
-// ClusterType defines the type of cluster when in Decoupled mode.
-// +kubebuilder:validation:Enum=Storage;Virtualization
+// ClusterType defines the type of cluster.
+// +kubebuilder:validation:Enum=Storage;Virtualization;Management
 type ClusterType string
 
 const (
@@ -91,6 +91,9 @@ const (
 
 	// ClusterTypeVirtualization - Dedicated virtualization/hypervisor cluster.
 	ClusterTypeVirtualization ClusterType = "Virtualization"
+
+	// ClusterTypeManagement - Dedicated management cluster.
+	ClusterTypeManagement ClusterType = "Management"
 )
 
 // TalosManagementMode defines the management mode for the Talos cluster.
@@ -109,14 +112,15 @@ const (
 )
 
 // ClusterSpec defines the desired state of Cluster.
+// +kubebuilder:validation:XValidation:rule="!has(self.deploymentTopology) || self.deploymentTopology == '' ? has(self.type) && string(self.type) == 'Management' : true",message="Type must be Management when topology is empty"
+// +kubebuilder:validation:XValidation:rule="has(self.deploymentTopology) && self.deploymentTopology == 'Decoupled' ? has(self.type) && (string(self.type) == 'Storage' || string(self.type) == 'Virtualization') : true",message="Type must be Storage or Virtualization when topology is Decoupled"
 type ClusterSpec struct {
 	// DeploymentTopology defines whether the cluster is hyperconverged or decoupled.
-	// +kubebuilder:validation:Required
+	// +optional
 	// +kubebuilder:validation:Enum=Hyperconverged;Decoupled
 	DeploymentTopology DeploymentTopology `json:"deploymentTopology,omitempty"`
 
-	// Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
-	// This field can only be set when DeploymentTopology is Decoupled and is ignored otherwise.
+	// Type specifies the cluster type (Storage, Workload, Management).
 	// +optional
 	Type *ClusterType `json:"type,omitempty"`
 

@@ -71,13 +71,22 @@ func TestCollector_Collect(t *testing.T) {
 			DeploymentTopology: operatorv1alpha1.DeploymentTopologyHyperconverged,
 		},
 	}
+	cluster5 := &operatorv1alpha1.Cluster{
+		ObjectMeta: metav1.ObjectMeta{Name: "cluster-5", UID: "uid-5"},
+		Spec: operatorv1alpha1.ClusterSpec{
+			Region:             "us-east-1",
+			AvailabilityZone:   "us-east-1c",
+			DeploymentTopology: "",
+			Type:               ptr(operatorv1alpha1.ClusterTypeManagement),
+		},
+	}
 
 	kubeSystem := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{Name: "kube-system", UID: "kube-system-uid"},
 	}
 
 	c := &Collector{
-		Client:          fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cluster1, cluster2, cluster3, cluster4, kubeSystem).Build(),
+		Client:          fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(cluster1, cluster2, cluster3, cluster4, cluster5, kubeSystem).Build(),
 		OperatorVersion: "v1.0.0",
 		Namespace:       "operator-ns",
 		SystemVersion:   "v2.0.0",
@@ -122,9 +131,10 @@ func TestCollector_Collect(t *testing.T) {
 		}
 	}
 	assert.Equal(t, 2, len(foundAZs))
-	assert.Equal(t, 2, len(foundAZs[testAnonymize("us-east-1")]))
+	assert.Equal(t, 3, len(foundAZs[testAnonymize("us-east-1")]))
 	assert.Equal(t, float64(1), foundAZs[testAnonymize("us-east-1")][testAnonymize("us-east-1a")])
 	assert.Equal(t, float64(1), foundAZs[testAnonymize("us-east-1")][testAnonymize("us-east-1b")])
+	assert.Equal(t, float64(1), foundAZs[testAnonymize("us-east-1")][testAnonymize("us-east-1c")])
 	assert.Equal(t, 1, len(foundAZs[testAnonymize("eu-west-1")]))
 	assert.Equal(t, float64(1), foundAZs[testAnonymize("eu-west-1")][testAnonymize("eu-west-1a")])
 
@@ -152,10 +162,13 @@ func TestCollector_Collect(t *testing.T) {
 			case testAnonymize("uid-4"):
 				assert.Equal(t, testAnonymize("us-east-1"), m.Labels["region"])
 				assert.Equal(t, testAnonymize("us-east-1b"), m.Labels["az"])
+			case testAnonymize("uid-5"):
+				assert.Equal(t, "hyperconverged", m.Labels["topology"])
+				assert.Equal(t, "management", m.Labels["type"])
 			}
 		}
 	}
-	assert.Equal(t, 4, clustersFound)
+	assert.Equal(t, 5, clustersFound)
 
 	// Check node_count
 	nodeCountsFound := 0
@@ -188,12 +201,14 @@ func TestCollector_Collect(t *testing.T) {
 				assert.Equal(t, "v1.2.3", m.Labels["version"])
 			case testAnonymize("uid-4"):
 				assert.Equal(t, "unknown", m.Labels["version"])
+			case testAnonymize("uid-5"):
+				assert.Equal(t, "unknown", m.Labels["version"])
 			default:
 				t.Errorf("unexpected superphenix-system for cluster %s", m.Labels["cluster"])
 			}
 		}
 	}
-	assert.Equal(t, 4, systemComponentsFound)
+	assert.Equal(t, 5, systemComponentsFound)
 
 	// Check management component info
 	mgmtFound := false

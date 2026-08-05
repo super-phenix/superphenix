@@ -137,20 +137,45 @@ config:
       # -- Version of the talos-manager chart.
       version: 0.1.0
 
+# -- Superphenix management cluster configuration.
+# This will create a Cluster resource for the management cluster, pointing to the Kubernetes cluster
+# where the operator is installed. Only management configuration can be defined here. If you also want
+# to install a Storage/Workload/Hyperconverged cluster on the Kubernetes cluster where the operator is installed,
+# you need to create a separate Cluster CR manually or use the 'clusters' field below.
+management:
+  # -- Region where the management cluster is located.
+  # This is optional, as the cluster will not be visible to end users.
+  # Defaults to "management".
+  region: ""
+  # -- Availability zone where the management cluster is located.
+  # This is optional, as the cluster will not be visible to end users.
+  # Defaults to "management".
+  availabilityZone: ""
+
+  # -- Override the default Superphenix system chart repository.
+  # This is useful if you want to use a custom chart.
+  repoURL: ""
+  # -- Override the default Superphenix system chart name.
+  # This is useful if you want to use a custom chart.
+  chartName: ""
+  # -- Override the default Superphenix system chart version.
+  # This is useful if you want to use a custom chart.
+  version: ""
+
+  # -- Whether to pause the synchronization of the Superphenix stack on the management cluster.
+  pauseSync: false
+  # -- Whether to disable the autosync of all applications on the management cluster.
+  manual: false
+  # -- Whether to clean up resources deployed by the management stack applications when they get deleted.
+  cleanupOnDeletion: true
+
+  # -- System configuration for the management stack.
+  # This configuration is passed to the superphenix-system chart.
+  systemConfiguration: {}
+
 # -- Superphenix clusters to be managed by this operator.
 # You can either create the Cluster CRs by hand or use this field to define your clusters from the chart.
-clusters:
-  # -- The management configuration, deployed on the cluster where the operator is installed.
-  # This is where you should be overriding the management configuration
-  #management:
-  #  deploymentTopology: Hyperconverged
-  #  type: Management
-  #  region: "mgmt"
-  #  availabilityZone: "mgmt"
-  #  connection:
-  #    mode: Local
-  #  systemConfiguration: {}
-
+clusters: {}
 #  example-cluster:
 #    # DeploymentTopology defines whether the cluster is part of an hyperconverged or decoupled deployment.
 #    # Accepted values: Hyperconverged, Decoupled

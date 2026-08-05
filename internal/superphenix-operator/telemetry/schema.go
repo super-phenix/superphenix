@@ -46,6 +46,7 @@ const (
 const (
 	TypeStorage        = "storage"
 	TypeVirtualization = "virtualization"
+	TypeManagement     = "management"
 	TypeNone           = "none"
 )
 

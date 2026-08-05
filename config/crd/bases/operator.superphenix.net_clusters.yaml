@@ -177,12 +177,11 @@ spec:
                   that will be passed to the talos-manager chart.
                 x-kubernetes-preserve-unknown-fields: true
               type:
-                description: |-
-                  Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.
-                  This field can only be set when DeploymentTopology is Decoupled and is ignored otherwise.
+                description: Type specifies the cluster type (Storage, Workload, Management).
                 enum:
                 - Storage
                 - Virtualization
+                - Management
                 type: string
               version:
                 description: |-
@@ -194,9 +193,16 @@ spec:
             required:
             - availabilityZone
             - connection
-            - deploymentTopology
             - region
             type: object
+            x-kubernetes-validations:
+            - message: Type must be Management when topology is empty
+              rule: '!has(self.deploymentTopology) || self.deploymentTopology == ''''
+                ? has(self.type) && string(self.type) == ''Management'' : true'
+            - message: Type must be Storage or Virtualization when topology is Decoupled
+              rule: 'has(self.deploymentTopology) && self.deploymentTopology == ''Decoupled''
+                ? has(self.type) && (string(self.type) == ''Storage'' || string(self.type)
+                == ''Virtualization'') : true'
           status:
             description: Status defines the observed state of Cluster.
             properties:

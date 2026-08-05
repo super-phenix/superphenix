@@ -1,0 +1,45 @@
+{{- if .Values.management }}
+{{- $cluster := .Values.management }}
+apiVersion: operator.superphenix.net/v1alpha1
+kind: Cluster
+metadata:
+  name: superphenix-management
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "superphenix-operator.labels" . | nindent 4 }}
+    {{- with $cluster.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with $cluster.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: Management
+  region: {{ $cluster.region | default "management" }}
+  availabilityZone: {{ $cluster.availabilityZone | default "management" }}
+  {{- if $cluster.version }}
+  version: {{ $cluster.version }}
+  {{- end }}
+  {{- if $cluster.repoURL }}
+  repoURL: {{ $cluster.repoURL }}
+  {{- end }}
+  {{- if $cluster.chartName }}
+  chartName: {{ $cluster.chartName }}
+  {{- end }}
+  {{- if $cluster.systemConfiguration }}
+  systemConfiguration:
+    {{- toYaml $cluster.systemConfiguration | nindent 4 }}
+  {{- end }}
+  connection:
+    mode: Local
+  {{- if hasKey $cluster "pauseSync" }}
+  pauseSync: {{ $cluster.pauseSync }}
+  {{- end }}
+  {{- if hasKey $cluster "manual" }}
+  manual: {{ $cluster.manual }}
+  {{- end }}
+  {{- if hasKey $cluster "cleanupOnDeletion" }}
+  cleanupOnDeletion: {{ $cluster.cleanupOnDeletion }}
+  {{- end }}
+{{- end }}
