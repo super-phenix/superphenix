@@ -1,0 +1,4 @@
+argocd:
+  namespace: superphenix
+cluster:
+  type: Management

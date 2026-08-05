@@ -1510,7 +1510,25 @@ apps:
     helm:
       chart: superphenix-console
       releaseName: superphenix-console
-      values: {}
+      values:
+        # -- Domain on which the console is exposed
+        # TODO: this needs to be ported directly to superphenix-console, with a tpl of the ingress there
+        domain: &consoleDomain console.superphenix.net
+
+        ingress:
+          enabled: true
+          # className: ""
+          # annotations:
+          #  cert-manager.io/cluster-issuer: letsencrypt
+          hosts:
+            - host: *consoleDomain
+              paths:
+                - path: /
+          tls:
+            - secretName: superphenix-console-tls
+              hosts:
+                - *consoleDomain
+
 
   # -- Superphenix API configuration
   superphenix-api:
@@ -1527,6 +1545,9 @@ apps:
       chart: superphenix-api
       releaseName: superphenix-api
       values:
+        # -- Domain on which the API is exposed
+        domain: api.superphenix.net
+
         config:
           # -- Database used by the Superphenix API for storing users, organizations, projects and more
           database:
@@ -1534,7 +1555,7 @@ apps:
             port: 5432
             database: superphenix
             username: superphenix
-            password: "{{ .Values.apps.postgres.helm.values.auth.password | quote }}"
+            password: "{{ $.Values.apps.postgres.helm.values.auth.password | quote }}"
 
           # -- Permify endpoint used to handle permissions
           permify:
@@ -1557,7 +1578,7 @@ apps:
         kratos:
           config:
             # -- Database used by Kratos to store users, sessions, recovery codes, ...
-            dsn: postgres://superphenix:{{ .Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
+            dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
 
             secrets:
               default:
@@ -1566,13 +1587,13 @@ apps:
             # -- Kratos exposition settings
             serve:
               public:
-                base_url: https://auth.console.agoracalyce.com
+                base_url: https://auth.console.superphenix.net
                 cors:
                   enabled: true
                   allow_credentials: true
                   allowed_origins:
-                    - "https://*.console.agoracalyce.com"
-                    - "https://*.api.agoracalyce.com"
+                    - "https://*.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+                    - "https://*.{{ (index $.Values.apps \"superphenix-api\").helm.values.domain }}"
                   allowed_methods:
                     - POST
                     - GET
@@ -1609,28 +1630,28 @@ apps:
                     lifespan: "15m"
 
               # -- Where Kratos redirects us by default
-              default_browser_return_url: https://console.agoracalyce.com/
+              default_browser_return_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
 
               # -- Where Kratos is allowed to redirect us
               allowed_return_urls:
-                - "https://*.agoracalyce.com/"
+                - "https://*.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
 
               # -- Kratos flows configuration
               flows:
                 recovery:
                   enabled: true
-                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/recovery"
+                  ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/recovery"
                   after:
                     hooks:
                       - hook: revoke_active_sessions
                 verification:
                   enabled: true
-                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/verification"
+                  ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/verification"
                   use: code
                   lifespan: "1h"
                   notify_unknown_recipients: false
                 registration:
-                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/registration"
+                  ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/registration"
                   after:
                     password:
                       hooks:
@@ -1642,20 +1663,20 @@ apps:
                       hooks:
                         - hook: show_verification_ui
                 login:
-                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/login"
+                  ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/login"
                   after:
                     hooks:
                       - hook: require_verified_address
                 error:
-                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/error"
+                  ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/error"
                 settings:
-                  ui_url: "{{ $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url }}/ui/settings"
+                  ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/settings"
                   # Sessions older than 15 minute requires the user to sign in again before the password is changed
                   privileged_session_max_age: 15m
 
             # -- Cookie configuration
             cookies:
-              domain: agoracalyce.com
+              domain: "{{ (urlParse $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url).host }}"
               same_site: Strict
 
           # -- Auto migrate on Kratos updates
@@ -1720,14 +1741,14 @@ apps:
             annotations: {}
             #  cert-manager.io/cluster-issuer: letsencrypt
             hosts:
-              - host: auth.console.agoracalyce.com
+              - host: "{{ (urlParse $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url).host }}"
                 paths:
                   - path: /
                     pathType: ImplementationSpecific
             tls:
               - secretName: kratos-public-tls
                 hosts:
-                  - auth.console.agoracalyce.com
+                  - "{{ (urlParse $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url).host }}"
 
   # -- Permify configuration, handles permissions for the Superphenix API
   permify:
@@ -1747,7 +1768,7 @@ apps:
           # -- Database connection to store permissions
           database:
             engine: postgres
-            uri: postgres://superphenix:{{ .Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify
+            uri: "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
             garbage_collection:
               enabled: false
 

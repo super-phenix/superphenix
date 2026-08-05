@@ -139,10 +139,21 @@ config:
 
 # -- Superphenix clusters to be managed by this operator.
 # You can either create the Cluster CRs by hand or use this field to define your clusters from the chart.
-clusters: {}
+clusters:
+  # -- The management configuration, deployed on the cluster where the operator is installed.
+  # This is where you should be overriding the management configuration
+  #management:
+  #  deploymentTopology: Hyperconverged
+  #  type: Management
+  #  region: "mgmt"
+  #  availabilityZone: "mgmt"
+  #  connection:
+  #    mode: Local
+  #  systemConfiguration: {}
+
 #  example-cluster:
 #    # DeploymentTopology defines whether the cluster is part of an hyperconverged or decoupled deployment.
-#    # Accepted values: hyperconverged, decoupled
+#    # Accepted values: Hyperconverged, Decoupled
 #    deploymentTopology: Hyperconverged
 #
 #    # Type specifies the cluster type (Storage or Virtualization) when DeploymentTopology is Decoupled.

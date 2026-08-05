@@ -26,13 +26,15 @@
 {{- end }}
 
 {{- if $shouldDeploy }}
+
 ---
 apiVersion: {{ $argocd.appVersion }}
 kind: Application
 metadata:
   name: {{ $cluster.name }}-{{ $app | lower }}
   namespace: {{ $argocd.namespace }}
-  {{- if or $.Values.cleanupOnDeletion (default false $values.automation.cleanupOnDeletion) }}
+  {{- $cleanup := or $.Values.cleanupOnDeletion (default false $values.automation.cleanupOnDeletion) }}
+  {{- if $cleanup }}
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   {{- end }}
@@ -89,7 +91,8 @@ spec:
   {{- end }}
   syncPolicy:
     automated:
-      enabled: {{ and $values.automation.enabled (not $forceManual) | default false }}
+      {{- $syncEnabled := and $values.automation.enabled (not $forceManual) | default false }}
+      enabled: {{ $syncEnabled }}
       {{- if $values.automation.selfHeal }}
       selfHeal: true
       {{- end }}
