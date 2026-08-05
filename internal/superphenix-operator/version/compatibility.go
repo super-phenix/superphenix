@@ -14,7 +14,7 @@ import (
 
 const (
 	// ManagementAppName is the ArgoCD Application name for the management stack.
-	ManagementAppName = "superphenix-management"
+	ManagementAppName = "management"
 
 	// ClusterSystemChartName is the default name of the cluster system chart.
 	ClusterSystemChartName = "superphenix-system"

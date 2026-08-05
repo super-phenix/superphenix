@@ -1,6 +1,6 @@
 apiVersion: v2
 name: superphenix-system
-description: Helm chart to install Superphenix system on workload, storage, and management clusters
+description: Helm chart to install Superphenix system on all Superphenix clusters (management, hyperconverged, storage, workload)
 type: application
 # This chart inherits the tag of the Git repository
 version: 0.0.0

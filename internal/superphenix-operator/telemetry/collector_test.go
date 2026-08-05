@@ -213,7 +213,7 @@ func TestCollector_Collect(t *testing.T) {
 	// Check management component info
 	mgmtFound := false
 	for _, m := range report.Metrics {
-		if m.Name == MetricComponentInfo && m.Labels["name"] == "superphenix-management" && m.Labels["management"] == "true" {
+		if m.Name == MetricComponentInfo && m.Labels["name"] == "management" && m.Labels["management"] == "true" {
 			mgmtFound = true
 			assert.Equal(t, "v2.0.0", m.Labels["version"])
 			_, clusterPresent := m.Labels["cluster"]

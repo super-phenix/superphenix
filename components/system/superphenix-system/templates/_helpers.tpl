@@ -60,3 +60,25 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+The effective mode is the concatenation of deploymentTopology and type.
+*/}}
+{{- define "superphenix-system.effectiveMode" -}}
+{{- printf "%s%s" .Values.cluster.deploymentTopology .Values.cluster.type -}}
+{{- end -}}
+
+{{/*
+Determine if an application should be deployed.
+Usage: {{ include "superphenix-system.shouldDeploy" (list $appValues $) }}
+*/}}
+{{- define "superphenix-system.shouldDeploy" -}}
+{{- $app := index . 0 -}}
+{{- $root := index . 1 -}}
+{{- $effectiveMode := include "superphenix-system.effectiveMode" $root -}}
+{{- if and (eq $app.enabled true) (eq $root.Values.disableAll false) -}}
+  {{- if or (not $app.modes) (has $effectiveMode (default (list) $app.modes)) -}}
+    true
+  {{- end -}}
+{{- end -}}
+{{- end -}}

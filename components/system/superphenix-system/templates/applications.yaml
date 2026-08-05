@@ -1,40 +1,28 @@
-{{ $cluster := .Values.cluster }}
-{{ $argocd := .Values.argocd }}
-{{ $disableAll := .Values.disableAll }}
-{{ $forceManual := .Values.forceManual }}
-{{ $labels := include "superphenix-system.labels" . }}
+{{- /*
+Generate one Argo CD Application per entry in `.Values.apps`.
 
-{{- $currentMode := .Values.cluster.deploymentTopology }}
-{{- if eq .Values.cluster.type "Management" }}
-  {{- $currentMode = "Management" }}
-{{- else if eq .Values.cluster.deploymentTopology "Decoupled" }}
-  {{- $currentMode = printf "%s%s" .Values.cluster.deploymentTopology .Values.cluster.type }}
-{{- end }}
+An application is deployed when:
+  - `.Values.disableAll` is false, AND
+  - the application is `enabled`, AND
+  - the application's `modes` list is empty OR contains the current effective mode.
+
+The effective mode is `deploymentTopology + type` (e.g. "Hyperconverged",
+"DecoupledStorage", "Management", ...). See the chart README for details.
+*/ -}}
+
+{{- $cluster := .Values.cluster }}
+{{- $argocd := .Values.argocd }}
+{{- $labels := include "superphenix-system.labels" . }}
 
 {{- range $app, $values := .Values.apps }}
-{{- $shouldDeploy := false }}
-{{- if and (eq $values.enabled true) (eq $disableAll false) }}
-  {{- if eq $currentMode "Management" }}
-    {{- if has "Management" (default (list) $values.modes) }}
-      {{- $shouldDeploy = true }}
-    {{- end }}
-  {{- else }}
-    {{- if or (not $values.modes) (has $currentMode (default (list) $values.modes)) }}
-      {{- $shouldDeploy = true }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-
-{{- if $shouldDeploy }}
+{{- if (include "superphenix-system.shouldDeploy" (list $values $)) }}
 ---
 apiVersion: {{ $argocd.appVersion }}
 kind: Application
 metadata:
+  {{- /* Prefix the app name with the cluster name on non-management clusters to avoid collisions when Argo CD manages several clusters at once. */}}
   {{- $appName := $app | lower }}
-  {{- if ne $currentMode "Management" }}
-    {{- $appName = printf "%s-%s" $cluster.name $appName }}
-  {{- end }}
-  name: {{ $appName }}
+  name: {{ printf "%s-%s" $cluster.name ($app | lower) }}
   namespace: {{ $argocd.namespace }}
   {{- if or $.Values.cleanupOnDeletion (default false $values.automation.cleanupOnDeletion) }}
   finalizers:
@@ -44,7 +32,7 @@ metadata:
     operator.superphenix.net/clusterName: {{ $cluster.name }}
     operator.superphenix.net/application: {{ $app | lower }}
     operator.superphenix.net/managed: "true"
-    {{ $labels | nindent 4 }}
+    {{- include "superphenix-system.labels" $ | nindent 4 }}
   annotations:
     {{- if hasKey $values "wave" }}
     argocd.argoproj.io/sync-wave: {{ $values.wave | quote }}
@@ -71,6 +59,7 @@ spec:
       {{- end }}
     {{- end }}
 
+    {{- /* Applications without an explicit targetRevision follow the chart's own version (Chart.AppVersion), which keeps every SPX component in lockstep with this chart. */}}
     targetRevision: {{ $values.targetRevision | default $.Chart.AppVersion | quote }}
 
     {{- with $values.helm }}
@@ -80,13 +69,15 @@ spec:
       {{- end }}
 
       {{- with .values }}
+      {{- /* Run each app's values through `tpl` so they can reference other apps (e.g. share passwords or hostnames via the top-level `$` context). */}}
       valuesObject:
         {{- tpl (toYaml .) $ | nindent 8 }}
       {{- end }}
     {{- end }}
   destination:
+    {{- /* The management cluster is Argo CD's own cluster, so we target "in-cluster" instead of a remote cluster registration. */}}
     {{- $destination := $cluster.name }}
-    {{- if eq $cluster.name "superphenix-management" }}
+    {{- if eq $cluster.name "management" }}
     {{- $destination = "in-cluster" }}
     {{- end }}
     name: {{ $destination | quote }}
@@ -97,7 +88,8 @@ spec:
   {{- end }}
   syncPolicy:
     automated:
-      {{- $syncEnabled := and $values.automation.enabled (not $forceManual) | default false }}
+      {{- /* Automated sync is opt-in per app AND can be globally disabled via `.Values.forceManual`. */}}
+      {{- $syncEnabled := and $values.automation.enabled (not $.Values.forceManual) | default false }}
       enabled: {{ $syncEnabled }}
       {{- if $values.automation.selfHeal }}
       selfHeal: true
@@ -114,10 +106,8 @@ spec:
       - SkipDryRunOnMissingResource=true
     managedNamespaceMetadata:
       labels:
-        superphenix.net/gitops: "true"
         {{- with $values.nsLabels }}
         {{- . | toYaml | nindent 8 }}
         {{- end }}
 {{- end }}
 {{- end }}
-

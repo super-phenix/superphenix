@@ -1,29 +1,51 @@
 # {{ template "chart.name" . }}
 
-{{ template "chart.versionBadge" . }} {{ template "chart.typeBadge" . }} {{ template "chart.appVersionBadge" . }}
+{{ template "chart.versionBadge" . }} {{ template "chart.typeBadge" . }}
 
 {{ template "chart.description" . }}
 
-## Deployment Model
+This chart is the central piece of the Superphenix system installation. It is responsible for installing and configuring all the necessary components on **all Superphenix clusters**, regardless of their role:
 
-This chart is designed to be flexible and supports different deployment scenarios based on the cluster's purpose.
+- **Management clusters**: host the Superphenix control plane (console, API, identity, database, ...).
+- **Hyperconverged clusters**: combine storage and virtualization on the same nodes.
+- **Storage clusters**: dedicated to storage workloads (Rook / Ceph).
+- **Workload (virtualization) clusters**: dedicated to running virtualized workloads (KubeVirt).
 
-### Application Modes
+For more information about the different deployment topologies and cluster types, please refer to the official [Superphenix Deployment Topology documentation](https://docs.superphenix.net/architecture/deployment-topology/).
 
-Each application defined in the `apps` section can have a `modes` list. This list specifies which `deploymentTopology` modes (such as "Hyperconverged", "DecoupledWorkload", "DecoupledStorage", etc.) the application should be deployed in.
+## How it works
 
-- If an application's `modes` list is empty or not specified, it is considered eligible for deployment in any mode, provided it is enabled.
-- If a list is provided, the application will only be deployed if the cluster's `deploymentTopology` matches one of the specified modes.
+For every entry in `.Values.apps` the chart renders a single Argo CD `Application` object. Whether an entry actually results in an `Application` depends on three inputs:
 
-### Management Clusters
+1. The global switch `.Values.disableAll` — when `true`, nothing is deployed.
+2. The per-app switch `.Values.apps.<name>.enabled`.
+3. The per-app `modes` list, matched against the *effective mode* of the target cluster.
 
-Special logic applies when a cluster is designated as a management cluster by setting `.Values.cluster.type` to `Management`.
+The effective mode is the concatenation of `.Values.cluster.deploymentTopology` and `.Values.cluster.type`, giving one of:
 
-- In a management cluster, the effective deployment mode is forced to `Management`.
-- Only applications with `Management` included in their `modes` list are considered for deployment. All other applications are ignored.
-- For an application to be deployed in a management cluster, it must also be enabled (`enabled: true`).
+| deploymentTopology | type              | Effective mode              |
+| ------------------ | ----------------- | --------------------------- |
+| `Hyperconverged`   | *(empty)*         | `Hyperconverged`            |
+| `Decoupled`        | `Storage`         | `DecoupledStorage`          |
+| `Decoupled`        | `Virtualization`  | `DecoupledVirtualization`   |
+| *(empty)*          | `Management`      | `Management`                |
 
-In non-management clusters, all enabled applications are evaluated based on their `modes` configuration. Applications without specified modes are deployed in all non-management cluster topologies.
+- If an application's `modes` list is empty or not specified, it is considered eligible for deployment in any effective mode (as long as it is enabled).
+- If a list is provided, the application is deployed only if the cluster's effective mode is present in the list.
+
+### Global overrides
+
+A handful of top-level values act as blast-radius controls over every generated Application:
+
+| Field                | Effect                                                                                                     |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `disableAll`         | Skip rendering every Application (useful for one-off maintenance).                                         |
+| `forceManual`        | Force `syncPolicy.automated.enabled = false` on every Application, regardless of per-app `automation.enabled`. |
+| `cleanupOnDeletion`  | Add the `resources-finalizer.argocd.argoproj.io` finalizer on every Application, forcing cascade delete.   |
+
+### Version parity
+
+Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVersion` — the tag of this Git repository. That keeps every Superphenix-owned component in lockstep with the release of this chart.
 
 {{ template "chart.valuesSectionHtml" . }}
 

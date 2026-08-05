@@ -25,7 +25,7 @@ type Collector struct {
 	OperatorVersion string
 	Namespace       string
 
-	// SystemVersion is the currently deployed superphenix-management
+	// SystemVersion is the currently deployed management
 	// chart version on this cluster (in management mode).
 	SystemVersion string
 
@@ -59,7 +59,7 @@ func (c *Collector) Collect(ctx context.Context) (Report, error) {
 			Kind:  KindGauge,
 			Value: 1,
 			Labels: map[string]string{
-				"name":       "superphenix-management",
+				"name":       "management",
 				"version":    sanitizeVersion(c.SystemVersion),
 				"management": "true",
 			},

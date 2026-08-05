@@ -3,7 +3,7 @@
 apiVersion: operator.superphenix.net/v1alpha1
 kind: Cluster
 metadata:
-  name: superphenix-management
+  name: management
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "superphenix-operator.labels" . | nindent 4 }}

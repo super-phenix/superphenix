@@ -1,29 +1,44 @@
-# -- Cluster on which the applications should be deployed
+# -- Cluster on which the applications should be deployed.
+# The pair (`deploymentTopology`, `type`) determines the "effective mode" used
+# to filter the `apps` entries (see the `apps.*.modes` field).
 cluster:
+  # -- Name of the target cluster. When set to "management" the
+  # Applications are deployed to the local Argo CD cluster ("in-cluster").
   name: "in-cluster"
+  # -- Geographical region the cluster belongs to (informational).
   region: ""
+  # -- Availability zone the cluster belongs to (informational).
   availabilityZone: ""
+  # -- Deployment topology. One of: "Hyperconverged", "Decoupled".
   deploymentTopology: ""
+  # -- Cluster role. One of: "Storage", "Virtualization", "Management".
   type: ""
 
-# -- ArgoCD application parameters
+# -- Argo CD application parameters shared by every generated Application.
 argocd:
+  # -- Argo CD API version to use when generating Application resources.
   appVersion: "argoproj.io/v1alpha1"
+  # -- Namespace in which Argo CD Applications are created.
   namespace: "superphenix-system"
+  # -- Argo CD project the generated Applications belong to.
   project: "default"
 
-# -- Disable all applications and override "per application" setting
+# -- Disable all applications, overriding any per-application `enabled` setting.
 disableAll: false
 
-# -- Force manual sync for all applications and override "per application" setting
+# -- Force manual sync for all applications, overriding any per-application
+# `automation.enabled` setting. Useful when troubleshooting or during upgrades.
 forceManual: false
 
-# -- Cleanup resources on deletion (cascading deletion) for all applications and override "per application" setting
+# -- Add the Argo CD `resources-finalizer` to every Application so that
+# resources are cascade-deleted when the Application is removed. Overrides
+# any per-application `automation.cleanupOnDeletion` setting.
 cleanupOnDeletion: false
 
-# -- "Per application" settings
+# -- Per-application settings. Each key defines an Argo CD Application that is
+# generated conditionally based on `enabled` and `modes` (see the README).
 apps:
-  # -- Superphenix Controller installed on the AZs
+  # -- Superphenix controller deployed on every availability-zone cluster.
   superphenix-controller:
     enabled: true
     wave: "-10"
@@ -63,10 +78,10 @@ apps:
       chart: coredns
       releaseName: coredns
       values:
-        # Initial amount of DNS instances
+        # Initial number of CoreDNS replicas.
         replicaCount: 2
 
-        # IP of the DNS cluster-wide
+        # Cluster-wide DNS service (dual-stack, IPv6 primary).
         service:
           clusterIP: fd00:100:ffff::a
           clusterIPs:
@@ -74,7 +89,7 @@ apps:
             - 10.16.0.10
           ipFamilyPolicy: RequireDualStack
 
-        # Monitoring for CoreDNS
+        # Expose Prometheus metrics and register a ServiceMonitor.
         prometheus:
           service:
             enabled: true
@@ -100,15 +115,15 @@ apps:
       chart: kube-ovn-v2
       releaseName: kube-ovn
       values:
-        # Which nodes we want to use to deploy the OVS control plane
+        # Node labels used to select where the OVS/OVN control plane is scheduled.
         masterNodesLabels:
           node-role.kubernetes.io/control-plane: ""
           kube-ovn/role: null
 
-        # IP of the nodes hosting the control plane (csv)
+        # Control-plane node IPs (comma-separated). Must be overridden per cluster.
         masterNodes: "invalid,invalid,invalid"
 
-        # We want to run dual-stack
+        # Dual-stack IPv4/IPv6 pod, service and join networks.
         networking:
           stack: Dual
           pods:
@@ -188,34 +203,35 @@ apps:
             metadata:
               name: system-isolated-egress
             spec:
-              # The CDI might reach both v4 and v6 IPs on the Internet, so we need both protocols.
-              # We will NAT anyway (using the IP of the nodes), but we only do NAT44 and NAT66.
-              # Maybe later we'll give a proper GUA of IPv6, but we cannot do it for IPv4 and 
-              # Kube-OVN doesn't support NATing only the IPv4 side.
+              # The CDI can reach both IPv4 and IPv6 addresses on the Internet, so we need both
+              # protocols. Traffic is always NATed to the node IPs and we only do NAT44/NAT66.
+              # Later on we might assign a proper IPv6 GUA, but we cannot do the same for IPv4 and
+              # Kube-OVN does not support NATing only the IPv4 side.
               protocol: Dual
               cidrBlock: 10.32.0.0/16,fd00:110::/64
-              # Only the default VPC can do outgoing NAT, but it puts us at danger of lateral movements
-              # This is mitigated by settings "private" to false and by adding a network policy blocking
-              # everything except traffic going to the public Internet
+              # Only the default VPC can perform outgoing NAT, which exposes us to lateral movement.
+              # This is mitigated by keeping `private: false` and by installing ACLs that block
+              # anything except traffic destined to the public Internet (see below).
               vpc: ovn-cluster
-              # Any node can be a gateway
+              # Any node can act as a gateway for this subnet.
               gatewayType: distributed
-              # We set MTU to 9000 on the interfaces. To prevent PMTUD problems, we restrict the MTU to the appropriate size for Geneve
+              # Node interfaces are ideally configured with MTU 9000; we cap the overlay MTU at 1380 to
+              # leave room for the Geneve header and avoid PMTUD-related failures.
               mtu: 1380
               acls:
-              # Allow traffic to the DNS
+              # Allow traffic to the cluster DNS.
               - action: allow-related
                 direction: from-lport
                 match: ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a
                 priority: 1001
 
-              # Allow the gateways
+              # Allow traffic originating from the subnet gateways.
               - action: allow-related
                 direction: from-lport
                 match: ip4.src == 10.32.0.1 || ip6.src == fd00:110::1
                 priority: 1001
 
-              # Block IPv4 private CIDR (RFC1918)
+              # Block RFC1918 IPv4 ranges and other non-public IPv4 space.
               - action: drop
                 direction: from-lport
                 match: ip4.dst == 10.0.0.0/8 && ip4.dst != 10.32.0.1 && ip4.src == 10.0.0.0/8
@@ -237,16 +253,16 @@ apps:
                 match: ip4.dst == 169.254.0.0/16 && ip
                 priority: 1000
 
-              # Block IPv6 private CIDR
+              # Block IPv6 ULA (fc00::/7), except the subnet gateway.
               - action: drop
                 direction: from-lport
                 match: ip6.dst == fc00::/7 && ip6.dst != fd00:110::1 && ip6.src == fd00:110::/64
                 priority: 1000
 
-              # Don't allow pods in the subnet to talk to each other
+              # Prevent pods in the subnet from talking to each other.
               allowEWTraffic: false
 
-              # Egress using the IP of the nodes
+              # SNAT egress traffic to the node IPs.
               natOutgoing: true
               provider: system-isolated-egress.kube-system.ovn
           # Network attachment definition for CDI
@@ -263,7 +279,7 @@ apps:
                   "provider": "system-isolated-egress.kube-system.ovn"
                 }'
 
-  # -- Multus is used for multi-attached pods/VMs
+  # -- Multus CNI meta-plugin, enables multi-homed pods and VMs.
   multus:
     enabled: true
     wave: "-100"
@@ -287,8 +303,8 @@ apps:
           - effect: NoExecute
             operator: Exists
 
-  # -- Cilium is used as the CNI on storage clusters
-  # TODO: Maybe phase out Cilium and use Kube-OVN everywhere?
+  # -- Cilium CNI, used on storage clusters where the Kube-OVN overlay is not needed.
+  # TODO: Consider phasing Cilium out and using Kube-OVN everywhere.
   cilium:
     enabled: true
     wave: "-100"
@@ -306,15 +322,15 @@ apps:
       chart: cilium
       releaseName: cilium
       values:
-        # We don't need the Envoy proxy
+        # Envoy proxy is not needed on storage clusters.
         envoy:
           enabled: false
 
-        # Use the IP block allocated to each node, and not CiliumNodes, to reduce complexity
+        # Delegate IPAM to Kubernetes (per-node PodCIDR) instead of CiliumNodes.
         ipam:
           mode: kubernetes
 
-        # Talos needs a specific security context to allow Cilium to run
+        # Talos requires an explicit set of capabilities for Cilium to run.
         securityContext:
           capabilities:
             ciliumAgent:
@@ -334,25 +350,27 @@ apps:
               - SYS_ADMIN
               - SYS_RESOURCE
 
-        # Talos has the cgroups in a different location
+        # Talos exposes cgroups at a non-default location.
         cgroup:
           autoMount:
             enabled: false
           hostRoot: /sys/fs/cgroup
 
-        # Talos has a local loadbalancer (Kubeprism) to expose the controlplanes under one IP, it listens on localhost:7445
+        # Talos ships KubePrism, a local load-balancer that fronts the control planes
+        # on localhost:7445, so we point Cilium at it rather than the cluster VIP.
         k8sServiceHost: localhost
         k8sServicePort: 7445
 
-        # Cilium will handle the function of kube-proxy
+        # Cilium replaces kube-proxy entirely.
         kubeProxyReplacement: true
 
-        # Do not startup if the K8s nodes are misconfigured and do not have both an IPv6 and IPv4 CIDR
+        # Refuse to start if any node is missing an IPv4 or IPv6 PodCIDR (safety net
+        # against a misconfigured dual-stack rollout).
         k8s:
           requireIPv4PodCIDR: true
           requireIPv6PodCIDR: true
 
-        # Run Cilium in dual stack mode
+        # Dual-stack IPv4/IPv6.
         ipv4:
           enabled: true
         ipv6:
@@ -391,8 +409,8 @@ apps:
           - --kubelet-insecure-tls
           - --metric-resolution=15s
 
-  # Ingress-nginx -- Ingress controller
-  # TODO: Phase out ingress-nginx and use Traefik from now on
+  # -- ingress-nginx ingress controller. Kept for backwards compatibility with legacy Ingress annotations.
+  # TODO: phase out ingress-nginx and rely on Traefik only.
   ingress-nginx:
     enabled: true
     wave: "-10"
@@ -440,13 +458,13 @@ apps:
               enabled: true
               additionalLabels:
                 release: prometheus
-          # Tolerate to schedule on masters
+          # Tolerate control-plane taint so the DaemonSet can run on master nodes.
           tolerations:
             - key: "node-role.kubernetes.io/master"
               operator: "Exists"
               effect: "NoSchedule"
 
-  # Cert-manager -- Let's encrypt SSL certificate issuance operator
+  # -- cert-manager: issues and renews TLS certificates, including via Let's Encrypt ACME.
   cert-manager:
     enabled: true
     wave: "-10"
@@ -491,7 +509,7 @@ apps:
                     ingress:
                       class: traefik
 
-  # Prometheus -- Metric aggregation and analysis
+  # -- kube-prometheus-stack: metrics collection, storage and Grafana dashboards.
   prometheus-stack:
     enabled: true
     wave: "-5"
@@ -583,7 +601,7 @@ apps:
                     requests:
                       storage: 50Gi
 
-  # Promtail -- Agent which ships the contents of local logs to a Loki instance
+  # -- Promtail: node-local agent that ships container logs to Loki.
   promtail:
     enabled: true
     wave: "0"
@@ -610,7 +628,7 @@ apps:
             - url: http://loki.loki-system:3100/loki/api/v1/push
               tenant_id: 1
 
-  # Loki -- Log aggregator with Prometheus-like query language
+  # -- Loki: log aggregation backend with a Prometheus-like query language (LogQL).
   loki:
     enabled: true
     wave: "-5"
@@ -701,6 +719,7 @@ apps:
         bloomGateway:
           replicas: 0
 
+  # -- KubeVirt: virtualization runtime that lets Kubernetes schedule VMs alongside containers.
   kubevirt:
     enabled: true
     wave: "5"
@@ -718,7 +737,7 @@ apps:
     directory:
       recurse: true
 
-  # CDI -- Kubevirt CDI
+  # -- Containerized Data Importer (CDI) for KubeVirt. Provisions VM disks from images, PVCs or uploads.
   cdi:
     enabled: true
     wave: "5"
@@ -736,10 +755,10 @@ apps:
       chart: "cdi"
       releaseName: "cdi"
 
-  # Rook Operator -- This must be enabled for any cluster that plans on interacting with Ceph/Rook.
-  # Virtualization clusters need the operator to provision an external connection to a centralized
-  # storage cluster, and centralized storage clusters need this operator to provision a local Ceph
-  # cluster that will act as a remote backend for "client" clusters.
+  # -- Rook operator, required on any cluster that interacts with Ceph/Rook.
+  # Virtualization clusters need it to provision an external connection to a centralized
+  # storage cluster; centralized storage clusters need it to provision a local Ceph cluster
+  # that acts as the remote backend for "client" clusters.
   rook-operator:
     enabled: true
     wave: "-5"
@@ -759,35 +778,36 @@ apps:
       chart: "rook-ceph"
       releaseName: "rook-operator"
       values:
-        # We want to bind to the IPv6 SPX storage network
+        # Bind the operator to the IPv6 Superphenix storage network.
         useOperatorHostNetwork: true
         enforceHostNetwork: true
 
-        # Container Storage Interface
+        # Container Storage Interface configuration.
         csi:
-          # Necessary for volume replication and mirroring
+          # csi-addons enables volume replication and mirroring.
           csiAddons:
             enabled: true
-          # Necessary for volume replication and mirroring
+          # Object Map generator required by RBD mirroring.
           enableOMAPGenerator: true
-          # We need to bind the RBD on another port because of hostNetwork port conflicts
+          # Default port 9070 conflicts with the RBD provisioner when running on hostNetwork.
           csiAddonsRBDProvisionerPort: 9071
-          # We don't do CephFS
+          # CephFS driver is intentionally disabled, we only use RBD.
           enableCephfsDriver: false
-          # Monitoring config
+          # Expose CSI metrics via a ServiceMonitor.
           serviceMonitor:
             enabled: true
 
         monitoring:
           enabled: true
 
-        # Discover new disks to show them on the dashboard
+        # Auto-discover new disks so they appear in the Ceph dashboard.
         enableDiscoveryDaemon: true
         discoveryDaemonInterval: 5m
 
-        # Allow additional options on ObjectBucketClaims for self-service
+        # Allow tenants to set additional options on ObjectBucketClaims (self-service quotas etc.).
         obcAllowAdditionalConfigFields: "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle"
 
+  # -- Local Rook/Ceph cluster deployed on storage-capable clusters (hyperconverged or decoupled storage).
   rook-local-cluster:
     enabled: true
     wave: "0"
@@ -829,17 +849,15 @@ apps:
         cephClusterSpec:
           cephConfig:
             global:
-              # Always move images to trash before fully deleting them
-              # This is already enforced by the Ceph-CSI for K8s cluster, this option is here only to protect
-              # manual removals done from the dashboard or from the toolbox
+              # Always move images to trash before fully deleting them.
+              # Ceph-CSI already enforces this from the Kubernetes side; this option catches
+              # manual removals performed from the dashboard or the toolbox.
               rbd_move_to_trash_on_remove: "true"
-              # Wait before purging RBD images that have been put into the trash, allowing for their recovery
-              # This time is set to one week in seconds (7*24*60*60)
+              # Grace period before trashed RBD images are purged (7d in seconds).
               rbd_move_to_trash_on_remove_expire_seconds: "604800"
-              # Wait before propagating a mirroring relationship deletion to the remote cluster
-              # This time is set to one week in seconds (7*24*60*60)
+              # Delay before propagating a mirroring-relationship deletion to the remote cluster (7d in seconds).
               rbd_mirroring_delete_delay: "604800"
-              # How many snapshots we keep on the remote cluster before pruning
+              # Maximum number of mirroring snapshots kept on the remote cluster before pruning.
               rbd_mirroring_max_mirroring_snapshots: "30"
 
           dashboard:
@@ -862,11 +880,11 @@ apps:
             daysToRetain: 365
 
           network:
-            # Use the underlying host network for performance and to expose the daemons to remote Ceph clients
+            # Use host networking for performance and to expose the daemons to remote Ceph clients.
             provider: host
-            # We run Ceph only on IPv6 networks, bind the daemons on IPv6 addresses
+            # Ceph runs on IPv6 only; bind the daemons on IPv6 addresses.
             ipFamily: IPv6
-            # This needs to be overriden for each cluster with the IPv6 ranges dedicated to handling storage traffic
+            # Must be overridden per cluster with the IPv6 ranges dedicated to storage traffic.
             addressRanges:
               public:
                 - invalid
@@ -876,9 +894,9 @@ apps:
         cephFileSystems: []
         cephObjectStores: []
         cephBlockPools:
-          # We need to override the ".mgr" pool because it doesn't have a device class by default
-          # This configuration ensures it has a device class of type "nvme"
-          # TODO: remove
+          # Override the built-in ".mgr" pool to pin it to the "nvme" device class
+          # (Rook does not set a device class on that pool by default).
+          # TODO: remove once Rook exposes this natively.
           - name: mgr
             spec:
               name: .mgr
@@ -895,9 +913,9 @@ apps:
             storageClass:
               enabled: false
 
-          # Block storage used locally by the storage cluster for its internal needs
-          # FS type is EXT4 because it is running hyperconverged (XFS can deadlock in that scenario)
-          # Replication is set to only 2 because the data is considered non-critical (logs, metrics...)
+          # Block-storage pool used locally by the storage cluster for its own transient needs.
+          # Uses EXT4 (XFS can deadlock in a hyperconverged setup) and a replica-2 configuration
+          # since the data (logs, metrics, ...) is considered non-critical.
           - name: spx-scratchpad
             spec:
               failureDomain: host
@@ -926,6 +944,8 @@ apps:
               mountOptions:
                 - discard
 
+  # -- Rook connection to an external (decoupled) Ceph cluster.
+  # Deployed on virtualization clusters that consume storage from a remote storage cluster.
   rook-connection:
     enabled: true
     wave: "0"
@@ -935,13 +955,14 @@ apps:
       selfHeal: true
       prune: true
       cleanupOnDeletion: false
-      # The endpoint ConfigMap is edited on the fly by Rook and must be ignored during syncs, unless it doesn't exist on the cluster
+      # The endpoint ConfigMap is patched at runtime by Rook, ignore it during syncs
+      # unless it does not yet exist on the cluster.
       syncOptions:
         - RespectIgnoreDifferences=true
     namespace: "rook-system"
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
-    # The endpoint ConfigMap is edited on the fly by Rook and must be ignored from diffs when it changes
+    # The endpoint ConfigMap is patched at runtime by Rook and must be excluded from diffs.
     ignoreDifferences:
       - kind: ConfigMap
         jsonPointers:
@@ -954,6 +975,7 @@ apps:
       chart: "spx-rook-connection"
       releaseName: "spx-rook-connection"
 
+  # -- volume-replicator: Kubernetes controller that automates RBD mirroring between Ceph clusters (disaster-recovery).
   volume-replicator:
     enabled: true
     modes: [Hyperconverged, DecoupledVirtualization]
@@ -972,7 +994,7 @@ apps:
       values:
         exclusionRegex: "^prime-.*$"
 
-  # Policies -- Used to enforce SPX RFCs and protect against bugs/attacks
+  # -- spx-policies: Kyverno policies that enforce Superphenix RFCs and protect against known bugs and attacks.
   policies:
     enabled: true
     modes: [Hyperconverged, DecoupledVirtualization]
@@ -989,7 +1011,7 @@ apps:
       chart: "spx-policies"
       releaseName: "spx-policies"
 
-  # Talos-backup -- Used to run a CronJob that periodically pushes etcd snapshots to S3 storage
+  # -- talos-backup: CronJob that periodically pushes etcd snapshots to S3 for disaster recovery.
   talos-backup:
     enabled: true
     modes: [Hyperconverged, DecoupledStorage, DecoupledVirtualization]
@@ -1006,7 +1028,7 @@ apps:
       chart: "talos-backup"
       releaseName: "talos-backup"
 
-  # Velero -- Used to execute disaster recovery across AZs
+  # -- Velero: cluster backup and disaster-recovery across availability zones.
   velero:
     enabled: true
     wave: "0"
@@ -1026,23 +1048,23 @@ apps:
       chart: velero
       releaseName: velero
       values:
-        # Install plugins at boot of Velero
+        # Load Velero plugins as init-containers at start-up.
         initContainers:
-          # Plugin to connect to S3 buckets
+          # AWS/S3-compatible object store plugin.
           - name: velero-plugin-for-aws
             image: velero/velero-plugin-for-aws:v1.12.1
             imagePullPolicy: IfNotPresent
             volumeMounts:
               - mountPath: /target
                 name: plugins
-          # Plugin to handle KubeVirt backups
+          # KubeVirt-aware backup plugin (freezes/thaws VMs consistently).
           - name: velero-plugin-for-kubevirt
             image: quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0
             imagePullPolicy: IfNotPresent
             volumeMounts:
               - mountPath: /target
                 name: plugins
-          # Plugin to handle SPX specific backup actions
+          # Superphenix-specific backup/restore actions.
           - name: velero-plugin-for-superphenix
             image: ghcr.io/super-phenix/superphenix-velero-plugin:v0.1.0
             imagePullPolicy: Always
@@ -1050,20 +1072,20 @@ apps:
               - mountPath: /target
                 name: plugins
 
-        # Enable metrics and service monitors
+        # Expose metrics via a ServiceMonitor.
         metrics:
           serviceMonitor:
             enabled: true
 
-        # Node agent is used for CSI-Movement backups
+        # Deploy the node agent (required for CSI data-movement backups).
         deployNodeAgent: true
 
-        # Configure the node agent for parallelism
+        # Point the node agent at a custom ConfigMap for tuning.
         nodeAgent:
           extraArgs:
             - --node-agent-configmap=node-agent-config
 
-        # Configure the node agent to execute 40 data movements at a time per node
+        # Allow up to 40 concurrent data movements per node.
         extraObjects:
           - apiVersion: v1
             kind: ConfigMap
@@ -1078,28 +1100,28 @@ apps:
                     }
                 }
 
-        # General Velero configuration
+        # General Velero configuration.
         configuration:
-          # Tell the server we're deploying in a different namespace than the original
+          # Namespace we deploy into (differs from the upstream default of "velero").
           namespace: velero-system
-          # CSI feature is used for CSI-Movement backups
+          # Enable CSI support, required for CSI data-movement backups.
           features: "EnableCSI"
-          # S3 where we're sending the backups
+          # Backup storage locations (S3 buckets). Must be filled in per cluster.
           backupStorageLocation: []
-          # How long a backup can run for before being terminated
+          # Maximum time a backup can run before Velero terminates it.
           defaultItemOperationTimeout: 8h
-          # Priorities for the restoring order
+          # Ordered list of resource kinds Velero should restore first.
           restoreResourcePriorities: vpc.kubeovn.io,subnet.kubeovn.io,vpc-nat-gateway.kubeovn.io,iptables-eip.kubeovn.io,iptables-fip-rule.kubeovn.io,iptables-snat-rule.kubeovn.io,iptables-dnat-rule.kubeovn.io,switch-lb-rule.kubeovn.io,networkpolicy.networking.k8s.io,network-attachment-definition.k8s.cni.cncf.io,controllerrevision.apps,datauploads.velero.io,persistentvolume,persistentvolumeclaim,datavolume.cdi.kubevirt.io,secret,virtualmachine.kubevirt.io,cluster.cluster.x-k8s.io,kubevirtcluster.infrastructure.cluster.x-k8s.io,configmap,issuer.cert-manager.io,certificate.cert-manager.io,serviceaccount,role.rbac.authorization.k8s.io,rolebinding.rbac.authorization.k8s.io,clusterrole.rbac.authorization.k8s.io,clusterrolebinding.rbac.authorization.k8s.io,etcdmember.etcd-operator.cozystack.io,etcdcluster.etcd-operator.cozystack.io,etcdcluster.etcd.aenix.io,datastore.kamaji.clastix.io,gateway.gateway.networking.k8s.io,tlsroute.gateway.networking.k8s.io,deployment.apps,kamajicontrolplane.controlplane.cluster.x-k8s.io,kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io,kubevirtmachinetemplate.infrastructure.cluster.x-k8s.io,kubeadmconfig.bootstrap.cluster.x-k8s.io,kubevirtmachine.infrastructure.cluster.x-k8s.io,machine.cluster.x-k8s.io,machineset.cluster.x-k8s.io,machinedeployment.cluster.x-k8s.io,mutatingadmissionpolicy.admissionregistration.k8s.io,mutatingadmissionpolicybinding.admissionregistration.k8s.io
 
-        # Authentication to the S3 bucket
+        # S3 credentials (populated per cluster).
         credentials:
           secretContents:
             cloud: ""
 
-        # We don't backup the persistent data by default, only the K8s resources
+        # Persistent data is intentionally not backed up by default, only Kubernetes resources are.
         snapshotsEnabled: false
 
-  # CSI-Addons -- Used to add features such as replications to the CSI
+  # -- csi-addons: adds features such as volume replication and reclaim-space to the CSI drivers.
   csi-addons:
     enabled: true
     wave: "0"
@@ -1118,7 +1140,7 @@ apps:
       chart: "csi-addons"
       releaseName: "csi-addons"
 
-  # CSI-Snapshotter -- Used to add VolumeSnapshots to the CSI
+  # -- external-snapshotter: adds VolumeSnapshot support to the CSI drivers.
   csi-snapshotter:
     enabled: true
     wave: "0"
@@ -1137,7 +1159,9 @@ apps:
       chart: "external-snapshotter"
       releaseName: "external-snapshotter"
 
-  # Kyverno -- Used to correctly set VolumeSnapshotClass/VolumeReplicationClass (ideally removed ASAP)
+  # -- Kyverno policy engine.
+  # Currently only used to patch VolumeSnapshotClass/VolumeReplicationClass at runtime;
+  # this dependency should be removed as soon as possible.
   kyverno:
     enabled: true
     wave: "0"
@@ -1155,11 +1179,12 @@ apps:
       chart: "kyverno"
       releaseName: "kyverno"
       values:
-        # Unnecessary controller doing high CPU usage under unknown circumstances
+        # The reports controller has been observed to spike CPU usage under undiagnosed
+        # conditions; disable it until the root cause is identified.
         reportsController:
           enabled: false
 
-  # Snapscheduler -- Used to schedule snapshots of volumes
+  # -- snapscheduler: periodic VolumeSnapshot scheduler for PVCs.
   snapscheduler:
     enabled: true
     wave: "0"
@@ -1177,18 +1202,19 @@ apps:
       chart: snapscheduler
       releaseName: "snapscheduler"
       values:
-        # Run the controller HA
+        # Run the controller in HA (two replicas, active/passive via leader election).
         replicaCount: 2
 
-        # Make the snapshots owned by the schedule so that they get garbage collected if the
-        # schedule is ever deleted
+        # Own generated snapshots via ownerReferences so they are garbage-collected
+        # if the parent SnapshotSchedule is ever deleted.
         enableOwnerReferences: true
 
 
-  # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  # %          KaaS Controller System           %
-  # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  # KaaS Controller -- extra CRDs and resources for KaaS
+  ###########################################################################
+  #                        KAAS CONTROLLER SYSTEM                           #
+  ###########################################################################
+
+  # -- KaaS controller: extra CRDs and controllers backing the Kubernetes-as-a-Service stack.
   kaas-controller:
     enabled: true
     wave: "15"
@@ -1206,7 +1232,7 @@ apps:
       chart: "kaas-controller"
       releaseName: "kaas-controller"
 
-  # KaaS Datastore -- Deploys etcd clusters for Kamaji controlplanes through etcd-operator
+  # -- KaaS datastore: provisions etcd clusters (via etcd-operator) used as Kamaji datastores.
   kaas-datastore:
     enabled: true
     wave: "5"
@@ -1223,11 +1249,11 @@ apps:
     helm:
       chart: "kaas-datastore"
       releaseName: "kaas-datastore"
-      # No datastores are deployed by default, they must be declared in the
-      # config.yaml file for each virtualization cluster.
+      # No datastores are deployed by default; they must be declared in the
+      # config.yaml of each virtualization cluster.
       values: {}
 
-  # Kamaji -- Hosted k8s controlplanes
+  # -- Kamaji: hosted Kubernetes control-plane provider used by the KaaS stack.
   kamaji:
     enabled: true
     wave: "10"
@@ -1248,9 +1274,10 @@ apps:
         image:
           tag: "26.7.3-edge" # https://github.com/clastix/kamaji/releases
         replicaCount: 3
-        defaultDatastoreName: "" # Disable default DS (override in config.yaml)
+        # Disable the default datastore as the actual datastore is overridden per cluster via config.yaml.
+        defaultDatastoreName: ""
         extraArgs:
-          # 336h = 14d
+          # Rotate tenant-cluster certificates 14 days before expiry (336h == 14d).
           - --certificate-expiration-deadline=336h
         affinity:
           podAntiAffinity:
@@ -1268,11 +1295,11 @@ apps:
           requests:
             cpu: 100m
             memory: 200Mi
-        # dataStores are configured in each cluster's config.yaml using the etcd-operator
+        # Datastores are configured per cluster in config.yaml via the etcd-operator.
         kamaji-etcd:
           deploy: false
 
-  # Cluster API operator -- Install providers for KaaS
+  # -- Cluster API operator: installs the providers used by the KaaS stack (core, bootstrap, infra, control-plane).
   cluster-api-operator:
     enabled: true
     wave: "15"
@@ -1304,7 +1331,7 @@ apps:
             version: v0.19.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
 
 
-  # ETCD operator -- Deploys datastores for the controlplanes
+  # -- etcd-operator: manages the etcd datastores backing Kamaji control planes.
   etcd-operator:
     enabled: true
     wave: "5"
@@ -1330,7 +1357,7 @@ apps:
           vpa:
             enabled: false
 
-  # TuneD -- Performance & optimization daemon for Superphenix
+  # -- TuneD: node-level performance-tuning daemon (Superphenix-specific profiles). Disabled by default.
   tuned:
     enabled: false
     wave: "0"
@@ -1350,7 +1377,7 @@ apps:
       chart: "tuned"
       releaseName: "tuned"
 
-  # Gateway-API -- Gateway API CRDs
+  # -- Gateway API standard CRDs (installed cluster-wide).
   gateway-api:
     enabled: true
     wave: "0"
@@ -1368,7 +1395,7 @@ apps:
     directory:
       recurse: true
 
-  # Traefik -- Gateway API & ingress controller
+  # -- Traefik: primary Ingress and Gateway API controller. Successor to ingress-nginx.
   traefik:
     enabled: true
     wave: "0"
@@ -1388,23 +1415,24 @@ apps:
       chart: "traefik"
       releaseName: "traefik"
       values:
-        # -- Disable logs signaling about new versions
+        # Silence "new version available" log messages.
         global:
           checkNewVersion: false
 
-        # -- Deploy Traefik as a DaemonSet so that every node can receive traffic
+        # Deploy Traefik as a DaemonSet so that every node can accept incoming traffic.
         deployment:
           enabled: true
           kind: DaemonSet
 
-        # -- Use a ClusterIP instead of a LoadBalancer, as we're deploying on baremetal
+        # ClusterIP instead of LoadBalancer, we run on bare-metal without a cloud LB.
         service:
           type: ClusterIP
 
-        # -- We're deploying on baremetal (maybe replace by hostPort in .ports structure?)
+        # Bare-metal deployment: bind directly to the host network.
+        # TODO: consider switching to per-port hostPort in `.ports`.
         hostNetwork: true
 
-        # -- Gateway API default gateway (we do not use it)
+        # Do not create Traefik's default Gateway (we manage our own).
         gateway:
           enabled: false
 
@@ -1412,11 +1440,11 @@ apps:
           enabled: true
           name: traefik
 
-        # -- Enable the access logs within the Traefik pods
+        # Enable access logs inside the Traefik pods.
         accessLog:
           enabled: true
 
-        # -- Security context to bind on port < 1024 (80 and 443)
+        # Grant NET_BIND_SERVICE so we can bind to ports < 1024 (80 and 443).
         securityContext:
           capabilities:
             drop:
@@ -1428,15 +1456,15 @@ apps:
           runAsUser: 0
           runAsNonRoot: false
 
-        # -- Ports on which Traefik listens
+        # Ports Traefik listens on.
         ports:
-          # -- HTTP
+          # HTTP
           web:
             port: 80
-          # -- HTTPS
+          # HTTPS
           websecure:
             port: 443
-          # -- KaaS HTTPS API server
+          # KaaS HTTPS API server
           kaas-https:
             port: 7443
             exposedPort: 7443
@@ -1446,7 +1474,7 @@ apps:
             http:
               tls:
                 enabled: true
-          # -- KaaS TLS API server (HAProxy)
+          # KaaS TLS API server (fronted by HAProxy)
           kaas-api-tls:
             port: 7444
             exposedPort: 7444
@@ -1456,7 +1484,7 @@ apps:
             http:
               tls:
                 enabled: true
-          # -- KaaS Konnectivity server
+          # KaaS Konnectivity server
           kaas-konnectivity:
             port: 7442
             exposedPort: 7442
@@ -1466,26 +1494,28 @@ apps:
             http:
               tls:
                 enabled: true
+          # Prometheus metrics endpoint
           metrics:
             port: 9101
             exposedPort: 9101
 
-        # -- We do not use the dashboard by default to save on compute and RAM
+        # Dashboard is disabled by default to save compute and memory.
         api:
           dashboard: false
 
-        # -- Create a Traefik default ingress class
+        # Create the default Traefik IngressClass.
         ingressClass:
           enabled: true
 
-        # -- Update strategy for hostNetwork deployment
+        # Rolling-update strategy tuned for a DaemonSet on hostNetwork.
         updateStrategy:
           type: RollingUpdate
           rollingUpdate:
             maxUnavailable: 1
             maxSurge: 0
 
-        # -- We're listening for ingress-nginx annotations to support previous deployments
+        # Also consume Ingress objects that carry ingress-nginx annotations,
+        # so existing deployments keep working during the migration.
         providers:
           kubernetesIngressNGINX:
             enabled: true
@@ -1497,7 +1527,7 @@ apps:
   #                            MANAGEMENT COMPONENTS                        #
   ###########################################################################
 
-  # -- Superphenix Console configuration
+  # -- Superphenix Console: web UI exposed to end users.
   superphenix-console:
     enabled: true
     modes: [Management]
@@ -1511,8 +1541,8 @@ apps:
       chart: superphenix-console
       releaseName: superphenix-console
       values:
-        # -- Domain on which the console is exposed
-        # TODO: this needs to be ported directly to superphenix-console, with a tpl of the ingress there
+        # -- Public domain the console is exposed on.
+        # TODO: move ingress templating into the superphenix-console chart itself.
         domain: &consoleDomain console.superphenix.net
 
         ingress:
@@ -1530,7 +1560,7 @@ apps:
                 - *consoleDomain
 
 
-  # -- Superphenix API configuration
+  # -- Superphenix API: backend serving the console and CLI, persists to PostgreSQL and delegates auth to Permify/Kratos.
   superphenix-api:
     enabled: true
     modes: [Management]
@@ -1545,11 +1575,11 @@ apps:
       chart: superphenix-api
       releaseName: superphenix-api
       values:
-        # -- Domain on which the API is exposed
+        # -- Public domain the API is exposed on.
         domain: api.superphenix.net
 
         config:
-          # -- Database used by the Superphenix API for storing users, organizations, projects and more
+          # -- Database storing users, organizations, projects and other API state.
           database:
             host: "postgres.{{ $.Release.Namespace }}.svc"
             port: 5432
@@ -1557,11 +1587,11 @@ apps:
             username: superphenix
             password: "{{ $.Values.apps.postgres.helm.values.auth.password | quote }}"
 
-          # -- Permify endpoint used to handle permissions
+          # -- Permify endpoint used for authorization checks.
           permify:
             url: "permify.{{ $.Release.Namespace }}.svc:3478"
 
-  # -- Kratos configuration
+  # -- Ory Kratos: identity, session and self-service flows backing the Superphenix console.
   kratos:
     enabled: true
     modes: [Management]
@@ -1577,14 +1607,15 @@ apps:
       values:
         kratos:
           config:
-            # -- Database used by Kratos to store users, sessions, recovery codes, ...
+            # -- Kratos DSN stores users, sessions, recovery codes and verification data.
             dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
 
+            # -- Kratos signing secrets. MUST be overridden per environment with a strong random value.
             secrets:
               default:
                 - "base64=="
 
-            # -- Kratos exposition settings
+            # -- Kratos public/admin listener configuration.
             serve:
               public:
                 base_url: https://auth.console.superphenix.net
@@ -1614,7 +1645,7 @@ apps:
                 request_log:
                   disable_for_health: true
 
-            # -- Identity schemas used to register users
+            # -- Identity schemas used at registration.
             identity:
               default_schema_id: default
               schemas:
@@ -1622,21 +1653,21 @@ apps:
                   url: file:///etc/config/identity.default.schema.json
 
             selfservice:
-              # -- Enable code based authentication
+              # -- Enable code-based (one-time code) authentication.
               methods:
                 code:
                   enabled: true
                   config:
                     lifespan: "15m"
 
-              # -- Where Kratos redirects us by default
+              # -- Default post-flow redirect target.
               default_browser_return_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
 
-              # -- Where Kratos is allowed to redirect us
+              # -- Allowed post-flow redirect targets (glob-based).
               allowed_return_urls:
                 - "https://*.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
 
-              # -- Kratos flows configuration
+              # -- Kratos self-service flow configuration (login, registration, recovery, ...).
               flows:
                 recovery:
                   enabled: true
@@ -1671,19 +1702,19 @@ apps:
                   ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/error"
                 settings:
                   ui_url: "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/ui/settings"
-                  # Sessions older than 15 minute requires the user to sign in again before the password is changed
+                  # Force re-authentication before a password change if the session is older than 15 minutes.
                   privileged_session_max_age: 15m
 
-            # -- Cookie configuration
+            # -- Session cookie settings.
             cookies:
               domain: "{{ (urlParse $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url).host }}"
               same_site: Strict
 
-          # -- Auto migrate on Kratos updates
+          # -- Run database migrations automatically on Kratos upgrades.
           automigration:
             enabled: true
 
-          # -- Definition of the schemas used in .config.identity.schemas
+          # -- Contents of the identity schema files referenced by `config.identity.schemas`.
           identitySchemas:
             "identity.default.schema.json": |
               {
@@ -1750,7 +1781,7 @@ apps:
                 hosts:
                   - "{{ (urlParse $.Values.apps.kratos.helm.values.kratos.config.serve.public.base_url).host }}"
 
-  # -- Permify configuration, handles permissions for the Superphenix API
+  # -- Permify: authorization service consulted by the Superphenix API to enforce permissions.
   permify:
     enabled: true
     modes: [Management]
@@ -1765,19 +1796,20 @@ apps:
       releaseName: permify
       values:
         app:
-          # -- Database connection to store permissions
+          # -- Database connection used to store Permify tuples and schemas.
           database:
             engine: postgres
             uri: "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
             garbage_collection:
               enabled: false
 
+          # -- Distributed mode is disabled (single-instance deployment).
           distributed:
             enabled: false
             address: "permify.{{ $.Release.Namespace }}.svc:5000"
             port: 5000
 
-  # -- Postgres configuration
+  # -- PostgreSQL: shared database backing the Superphenix API, Kratos and Permify.
   postgres:
     enabled: true
     modes: [Management]
@@ -1791,17 +1823,18 @@ apps:
       chart: postgres
       releaseName: postgres
       values:
-        # -- Credentials used by the management stack to connect to the database
+        # -- Primary user/database credentials.
+        # SECURITY: `password` MUST be overridden per environment.
         auth:
           database: superphenix
           username: superphenix
           password: "changeme!"
 
-        # -- Size of the database, should be enough for most deployments
+        # -- Persistent volume size. Sufficient for most deployments.
         persistence:
           size: 8Gi
 
-        # -- Additional databases
+        # -- Additional databases created at initialization for Kratos and Permify.
         initdb:
           scripts:
             setup.sql: |
@@ -1810,7 +1843,7 @@ apps:
               GRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;
               GRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;
 
-  # -- Talos Operator configuration
+  # -- Talos Operator: manages bare-metal Talos nodes (PXE boot, machine configuration). Disabled by default.
   talos-operator:
     enabled: false
     modes: [Management]
@@ -1827,7 +1860,7 @@ apps:
         featureFlags:
           enablePxeBootStack: true
 
-  # -- iDRAC Exporter configuration
+  # -- iDRAC Exporter: Prometheus exporter for Dell iDRAC BMCs. Disabled by default.
   idrac-exporter:
     enabled: false
     modes: [Management]
