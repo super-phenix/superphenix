@@ -27,7 +27,7 @@ The effective mode is the concatenation of `.Values.cluster.deploymentTopology` 
 | ------------------ | ----------------- | --------------------------- |
 | `Hyperconverged`   | *(empty)*         | `Hyperconverged`            |
 | `Decoupled`        | `Storage`         | `DecoupledStorage`          |
-| `Decoupled`        | `Workload`  | `DecoupledWorkload`   |
+| `Decoupled`        | `Workload`        | `DecoupledWorkload`   |
 | *(empty)*          | `Management`      | `Management`                |
 
 - If an application's `modes` list is empty or not specified, it is considered eligible for deployment in any effective mode (as long as it is enabled).
@@ -2687,7 +2687,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kaas-system",
   "repoURL": "ghcr.io/super-phenix/charts",
@@ -2718,7 +2718,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kaas-datastore-system",
   "repoURL": "ghcr.io/super-phenix/charts",
@@ -2788,7 +2788,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kamaji-system",
   "repoURL": "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm",
@@ -3411,7 +3411,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kube-system",
   "repoURL": "oci://ghcr.io/kubeovn/charts/kube-ovn-v2",
@@ -3420,7 +3420,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 }
 </pre>
 </td>
-			<td>Kube-OVN is used as the CNI for the workload layer</td>
+			<td>Kube-OVN is used as the CNI for the virtualization layer</td>
 		</tr>
 		<tr>
 			<td>apps.kubevirt</td>
@@ -3440,7 +3440,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "enabled": true,
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kubevirt-system",
   "path": "v1.7.3/",
@@ -3476,7 +3476,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kyverno-system",
   "repoURL": "https://kyverno.github.io/kyverno/",
@@ -3614,7 +3614,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "modes": [
     "Hyperconverged",
     "DecoupledStorage",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "loki-system",
   "repoURL": "https://grafana.github.io/helm-charts",
@@ -3656,7 +3656,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kube-system",
   "repoURL": "oci://ghcr.io/super-phenix/charts/multus",
@@ -3755,7 +3755,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "kube-system",
   "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
@@ -3913,6 +3913,135 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "selector": {
             "k8s-app": "kube-controller-manager"
           }
+        ]
+      }
+    }
+  },
+  "modes": [
+    "DecoupledStorage"
+  ],
+  "namespace": "ingress-nginx-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "https://kubernetes.github.io/ingress-nginx",
+  "targetRevision": "4.13.3",
+  "wave": "-10"
+}
+</pre>
+</td>
+			<td>ingress-nginx ingress controller. Kept for backwards compatibility with legacy Ingress annotations. TODO: phase out ingress-nginx and rely on Traefik only.</td>
+		</tr>
+		<tr>
+			<td>apps.kaas-controller</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kaas-controller",
+    "releaseName": "kaas-controller"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kaas-system",
+  "repoURL": "ghcr.io/super-phenix/charts",
+  "targetRevision": "",
+  "wave": "15"
+}
+</pre>
+</td>
+			<td>KaaS controller: extra CRDs and controllers backing the Kubernetes-as-a-Service stack.</td>
+		</tr>
+		<tr>
+			<td>apps.kaas-datastore</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kaas-datastore",
+    "releaseName": "kaas-datastore",
+    "values": {}
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kaas-datastore-system",
+  "repoURL": "ghcr.io/super-phenix/charts",
+  "targetRevision": "",
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>KaaS datastore: provisions etcd clusters (via etcd-operator) used as Kamaji datastores.</td>
+		</tr>
+		<tr>
+			<td>apps.kamaji</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kamaji",
+    "releaseName": "kamaji",
+    "values": {
+      "affinity": {
+        "podAntiAffinity": {
+          "preferredDuringSchedulingIgnoredDuringExecution": [
+            {
+              "podAffinityTerm": {
+                "labelSelector": {
+                  "matchLabels": {
+                    "app.kubernetes.io/name": "kamaji"
+                  }
+                },
+                "topologyKey": "kubernetes.io/hostname"
+              },
+              "weight": 1
+            }
+          ]
+        }
+      },
+      "defaultDatastoreName": "",
+      "extraArgs": [
+        "--certificate-expiration-deadline=336h"
+      ],
+      "image": {
+        "tag": "26.7.3-edge"
+      },
+      "kamaji-etcd": {
+        "deploy": false
+      },
+      "replicaCount": 3,
+      "resources": {
+        "limits": {
+          "cpu": "1000m",
+          "memory": "2Gi"
         },
         "serviceMonitor": {
           "metricRelabelings": [
@@ -4277,10 +4406,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
+    "DecoupledStorage"
   ],
-  "namespace": "rook-system",
+  "namespace": "spx-storage",
   "nsLabels": {
     "pod-security.kubernetes.io/enforce": "privileged"
   },
@@ -4290,7 +4418,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 }
 </pre>
 </td>
-			<td>Rook operator, required on any cluster that interacts with Ceph/Rook. Workload clusters need it to provision an external connection to a centralized storage cluster; centralized storage clusters need it to provision a local Ceph cluster that acts as the remote backend for "client" clusters.</td>
+			<td>Rook operator, required on any cluster that interacts with Ceph/Rook. Virtualization clusters need it to provision an external connection to a centralized storage cluster; centralized storage clusters need it to provision a local Ceph cluster that acts as the remote backend for "client" clusters.</td>
 		</tr>
 		<tr>
 			<td>apps.snapscheduler</td>
@@ -4315,6 +4443,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
+    "DecoupledStorage",
     "DecoupledWorkload"
   ],
   "namespace": "snapscheduler-system",
@@ -4332,9 +4461,11 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td><pre lang="json">
 {
   "automation": {
+    "cleanupOnDeletion": false,
     "enabled": true,
     "prune": true,
-    "selfHeal": true
+    "selfHeal": true,
+    "syncOptions": {}
   },
   "enabled": true,
   "helm": {
@@ -4357,7 +4488,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     }
   },
   "modes": [
-    "Management"
+    "Hyperconverged",
+    "DecoupledWorkload"
   ],
   "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-api",
   "targetRevision": ""
@@ -4481,7 +4613,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "superphenix-system",
   "repoURL": "ghcr.io/super-phenix/charts",
@@ -4512,7 +4644,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "modes": [
     "Hyperconverged",
     "DecoupledStorage",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "talos-backup",
   "repoURL": "oci://ghcr.io/super-phenix/charts/talos-backup",
@@ -4682,7 +4814,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "traefik-system",
   "nsLabels": {
@@ -4716,7 +4848,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "modes": [
     "Hyperconverged",
     "DecoupledStorage",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "tuned-system",
   "nsLabels": {
@@ -4859,7 +4991,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledVirtualization"
   ],
   "namespace": "volume-replicator",
   "repoURL": "ghcr.io/super-phenix/helm-charts",
@@ -4976,7 +5108,7 @@ false
 ""
 </pre>
 </td>
-			<td>Cluster role. One of: "Storage", "Workload", "Management".</td>
+			<td>Cluster role. One of: "Storage", "Virtualization", "Management".</td>
 		</tr>
 		<tr>
 			<td>disableAll</td>
