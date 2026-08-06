@@ -89,16 +89,16 @@ type Config struct {
 			DefaultAnnotations map[string]string `yaml:"defaultAnnotations"`
 		} `yaml:"datavolume"`
 
-		Blocks struct {
+		BlockStorage struct {
 			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
-		} `yaml:"blocks"`
+		} `yaml:"blockStorage"`
 
-		S3 struct {
+		ObjectStorage struct {
 			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
 			MaxBucketSize       string            `yaml:"maxBucketSize"`
 			MaxBucketObjects    uint64            `yaml:"maxBucketObjects"`
 			ExternalEndpoint    string            `yaml:"externalEndpoint"`
-		} `yaml:"s3"`
+		} `yaml:"objectStorage"`
 	} `yaml:"productsConfig"`
 
 	DisableEditionForResourcesByLabels map[string]string `yaml:"disableEditionForResourcesByLabels"`
@@ -161,9 +161,9 @@ productsConfig:
     defaultAnnotations:
       "v1.multus-cni.io/default-network": "kube-system/system-isolated-egress"
       "cdi.kubevirt.io/allowClaimAdoption": "true"
-  blocks:
+  blockStorage:
     storageClassMapping: {}
-  s3:
+  objectStorage:
     storageClassMapping: {}
     maxBucketSize: "1Ti"
     maxBucketObjects: 1000000

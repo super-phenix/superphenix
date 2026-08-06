@@ -44,12 +44,12 @@ func testEffectiveId(t *testing.T) string {
 
 func setS3Config(t *testing.T, mapping map[string]string, maxBucketSize string, maxBucketObjects uint64, externalEndpoint string) {
 	t.Helper()
-	old := config.Global.ProductsConfig.S3
-	config.Global.ProductsConfig.S3.StorageClassMapping = mapping
-	config.Global.ProductsConfig.S3.MaxBucketSize = maxBucketSize
-	config.Global.ProductsConfig.S3.MaxBucketObjects = maxBucketObjects
-	config.Global.ProductsConfig.S3.ExternalEndpoint = externalEndpoint
-	t.Cleanup(func() { config.Global.ProductsConfig.S3 = old })
+	old := config.Global.ProductsConfig.ObjectStorage
+	config.Global.ProductsConfig.ObjectStorage.StorageClassMapping = mapping
+	config.Global.ProductsConfig.ObjectStorage.MaxBucketSize = maxBucketSize
+	config.Global.ProductsConfig.ObjectStorage.MaxBucketObjects = maxBucketObjects
+	config.Global.ProductsConfig.ObjectStorage.ExternalEndpoint = externalEndpoint
+	t.Cleanup(func() { config.Global.ProductsConfig.ObjectStorage = old })
 }
 
 func setFakeDynamicClient(t *testing.T, objects ...runtime.Object) {

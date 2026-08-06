@@ -47,11 +47,11 @@ func Transform[T, K interface{}](object T) K {
 }
 
 func convertStorageClassName(storageClassName string) string {
-	for friendlyName, fullname := range config.Global.ProductsConfig.Blocks.StorageClassMapping {
+	for friendlyName, fullname := range config.Global.ProductsConfig.BlockStorage.StorageClassMapping {
 		if fullname == storageClassName {
 			return friendlyName
 		}
 	}
-	log.Warn().Str("storageClassName", storageClassName).Any("storageClassMapping", config.Global.ProductsConfig.Blocks.StorageClassMapping).Msg("Storage class name not found")
+	log.Warn().Str("storageClassName", storageClassName).Any("storageClassMapping", config.Global.ProductsConfig.BlockStorage.StorageClassMapping).Msg("Storage class name not found")
 	return "undefined-storage-class"
 }

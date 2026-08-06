@@ -89,5 +89,5 @@ func endpointOrFallback(endpoint string) string {
 	if endpoint != "" {
 		return endpoint
 	}
-	return config.Global.ProductsConfig.S3.ExternalEndpoint
+	return config.Global.ProductsConfig.ObjectStorage.ExternalEndpoint
 }

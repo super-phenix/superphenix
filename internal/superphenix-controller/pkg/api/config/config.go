@@ -33,8 +33,8 @@ type S3Config struct {
 
 // storageClassKeys returns the friendly names from the unified StorageClassMapping.
 func storageClassKeys() []string {
-	keys := make([]string, 0, len(config.Global.ProductsConfig.Blocks.StorageClassMapping))
-	for k := range config.Global.ProductsConfig.Blocks.StorageClassMapping {
+	keys := make([]string, 0, len(config.Global.ProductsConfig.BlockStorage.StorageClassMapping))
+	for k := range config.Global.ProductsConfig.BlockStorage.StorageClassMapping {
 		keys = append(keys, k)
 	}
 	return keys
@@ -165,7 +165,7 @@ func GetVMClusterPreferenceAdvancedOptions(w http.ResponseWriter, r *http.Reques
 //	@Security		Bearer
 func GetKaaSConfig(w http.ResponseWriter, r *http.Request) {
 	storageClasses := make([]StorageClass, 0)
-	for k, fullname := range config.Global.ProductsConfig.Blocks.StorageClassMapping {
+	for k, fullname := range config.Global.ProductsConfig.BlockStorage.StorageClassMapping {
 		storageClasses = append(storageClasses, StorageClass{
 			Shortname: k,
 			Fullname:  fullname,
@@ -193,16 +193,16 @@ func GetKaaSConfig(w http.ResponseWriter, r *http.Request) {
 //	@Router			/{orgId}/{projectId}/s3-config [get]
 //	@Security		Bearer
 func GetS3Config(w http.ResponseWriter, r *http.Request) {
-	storageClasses := make([]string, 0, len(config.Global.ProductsConfig.S3.StorageClassMapping))
-	for k := range config.Global.ProductsConfig.S3.StorageClassMapping {
+	storageClasses := make([]string, 0, len(config.Global.ProductsConfig.ObjectStorage.StorageClassMapping))
+	for k := range config.Global.ProductsConfig.ObjectStorage.StorageClassMapping {
 		storageClasses = append(storageClasses, k)
 	}
 	sort.Strings(storageClasses)
 
 	s3Config := S3Config{
 		StorageClasses:   storageClasses,
-		MaxBucketSize:    config.Global.ProductsConfig.S3.MaxBucketSize,
-		MaxBucketObjects: config.Global.ProductsConfig.S3.MaxBucketObjects,
+		MaxBucketSize:    config.Global.ProductsConfig.ObjectStorage.MaxBucketSize,
+		MaxBucketObjects: config.Global.ProductsConfig.ObjectStorage.MaxBucketObjects,
 	}
 
 	b, _ := json.Marshal(s3Config)

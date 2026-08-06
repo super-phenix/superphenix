@@ -10,12 +10,12 @@ import (
 
 func TestPVCToView_AutomaticConversion(t *testing.T) {
 	// Backup and restore Global config
-	originalMapping := config.Global.ProductsConfig.Blocks.StorageClassMapping
+	originalMapping := config.Global.ProductsConfig.BlockStorage.StorageClassMapping
 	defer func() {
-		config.Global.ProductsConfig.Blocks.StorageClassMapping = originalMapping
+		config.Global.ProductsConfig.BlockStorage.StorageClassMapping = originalMapping
 	}()
 
-	config.Global.ProductsConfig.Blocks.StorageClassMapping = map[string]string{
+	config.Global.ProductsConfig.BlockStorage.StorageClassMapping = map[string]string{
 		"SSD Storage": "fast",
 	}
 
@@ -72,12 +72,12 @@ func TestPVCToView_AutomaticConversion(t *testing.T) {
 
 func TestConvertStorageClassName(t *testing.T) {
 	// Backup and restore Global config
-	originalMapping := config.Global.ProductsConfig.Blocks.StorageClassMapping
+	originalMapping := config.Global.ProductsConfig.BlockStorage.StorageClassMapping
 	defer func() {
-		config.Global.ProductsConfig.Blocks.StorageClassMapping = originalMapping
+		config.Global.ProductsConfig.BlockStorage.StorageClassMapping = originalMapping
 	}()
 
-	config.Global.ProductsConfig.Blocks.StorageClassMapping = map[string]string{
+	config.Global.ProductsConfig.BlockStorage.StorageClassMapping = map[string]string{
 		"SSD Storage": "fast",
 		"HDD Storage": "slow",
 	}

@@ -92,7 +92,7 @@ func (info *CreateDiskInfo) CreateDisk(ctx context.Context, namespace string) er
 
 	volumeMode := v1.PersistentVolumeBlock
 	storageClassName := ""
-	if fullname, ok := config.Global.ProductsConfig.Blocks.StorageClassMapping[info.General.StorageClass]; ok {
+	if fullname, ok := config.Global.ProductsConfig.BlockStorage.StorageClassMapping[info.General.StorageClass]; ok {
 		storageClassName = fullname
 	}
 
