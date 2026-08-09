@@ -1,0 +1,9 @@
+{{- if .Values.installOnClusterWithoutCNI }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    {{- include "superphenix-operator.labels" . | nindent 4 }}
+    pod-security.kubernetes.io/enforce: privileged
+{{- end }}

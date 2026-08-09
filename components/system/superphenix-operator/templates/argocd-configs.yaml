@@ -21,6 +21,11 @@ data:
         - key: "node.kubernetes.io/not-ready"
           operator: "Exists"
           effect: "NoSchedule"
+      hostAliases:
+        - ip: "::"
+          hostnames:
+            - "superphenix-argocd-redis"
+            - "superphenix-argocd-repo-server"
       {{- end }}
 
       # Restrict network flow in and out of ArgoCD
@@ -162,15 +167,7 @@ data:
             argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 
     notifications:
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-          # ArgoCD will fail to sync if it's installing an instance of ArgoCD
-          # before the Prometheus ServiceMonitor CRD is installed on the cluster
-          # We simply skip the dry-run in that case
-          annotations:
-            argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+      enabled: false
 
 ---
 apiVersion: v1

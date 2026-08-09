@@ -38,7 +38,7 @@ spec:
           command:
             - /manager
           args:
-            - --health-probe-bind-address={{ .Values.health.probeBindAddress }}
+            - --health-probe-bind-address={{ include "superphenix-operator.healthProbeBindAddress" . }}
             - --metrics-bind-address={{ .Values.metrics.bindAddress }}
             - --metrics-secure={{ .Values.metrics.secure }}
             {{- if .Values.config.argocd.chart }}
@@ -90,6 +90,9 @@ spec:
             {{- if .Values.config.argocd.ha.enabled }}
             - --ha-enabled=true
             {{- end }}
+            {{- if .Values.installOnClusterWithoutCNI }}
+            - --install-without-cni
+            {{- end }}
             {{- if .Values.leaderElection.enabled }}
             - --leader-elect
             {{- end }}
@@ -101,13 +104,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ (split ":" .Values.health.probeBindAddress)._1 | default "8081" | int }}
+              port: {{ include "superphenix-operator.healthProbePort" . | int }}
             initialDelaySeconds: 15
             periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /readyz
-              port: {{ (split ":" .Values.health.probeBindAddress)._1 | default "8081" | int }}
+              port: {{ include "superphenix-operator.healthProbePort" . | int }}
             initialDelaySeconds: 5
             periodSeconds: 10
           resources:

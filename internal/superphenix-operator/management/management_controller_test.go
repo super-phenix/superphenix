@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -328,6 +329,54 @@ var _ = Describe("Management Controller", func() {
 			Expect(hasTopLevel).To(BeFalse(), "topLevel should be removed because it was null in override")
 
 			Expect(vals["otherKey"]).To(Equal("otherValue"))
+		})
+
+		It("should patch redis for hostNetwork if InstallWithoutCNI is true", func() {
+			const opNamespace = "op-hostnetwork-ns"
+			const redisName = ArgoCDApp + "-redis"
+
+			By("Creating the namespace")
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: opNamespace}}
+			Expect(k8sClient.Create(ctx, ns)).To(Succeed())
+			defer func() {
+				_ = k8sClient.Delete(ctx, ns)
+			}()
+
+			By("Creating the redis deployment")
+			redisDep := &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      redisName,
+					Namespace: opNamespace,
+				},
+				Spec: appsv1.DeploymentSpec{
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "redis"}},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "redis"}},
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "redis", Image: "redis"}},
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, redisDep)).To(Succeed())
+			defer func() {
+				_ = k8sClient.Delete(ctx, redisDep)
+			}()
+
+			mgmtReconciler := &Reconciler{
+				Client:            k8sClient,
+				OperatorNamespace: opNamespace,
+				InstallWithoutCNI: true,
+			}
+
+			By("Calling patchRedisForHostNetwork")
+			err := mgmtReconciler.patchRedisForHostNetwork(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("Verifying hostNetwork is true")
+			updatedDep := &appsv1.Deployment{}
+			Expect(k8sClient.Get(ctx, types.NamespacedName{Name: redisName, Namespace: opNamespace}, updatedDep)).To(Succeed())
+			Expect(updatedDep.Spec.Template.Spec.HostNetwork).To(BeTrue())
 		})
 	})
 })

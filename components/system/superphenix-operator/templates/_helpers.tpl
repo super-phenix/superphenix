@@ -60,3 +60,22 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Get the health probe bind address.
+*/}}
+{{- define "superphenix-operator.healthProbeBindAddress" -}}
+{{- if .Values.installOnClusterWithoutCNI -}}
+{{- printf ":28765" -}}
+{{- else -}}
+{{- .Values.health.probeBindAddress -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get the health probe port.
+*/}}
+{{- define "superphenix-operator.healthProbePort" -}}
+{{- $address := include "superphenix-operator.healthProbeBindAddress" . -}}
+{{- (split ":" $address)._1 | default "8081" -}}
+{{- end -}}

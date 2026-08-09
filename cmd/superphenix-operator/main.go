@@ -78,6 +78,7 @@ func main() {
 	var disableTelemetry bool
 	var telemetryEndpoint string
 	var disableVersionValidation bool
+	var installWithoutCNI bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -113,6 +114,7 @@ func main() {
 	flag.BoolVar(&disableTelemetry, "disable-telemetry", false, "Disable sending anonymous telemetry to the Superphenix open-source project")
 	flag.StringVar(&telemetryEndpoint, "telemetry-endpoint", telemetry.DefaultEndpoint, "URL of the telemetry ingest endpoint")
 	flag.BoolVar(&disableVersionValidation, "disable-version-validation", false, "Disable validation of versions entirely")
+	flag.BoolVar(&installWithoutCNI, "install-without-cni", false, "Whether to install components without CNI (enables hostNetwork for redis)")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -270,6 +272,7 @@ func main() {
 		ArgoCDChartVersion:  argocdChartVersion,
 		ArgoCDDefaultConfig: argocdDefaultConfig,
 		ArgoCDHAConfig:      argocdHAConfig,
+		InstallWithoutCNI:   installWithoutCNI,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create management controller")
 		os.Exit(1)
