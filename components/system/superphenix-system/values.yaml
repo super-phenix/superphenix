@@ -72,7 +72,7 @@ apps:
       syncOptions:
         - SkipDryRunOnMissingResource=true
     repoURL: https://coredns.github.io/helm
-    targetRevision: "1.37.3"
+    targetRevision: "1.47.0"
     namespace: coredns-system
     helm:
       chart: coredns
@@ -392,7 +392,7 @@ apps:
       syncOptions: {}
     namespace: "metrics-server-system"
     repoURL: "https://kubernetes-sigs.github.io/metrics-server/"
-    targetRevision: "3.13.0"
+    targetRevision: "3.13.1"
     helm:
       chart: "metrics-server"
       releaseName: "metrics-server"
@@ -477,7 +477,7 @@ apps:
       syncOptions: {}
     namespace: "cert-manager-system"
     repoURL: "https://charts.jetstack.io"
-    targetRevision: "1.19.1"
+    targetRevision: "1.21.1"
     helm:
       chart: "cert-manager"
       releaseName: "cert-manager"
@@ -525,7 +525,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://prometheus-community.github.io/helm-charts"
-    targetRevision: "78.4.0"
+    targetRevision: "88.2.0"
     helm:
       chart: "kube-prometheus-stack"
       releaseName: "prometheus"
@@ -602,6 +602,8 @@ apps:
                       storage: 50Gi
 
   # -- Promtail: node-local agent that ships container logs to Loki.
+  # TODO: This chart is deprecated. This component is non-critical, but we should phase it out.
+  # It went EOL on Grafana's side and should be replaced by Alloy.
   promtail:
     enabled: true
     wave: "0"
@@ -616,7 +618,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://grafana.github.io/helm-charts"
-    targetRevision: "6.17.0"
+    targetRevision: "6.17.1"
     helm:
       chart: "promtail"
       releaseName: "promtail"
