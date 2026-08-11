@@ -57,8 +57,8 @@ func isEditAllowed(labels map[string]string, forceGitops bool) error {
 		return fmt.Errorf("cannot update/delete generated resources")
 	}
 
-	for key, value := range config.Global.DisableEditionForResourcesByLabels {
-		if labels[key] == value {
+	for _, kv := range config.Global.DisableEditionForResourcesByLabels {
+		if labels[kv.Key] == kv.Value {
 			return fmt.Errorf("cannot update/delete this resource")
 		}
 	}

@@ -102,10 +102,7 @@ func (info *CreateDiskInfo) CreateDisk(ctx context.Context, namespace string) er
 		return err
 	}
 
-	defaultAnnotations := make(map[string]string)
-	for key, value := range config.Global.ProductsConfig.Datavolume.DefaultAnnotations {
-		defaultAnnotations[key] = value
-	}
+	defaultAnnotations := config.Global.ProductsConfig.Datavolume.DefaultAnnotations.Map()
 
 	labels := metadata.GetLabels()
 	labels["superphenix.net/ignoreNetworkPolicies"] = "true"

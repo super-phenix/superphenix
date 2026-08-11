@@ -29,6 +29,25 @@ type ContainerDiskCatalogEntry struct {
 	Recommended bool     `yaml:"recommended" json:"recommended"`
 }
 
+// KeyValue is one entry of a KeyValueList.
+type KeyValue struct {
+	Key   string `yaml:"key"`
+	Value string `yaml:"value"`
+}
+
+// KeyValueList holds case-sensitive map entries (annotations, labels)
+// as a list, since viper lowercases YAML map keys.
+type KeyValueList []KeyValue
+
+// Map returns the entries as a map.
+func (l KeyValueList) Map() map[string]string {
+	m := make(map[string]string, len(l))
+	for _, e := range l {
+		m[e.Key] = e.Value
+	}
+	return m
+}
+
 type Config struct {
 	AzName  string `yaml:"azName"`
 	Logging struct {
@@ -86,7 +105,7 @@ type Config struct {
 		} `yaml:"eipDefault"`
 
 		Datavolume struct {
-			DefaultAnnotations map[string]string `yaml:"defaultAnnotations"`
+			DefaultAnnotations KeyValueList `yaml:"defaultAnnotations"`
 		} `yaml:"datavolume"`
 
 		BlockStorage struct {
@@ -101,7 +120,7 @@ type Config struct {
 		} `yaml:"objectStorage"`
 	} `yaml:"productsConfig"`
 
-	DisableEditionForResourcesByLabels map[string]string `yaml:"disableEditionForResourcesByLabels"`
+	DisableEditionForResourcesByLabels KeyValueList `yaml:"disableEditionForResourcesByLabels"`
 
 	GarbageCollection struct {
 		Interval     time.Duration `yaml:"interval"`
@@ -159,8 +178,10 @@ productsConfig:
     externalSubnet: external-subnet
   datavolume:
     defaultAnnotations:
-      "v1.multus-cni.io/default-network": "kube-system/system-isolated-egress"
-      "cdi.kubevirt.io/allowClaimAdoption": "true"
+      - key: "v1.multus-cni.io/default-network"
+        value: "kube-system/system-isolated-egress"
+      - key: "cdi.kubevirt.io/allowClaimAdoption"
+        value: "true"
   blockStorage:
     storageClassMapping: {}
   objectStorage:
@@ -169,7 +190,8 @@ productsConfig:
     maxBucketObjects: 1000000
     externalEndpoint: ""
 disableEditionForResourcesByLabels:
-  "app.kubernetes.io/name": "sfs-kaas"
+  - key: "app.kubernetes.io/name"
+    value: "sfs-kaas"
 garbageCollection:
   interval: 15m
   timeout: 10m
