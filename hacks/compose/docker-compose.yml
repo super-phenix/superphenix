@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 services:
   kratos-migrate:
     image: oryd/kratos:v26.2.0
@@ -16,24 +16,13 @@ services:
       - postgresd
     networks:
       - intranet
-  auth-ui:
-    build:
-      context: ${AUTH_UI_PATH}
-      dockerfile: Dockerfile.local
-    ports:
-      - '${AUTH_UI_PORT:-3000}:80'
-    networks:
-      - intranet
-    restart: on-failure
-    profiles:
-      - auth-ui
   kratos:
     depends_on:
       - kratos-migrate
     image: oryd/kratos:v26.2.0
     ports:
-      - '${KRATOS_PUBLIC_PORT:-4433}:4433' # public
-      - '${KRATOS_ADMIN_PORT:-4434}:4434' # admin
+      - "${KRATOS_PUBLIC_PORT:-4433}:4433" # public
+      - "${KRATOS_ADMIN_PORT:-4434}:4434" # admin
     restart: unless-stopped
     profiles:
       - backend
@@ -115,7 +104,7 @@ services:
       - SUPERPHENIX-API_LOGGING_PRETTY=true
       - SUPERPHENIX-API_SESSION_COOKIES_SECURE=false
       - SUPERPHENIX-API_SESSION_COOKIES_SAMESITE=Lax
-      - SUPERPHENIX-API_SESSION_CORS_ALLOWEDORIGINS=http://localhost:${SPX_PANEL_PORT:-4200},http://localhost:${AUTH_UI_PORT:-3000}
+      - SUPERPHENIX-API_SESSION_CORS_ALLOWEDORIGINS=http://localhost:${SPX_PANEL_PORT:-4200}
       - SUPERPHENIX-API_PERMIFY_URL=permify:3478
       - SUPERPHENIX-API_ADMINHTTP_AUTHSECRET=${SUPERPHENIX_API_ADMIN_SECRET:-local}
       - SUPERPHENIX-API_CONTROLLER_AUTHSECRET=${SUPERPHENIX_API_CONTROLLER_SECRET:-local}
@@ -140,7 +129,6 @@ services:
       - spx-panel
     depends_on:
       - superphenix-api
-      - auth-ui
     networks:
       - intranet
 networks:

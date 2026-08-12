@@ -2,7 +2,8 @@
 
 This directory contains a base Docker Compose setup for running the full console stack locally — useful for local development and testing without relying on a Kubernetes cluster.
 
-It is **not** a production deployment. It bundles Kratos, Postgres, Permify, the Superphenix API, the auth UI, and the SPX panel into a single `docker compose up` workflow.
+It is **not** a production deployment. It bundles Kratos, Postgres, Permify, the Superphenix API, and the SPX panel into
+a single `docker compose up` workflow.
 
 ## What's here
 
@@ -13,12 +14,12 @@ It is **not** a production deployment. It bundles Kratos, Postgres, Permify, the
 
 ## First-time setup
 
-The stack expects local checkouts of the two frontend repos (`auth-ui`, `spx-panel`) and a local Kratos config.
+The stack expects local checkouts of the frontend repos (`spx-panel`) and a local Kratos config.
 
 ```sh
 # 1. Point the stack at your local frontend checkouts
 cp .env.example .env
-$EDITOR .env   # set AUTH_UI_PATH and SPX_PANEL_PATH to absolute paths
+$EDITOR .env   # set SPX_PANEL_PATH to absolute paths
 
 # 2. Create a local Kratos config (the example is committed, the real file is gitignored)
 cp kratos/kratos.example.yml local/kratos/kratos.yml
@@ -38,7 +39,6 @@ Every service in the stack is assigned to a **profile**. Only the profiles you a
 | Profile     | Services                                                                                    |
 |-------------|---------------------------------------------------------------------------------------------|
 | `backend`   | `kratos-migrate`, `kratos`, `postgresd`, `superphenix-api-db`, `permify`, `superphenix-api` |
-| `auth-ui`   | `auth-ui`                                                                                   |
 | `spx-panel` | `spx-panel`                                                                                 |
 
 ### Activating profiles via `COMPOSE_PROFILES`
@@ -47,7 +47,7 @@ The recommended way is to set the `COMPOSE_PROFILES` variable in your `.env` fil
 
 ```dotenv
 # .env — start everything
-COMPOSE_PROFILES=backend,auth-ui,spx-panel
+COMPOSE_PROFILES=backend,spx-panel
 ```
 
 Then run the usual command without any `--profile` flags:
@@ -71,7 +71,7 @@ COMPOSE_PROFILES=backend
 You can also pass profiles directly on the command line:
 
 ```sh
-docker compose --profile backend --profile auth-ui up -d
+docker compose --profile backend --profile spx-panel up -d
 ```
 
 Ports and dev credentials use sensible defaults baked into the compose file; override them in `.env` only if you have a port conflict or want different DB credentials. See the `${VAR:-default}` references in `docker-compose.yml` for the full list.
