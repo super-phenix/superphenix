@@ -5924,6 +5924,14 @@ const docTemplate = `{
                 "resourceLocalID": {
                     "type": "string"
                 },
+                "subnetEIds": {
+                    "description": "SubnetEIds scopes the policy to these subnets, empty meaning all of them.",
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "target": {
                     "$ref": "#/definitions/netpol.LabelSelector"
                 }
@@ -6075,6 +6083,14 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/netpol.IngressRule"
+                    }
+                },
+                "subnetEIds": {
+                    "description": "SubnetEIds scopes the policy to these subnets, empty meaning all of them.",
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "target": {
@@ -13790,6 +13806,13 @@ const docTemplate = `{
                 },
                 "spec": {
                     "$ref": "#/definitions/v1.NetworkPolicySpec"
+                },
+                "subnetEIds": {
+                    "description": "SubnetEIds scopes the policy to these subnets, empty meaning all of them.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

@@ -255,6 +255,7 @@ func (h *Service) CreateSecurityGroup(w http.ResponseWriter, r *http.Request) {
 		Target:      body.Spec.Target,
 		Ingress:     body.Spec.Ingress,
 		Egress:      body.Spec.Egress,
+		SubnetEIds:  body.Spec.SubnetEIds,
 	}
 
 	// update body
@@ -330,6 +331,7 @@ func (h *Service) UpdateSecurityGroup(w http.ResponseWriter, r *http.Request) {
 		Target:      body.Spec.Target,
 		Ingress:     body.Spec.Ingress,
 		Egress:      body.Spec.Egress,
+		SubnetEIds:  body.Spec.SubnetEIds,
 	}
 
 	// update body
@@ -492,6 +494,8 @@ type CreateSecurityGroupBody struct {
 		Target  LabelSelector `json:"target"`
 		Ingress []IngressRule `json:"ingress"`
 		Egress  []EgressRule  `json:"egress"`
+		// SubnetEIds scopes the security group to these subnets, empty meaning all of them.
+		SubnetEIds []string `json:"subnetEIds" validate:"max=10"`
 	} `json:"spec"`
 }
 
@@ -504,6 +508,8 @@ type UpdateSecurityGroupBody struct {
 		Target  LabelSelector `json:"target"`
 		Ingress []IngressRule `json:"ingress"`
 		Egress  []EgressRule  `json:"egress"`
+		// SubnetEIds scopes the security group to these subnets, empty meaning all of them.
+		SubnetEIds []string `json:"subnetEIds" validate:"max=10"`
 	} `json:"spec"`
 }
 
@@ -558,6 +564,7 @@ type CreateSecurityGroupSpxControllerBody struct {
 	Target      LabelSelector `json:"target"`
 	Ingress     []IngressRule `json:"ingress"`
 	Egress      []EgressRule  `json:"egress"`
+	SubnetEIds  []string      `json:"subnetEIds" validate:"max=10"`
 }
 
 // UpdateSecurityGroupSpxControllerBody is the body send to superphenix-controller to update a Security Group
@@ -566,6 +573,7 @@ type UpdateSecurityGroupSpxControllerBody struct {
 	Target      LabelSelector `json:"target"`
 	Ingress     []IngressRule `json:"ingress"`
 	Egress      []EgressRule  `json:"egress"`
+	SubnetEIds  []string      `json:"subnetEIds" validate:"max=10"`
 }
 
 type SecurityGroupFullResponse struct {

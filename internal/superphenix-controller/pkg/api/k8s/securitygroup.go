@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"net/http"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/k8s"
@@ -187,6 +188,11 @@ func createNetPol(w http.ResponseWriter, r *http.Request) {
 
 	err = body.CreateNetPol(r.Context(), namespace)
 	if err != nil {
+		if stderrors.Is(err, netpol.ErrUnknownSubnet) || stderrors.Is(err, netpol.ErrTooManySubnets) {
+			log.Error().Err(err).Msg("Invalid subnet scope")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+			return
+		}
 		log.Error().Err(err).Msg("Failed to create network policy")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to create network policy")
 	} else {
@@ -232,6 +238,11 @@ func updateNetPol(w http.ResponseWriter, r *http.Request) {
 		if errors.IsNotFound(err) {
 			log.Err(err).Msg("Resource not found")
 			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
+			return
+		}
+		if stderrors.Is(err, netpol.ErrUnknownSubnet) || stderrors.Is(err, netpol.ErrTooManySubnets) {
+			log.Error().Err(err).Msg("Invalid subnet scope")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
 			return
 		}
 		log.Error().Err(err).Msg("Failed to update Network Policy")

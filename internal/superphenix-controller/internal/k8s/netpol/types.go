@@ -1,5 +1,18 @@
 package netpol
 
+import (
+	"errors"
+	"fmt"
+)
+
+// MaxSubnets must stay in sync with the `max` validation tag on the SubnetEIds fields.
+const MaxSubnets = 10
+
+var (
+	ErrUnknownSubnet  = errors.New("unknown subnet")
+	ErrTooManySubnets = fmt.Errorf("a network policy cannot be scoped to more than %d subnets", MaxSubnets)
+)
+
 type SgPort struct {
 	Port     int32  `json:"port"`
 	EndPort  int32  `json:"endPort"`

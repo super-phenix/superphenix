@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/models/view"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
@@ -259,4 +260,35 @@ func ExpressionExistsInList(expList []metav1.LabelSelectorRequirement, newExp me
 		}
 	}
 	return false
+}
+
+// withSubnetScope scopes the network policy to the given subnets, an empty list clearing any
+// existing scope. Every effective ID must be available to the project.
+func withSubnetScope(np *v1.NetworkPolicy, namespace string, subnetEIds []string, available []view.SubnetView) error {
+	if len(subnetEIds) == 0 {
+		delete(np.Annotations, utils.NetPolForAnnotation)
+		return nil
+	}
+
+	if len(subnetEIds) > MaxSubnets {
+		return ErrTooManySubnets
+	}
+
+	known := make(map[string]bool, len(available))
+	for _, subnet := range available {
+		known[subnet.Name] = true
+	}
+
+	for _, eid := range subnetEIds {
+		if !known[eid] {
+			return fmt.Errorf("%w: %s", ErrUnknownSubnet, eid)
+		}
+	}
+
+	if np.Annotations == nil {
+		np.Annotations = make(map[string]string)
+	}
+	np.Annotations[utils.NetPolForAnnotation] = utils.BuildSubnetScope(namespace, subnetEIds)
+
+	return nil
 }

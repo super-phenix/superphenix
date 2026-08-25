@@ -20,6 +20,8 @@ type NetPolView struct {
 
 	Spec        v1.NetworkPolicySpec `json:"spec"`
 	Description string               `json:"description"`
+	// SubnetEIds scopes the policy to these subnets, empty meaning all of them.
+	SubnetEIds []string `json:"subnetEIds,omitempty"`
 }
 
 func UnstructuredNetPolToView(fw *unstructured.Unstructured) NetPolView {
@@ -37,10 +39,14 @@ func UnstructuredNetPolToView(fw *unstructured.Unstructured) NetPolView {
 			view.Description = v
 		}
 	}
+	view.SubnetEIds = utils.ParseSubnetScope(fw.GetAnnotations())
 	return view
 }
 
 func NetPolToView(fw v1.NetworkPolicy) NetPolView {
+	// Read the scope before the ovn annotation gets filtered out.
+	subnetEIds := utils.ParseSubnetScope(fw.GetAnnotations())
+
 	fw.Labels = utils.FilterLabels(fw.GetLabels())
 	fw.Annotations = utils.FilterAnnotations(fw.GetAnnotations())
 
@@ -52,6 +58,7 @@ func NetPolToView(fw v1.NetworkPolicy) NetPolView {
 			fwView.Description = v
 		}
 	}
+	fwView.SubnetEIds = subnetEIds
 
 	return fwView
 }
