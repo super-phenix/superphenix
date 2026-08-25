@@ -9759,6 +9759,14 @@ const docTemplate = `{
                                 "$ref": "#/definitions/securitygroup.IngressRule"
                             }
                         },
+                        "subnetEIds": {
+                            "description": "SubnetEIds scopes the security group to these subnets, empty meaning all of them.",
+                            "type": "array",
+                            "maxItems": 10,
+                            "items": {
+                                "type": "string"
+                            }
+                        },
                         "target": {
                             "$ref": "#/definitions/securitygroup.LabelSelector"
                         }
@@ -9951,6 +9959,14 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/securitygroup.IngressRule"
+                            }
+                        },
+                        "subnetEIds": {
+                            "description": "SubnetEIds scopes the security group to these subnets, empty meaning all of them.",
+                            "type": "array",
+                            "maxItems": 10,
+                            "items": {
+                                "type": "string"
                             }
                         },
                         "target": {

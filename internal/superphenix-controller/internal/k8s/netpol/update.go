@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/kubeovn/subnet"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
@@ -19,6 +20,8 @@ type UpdateNetPolInfo struct {
 	Target      LabelSelector `json:"target"`
 	Ingress     []IngressRule `json:"ingress"`
 	Egress      []EgressRule  `json:"egress"`
+	// SubnetEIds scopes the policy to these subnets, empty meaning all of them.
+	SubnetEIds []string `json:"subnetEIds" validate:"max=10"`
 }
 
 func (info *UpdateNetPolInfo) UpdateNetPol(ctx context.Context, namespace, name string) error {
@@ -60,6 +63,11 @@ func (info *UpdateNetPolInfo) UpdateNetPol(ctx context.Context, namespace, name 
 
 	if err := withEgress(ctx, netPol, info.Egress, namespace); err != nil {
 		log.Err(err).Any("info", info).Str("namespace", namespace).Msg("Failed to add egress rules")
+		return err
+	}
+
+	if err := withSubnetScope(netPol, namespace, info.SubnetEIds, subnet.ListSubnet(ctx, namespace)); err != nil {
+		log.Err(err).Any("info", info).Str("namespace", namespace).Msg("Failed to scope the network policy to the subnets")
 		return err
 	}
 
