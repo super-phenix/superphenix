@@ -25,6 +25,7 @@ kubevirtCsi:
     #   tenantClass: default
     #   infraClass: default
     #   reclaimPolicy: Retain
+    #   allowVolumeExpansion: true
   snapshotclasses: {}
     # default:
     #   isDefaultClass: true

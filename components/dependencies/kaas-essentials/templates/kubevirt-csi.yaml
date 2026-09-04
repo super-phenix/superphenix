@@ -323,7 +323,7 @@ metadata:
   annotations:
     storageclass.kubernetes.io/is-default-class: {{ $class.isDefaultClass | default false | quote }}
 provisioner: csi.kubevirt.io
-allowVolumeExpansion: true
+allowVolumeExpansion: {{ $class.allowVolumeExpansion | default true }}
 parameters:
   infraStorageClassName: {{ $class.infraClass }}
   bus: scsi
