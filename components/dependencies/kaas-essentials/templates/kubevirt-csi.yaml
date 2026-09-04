@@ -338,7 +338,7 @@ metadata:
   annotations:
     snapshot.storage.kubernetes.io/is-default-class: {{ $class.isDefaultClass | default false | quote }}
 driver: csi.kubevirt.io
-deletionPolicy: Delete
+deletionPolicy: {{ $class.deletionPolicy | default "Delete" }}
 parameters:
   infraSnapshotClassName: {{ $class.infraClass }}
 {{- end }}
