@@ -327,6 +327,7 @@ allowVolumeExpansion: true
 parameters:
   infraStorageClassName: {{ $class.infraClass }}
   bus: scsi
+reclaimPolicy: {{ $class.reclaimPolicy | default "Retain" }}
 {{- end }}
 {{- range $key, $class := .snapshotClasses }}
 ---

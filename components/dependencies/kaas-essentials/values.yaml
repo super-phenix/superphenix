@@ -18,11 +18,13 @@ controlPlane:
       proxyPort: 7444
 
 kubevirtCsi:
+  # https://kubernetes.io/docs/concepts/storage/storage-classes/
   storageClasses: {}
     # default:
     #   isDefaultClass: true
     #   tenantClass: default
     #   infraClass: default
+    #   reclaimPolicy: Retain
   snapshotclasses: {}
     # default:
     #   isDefaultClass: true
