@@ -285,7 +285,6 @@ func main() {
 				Client:          mgr.GetClient(),
 				OperatorVersion: version.OperatorVersion,
 				Namespace:       operatorNamespace,
-				SystemVersion:   systemChartVersion,
 				ArgoCDVersion:   argocdChartVersion,
 			},
 			Client: telemetry.NewClient(telemetryEndpoint),
