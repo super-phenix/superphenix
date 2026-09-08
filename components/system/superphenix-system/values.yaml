@@ -2031,4 +2031,53 @@ apps:
     helm:
       chart: "misc"
       releaseName: "misc"
-      values: {}
+      values:
+        effectiveMode: '{{ include "superphenix-system.effectiveMode" . }}'
+        modes:
+          external-subnet: [Hyperconverged, DecoupledWorkload]
+          external-subnet-nad: [Hyperconverged, DecoupledWorkload]
+        objects:
+          # -- This is the physical network in which the NAT gateways will be created.
+          # The NAT gateways will take IPs at random within that subnet, so ensure the `excludeIps field
+          # encompasses any IPs that are already in use. Ideally, the range of that subnet (or part of it)
+          # must be reserved to SPX.
+          external-subnet:
+            apiVersion: kubeovn.io/v1
+            kind: Subnet
+            metadata:
+              name: external-subnet
+            spec:
+              # NAT gateways work exclusively for IPv4. IPv6 doesn't need NATing.
+              protocol: IPv4
+              # The CIDR of the physical network in which the NAT gateways will be created.
+              cidrBlock: 192.168.1.0/24
+              # The gateway where the NATed traffic must be forwarded.
+              gateway: 192.168.1.254
+              # IPs that must not be picked up by the NAT gateway.
+              # You can include individual IPs, or ranges of IPs (separate the IPs using "..")
+              excludeIps:
+                - 192.168.1.0..192.168.1.200
+                - 192.168.1.254
+              provider: external-subnet.kube-system
+          # - This is where you specify what physical port must be used by the NAT gateways.
+          # Override the "config" and change the "master" to a physical interface, bond or VLAN.
+          # The interface must have the same name on every node of the cluster. Use link aliases
+          # to give a secondary name to your interfaces if they do not fulfill that requirement.
+          external-subnet-nad:
+            apiVersion: "k8s.cni.cncf.io/v1"
+            kind: NetworkAttachmentDefinition
+            metadata:
+              name: external-subnet
+              namespace: kube-system
+            spec:
+              config: '{
+                  "cniVersion": "0.3.0",
+                  "type": "macvlan",
+                  "master": "enp0s31f6",
+                  "mode": "bridge",
+                  "ipam": {
+                    "type": "kube-ovn",
+                    "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
+                    "provider": "external-subnet.kube-system"
+                  }
+                }'

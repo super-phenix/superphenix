@@ -1,3 +1,12 @@
+# -- The effective mode of the cluster.
+# Passed by superphenix-system to filter objects.
+effectiveMode: ""
+
+# -- Map of object names to a list of modes.
+# If an object's name is in this map, it will only be deployed if the
+# effectiveMode is in the list.
+modes: {}
+
 # -- Arbitrary YAML objects to be deployed.
 # The objects are templated before being applied.
 # Example:
