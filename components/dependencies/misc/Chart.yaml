@@ -1,0 +1,6 @@
+apiVersion: v2
+name: misc
+description: A helm chart to deploy arbitrary YAML objects
+type: application
+version: 0.0.0
+appVersion: 0.0.0

@@ -1,0 +1,12 @@
+# -- Arbitrary YAML objects to be deployed.
+# The objects are templated before being applied.
+# Example:
+# objects:
+#   my-configmap:
+#     apiVersion: v1
+#     kind: ConfigMap
+#     metadata:
+#       name: my-configmap
+#     data:
+#       key: '{{ .Release.Name }}'
+objects: {}

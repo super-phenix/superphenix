@@ -2011,3 +2011,24 @@ apps:
       chart: "idrac-exporter"
       releaseName: "idrac-exporter"
       values: {}
+
+  # -- misc: arbitrary YAML objects passed through the values.
+  # Useful to create objects on the clusters for anything not natively
+  # supported by other charts.
+  misc:
+    enabled: true
+    wave: "100"
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions:
+        - SkipDryRunOnMissingResource=true
+    namespace: default
+    repoURL: "ghcr.io/super-phenix/charts"
+    targetRevision: "0.0.0"
+    helm:
+      chart: "misc"
+      releaseName: "misc"
+      values: {}
