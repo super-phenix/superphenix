@@ -24,15 +24,11 @@ location: ""
 # This parameter cannot be overriden by the user.
 gitops: false
 
-# -- Domain to use in generated urls (controlplanes, AZ IPs)
-# This parameter cannot be overriden by the user.
-domain: "superphenix.net"
-
-# -- Domains to use in urls generated to fetch AZ IPs (per region)
-# Defaults to .domain for any given region.
+# -- Per AZ mapping of URLs for the integrated kube-API proxy
 # This parameter cannot be overriden by the user.
 azDomains: {}
-  # fr01: example.org
+  # aq01-test01:
+  #   internal: azs.aq01.superphenix.net
 
 # -- Maximum mumber of AZs in a region (for cluster migrations).
 # This parameter cannot be overriden by the user.

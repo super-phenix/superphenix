@@ -8,10 +8,8 @@
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) -}}
 {{- $imgUrl := $.Values.defaultImageUrl }}
 {{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "name" $clusterID "az" $.Values.location "domain" $.Values.domain)) }}
-{{- $region := (split "-" $.Values.location)._0 }}
 {{- $azCount := $.Values.azCount }}
-{{- $azQueryUrlDomain := (get $.Values.azDomains $region) | default $.Values.domain }}
-{{- $azQueryUrl := printf "azs.%s.%s" $region $azQueryUrlDomain }}
+{{- $azListUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").internal }}
 
 {{- range $poolName, $pool := $workers.instances -}}
 {{- $template := $pool.template -}}
@@ -107,10 +105,10 @@ spec:
               default_backend konnectivity-server
             backend controlplane
               option httpchk GET /readyz
-              server-template az "{{ $azCount }}" "{{ $azQueryUrl }}":"{{ $controlPlaneDefaults.network.apiServer.proxyPort }}" ssl sni str("{{ $fqdn }}") resolvers default check port "{{ $controlPlaneDefaults.network.apiServer.port }}" check-ssl check-sni "{{ $fqdn }}"
+              server-template az "{{ $azCount }}" "{{ $azListUrl }}":"{{ $controlPlaneDefaults.network.apiServer.proxyPort }}" ssl sni str("{{ $fqdn }}") resolvers default check port "{{ $controlPlaneDefaults.network.apiServer.port }}" check-ssl check-sni "{{ $fqdn }}"
             backend konnectivity-server
               option httpchk GET /readyz
-              server-template az "{{ $azCount }}" "{{ $azQueryUrl }}":"{{ $controlPlaneDefaults.network.konnectivity.port }}" ssl sni str("{{ $fqdn }}") resolvers default check port "{{ $controlPlaneDefaults.network.apiServer.port }}" check-ssl check-sni "{{ $fqdn }}"
+              server-template az "{{ $azCount }}" "{{ $azListUrl }}":"{{ $controlPlaneDefaults.network.konnectivity.port }}" ssl sni str("{{ $fqdn }}") resolvers default check port "{{ $controlPlaneDefaults.network.apiServer.port }}" check-ssl check-sni "{{ $fqdn }}"
       joinConfiguration:
         discovery:
           bootstrapToken:
