@@ -75,6 +75,16 @@ apps:
             blockStorage:
               storageClassMapping:
                 default: spx-storage.spx-rbd-3x
+            natGatewayDefault:
+              externalSubnets:
+                - external-subnet
+              defaultRoutes:
+                - cidr: 198.18.0.0/16
+                  nextHopIP: gateway
+              bgpSpeaker:
+                enabled: false
+            eipDefault:
+              externalSubnet: external-subnet
 
   # -- CoreDNS used for DNS resolution within the Kubernetes clusters
   coredns:
@@ -712,7 +722,7 @@ apps:
       prune: true
       cleanupOnDeletion: false
       syncOptions: {}
-    namespace: "kubevirt"
+    namespace: "kubevirt-system"
     repoURL: "oci://ghcr.io/super-phenix/charts/kubevirt"
     targetRevision: "0.1.0"
     helm:
@@ -1104,7 +1114,7 @@ apps:
 
   # -- talos-backup: CronJob that periodically pushes etcd snapshots to S3 for disaster recovery.
   talos-backup:
-    enabled: true
+    enabled: false
     modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
     automation:
       enabled: true
