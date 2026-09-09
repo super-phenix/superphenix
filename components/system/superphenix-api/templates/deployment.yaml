@@ -35,6 +35,14 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if or .Values.jwtSecret.generate .Values.jwtSecret.secretName }}
+          env:
+            - name: SUPERPHENIX-API_AUTHENTICATION_JWTSECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.jwtSecret.secretName | default (printf "%s-jwt" (include "superphenix-api.fullname" .)) }}
+                  key: jwt-secret
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.containerPorts.http }}

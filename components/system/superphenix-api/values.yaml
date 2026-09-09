@@ -85,6 +85,12 @@ serviceMonitor:
 # `config.productsConfig.argoApp.{kubernetes,backup}`.
 config: {}
 
+jwtSecret:
+  # -- Whether to generate a random JWT secret using a Kubernetes Job.
+  generate: true
+  # -- The name of the secret to create/use. Defaults to `{{ include "superphenix-api.fullname" . }}-jwt`.
+  secretName: ""
+
 ingress:
   enabled: false
   className: ""
