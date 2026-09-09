@@ -26,6 +26,8 @@
   ·
   <a href="https://docs.superphenix.net"><strong>Documentation</strong></a>
   ·
+  <a href="https://join.slack.com/t/superphenix/shared_invite/zt-49gzuarwh-bfOqBOf0g53SgTL5h_YSLg"><strong>Slack</strong></a>
+  ·
   <a href="https://docs.superphenix.net/installation/getting-started/"><strong>Get started</strong></a>
   ·
   <a href="https://docs.superphenix.net/features/"><strong>Features</strong></a>
@@ -82,6 +84,7 @@ If your goal is independence and total control over your infrastructure, Superph
 
 ## Community
 
+- **Chat:** [Slack](https://join.slack.com/t/superphenix/shared_invite/zt-49gzuarwh-bfOqBOf0g53SgTL5h_YSLg)
 - **Issues & discussions:** [GitHub Issues](https://github.com/super-phenix/superphenix/issues) · [GitHub Discussions](https://github.com/super-phenix/superphenix/discussions)
 - **Contributions:** see [CONTRIBUTING.md](CONTRIBUTING.md)
 
