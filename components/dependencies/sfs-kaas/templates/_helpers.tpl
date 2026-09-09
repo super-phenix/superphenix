@@ -60,7 +60,7 @@ Returns the FQDN of a cluster
 */}}
 {{- define "sfs-kaas.fqdn" -}}
 {{- $ := .root }}
-{{- $baseUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").external | required "Missing `external` key for this AZ under `.azDomains.<AZ>`"}}
+{{- $baseUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").external | required "Missing `external` key for this AZ under `.azDomains.<AZ>`" }}
 {{- printf "%s" (regexReplaceAll "%s" $baseUrl .name) }}
 {{- end }}
 
