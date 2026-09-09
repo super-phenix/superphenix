@@ -1695,7 +1695,6 @@ apps:
             url: "permify.{{ $.Release.Namespace }}.svc:3478"
 
           authentication:
-            jwtSecret: "changeme!"
             kratosEndpoint: "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
 
           session:
