@@ -94,6 +94,11 @@ clusters: {}
   #   # @section -- Cluster
   #   # @default -- {}
   #   controlPlane:
+  #     # -- Advanced API server configuration
+  #     apiServer:
+  #       # -- Specify additional arguments
+  #       extraArgs: []
+
   #     # -- Defines the controlplane's datastore.
   #     # @section -- Controlplane
   #     dataStore:

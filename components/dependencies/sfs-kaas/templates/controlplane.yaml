@@ -25,6 +25,13 @@ metadata:
     superphenix.net/resourceLocalID: {{ $preID | quote }}
     superphenix.net/resourceName: {{ $cluster.name | quote }}
 spec:
+  {{- with $controlplane.apiServer }}
+  apiServer:
+    {{- with .extraArgs }}
+    extraArgs:
+      {{- . | toYaml | nindent 6 }}
+    {{- end }}
+  {{- end }}
   {{- if ne $dataStoreName "" }}
   dataStoreName: {{ $dataStoreName | quote }}
   {{- end }}
