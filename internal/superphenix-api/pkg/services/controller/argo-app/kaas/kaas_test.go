@@ -652,31 +652,41 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		azDomains map[string]string
-		want      map[string]string
-		rawWant   string // empty means the azDomains key must be absent
+		azDomains map[string]config.AzDomainConfig
+		want      map[string]AzDomain
+		rawWant   []string // empty means the azDomains key must be absent
 	}{
 		{
-			name:      "configured with two entries",
-			azDomains: map[string]string{"az01": "example.org", "az02": "example.net"},
-			want:      map[string]string{"az01": "example.org", "az02": "example.net"},
-			rawWant:   "az01: example.org",
+			name: "configured with two entries",
+			azDomains: map[string]config.AzDomainConfig{
+				"az01": {Internal: "azs.az01.example.org", External: "%s.kaas.az01.example.org"},
+				"az02": {Internal: "azs.az02.example.net", External: "%s.kaas.az02.example.net"},
+			},
+			want: map[string]AzDomain{
+				"az01": {Internal: "azs.az01.example.org", External: "%s.kaas.az01.example.org"},
+				"az02": {Internal: "azs.az02.example.net", External: "%s.kaas.az02.example.net"},
+			},
+			rawWant: []string{"internal: azs.az01.example.org", "external: '%s.kaas.az02.example.net'"},
 		},
 		{
-			name:      "configured with one entry",
-			azDomains: map[string]string{"az01": "example.org"},
-			want:      map[string]string{"az01": "example.org"},
-			rawWant:   "az01: example.org",
+			name: "configured with one entry",
+			azDomains: map[string]config.AzDomainConfig{
+				"az01": {Internal: "azs.az01.example.org", External: "%s.kaas.az01.example.org"},
+			},
+			want: map[string]AzDomain{
+				"az01": {Internal: "azs.az01.example.org", External: "%s.kaas.az01.example.org"},
+			},
+			rawWant: []string{"internal: azs.az01.example.org", "external: '%s.kaas.az01.example.org'"},
 		},
 		{
 			name:      "unconfigured omits the key",
 			azDomains: nil,
-			want:      map[string]string{},
+			want:      map[string]AzDomain{},
 		},
 		{
 			name:      "empty map omits the key",
-			azDomains: map[string]string{},
-			want:      map[string]string{},
+			azDomains: map[string]config.AzDomainConfig{},
+			want:      map[string]AzDomain{},
 		},
 	}
 
@@ -687,12 +697,15 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 			if err != nil {
 				t.Fatalf("CreateKaaSAppValues() error = %v", err)
 			}
-			if tt.rawWant == "" {
+			if len(tt.rawWant) == 0 {
 				if strings.Contains(values, "azDomains") {
 					t.Errorf("expected values to NOT contain azDomains.\nValues:\n%s", values)
 				}
-			} else if !strings.Contains(values, tt.rawWant) {
-				t.Errorf("expected values to contain %q.\nValues:\n%s", tt.rawWant, values)
+			}
+			for _, want := range tt.rawWant {
+				if !strings.Contains(values, want) {
+					t.Errorf("expected values to contain %q.\nValues:\n%s", want, values)
+				}
 			}
 			var parsed Values
 			if err := yaml.Unmarshal([]byte(values), &parsed); err != nil {
@@ -703,7 +716,7 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 			}
 			for k, v := range tt.want {
 				if parsed.AzDomains[k] != v {
-					t.Errorf("azDomains[%q] = %q, want %q", k, parsed.AzDomains[k], v)
+					t.Errorf("azDomains[%q] = %+v, want %+v", k, parsed.AzDomains[k], v)
 				}
 			}
 		})
@@ -731,9 +744,12 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		azDomains map[string]string
+		azDomains map[string]config.AzDomainConfig
 	}{
-		{name: "populated map", azDomains: map[string]string{"az01": "example.org", "az02": "example.net"}},
+		{name: "populated map", azDomains: map[string]config.AzDomainConfig{
+			"az01": {Internal: "azs.az01.example.org", External: "%s.kaas.az01.example.org"},
+			"az02": {Internal: "azs.az02.example.net", External: "%s.kaas.az02.example.net"},
+		}},
 		{name: "empty map", azDomains: nil},
 	}
 

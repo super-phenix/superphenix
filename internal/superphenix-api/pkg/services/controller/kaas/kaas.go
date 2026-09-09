@@ -618,7 +618,8 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if argokaas.ShouldRewriteFQDN(h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeVersions, spec.KubeVersion) {
-		body, err = argokaas.RewriteFQDN(body, effectiveId, azDb.Code, h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeConfigDomain)
+		azDomain := h.cfg.ProductsConfig.ArgoApp.Kubernetes.AzDomains[azDb.Code]
+		body, err = argokaas.RewriteFQDN(body, effectiveId, azDomain.External)
 		if err != nil {
 			log.Err(err).Str("eid", effectiveId).Msg("Failed to rewrite kubeconfig server endpoint")
 			httpError.Http(w, r, http.StatusInternalServerError).Str("eid", effectiveId).Msg(consts.SpxResponseParseFailure)

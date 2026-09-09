@@ -37,6 +37,15 @@ type KubeVersionConfig struct {
 	Fqdn    *bool              `yaml:"fqdn"`
 }
 
+// AzDomainConfig holds the URLs used in KaaS cluster configuration for one AZ.
+// Internal is the host the in-cluster kube-API proxy resolves to reach control
+// planes, including across AZs during disaster recovery. External is a URL
+// template for the control plane FQDN, where "%s" is replaced by the cluster ID.
+type AzDomainConfig struct {
+	Internal string `yaml:"internal"`
+	External string `yaml:"external"`
+}
+
 // ResolveKubeVersionRepo returns the effective repo for version and whether the
 // version is supported. A version's own Repo fully replaces def.
 func ResolveKubeVersionRepo(versions []KubeVersionConfig, def RepoArgoAppConfig, version string) (RepoArgoAppConfig, bool) {
@@ -172,11 +181,12 @@ type Config struct {
 	ProductsConfig struct {
 		ArgoApp struct {
 			Kubernetes struct {
-				Repo             RepoArgoAppConfig   `yaml:"repo"`
-				KubeVersions     []KubeVersionConfig `yaml:"kubeVersions,omitempty"`
-				KubeConfigDomain string              `yaml:"kubeConfigDomain"`
-				// AZ code -> domain, sent in KaaS helm values.
-				AzDomains map[string]string `yaml:"azDomains"`
+				Repo         RepoArgoAppConfig   `yaml:"repo"`
+				KubeVersions []KubeVersionConfig `yaml:"kubeVersions,omitempty"`
+				// AZ code -> internal/external URLs, sent in KaaS helm values.
+				// The key must match the AZ code, which is what the chart's
+				// `location` value is set to.
+				AzDomains map[string]AzDomainConfig `yaml:"azDomains"`
 			} `yaml:"kubernetes"`
 
 			Backup struct {
@@ -291,7 +301,6 @@ productsConfig:
         repoURL: ""
         targetRevision: ""
       kubeVersions: []
-      kubeConfigDomain: "<kube-config-domain>"
       azDomains: {}
     backup:
       repo:

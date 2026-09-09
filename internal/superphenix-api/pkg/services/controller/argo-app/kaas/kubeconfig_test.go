@@ -51,8 +51,8 @@ func TestRewriteFQDN(t *testing.T) {
 	const (
 		// clusterID is the resource effective ID, which already carries the "spx-" prefix.
 		clusterID = "spx-eefbc9b5-ee3c-5854-a543-403ea86d6bc5"
-		az        = "aq01-test01"
-		domain    = "superphenix.net"
+		// external is the AZ URL template, "%s" standing for the cluster ID.
+		external = "%s.kaas.aq01-test01.superphenix.net"
 	)
 	wantHost := "spx-eefbc9b5-ee3c-5854-a543-403ea86d6bc5.kaas.aq01-test01.superphenix.net"
 
@@ -60,8 +60,7 @@ func TestRewriteFQDN(t *testing.T) {
 		name        string
 		raw         string
 		clusterID   string
-		az          string
-		domain      string
+		external    string
 		wantErr     bool
 		wantServers map[string]string // cluster name -> expected server
 	}{
@@ -69,32 +68,28 @@ func TestRewriteFQDN(t *testing.T) {
 			name:        "single cluster preserves port",
 			raw:         kubeconfigYAML("https://10.96.0.1:7443"),
 			clusterID:   clusterID,
-			az:          az,
-			domain:      domain,
+			external:    external,
 			wantServers: map[string]string{"c0": "https://" + wantHost + ":7443"},
 		},
 		{
 			name:        "scheme preserved",
 			raw:         kubeconfigYAML("http://10.96.0.1:7443"),
 			clusterID:   clusterID,
-			az:          az,
-			domain:      domain,
+			external:    external,
 			wantServers: map[string]string{"c0": "http://" + wantHost + ":7443"},
 		},
 		{
 			name:        "no port in source",
 			raw:         kubeconfigYAML("https://10.96.0.1"),
 			clusterID:   clusterID,
-			az:          az,
-			domain:      domain,
+			external:    external,
 			wantServers: map[string]string{"c0": "https://" + wantHost},
 		},
 		{
 			name:      "multiple clusters each keep their port",
 			raw:       kubeconfigYAML("https://10.96.0.1:7443", "https://10.96.0.2:6443"),
 			clusterID: clusterID,
-			az:        az,
-			domain:    domain,
+			external:  external,
 			wantServers: map[string]string{
 				"c0": "https://" + wantHost + ":7443",
 				"c1": "https://" + wantHost + ":6443",
@@ -104,39 +99,42 @@ func TestRewriteFQDN(t *testing.T) {
 			name:        "ipv6 source host with port",
 			raw:         kubeconfigYAML("https://[fd00::1]:7443"),
 			clusterID:   clusterID,
-			az:          az,
-			domain:      domain,
+			external:    external,
 			wantServers: map[string]string{"c0": "https://" + wantHost + ":7443"},
 		},
 		{
 			name:      "malformed kubeconfig",
 			raw:       "this is not a kubeconfig: {{{",
 			clusterID: clusterID,
-			az:        az,
-			domain:    domain,
+			external:  external,
 			wantErr:   true,
 		},
 		{
 			name:      "unparseable server url",
 			raw:       kubeconfigYAML("https://%zz"),
 			clusterID: clusterID,
-			az:        az,
-			domain:    domain,
+			external:  external,
 			wantErr:   true,
 		},
 		{
-			name:      "missing params",
+			name:      "missing external url",
 			raw:       kubeconfigYAML("https://10.96.0.1:7443"),
 			clusterID: clusterID,
-			az:        "",
-			domain:    domain,
+			external:  "",
+			wantErr:   true,
+		},
+		{
+			name:      "external url without placeholder",
+			raw:       kubeconfigYAML("https://10.96.0.1:7443"),
+			clusterID: clusterID,
+			external:  "kaas.aq01-test01.superphenix.net",
 			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := RewriteFQDN([]byte(tt.raw), tt.clusterID, tt.az, tt.domain)
+			got, err := RewriteFQDN([]byte(tt.raw), tt.clusterID, tt.external)
 			if tt.wantErr {
 				if err == nil {
 					t.Fatalf("expected error, got nil")

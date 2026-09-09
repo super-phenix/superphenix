@@ -24,6 +24,20 @@ import (
 
 var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9-]*$")
 
+// azDomainValues converts the configured per-AZ URLs into the shape the
+// sfs-kaas chart expects. A nil or empty configuration yields nil so the
+// azDomains key stays out of the rendered values.
+func azDomainValues(cfg map[string]config.AzDomainConfig) map[string]AzDomain {
+	if len(cfg) == 0 {
+		return nil
+	}
+	out := make(map[string]AzDomain, len(cfg))
+	for az, d := range cfg {
+		out[az] = AzDomain{Internal: d.Internal, External: d.External}
+	}
+	return out
+}
+
 // CreateKaaSAppValues generates the Helm values YAML for a KaaS application.
 func CreateKaaSAppValues(ctx context.Context, localId, location string, spec KaaSSpec, kaasConfig KaaSConfig, oldSpec *KaaSSpec) (string, []string, error) {
 	log := logger.GetLogger(ctx)
@@ -263,7 +277,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 	}
 
 	valuesObj := Values{
-		AzDomains: config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains,
+		AzDomains: azDomainValues(config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains),
 		Clusters: map[string]Cluster{
 			localId: {
 				Name:        localId,

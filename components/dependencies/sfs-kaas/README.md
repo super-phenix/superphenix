@@ -77,7 +77,7 @@ This Helm Chart is used by the self-service ArgoCDs of Superphénix to create Ku
 {}
 </pre>
 </td>
-		<td>Domains to use in urls generated to fetch AZ IPs (per region) Defaults to .domain for any given region. This parameter cannot be overriden by the user.</td>
+		<td>Per AZ mapping of URLs to use in cluster configuration This parameter cannot be overriden by the user.</td>
 	</tr>
 	<tr>
 		<td>clusters</td>
@@ -96,15 +96,6 @@ This Helm Chart is used by the self-service ArgoCDs of Superphénix to create Ku
 </pre>
 </td>
 		<td>Image URL for the worker VMs This parameter cannot be overriden by the user.</td>
-	</tr>
-	<tr>
-		<td>domain</td>
-		<td>string</td>
-		<td><pre lang="json">
-"superphenix.net"
-</pre>
-</td>
-		<td>Domain to use in generated urls (controlplanes, AZ IPs) This parameter cannot be overriden by the user.</td>
 	</tr>
 	<tr>
 		<td>gitops</td>
