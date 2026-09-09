@@ -7,9 +7,9 @@
 {{- $workers := $cluster.workers -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) -}}
 {{- $imgUrl := $.Values.defaultImageUrl }}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "name" $clusterID "az" $.Values.location "domain" $.Values.domain)) }}
+{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
 {{- $azCount := $.Values.azCount }}
-{{- $azListUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").internal }}
+{{- $azListUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").internal | required "Missing `internal` key for this AZ under `.azDomains.<AZ>`" }}
 
 {{- range $poolName, $pool := $workers.instances -}}
 {{- $template := $pool.template -}}

@@ -59,7 +59,9 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Returns the FQDN of a cluster
 */}}
 {{- define "sfs-kaas.fqdn" -}}
-{{- printf "%s.kaas.%s.%s" .name .az .domain }}
+{{- $ := .root }}
+{{- $baseUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").external | required "Missing `external` key for this AZ under `.azDomains.<AZ>`"}}
+{{- printf "%s" (regexReplaceAll "%s" $baseUrl .name) }}
 {{- end }}
 
 {{/*

@@ -7,7 +7,7 @@
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) }}
 {{- $kubeVersion := $cluster.kubeVersion }}
 {{- $kubeMinor := substr 1 5 $kubeVersion -}}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "name" $clusterID "az" $.Values.location "domain" $.Values.domain)) }}
+{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
 
 ---
 apiVersion: v1

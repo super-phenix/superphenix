@@ -24,11 +24,17 @@ location: ""
 # This parameter cannot be overriden by the user.
 gitops: false
 
-# -- Per AZ mapping of URLs for the integrated kube-API proxy
+# -- Per AZ mapping of URLs to use in cluster configuration
 # This parameter cannot be overriden by the user.
 azDomains: {}
   # aq01-test01:
-  #   internal: azs.aq01.superphenix.net
+  #   # -- Used by the integrated kube-API proxy to reach its controlplane
+  #   # even accross AZs in case of disaster recovery
+  #   internal: "azs.aq01.superphenix.net"
+
+  #   # -- Url template on which the controlplane will be reachable
+  #   # "%s" will be replaced by the cluster's ID
+  #   external: "%s.kaas.aq01-test01.superphenix.net"
 
 # -- Maximum mumber of AZs in a region (for cluster migrations).
 # This parameter cannot be overriden by the user.

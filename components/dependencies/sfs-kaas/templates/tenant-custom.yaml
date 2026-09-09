@@ -7,7 +7,7 @@
 {{- $controlPlane := $cluster.controlPlane -}}
 {{- $controlPlaneDefaults := $.Values.clusterDefaults.controlPlane -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) }}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "name" $clusterID "az" $.Values.location "domain" $.Values.domain)) }}
+{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
 
 ---
 apiVersion: v1
