@@ -25,7 +25,7 @@ metadata:
     superphenix.net/resourceLocalID: {{ $preID | quote }}
     superphenix.net/resourceName: {{ $cluster.name | quote }}
 spec:
-  {{- with $controlplane.apiServer }}
+  {{- with $controlPlane.apiServer }}
   apiServer:
     {{- with .extraArgs }}
     extraArgs:
