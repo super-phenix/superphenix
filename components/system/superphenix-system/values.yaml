@@ -1730,19 +1730,20 @@ apps:
       chart: kratos
       releaseName: kratos
       values:
+        # -- Kratos global secret used to derive signing secrets. MUST be overridden per environment.
+        globalSecret: "change-me-to-something-random-at-least-16-char-long"
         kratos:
           config:
             # -- Kratos DSN stores users, sessions, recovery codes and verification data.
             dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
 
-            # -- Kratos signing secrets. MUST be overridden per environment with a strong random value.
             secrets:
               default:
-                - "change-me-to-something-random-at-least-16-char-long"
+                - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "default" | sha256sum | trunc 32 }}'
               cookie:
-                - "change-me-to-something-random-at-least-16-char-long"
+                - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cookie" | sha256sum | trunc 32 }}'
               cipher:
-                - "change-me-to-something-random-at-least-16-char-long"
+                - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cipher" | sha256sum | trunc 32 }}'
 
             # -- Kratos public/admin listener configuration.
             serve:
@@ -1854,6 +1855,7 @@ apps:
             enabled: true
 
           secret:
+            enabled: true
             secretAnnotations: null
 
           # -- Contents of the identity schema files referenced by `config.identity.schemas`.
