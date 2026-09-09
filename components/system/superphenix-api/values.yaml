@@ -90,6 +90,11 @@ jwtSecret:
   generate: true
   # -- The name of the secret to create/use. Defaults to `{{ include "superphenix-api.fullname" . }}-jwt`.
   secretName: ""
+  image:
+    # -- The image repository to use for the JWT secret generation job.
+    repository: alpine/kubectl
+    # -- The image tag to use for the JWT secret generation job.
+    tag: 1.35.0
 
 ingress:
   enabled: false
