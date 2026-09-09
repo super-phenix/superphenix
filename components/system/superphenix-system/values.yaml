@@ -1695,6 +1695,7 @@ apps:
             url: "permify.{{ $.Release.Namespace }}.svc:3478"
 
           authentication:
+            jwtSecret: "changeme!"
             kratosEndpoint: "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
 
           session:
@@ -1734,11 +1735,6 @@ apps:
           config:
             # -- Kratos DSN stores users, sessions, recovery codes and verification data.
             dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
-
-            # -- Kratos signing secrets. MUST be overridden per environment with a strong random value.
-            secrets:
-              default:
-                - "change-me-to-something-random-at-least-16-char-long"
 
             # -- Kratos public/admin listener configuration.
             serve:
