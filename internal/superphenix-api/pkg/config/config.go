@@ -298,9 +298,12 @@ productsConfig:
   argoApp:
     kubernetes:
       repo:
-        repoURL: ""
-        targetRevision: ""
-      kubeVersions: []
+      	repoURL: "ghcr.io/super-phenix/charts"
+		chart: "sfs-kaas"
+		targetRevision: "0.6.1"
+      kubeVersions:
+		- version: "v1.36.3"
+        - version: "v1.35.5"
       azDomains: {}
     backup:
       repo:
