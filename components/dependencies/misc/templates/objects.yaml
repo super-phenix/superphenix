@@ -1,6 +1,6 @@
 {{- range $name, $object := .Values.objects }}
 {{- $modes := index $.Values.modes $name -}}
-{{- if or (not $modes) (has $.Values.effectiveMode (default (list) $modes)) -}}
+{{- if or (not $modes) (has $.Values.effectiveMode (default (list) $modes)) }}
 ---
 {{ tpl (toYaml $object) $ }}
 {{- end }}
