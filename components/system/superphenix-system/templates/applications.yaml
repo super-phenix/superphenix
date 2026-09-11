@@ -62,13 +62,15 @@ spec:
     {{- /* Applications without an explicit targetRevision follow the chart's own version (Chart.AppVersion), which keeps every SPX component in lockstep with this chart. */}}
     targetRevision: {{ $values.targetRevision | default $.Chart.AppVersion | quote }}
 
-    {{- with $values.helm }}
+    {{- if or $values.helm $values.values }}
     helm:
+      {{- with $values.helm }}
       {{- with .releaseName }}
       releaseName: {{ . | quote }}
       {{- end }}
+      {{- end }}
 
-      {{- with .values }}
+      {{- with $values.values }}
       {{- /* Run each app's values through `tpl` so they can reference other apps (e.g. share passwords or hostnames via the top-level `$` context). */}}
       valuesObject:
         {{- tpl (toYaml .) $ | nindent 8 }}

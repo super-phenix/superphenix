@@ -59,32 +59,32 @@ apps:
     helm:
       chart: superphenix-controller
       releaseName: superphenix-controller
-      values:
-        config:
-          http:
-            authSecret: "secret!"
-          containerDiskCatalog:
-            windows-virtio-drivers:
-              displayName: "Windows VirtIO Driver"
-              image: quay.io/kubevirt/virtio-container-disk:v1.7.0
-              bus: sata
-              recommended: true
-              supportedOS:
-                - windows
-          productsConfig:
-            blockStorage:
-              storageClassMapping:
-                default: spx-storage.spx-rbd-3x
-            natGatewayDefault:
-              externalSubnets:
-                - external-subnet
-              defaultRoutes:
-                - cidr: 198.18.0.0/16
-                  nextHopIP: gateway
-              bgpSpeaker:
-                enabled: false
-            eipDefault:
-              externalSubnet: external-subnet
+    values:
+      config:
+        http:
+          authSecret: "secret!"
+        containerDiskCatalog:
+          windows-virtio-drivers:
+            displayName: "Windows VirtIO Driver"
+            image: quay.io/kubevirt/virtio-container-disk:v1.7.0
+            bus: sata
+            recommended: true
+            supportedOS:
+              - windows
+        productsConfig:
+          blockStorage:
+            storageClassMapping:
+              default: spx-storage.spx-rbd-3x
+          natGatewayDefault:
+            externalSubnets:
+              - external-subnet
+            defaultRoutes:
+              - cidr: 198.18.0.0/16
+                nextHopIP: gateway
+            bgpSpeaker:
+              enabled: false
+          eipDefault:
+            externalSubnet: external-subnet
 
   # -- CoreDNS used for DNS resolution within the Kubernetes clusters
   coredns:
@@ -104,24 +104,24 @@ apps:
     helm:
       chart: coredns
       releaseName: coredns
-      values:
-        # Initial number of CoreDNS replicas.
-        replicaCount: 2
+    values:
+      # Initial number of CoreDNS replicas.
+      replicaCount: 2
 
-        # Cluster-wide DNS service (dual-stack, IPv6 primary).
+      # Cluster-wide DNS service (dual-stack, IPv6 primary).
+      service:
+        clusterIP: fd00:100:ffff::a
+        clusterIPs:
+          - fd00:100:ffff::a
+          - 10.16.0.10
+        ipFamilyPolicy: RequireDualStack
+
+      # Expose Prometheus metrics and register a ServiceMonitor.
+      prometheus:
         service:
-          clusterIP: fd00:100:ffff::a
-          clusterIPs:
-            - fd00:100:ffff::a
-            - 10.16.0.10
-          ipFamilyPolicy: RequireDualStack
-
-        # Expose Prometheus metrics and register a ServiceMonitor.
-        prometheus:
-          service:
-            enabled: true
-          monitor:
-            enabled: true
+          enabled: true
+        monitor:
+          enabled: true
 
   # -- Kube-OVN is used as the CNI for the workload layer
   kubeovn:
@@ -141,167 +141,167 @@ apps:
     helm:
       chart: kube-ovn-v2
       releaseName: kube-ovn
-      values:
-        # Node labels used to select where the OVS/OVN control plane is scheduled.
-        masterNodesLabels:
-          node-role.kubernetes.io/control-plane: ""
-          kube-ovn/role: null
+    values:
+      # Node labels used to select where the OVS/OVN control plane is scheduled.
+      masterNodesLabels:
+        node-role.kubernetes.io/control-plane: ""
+        kube-ovn/role: null
 
-        # Control-plane node IPs (comma-separated). Must be overridden per cluster.
-        masterNodes: "invalid,invalid,invalid"
+      # Control-plane node IPs (comma-separated). Must be overridden per cluster.
+      masterNodes: "invalid,invalid,invalid"
 
-        # Dual-stack IPv4/IPv6 pod, service and join networks.
-        networking:
-          stack: Dual
-          pods:
-            # By default, Kube-OVN will auto-determine the MTU to take GENEVE into account
-            # If you're running a high underlay MTU, you can force the overlay MTU to 1500
-            # mtu: 1500
-            cidr:
-              v4: "10.0.0.0/12"
-              v6: "fd00:100:0000:0::/96"
-            gateways:
-              v4: "10.0.0.1"
-              v6: "fd00:100:0000:0::1"
-          services:
-            cidr:
-              v4: "10.16.0.0/12"
-              v6: "fd00:100:ffff:0::/112"
-          join:
-            cidr:
-              v4: "100.64.0.0/12"
-              v6: "fd00:100:64::/112"
+      # Dual-stack IPv4/IPv6 pod, service and join networks.
+      networking:
+        stack: Dual
+        pods:
+          # By default, Kube-OVN will auto-determine the MTU to take GENEVE into account
+          # If you're running a high underlay MTU, you can force the overlay MTU to 1500
+          # mtu: 1500
+          cidr:
+            v4: "10.0.0.0/12"
+            v6: "fd00:100:0000:0::/96"
+          gateways:
+            v4: "10.0.0.1"
+            v6: "fd00:100:0000:0::1"
+        services:
+          cidr:
+            v4: "10.16.0.0/12"
+            v6: "fd00:100:ffff:0::/112"
+        join:
+          cidr:
+            v4: "100.64.0.0/12"
+            v6: "fd00:100:64::/112"
 
-        features:
-          enableNetworkPolicies: true
+      features:
+        enableNetworkPolicies: true
 
-        natGw:
-          namePrefix: "nat-gateway"
+      natGw:
+        namePrefix: "nat-gateway"
 
-        validatingWebhook:
-          enabled: true
+      validatingWebhook:
+        enabled: true
 
-        apiNad:
-          enabled: true
+      apiNad:
+        enabled: true
 
-        ovsOvn:
-          disableModulesManagement: true
-          ovsDirectory: "/var/lib/openvswitch"
-          ovnDirectory: "/var/lib/ovn"
+      ovsOvn:
+        disableModulesManagement: true
+        ovsDirectory: "/var/lib/openvswitch"
+        ovnDirectory: "/var/lib/ovn"
 
-        extraObjects:
-          - apiVersion: kubeovn.io/v1
-            kind: Subnet
-            metadata:
-              name: system-blackhole
-            spec:
-              protocol: IPv6
-              cidrBlock: fd00:666::/64
-              vpc: system-blackhole-vpc
-              disableGatewayCheck: true
-              # Block all traffic in that subnet
-              acls:
-              - action: drop
-                direction: from-lport
-                match: ip
-              - action: drop
-                direction: to-lport
-                match: ip
-              provider: system-blackhole.kube-system.ovn
-          - apiVersion: kubeovn.io/v1
-            kind: Vpc
-            metadata:
-              name: system-blackhole-vpc
-            spec: {}
-          - apiVersion: "k8s.cni.cncf.io/v1"
-            kind: NetworkAttachmentDefinition
-            metadata:
-              name: system-blackhole
-              namespace: kube-system
-            spec:
-              config: '{
-                  "cniVersion": "0.3.0",
-                  "type": "kube-ovn",
-                  "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
-                  "provider": "system-blackhole.kube-system.ovn"
-                }'
-          - apiVersion: kubeovn.io/v1
-            kind: Subnet
-            metadata:
-              name: system-isolated-egress
-            spec:
-              # The CDI can reach both IPv4 and IPv6 addresses on the Internet, so we need both
-              # protocols. Traffic is always NATed to the node IPs and we only do NAT44/NAT66.
-              # Later on we might assign a proper IPv6 GUA, but we cannot do the same for IPv4 and
-              # Kube-OVN does not support NATing only the IPv4 side.
-              protocol: Dual
-              cidrBlock: 10.32.0.0/16,fd00:110::/64
-              # Only the default VPC can perform outgoing NAT, which exposes us to lateral movement.
-              # This is mitigated by keeping `private: false` and by installing ACLs that block
-              # anything except traffic destined to the public Internet (see below).
-              vpc: ovn-cluster
-              # Any node can act as a gateway for this subnet.
-              gatewayType: distributed
-              # Node interfaces are ideally configured with MTU 9000; we cap the overlay MTU at 1380 to
-              # leave room for the Geneve header and avoid PMTUD-related failures.
-              mtu: 1380
-              #acls:
-              # Allow traffic to the cluster DNS.
-              #- action: allow-related
-              #  direction: from-lport
-              #  match: ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a
-              #  priority: 1001
-              # Allow traffic originating from the subnet gateways.
-              #- action: allow-related
-              #  direction: from-lport
-              #  match: ip4.src == 10.32.0.1 || ip6.src == fd00:110::1
-              #  priority: 1001
-              # Block RFC1918 IPv4 ranges and other non-public IPv4 space.
-              #- action: drop
-              #  direction: from-lport
-              #  match: ip4.dst == 10.0.0.0/8 && ip4.dst != 10.32.0.1 && ip4.src == 10.0.0.0/8
-              #  priority: 1000
-              #- action: drop
-              #  direction: from-lport
-              #  match: ip4.dst == 172.16.0.0/12 && ip
-              #  priority: 1000
-              #- action: drop
-              #  direction: from-lport
-              #  match: ip4.dst == 192.168.0.0/16 && ip
-              #  priority: 1000
-              #- action: drop
-              #  direction: from-lport
-              #  match: ip4.dst == 100.64.0.0/10 && ip
-              #  priority: 1000
-              #- action: drop
-              #  direction: from-lport
-              #  match: ip4.dst == 169.254.0.0/16 && ip
-              #  priority: 1000
-              # Block IPv6 ULA (fc00::/7), except the subnet gateway.
-              #- action: drop
-              #  direction: from-lport
-              #  match: ip6.dst == fc00::/7 && ip6.dst != fd00:110::1 && ip6.src == fd00:110::/64
-              #  priority: 1000
+      extraObjects:
+        - apiVersion: kubeovn.io/v1
+          kind: Subnet
+          metadata:
+            name: system-blackhole
+          spec:
+            protocol: IPv6
+            cidrBlock: fd00:666::/64
+            vpc: system-blackhole-vpc
+            disableGatewayCheck: true
+            # Block all traffic in that subnet
+            acls:
+            - action: drop
+              direction: from-lport
+              match: ip
+            - action: drop
+              direction: to-lport
+              match: ip
+            provider: system-blackhole.kube-system.ovn
+        - apiVersion: kubeovn.io/v1
+          kind: Vpc
+          metadata:
+            name: system-blackhole-vpc
+          spec: {}
+        - apiVersion: "k8s.cni.cncf.io/v1"
+          kind: NetworkAttachmentDefinition
+          metadata:
+            name: system-blackhole
+            namespace: kube-system
+          spec:
+            config: '{
+                "cniVersion": "0.3.0",
+                "type": "kube-ovn",
+                "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
+                "provider": "system-blackhole.kube-system.ovn"
+              }'
+        - apiVersion: kubeovn.io/v1
+          kind: Subnet
+          metadata:
+            name: system-isolated-egress
+          spec:
+            # The CDI can reach both IPv4 and IPv6 addresses on the Internet, so we need both
+            # protocols. Traffic is always NATed to the node IPs and we only do NAT44/NAT66.
+            # Later on we might assign a proper IPv6 GUA, but we cannot do the same for IPv4 and
+            # Kube-OVN does not support NATing only the IPv4 side.
+            protocol: Dual
+            cidrBlock: 10.32.0.0/16,fd00:110::/64
+            # Only the default VPC can perform outgoing NAT, which exposes us to lateral movement.
+            # This is mitigated by keeping `private: false` and by installing ACLs that block
+            # anything except traffic destined to the public Internet (see below).
+            vpc: ovn-cluster
+            # Any node can act as a gateway for this subnet.
+            gatewayType: distributed
+            # Node interfaces are ideally configured with MTU 9000; we cap the overlay MTU at 1380 to
+            # leave room for the Geneve header and avoid PMTUD-related failures.
+            mtu: 1380
+            #acls:
+            # Allow traffic to the cluster DNS.
+            #- action: allow-related
+            #  direction: from-lport
+            #  match: ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a
+            #  priority: 1001
+            # Allow traffic originating from the subnet gateways.
+            #- action: allow-related
+            #  direction: from-lport
+            #  match: ip4.src == 10.32.0.1 || ip6.src == fd00:110::1
+            #  priority: 1001
+            # Block RFC1918 IPv4 ranges and other non-public IPv4 space.
+            #- action: drop
+            #  direction: from-lport
+            #  match: ip4.dst == 10.0.0.0/8 && ip4.dst != 10.32.0.1 && ip4.src == 10.0.0.0/8
+            #  priority: 1000
+            #- action: drop
+            #  direction: from-lport
+            #  match: ip4.dst == 172.16.0.0/12 && ip
+            #  priority: 1000
+            #- action: drop
+            #  direction: from-lport
+            #  match: ip4.dst == 192.168.0.0/16 && ip
+            #  priority: 1000
+            #- action: drop
+            #  direction: from-lport
+            #  match: ip4.dst == 100.64.0.0/10 && ip
+            #  priority: 1000
+            #- action: drop
+            #  direction: from-lport
+            #  match: ip4.dst == 169.254.0.0/16 && ip
+            #  priority: 1000
+            # Block IPv6 ULA (fc00::/7), except the subnet gateway.
+            #- action: drop
+            #  direction: from-lport
+            #  match: ip6.dst == fc00::/7 && ip6.dst != fd00:110::1 && ip6.src == fd00:110::/64
+            #  priority: 1000
 
-              # Prevent pods in the subnet from talking to each other.
-              allowEWTraffic: false
+            # Prevent pods in the subnet from talking to each other.
+            allowEWTraffic: false
 
-              # SNAT egress traffic to the node IPs.
-              natOutgoing: true
-              provider: system-isolated-egress.kube-system.ovn
-          # Network attachment definition for CDI
-          - apiVersion: "k8s.cni.cncf.io/v1"
-            kind: NetworkAttachmentDefinition
-            metadata:
-              name: system-isolated-egress
-              namespace: kube-system
-            spec:
-              config: '{
-                  "cniVersion": "0.3.0",
-                  "type": "kube-ovn",
-                  "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
-                  "provider": "system-isolated-egress.kube-system.ovn"
-                }'
+            # SNAT egress traffic to the node IPs.
+            natOutgoing: true
+            provider: system-isolated-egress.kube-system.ovn
+        # Network attachment definition for CDI
+        - apiVersion: "k8s.cni.cncf.io/v1"
+          kind: NetworkAttachmentDefinition
+          metadata:
+            name: system-isolated-egress
+            namespace: kube-system
+          spec:
+            config: '{
+                "cniVersion": "0.3.0",
+                "type": "kube-ovn",
+                "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
+                "provider": "system-isolated-egress.kube-system.ovn"
+              }'
 
   # -- Multus CNI meta-plugin, enables multi-homed pods and VMs.
   multus:
@@ -320,12 +320,12 @@ apps:
     helm:
       chart: multus
       releaseName: multus
-      values:
-        tolerations:
-          - effect: NoSchedule
-            operator: Exists
-          - effect: NoExecute
-            operator: Exists
+    values:
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
 
   # -- Cilium CNI, used on storage clusters where the Kube-OVN overlay is not needed.
   # TODO: Consider phasing Cilium out and using Kube-OVN everywhere.
@@ -345,63 +345,63 @@ apps:
     helm:
       chart: cilium
       releaseName: cilium
-      values:
-        # Envoy proxy is not needed on storage clusters.
-        envoy:
+    values:
+      # Envoy proxy is not needed on storage clusters.
+      envoy:
+        enabled: false
+
+      # Delegate IPAM to Kubernetes (per-node PodCIDR) instead of CiliumNodes.
+      ipam:
+        mode: kubernetes
+
+      # Talos requires an explicit set of capabilities for Cilium to run.
+      securityContext:
+        capabilities:
+          ciliumAgent:
+            - CHOWN
+            - KILL
+            - NET_ADMIN
+            - NET_RAW
+            - IPC_LOCK
+            - SYS_ADMIN
+            - SYS_RESOURCE
+            - DAC_OVERRIDE
+            - FOWNER
+            - SETGID
+            - SETUID
+          cleanCiliumState:
+            - NET_ADMIN
+            - SYS_ADMIN
+            - SYS_RESOURCE
+
+      # Talos exposes cgroups at a non-default location.
+      cgroup:
+        autoMount:
           enabled: false
+        hostRoot: /sys/fs/cgroup
 
-        # Delegate IPAM to Kubernetes (per-node PodCIDR) instead of CiliumNodes.
-        ipam:
-          mode: kubernetes
+      # Talos ships KubePrism, a local load-balancer that fronts the control planes
+      # on localhost:7445, so we point Cilium at it rather than the cluster VIP.
+      k8sServiceHost: localhost
+      k8sServicePort: 7445
 
-        # Talos requires an explicit set of capabilities for Cilium to run.
-        securityContext:
-          capabilities:
-            ciliumAgent:
-              - CHOWN
-              - KILL
-              - NET_ADMIN
-              - NET_RAW
-              - IPC_LOCK
-              - SYS_ADMIN
-              - SYS_RESOURCE
-              - DAC_OVERRIDE
-              - FOWNER
-              - SETGID
-              - SETUID
-            cleanCiliumState:
-              - NET_ADMIN
-              - SYS_ADMIN
-              - SYS_RESOURCE
+      # Cilium replaces kube-proxy entirely.
+      kubeProxyReplacement: true
 
-        # Talos exposes cgroups at a non-default location.
-        cgroup:
-          autoMount:
-            enabled: false
-          hostRoot: /sys/fs/cgroup
+      # Refuse to start if any node is missing an IPv4 or IPv6 PodCIDR (safety net
+      # against a misconfigured dual-stack rollout).
+      k8s:
+        requireIPv4PodCIDR: true
+        requireIPv6PodCIDR: true
 
-        # Talos ships KubePrism, a local load-balancer that fronts the control planes
-        # on localhost:7445, so we point Cilium at it rather than the cluster VIP.
-        k8sServiceHost: localhost
-        k8sServicePort: 7445
+      # Dual-stack IPv4/IPv6.
+      ipv4:
+        enabled: true
+      ipv6:
+        enabled: true
 
-        # Cilium replaces kube-proxy entirely.
-        kubeProxyReplacement: true
-
-        # Refuse to start if any node is missing an IPv4 or IPv6 PodCIDR (safety net
-        # against a misconfigured dual-stack rollout).
-        k8s:
-          requireIPv4PodCIDR: true
-          requireIPv6PodCIDR: true
-
-        # Dual-stack IPv4/IPv6.
-        ipv4:
-          enabled: true
-        ipv6:
-          enabled: true
-
-        hubble:
-          enabled: false
+      hubble:
+        enabled: false
 
   # Metrics-server -- Pod metrics aggregator for HPA/VPA
   metrics-server:
@@ -420,18 +420,18 @@ apps:
     helm:
       chart: "metrics-server"
       releaseName: "metrics-server"
-      values:
-        replicas: 3
-        metrics:
-          enabled: true
-        serviceMonitor:
-          enabled: true
-        defaultArgs:
-          - --cert-dir=/tmp
-          - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
-          - --kubelet-use-node-status-port
-          - --kubelet-insecure-tls
-          - --metric-resolution=15s
+    values:
+      replicas: 3
+      metrics:
+        enabled: true
+      serviceMonitor:
+        enabled: true
+      defaultArgs:
+        - --cert-dir=/tmp
+        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+        - --kubelet-use-node-status-port
+        - --kubelet-insecure-tls
+        - --metric-resolution=15s
 
   # -- cert-manager: issues and renews TLS certificates, including via Let's Encrypt ACME.
   cert-manager:
@@ -450,33 +450,33 @@ apps:
     helm:
       chart: "cert-manager"
       releaseName: "cert-manager"
-      values:
-        enableCertificateOwnerRef: true
-        crds:
+    values:
+      enableCertificateOwnerRef: true
+      crds:
+        enabled: true
+      prometheus:
+        servicemonitor:
           enabled: true
-        prometheus:
-          servicemonitor:
-            enabled: true
-        extraObjects:
-          - |
-            apiVersion: cert-manager.io/v1
-            kind: ClusterIssuer
-            metadata:
-              name: letsencrypt
-            spec:
-              acme:
-                # The ACME server URL
-                server: https://acme-v02.api.letsencrypt.org/directory
+      extraObjects:
+        - |
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: letsencrypt
+          spec:
+            acme:
+              # The ACME server URL
+              server: https://acme-v02.api.letsencrypt.org/directory
 
-                # Name of a secret used to store the ACME account private key
-                privateKeySecretRef:
-                  name: letsencrypt
+              # Name of a secret used to store the ACME account private key
+              privateKeySecretRef:
+                name: letsencrypt
 
-                # Enable the HTTP-01 challenge provider
-                solvers:
-                - http01:
-                    ingress:
-                      class: traefik
+              # Enable the HTTP-01 challenge provider
+              solvers:
+              - http01:
+                  ingress:
+                    class: traefik
 
   # -- kube-prometheus-stack: metrics collection, storage and Grafana dashboards.
   prometheus-stack:
@@ -498,77 +498,77 @@ apps:
     helm:
       chart: "kube-prometheus-stack"
       releaseName: "prometheus"
-      values:
-        # Talos has different selectors
-        kubeEtcd:
-          service:
-            selector:
-              k8s-app: kube-controller-manager
+    values:
+      # Talos has different selectors
+      kubeEtcd:
+        service:
+          selector:
+            k8s-app: kube-controller-manager
 
-          serviceMonitor:
-            relabelings: # Add nodename label
-              - sourceLabels: [__meta_kubernetes_pod_node_name]
-                separator: ;
-                regex: ^(.*)$
-                targetLabel: nodename
-                replacement: $1
-                action: replace
-            metricRelabelings: # Remove pod label
-              - action: labeldrop
-                regex: pod
+        serviceMonitor:
+          relabelings: # Add nodename label
+            - sourceLabels: [__meta_kubernetes_pod_node_name]
+              separator: ;
+              regex: ^(.*)$
+              targetLabel: nodename
+              replacement: $1
+              action: replace
+          metricRelabelings: # Remove pod label
+            - action: labeldrop
+              regex: pod
 
-        # Talos has different selectors
-        kubeScheduler:
-          service:
-            selector:
-              k8s-app: kube-scheduler
+      # Talos has different selectors
+      kubeScheduler:
+        service:
+          selector:
+            k8s-app: kube-scheduler
 
-        # Talos has different selectors
-        kubeControllerManager:
-          service:
-            selector:
-              k8s-app: kube-controller-manager
+      # Talos has different selectors
+      kubeControllerManager:
+        service:
+          selector:
+            k8s-app: kube-controller-manager
 
-        defaultRules:
-          create: false
+      defaultRules:
+        create: false
 
-        alertmanager:
-          enabled: false
+      alertmanager:
+        enabled: false
 
-        grafana:
-          ingress:
-            enabled: true
-            hosts:
-              - "invalid"
-            tls:
-              - secretName: "grafana-tls"
-                hosts:
-                  - "invalid"
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt
-          additionalDataSources:
-            - name: Loki
-              editable: false
-              type: loki
-              url: "http://loki.loki-system:3100"
-              jsonData:
-                httpHeaderName1: 'X-Scope-OrgID'
-              secureJsonData:
-                httpHeaderValue1: '1'
-          adminPassword: ""
+      grafana:
+        ingress:
+          enabled: true
+          hosts:
+            - "invalid"
+          tls:
+            - secretName: "grafana-tls"
+              hosts:
+                - "invalid"
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt
+        additionalDataSources:
+          - name: Loki
+            editable: false
+            type: loki
+            url: "http://loki.loki-system:3100"
+            jsonData:
+              httpHeaderName1: 'X-Scope-OrgID'
+            secureJsonData:
+              httpHeaderValue1: '1'
+        adminPassword: ""
 
-        prometheus:
-          prometheusSpec:
-            podMonitorSelectorNilUsesHelmValues: false
-            serviceMonitorSelectorNilUsesHelmValues: false
-            retention: 30d
-            retentionSize: "45GB"
-            storageSpec:
-              volumeClaimTemplate:
-                spec:
-                  resources:
-                    requests:
-                      storage: 50Gi
+      prometheus:
+        prometheusSpec:
+          podMonitorSelectorNilUsesHelmValues: false
+          serviceMonitorSelectorNilUsesHelmValues: false
+          retention: 30d
+          retentionSize: "45GB"
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                resources:
+                  requests:
+                    storage: 50Gi
 
   # -- Promtail: node-local agent that ships container logs to Loki.
   # TODO: This chart is deprecated. This component is non-critical, but we should phase it out.
@@ -591,13 +591,13 @@ apps:
     helm:
       chart: "promtail"
       releaseName: "promtail"
-      values:
-        serviceMonitor:
-          enabled: true
-        config:
-          clients:
-            - url: http://loki.loki-system:3100/loki/api/v1/push
-              tenant_id: 1
+    values:
+      serviceMonitor:
+        enabled: true
+      config:
+        clients:
+          - url: http://loki.loki-system:3100/loki/api/v1/push
+            tenant_id: 1
 
   # -- Loki: log aggregation backend with a Prometheus-like query language (LogQL).
   loki:
@@ -616,79 +616,79 @@ apps:
     helm:
       chart: "loki"
       releaseName: "loki"
-      values:
-        deploymentMode: SingleBinary
-        global:
-          clusterDomain: ""
-          dnsService: "coredns"
-          dnsNamespace: "kube-system"
-        loki:
-          schemaConfig:
-            configs:
-              - from: 2024-12-01
-                store: tsdb
-                object_store: filesystem
-                schema: v13
-                index:
-                  prefix: loki_index_
-                  period: 24h
-          compactor:
-            compaction_interval: 10m
-            retention_enabled: true
-            retention_delete_delay: 2h
-            retention_delete_worker_count: 150
-            delete_request_store: filesystem
-          limits_config:
-            retention_period: 14d
-          auth_enabled: true
-          commonConfig:
-            replication_factor: 1
-          storage:
-            type: 'filesystem'
-        monitoring:
-          serviceMonitor:
-            enabled: true
-        lokiCanary:
-          enabled: false
-        singleBinary:
-          replicas: 1
-          persistence:
-            enableStatefulSetAutoDeletePVC: false
-            size: 50Gi
-        minio:
-          enabled: false
-        gateway:
-          enabled: false
-        test:
-          enabled: false
-        chunksCache:
-          enabled: false
-        resultsCache:
-          enabled: false
-        backend:
-          replicas: 0
-        read:
-          replicas: 0
-        write:
-          replicas: 0
-        ingester:
-          replicas: 0
-        querier:
-          replicas: 0
-        queryFrontend:
-          replicas: 0
-        queryScheduler:
-          replicas: 0
-        distributor:
-          replicas: 0
+    values:
+      deploymentMode: SingleBinary
+      global:
+        clusterDomain: ""
+        dnsService: "coredns"
+        dnsNamespace: "kube-system"
+      loki:
+        schemaConfig:
+          configs:
+            - from: 2024-12-01
+              store: tsdb
+              object_store: filesystem
+              schema: v13
+              index:
+                prefix: loki_index_
+                period: 24h
         compactor:
-          replicas: 0
-        indexGateway:
-          replicas: 0
-        bloomCompactor:
-          replicas: 0
-        bloomGateway:
-          replicas: 0
+          compaction_interval: 10m
+          retention_enabled: true
+          retention_delete_delay: 2h
+          retention_delete_worker_count: 150
+          delete_request_store: filesystem
+        limits_config:
+          retention_period: 14d
+        auth_enabled: true
+        commonConfig:
+          replication_factor: 1
+        storage:
+          type: 'filesystem'
+      monitoring:
+        serviceMonitor:
+          enabled: true
+      lokiCanary:
+        enabled: false
+      singleBinary:
+        replicas: 1
+        persistence:
+          enableStatefulSetAutoDeletePVC: false
+          size: 50Gi
+      minio:
+        enabled: false
+      gateway:
+        enabled: false
+      test:
+        enabled: false
+      chunksCache:
+        enabled: false
+      resultsCache:
+        enabled: false
+      backend:
+        replicas: 0
+      read:
+        replicas: 0
+      write:
+        replicas: 0
+      ingester:
+        replicas: 0
+      querier:
+        replicas: 0
+      queryFrontend:
+        replicas: 0
+      queryScheduler:
+        replicas: 0
+      distributor:
+        replicas: 0
+      compactor:
+        replicas: 0
+      indexGateway:
+        replicas: 0
+      bloomCompactor:
+        replicas: 0
+      bloomGateway:
+        replicas: 0
 
   # -- KubeVirt: virtualization runtime that lets Kubernetes schedule VMs alongside containers.
   kubevirt:
@@ -725,113 +725,113 @@ apps:
     helm:
       chart: "kubevirt"
       releaseName: "kubevirt-config"
-      values:
-        config:
-          configuration:
-            # CPU model compatible with every node on the cluster
-            # Change this to the most performant CPU model for your cluster, but compatible with
-            # all your nodes.
-            cpuModel: Broadwell-noTSX-IBRS
+    values:
+      config:
+        configuration:
+          # CPU model compatible with every node on the cluster
+          # Change this to the most performant CPU model for your cluster, but compatible with
+          # all your nodes.
+          cpuModel: Broadwell-noTSX-IBRS
 
-            # Apply a CPU limit for VMs on every customer namespace
-            autoCPULimitNamespaceLabelSelector:
-              matchExpressions:
-                - key: superphenix.net/projectID
-                  operator: Exists
+          # Apply a CPU limit for VMs on every customer namespace
+          autoCPULimitNamespaceLabelSelector:
+            matchExpressions:
+              - key: superphenix.net/projectID
+                operator: Exists
 
-            # Maximum amount of VMs per node
-            virtualMachineInstancesPerNode: 100
+          # Maximum amount of VMs per node
+          virtualMachineInstancesPerNode: 100
 
-            # Storageclass used to store TPM/EFI and more (VM backend storage)
-            vmStateStorageClass: default.spx-rbd-3x
+          # Storageclass used to store TPM/EFI and more (VM backend storage)
+          vmStateStorageClass: default.spx-rbd-3x
 
-            # Defines how VMs are evicted from a node when it is drained.
-            # We run live migrations of the VMs to prevent interruptions.
-            evictionStrategy: LiveMigrate
+          # Defines how VMs are evicted from a node when it is drained.
+          # We run live migrations of the VMs to prevent interruptions.
+          evictionStrategy: LiveMigrate
 
-            # Defines how VMs are updated when modifying live-updatables fields
-            # like CPU sockets, memory and more.
-            vmRolloutStrategy: LiveUpdate
+          # Defines how VMs are updated when modifying live-updatables fields
+          # like CPU sockets, memory and more.
+          vmRolloutStrategy: LiveUpdate
 
-            # Enable KSM on every node to reduce memory usage by optimizing VM pages
-            ksmConfiguration:
-              nodeLabelSelector: {}
+          # Enable KSM on every node to reduce memory usage by optimizing VM pages
+          ksmConfiguration:
+            nodeLabelSelector: {}
 
-            # Live migration configuration for VMs
-            migrations:
-              # If the VM cannot be migrated within an acceptable time using non-disrupting
-              # methods, we switch to a migration that allows for disruptions. This helps with
-              # big VMs that are hard to migrate, but also risks interrupting workload.
-              # The timeout to switch to a disrupting migration is defined by 'completionTimeoutPerGiB'.
-              allowWorkloadDisruption: true
+          # Live migration configuration for VMs
+          migrations:
+            # If the VM cannot be migrated within an acceptable time using non-disrupting
+            # methods, we switch to a migration that allows for disruptions. This helps with
+            # big VMs that are hard to migrate, but also risks interrupting workload.
+            # The timeout to switch to a disrupting migration is defined by 'completionTimeoutPerGiB'.
+            allowWorkloadDisruption: true
 
-              # Timeout in seconds per GiB of memory before we switch to a disrupting migration.
-              # For a VM of 10Gi, it will take 1200s for the non-disrupting migration to timeout
-              # and switch to a disrupting method.
-              completionTimeoutPerGiB: 120
+            # Timeout in seconds per GiB of memory before we switch to a disrupting migration.
+            # For a VM of 10Gi, it will take 1200s for the non-disrupting migration to timeout
+            # and switch to a disrupting method.
+            completionTimeoutPerGiB: 120
 
-              # Post-copy migrations poses risks of data loss, which we want to avoid at all cost.
-              # Setting this value to false makes disrupting migrations use the "paused mode" which
-              # may freeze the VM but guarantees no data loss.
-              allowPostCopy: false
+            # Post-copy migrations poses risks of data loss, which we want to avoid at all cost.
+            # Setting this value to false makes disrupting migrations use the "paused mode" which
+            # may freeze the VM but guarantees no data loss.
+            allowPostCopy: false
 
-              # Do not throttle VMs to optimize VM live migrations
-              allowAutoConverge: false
+            # Do not throttle VMs to optimize VM live migrations
+            allowAutoConverge: false
 
-              # Max bandwidth allocated per migration.
-              bandwidthPerMigration: 64Mi
+            # Max bandwidth allocated per migration.
+            bandwidthPerMigration: 64Mi
 
-              # Number of parallel migrations that can happen cluster wide.
-              # Useful to prevent overloads.
-              parallelMigrationsPerCluster: 10
+            # Number of parallel migrations that can happen cluster wide.
+            # Useful to prevent overloads.
+            parallelMigrationsPerCluster: 10
 
-              # How many migrations can happen outbound from a node.
-              # Prevents overloads when draining a node.
-              parallelOutboundMigrationsPerNode: 10
+            # How many migrations can happen outbound from a node.
+            # Prevents overloads when draining a node.
+            parallelOutboundMigrationsPerNode: 10
 
-              # Maximum amount of time where no copying happens during the migration.
-              # Once the timeout is reached, we consider the migration to be failed.
-              progressTimeout: 150
+            # Maximum amount of time where no copying happens during the migration.
+            # Once the timeout is reached, we consider the migration to be failed.
+            progressTimeout: 150
 
-            # Default network configuration of the VMs
-            network:
-              # How we bind the network of the virt-launcher with the VM
-              binding:
-                # Kube-OVN uses managedTap to expose its own DHCP to the VM
-                managedtap:
-                  domainAttachmentType: managedTap
+          # Default network configuration of the VMs
+          network:
+            # How we bind the network of the virt-launcher with the VM
+            binding:
+              # Kube-OVN uses managedTap to expose its own DHCP to the VM
+              managedtap:
+                domainAttachmentType: managedTap
 
-            developerConfiguration:
-              # Ratio of how many CPU is requested (and reserved) by each virt-launcher for
-              # each vCPU allocated to the VM. A VM requesting 10 vCPU will request and reserve
-              # 1 physical CPU on the host.
-              cpuAllocationRatio: 10
-              # Overcommit memory by 200%. For a VM with guest memory set to 16G, we'll request and
-              # reserve only 8G on the node.
-              memoryOvercommit: 200
-              # Feature gates enabled
-              featureGates:
-                - BlockVolume
-                - ExpandDisks
-                - Snapshot
-                - HotplugVolumes
-                #- DeclarativeHotplugVolumes
+          developerConfiguration:
+            # Ratio of how many CPU is requested (and reserved) by each virt-launcher for
+            # each vCPU allocated to the VM. A VM requesting 10 vCPU will request and reserve
+            # 1 physical CPU on the host.
+            cpuAllocationRatio: 10
+            # Overcommit memory by 200%. For a VM with guest memory set to 16G, we'll request and
+            # reserve only 8G on the node.
+            memoryOvercommit: 200
+            # Feature gates enabled
+            featureGates:
+              - BlockVolume
+              - ExpandDisks
+              - Snapshot
+              - HotplugVolumes
+              #- DeclarativeHotplugVolumes
 
-          # Defines how we upgrade KubeVirt's controlplane and VMIs.
-          workloadUpdateStrategy:
-            # Methods used to upgrade the running VMIs due to an upgrade of KubeVirt, or because
-            # the VM has been modified and needs to hotplug CPU, RAM, storage and more.
-            # We only upgrade using live migrations, updating the virt-launcher pods in the process.
-            # This is because we do not want any interruption of the workload during the upgrade of KubeVirt.
-            workloadUpdateMethods:
-              - LiveMigrate
+        # Defines how we upgrade KubeVirt's controlplane and VMIs.
+        workloadUpdateStrategy:
+          # Methods used to upgrade the running VMIs due to an upgrade of KubeVirt, or because
+          # the VM has been modified and needs to hotplug CPU, RAM, storage and more.
+          # We only upgrade using live migrations, updating the virt-launcher pods in the process.
+          # This is because we do not want any interruption of the workload during the upgrade of KubeVirt.
+          workloadUpdateMethods:
+            - LiveMigrate
 
-          # Prometheus configuration
-          monitorAccount: prometheus-kube-prometheus-prometheus
-          monitorNamespace: prometheus-system
-          serviceMonitorNamespace: kubevirt
+        # Prometheus configuration
+        monitorAccount: prometheus-kube-prometheus-prometheus
+        monitorNamespace: prometheus-system
+        serviceMonitorNamespace: kubevirt
 
-          imagePullPolicy: IfNotPresent
+        imagePullPolicy: IfNotPresent
 
   # -- Containerized Data Importer (CDI) for KubeVirt. Provisions VM disks from images, PVCs or uploads.
   cdi:
@@ -873,35 +873,35 @@ apps:
     helm:
       chart: "rook-ceph"
       releaseName: "rook-operator"
-      values:
-        # Bind the operator to the IPv6 Superphenix storage network.
-        useOperatorHostNetwork: true
-        enforceHostNetwork: true
+    values:
+      # Bind the operator to the IPv6 Superphenix storage network.
+      useOperatorHostNetwork: true
+      enforceHostNetwork: true
 
-        # Container Storage Interface configuration.
-        csi:
-          # csi-addons enables volume replication and mirroring.
-          csiAddons:
-            enabled: true
-          # Object Map generator required by RBD mirroring.
-          enableOMAPGenerator: true
-          # Default port 9070 conflicts with the RBD provisioner when running on hostNetwork.
-          csiAddonsRBDProvisionerPort: 9071
-          # CephFS driver is intentionally disabled, we only use RBD.
-          enableCephfsDriver: false
-          # Expose CSI metrics via a ServiceMonitor.
-          serviceMonitor:
-            enabled: true
-
-        monitoring:
+      # Container Storage Interface configuration.
+      csi:
+        # csi-addons enables volume replication and mirroring.
+        csiAddons:
+          enabled: true
+        # Object Map generator required by RBD mirroring.
+        enableOMAPGenerator: true
+        # Default port 9070 conflicts with the RBD provisioner when running on hostNetwork.
+        csiAddonsRBDProvisionerPort: 9071
+        # CephFS driver is intentionally disabled, we only use RBD.
+        enableCephfsDriver: false
+        # Expose CSI metrics via a ServiceMonitor.
+        serviceMonitor:
           enabled: true
 
-        # Auto-discover new disks so they appear in the Ceph dashboard.
-        enableDiscoveryDaemon: true
-        discoveryDaemonInterval: 5m
+      monitoring:
+        enabled: true
 
-        # Allow tenants to set additional options on ObjectBucketClaims (self-service quotas etc.).
-        obcAllowAdditionalConfigFields: "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle"
+      # Auto-discover new disks so they appear in the Ceph dashboard.
+      enableDiscoveryDaemon: true
+      discoveryDaemonInterval: 5m
+
+      # Allow tenants to set additional options on ObjectBucketClaims (self-service quotas etc.).
+      obcAllowAdditionalConfigFields: "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle"
 
   # -- Local Rook/Ceph cluster deployed on storage-capable clusters (hyperconverged or decoupled storage).
   rook-local-cluster:
@@ -922,105 +922,105 @@ apps:
     helm:
       chart: "rook-ceph-cluster"
       releaseName: "rook-local-cluster"
-      values:
-        operatorNamespace: rook-system
-        clusterName: "{{ $.Values.cluster.name }}"
-        toolbox:
+    values:
+      operatorNamespace: rook-system
+      clusterName: "{{ $.Values.cluster.name }}"
+      toolbox:
+        enabled: true
+      monitoring:
+        enabled: true
+
+      ingress:
+        dashboard:
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt
+          host:
+            name: "ceph.example.org"
+            path: "/"
+          tls:
+            - hosts:
+                - "ceph.example.org"
+              secretName: ceph-dashboard-tls
+
+      cephClusterSpec:
+        cephConfig:
+          global:
+            # Always move images to trash before fully deleting them.
+            # Ceph-CSI already enforces this from the Kubernetes side; this option catches
+            # manual removals performed from the dashboard or the toolbox.
+            rbd_move_to_trash_on_remove: "true"
+            # Grace period before trashed RBD images are purged (7d in seconds).
+            rbd_move_to_trash_on_remove_expire_seconds: "604800"
+            # Maximum number of mirroring snapshots kept on the remote cluster before pruning.
+            rbd_mirroring_max_mirroring_snapshots: "30"
+
+        dashboard:
           enabled: true
-        monitoring:
-          enabled: true
+          ssl: false
+          prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090"
+          prometheusEndpointSSLVerify: false
 
-        ingress:
-          dashboard:
-            annotations:
-              cert-manager.io/cluster-issuer: letsencrypt
-            host:
-              name: "ceph.example.org"
-              path: "/"
-            tls:
-              - hosts:
-                  - "ceph.example.org"
-                secretName: ceph-dashboard-tls
+        mgr:
+          modules:
+            - name: rook
+              enabled: true
 
-        cephClusterSpec:
-          cephConfig:
-            global:
-              # Always move images to trash before fully deleting them.
-              # Ceph-CSI already enforces this from the Kubernetes side; this option catches
-              # manual removals performed from the dashboard or the toolbox.
-              rbd_move_to_trash_on_remove: "true"
-              # Grace period before trashed RBD images are purged (7d in seconds).
-              rbd_move_to_trash_on_remove_expire_seconds: "604800"
-              # Maximum number of mirroring snapshots kept on the remote cluster before pruning.
-              rbd_mirroring_max_mirroring_snapshots: "30"
+        storage:
+          useAllDevices: true
+          # Use a regex here to filter the name of the disks (e.g., "nvme*|sd*")
+          # deviceFilter: ""
 
-          dashboard:
-            enabled: true
-            ssl: false
-            prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090"
-            prometheusEndpointSSLVerify: false
+        crashCollector:
+          disable: false
+          daysToRetain: 30
 
-          mgr:
-            modules:
-              - name: rook
-                enabled: true
+        network:
+          # Use host networking for performance and to expose the daemons to remote Ceph clients.
+          provider: host
+          # Specify which protocol we bind to.
+          ipFamily: IPv4
+          # Must be overridden per cluster with the IP ranges dedicated to storage traffic if you
+          # wish to ensure no sensitive traffic transits on untrusted networks.
+          # addressRanges:
+          #  public:
+          #    - invalid
+          #  cluster:
+          #    - invalid
 
-          storage:
-            useAllDevices: true
-            # Use a regex here to filter the name of the disks (e.g., "nvme*|sd*")
-            # deviceFilter: ""
-
-          crashCollector:
-            disable: false
-            daysToRetain: 30
-
-          network:
-            # Use host networking for performance and to expose the daemons to remote Ceph clients.
-            provider: host
-            # Specify which protocol we bind to.
-            ipFamily: IPv4
-            # Must be overridden per cluster with the IP ranges dedicated to storage traffic if you
-            # wish to ensure no sensitive traffic transits on untrusted networks.
-            # addressRanges:
-            #  public:
-            #    - invalid
-            #  cluster:
-            #    - invalid
-
-        cephFileSystems: []
-        cephObjectStores: []
-        cephBlockPools:
-          # Default block-storage pool.
-          # It isn't pinned to a particular device class, so the backing disks may be diverse (NVMe, HDD...)
-          - name: spx-rbd-3x
-            spec:
-              failureDomain: host
-              enableRBDStats: true
-              replicated:
-                size: 3
-              enableCrushUpdates: true
-            # The rook-connection settings will create a storage class to consume the pool locally
-            # on hyperconverged clusters (including the snapshots, replications...).
-            # For storage clusters, we have a default basic storage class for system PVCs (Prometheus, Loki...)
-            storageClass:
-              enabled: '{{- eq $.Values.cluster.deploymentTopology "DecoupledStorage" | ternary "true" "" -}}'
-              name: spx-storage.spx-rbd-3x
-              isDefault: true
-              reclaimPolicy: Delete
-              allowVolumeExpansion: true
-              volumeBindingMode: "Immediate"
-              parameters:
-                imageFormat: "2"
-                imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
-                csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
-                csi.storage.k8s.io/provisioner-secret-namespace: "spx-storage"
-                csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
-                csi.storage.k8s.io/controller-expand-secret-namespace: "spx-storage"
-                csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
-                csi.storage.k8s.io/node-stage-secret-namespace: "spx-storage"
-                csi.storage.k8s.io/fstype: ext4
-              mountOptions:
-                - discard
+      cephFileSystems: []
+      cephObjectStores: []
+      cephBlockPools:
+        # Default block-storage pool.
+        # It isn't pinned to a particular device class, so the backing disks may be diverse (NVMe, HDD...)
+        - name: spx-rbd-3x
+          spec:
+            failureDomain: host
+            enableRBDStats: true
+            replicated:
+              size: 3
+            enableCrushUpdates: true
+          # The rook-connection settings will create a storage class to consume the pool locally
+          # on hyperconverged clusters (including the snapshots, replications...).
+          # For storage clusters, we have a default basic storage class for system PVCs (Prometheus, Loki...)
+          storageClass:
+            enabled: '{{- eq $.Values.cluster.deploymentTopology "DecoupledStorage" | ternary "true" "" -}}'
+            name: spx-storage.spx-rbd-3x
+            isDefault: true
+            reclaimPolicy: Delete
+            allowVolumeExpansion: true
+            volumeBindingMode: "Immediate"
+            parameters:
+              imageFormat: "2"
+              imageFeatures: layering,fast-diff,object-map,deep-flatten,exclusive-lock
+              csi.storage.k8s.io/provisioner-secret-name: rook-csi-rbd-provisioner
+              csi.storage.k8s.io/provisioner-secret-namespace: "spx-storage"
+              csi.storage.k8s.io/controller-expand-secret-name: rook-csi-rbd-provisioner
+              csi.storage.k8s.io/controller-expand-secret-namespace: "spx-storage"
+              csi.storage.k8s.io/node-stage-secret-name: rook-csi-rbd-node
+              csi.storage.k8s.io/node-stage-secret-namespace: "spx-storage"
+              csi.storage.k8s.io/fstype: ext4
+            mountOptions:
+              - discard
 
   # -- Rook connection to a Ceph cluster.
   # Deployed on hyperconverged clusters and workload clusters that consume storage from a remote storage cluster.
@@ -1053,25 +1053,25 @@ apps:
     helm:
       chart: "spx-rook-connection"
       releaseName: "spx-rook-connection"
-      values:
-        clusters:
-          # -- This is the configuration for the local Ceph cluster when running hyperconverged.
-          # If you're adding an override to connect another Ceph cluster, remember to copy
-          # and paste this configuration to avoid losing the default values.
-          - name: "spx-storage"
-            enabled: '{{ eq $.Values.cluster.deploymentTopology "Hyperconverged" }}'
-            clusterID: "spx-storage"
-            local: true
-            csi:
-              secretNamespace: "spx-storage"
-              rbdNodeSecretName: "rook-csi-rbd-node"
-              rbdProvisionerSecretName: "rook-csi-rbd-provisioner"
-            blockPools:
-              - name: "spx-rbd-3x"
-                storageClasses:
-                  - name: "spx-rbd-3x"
-                    fs: "ext4"
-                    default: true
+    values:
+      clusters:
+        # -- This is the configuration for the local Ceph cluster when running hyperconverged.
+        # If you're adding an override to connect another Ceph cluster, remember to copy
+        # and paste this configuration to avoid losing the default values.
+        - name: "spx-storage"
+          enabled: '{{ eq $.Values.cluster.deploymentTopology "Hyperconverged" }}'
+          clusterID: "spx-storage"
+          local: true
+          csi:
+            secretNamespace: "spx-storage"
+            rbdNodeSecretName: "rook-csi-rbd-node"
+            rbdProvisionerSecretName: "rook-csi-rbd-provisioner"
+          blockPools:
+            - name: "spx-rbd-3x"
+              storageClasses:
+                - name: "spx-rbd-3x"
+                  fs: "ext4"
+                  default: true
 
   # -- Local Path Provisioner provides local storage using host paths.
   # This is useful for VM/containers that need a lot of IOPS and/or throughput.
@@ -1095,15 +1095,15 @@ apps:
     helm:
       chart: "local-path-provisioner"
       releaseName: "local-path-provisioner"
-      values:
-        storageClass:
-          name: local-path
-          defaultClass: false
-          nodePathmap:
-            - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
-              paths:
-                # Use Talos EPHEMERAL volume, wiping this partition will lose the data
-                - /var/local-path-provisioner
+    values:
+      storageClass:
+        name: local-path
+        defaultClass: false
+        nodePathmap:
+          - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+            paths:
+              # Use Talos EPHEMERAL volume, wiping this partition will lose the data
+              - /var/local-path-provisioner
 
   # -- volume-replicator: Kubernetes controller that automates RBD mirroring between Ceph clusters (disaster-recovery).
   volume-replicator:
@@ -1121,8 +1121,8 @@ apps:
     helm:
       chart: "volume-replicator"
       releaseName: "volume-replicator"
-      values:
-        exclusionRegex: "^prime-.*$|^tmp-.*$"
+    values:
+      exclusionRegex: "^prime-.*$|^tmp-.*$"
 
   # -- spx-policies: Kyverno policies that enforce Superphenix RFCs and protect against known bugs and attacks.
   policies:
@@ -1177,79 +1177,79 @@ apps:
     helm:
       chart: velero
       releaseName: velero
-      values:
-        # Load Velero plugins as init-containers at start-up.
-        initContainers:
-          # AWS/S3-compatible object store plugin.
-          - name: velero-plugin-for-aws
-            image: velero/velero-plugin-for-aws:v1.12.1
-            imagePullPolicy: IfNotPresent
-            volumeMounts:
-              - mountPath: /target
-                name: plugins
-          # KubeVirt-aware backup plugin (freezes/thaws VMs consistently).
-          - name: velero-plugin-for-kubevirt
-            image: quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0
-            imagePullPolicy: IfNotPresent
-            volumeMounts:
-              - mountPath: /target
-                name: plugins
-          # Superphenix-specific backup/restore actions.
-          - name: velero-plugin-for-superphenix
-            image: ghcr.io/super-phenix/superphenix-velero-plugin:v0.1.0
-            imagePullPolicy: IfNotPresent
-            volumeMounts:
-              - mountPath: /target
-                name: plugins
+    values:
+      # Load Velero plugins as init-containers at start-up.
+      initContainers:
+        # AWS/S3-compatible object store plugin.
+        - name: velero-plugin-for-aws
+          image: velero/velero-plugin-for-aws:v1.12.1
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /target
+              name: plugins
+        # KubeVirt-aware backup plugin (freezes/thaws VMs consistently).
+        - name: velero-plugin-for-kubevirt
+          image: quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /target
+              name: plugins
+        # Superphenix-specific backup/restore actions.
+        - name: velero-plugin-for-superphenix
+          image: ghcr.io/super-phenix/superphenix-velero-plugin:v0.1.0
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /target
+              name: plugins
 
-        # Expose metrics via a ServiceMonitor.
-        metrics:
-          serviceMonitor:
-            enabled: true
+      # Expose metrics via a ServiceMonitor.
+      metrics:
+        serviceMonitor:
+          enabled: true
 
-        # Deploy the node agent (required for CSI data-movement backups).
-        deployNodeAgent: true
+      # Deploy the node agent (required for CSI data-movement backups).
+      deployNodeAgent: true
 
-        # Point the node agent at a custom ConfigMap for tuning.
-        nodeAgent:
-          extraArgs:
-            - --node-agent-configmap=node-agent-config
+      # Point the node agent at a custom ConfigMap for tuning.
+      nodeAgent:
+        extraArgs:
+          - --node-agent-configmap=node-agent-config
 
-        # Allow up to 40 concurrent data movements per node.
-        extraObjects:
-          - apiVersion: v1
-            kind: ConfigMap
-            metadata:
-              name: node-agent-config
-              namespace: velero-system
-            data:
-              node-agent-config.json: |
-                {
-                    "loadConcurrency": {
-                        "globalConfig": 40
-                    }
-                }
+      # Allow up to 40 concurrent data movements per node.
+      extraObjects:
+        - apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: node-agent-config
+            namespace: velero-system
+          data:
+            node-agent-config.json: |
+              {
+                  "loadConcurrency": {
+                      "globalConfig": 40
+                  }
+              }
 
-        # General Velero configuration.
-        configuration:
-          # Namespace we deploy into (differs from the upstream default of "velero").
-          namespace: velero-system
-          # Enable CSI support, required for CSI data-movement backups.
-          features: "EnableCSI"
-          # Backup storage locations (S3 buckets). Must be filled in per cluster.
-          backupStorageLocation: []
-          # Maximum time a backup can run before Velero terminates it.
-          defaultItemOperationTimeout: 8h
-          # Ordered list of resource kinds Velero should restore first.
-          restoreResourcePriorities: vpc.kubeovn.io,subnet.kubeovn.io,vpc-nat-gateway.kubeovn.io,iptables-eip.kubeovn.io,iptables-fip-rule.kubeovn.io,iptables-snat-rule.kubeovn.io,iptables-dnat-rule.kubeovn.io,switch-lb-rule.kubeovn.io,networkpolicy.networking.k8s.io,network-attachment-definition.k8s.cni.cncf.io,controllerrevision.apps,datauploads.velero.io,persistentvolume,persistentvolumeclaim,datavolume.cdi.kubevirt.io,secret,virtualmachine.kubevirt.io,cluster.cluster.x-k8s.io,kubevirtcluster.infrastructure.cluster.x-k8s.io,configmap,issuer.cert-manager.io,certificate.cert-manager.io,serviceaccount,role.rbac.authorization.k8s.io,rolebinding.rbac.authorization.k8s.io,clusterrole.rbac.authorization.k8s.io,clusterrolebinding.rbac.authorization.k8s.io,etcdmember.etcd-operator.cozystack.io,etcdcluster.etcd-operator.cozystack.io,etcdcluster.etcd.aenix.io,datastore.kamaji.clastix.io,gateway.gateway.networking.k8s.io,tlsroute.gateway.networking.k8s.io,deployment.apps,kamajicontrolplane.controlplane.cluster.x-k8s.io,kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io,kubevirtmachinetemplate.infrastructure.cluster.x-k8s.io,kubeadmconfig.bootstrap.cluster.x-k8s.io,kubevirtmachine.infrastructure.cluster.x-k8s.io,machine.cluster.x-k8s.io,machineset.cluster.x-k8s.io,machinedeployment.cluster.x-k8s.io,mutatingadmissionpolicy.admissionregistration.k8s.io,mutatingadmissionpolicybinding.admissionregistration.k8s.io
+      # General Velero configuration.
+      configuration:
+        # Namespace we deploy into (differs from the upstream default of "velero").
+        namespace: velero-system
+        # Enable CSI support, required for CSI data-movement backups.
+        features: "EnableCSI"
+        # Backup storage locations (S3 buckets). Must be filled in per cluster.
+        backupStorageLocation: []
+        # Maximum time a backup can run before Velero terminates it.
+        defaultItemOperationTimeout: 8h
+        # Ordered list of resource kinds Velero should restore first.
+        restoreResourcePriorities: vpc.kubeovn.io,subnet.kubeovn.io,vpc-nat-gateway.kubeovn.io,iptables-eip.kubeovn.io,iptables-fip-rule.kubeovn.io,iptables-snat-rule.kubeovn.io,iptables-dnat-rule.kubeovn.io,switch-lb-rule.kubeovn.io,networkpolicy.networking.k8s.io,network-attachment-definition.k8s.cni.cncf.io,controllerrevision.apps,datauploads.velero.io,persistentvolume,persistentvolumeclaim,datavolume.cdi.kubevirt.io,secret,virtualmachine.kubevirt.io,cluster.cluster.x-k8s.io,kubevirtcluster.infrastructure.cluster.x-k8s.io,configmap,issuer.cert-manager.io,certificate.cert-manager.io,serviceaccount,role.rbac.authorization.k8s.io,rolebinding.rbac.authorization.k8s.io,clusterrole.rbac.authorization.k8s.io,clusterrolebinding.rbac.authorization.k8s.io,etcdmember.etcd-operator.cozystack.io,etcdcluster.etcd-operator.cozystack.io,etcdcluster.etcd.aenix.io,datastore.kamaji.clastix.io,gateway.gateway.networking.k8s.io,tlsroute.gateway.networking.k8s.io,deployment.apps,kamajicontrolplane.controlplane.cluster.x-k8s.io,kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io,kubevirtmachinetemplate.infrastructure.cluster.x-k8s.io,kubeadmconfig.bootstrap.cluster.x-k8s.io,kubevirtmachine.infrastructure.cluster.x-k8s.io,machine.cluster.x-k8s.io,machineset.cluster.x-k8s.io,machinedeployment.cluster.x-k8s.io,mutatingadmissionpolicy.admissionregistration.k8s.io,mutatingadmissionpolicybinding.admissionregistration.k8s.io
 
-        # S3 credentials (populated per cluster).
-        credentials:
-          secretContents:
-            cloud: ""
+      # S3 credentials (populated per cluster).
+      credentials:
+        secretContents:
+          cloud: ""
 
-        # Persistent data is intentionally not backed up by default, only Kubernetes resources are.
-        snapshotsEnabled: false
+      # Persistent data is intentionally not backed up by default, only Kubernetes resources are.
+      snapshotsEnabled: false
 
   # -- csi-addons: adds features such as volume replication and reclaim-space to the CSI drivers.
   csi-addons:
@@ -1306,13 +1306,13 @@ apps:
     helm:
       chart: snapscheduler
       releaseName: "snapscheduler"
-      values:
-        # Run the controller in HA (two replicas, active/passive via leader election).
-        replicaCount: 2
+    values:
+      # Run the controller in HA (two replicas, active/passive via leader election).
+      replicaCount: 2
 
-        # Own generated snapshots via ownerReferences so they are garbage-collected
-        # if the parent SnapshotSchedule is ever deleted.
-        enableOwnerReferences: true
+      # Own generated snapshots via ownerReferences so they are garbage-collected
+      # if the parent SnapshotSchedule is ever deleted.
+      enableOwnerReferences: true
 
   ###########################################################################
   #                        KAAS CONTROLLER SYSTEM                           #
@@ -1353,10 +1353,10 @@ apps:
     helm:
       chart: "kaas-datastore"
       releaseName: "kaas-datastore"
-      values:
-        dataStores:
-          default:
-            version: 3.6.7
+    values:
+      dataStores:
+        default:
+          version: 3.6.7
 
   # -- Kamaji: hosted Kubernetes control-plane provider used by the KaaS stack.
   kamaji:
@@ -1375,33 +1375,33 @@ apps:
     helm:
       chart: "kamaji"
       releaseName: "kamaji"
-      values:
-        image:
-          tag: "26.7.3-edge" # https://github.com/clastix/kamaji/releases
-        replicaCount: 3
-        defaultDatastoreName: "default"
-        extraArgs:
-          # Rotate tenant-cluster certificates 14 days before expiry (336h == 14d).
-          - --certificate-expiration-deadline=336h
-        affinity:
-          podAntiAffinity:
-            preferredDuringSchedulingIgnoredDuringExecution:
-              - weight: 1
-                podAffinityTerm:
-                  labelSelector:
-                    matchLabels:
-                      app.kubernetes.io/name: kamaji
-                  topologyKey: kubernetes.io/hostname
-        resources:
-          limits:
-            cpu: 1000m
-            memory: 2Gi
-          requests:
-            cpu: 100m
-            memory: 200Mi
-        # Datastores are configured per cluster in config.yaml via the etcd-operator.
-        kamaji-etcd:
-          deploy: false
+    values:
+      image:
+        tag: "26.7.3-edge" # https://github.com/clastix/kamaji/releases
+      replicaCount: 3
+      defaultDatastoreName: "default"
+      extraArgs:
+        # Rotate tenant-cluster certificates 14 days before expiry (336h == 14d).
+        - --certificate-expiration-deadline=336h
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: kamaji
+                topologyKey: kubernetes.io/hostname
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+      # Datastores are configured per cluster in config.yaml via the etcd-operator.
+      kamaji-etcd:
+        deploy: false
 
   # -- Cluster API operator: installs the providers used by the KaaS stack (core, bootstrap, infra, control-plane).
   cluster-api-operator:
@@ -1420,19 +1420,19 @@ apps:
     helm:
       chart: "cluster-api-operator"
       releaseName: "cluster-api-operator"
-      values:
-        core:
-          cluster-api:
-            version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
-        bootstrap:
-          kubeadm:
-            version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
-        infrastructure:
-          kubevirt:
-            version: v0.11.2 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
-        controlPlane:
-          kamaji:
-            version: v0.20.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
+    values:
+      core:
+        cluster-api:
+          version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
+      bootstrap:
+        kubeadm:
+          version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
+      infrastructure:
+        kubevirt:
+          version: v0.11.2 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
+      controlPlane:
+        kamaji:
+          version: v0.20.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
 
   # -- etcd-operator: manages the etcd datastores backing Kamaji control planes.
   etcd-operator:
@@ -1451,14 +1451,14 @@ apps:
     helm:
       chart: "etcd-operator"
       releaseName: "etcd-operator"
-      values:
-        # https://github.com/aenix-io/etcd-operator/blob/main/charts/etcd-operator/values.yaml
-        etcdOperator:
-          vpa:
-            enabled: false
-        kubeRbacProxy:
-          vpa:
-            enabled: false
+    values:
+      # https://github.com/aenix-io/etcd-operator/blob/main/charts/etcd-operator/values.yaml
+      etcdOperator:
+        vpa:
+          enabled: false
+      kubeRbacProxy:
+        vpa:
+          enabled: false
 
   # -- TuneD: node-level performance-tuning daemon (Superphenix-specific profiles). Disabled by default.
   tuned:
@@ -1517,120 +1517,120 @@ apps:
     helm:
       chart: "traefik"
       releaseName: "traefik"
-      values:
-        # Silence "new version available" log messages.
-        global:
-          checkNewVersion: false
+    values:
+      # Silence "new version available" log messages.
+      global:
+        checkNewVersion: false
 
-        # Deploy Traefik as a DaemonSet so that every node can accept incoming traffic.
-        deployment:
-          enabled: true
-          kind: DaemonSet
+      # Deploy Traefik as a DaemonSet so that every node can accept incoming traffic.
+      deployment:
+        enabled: true
+        kind: DaemonSet
 
-        # ClusterIP instead of LoadBalancer, we run on bare-metal without a cloud LB.
-        service:
-          type: ClusterIP
+      # ClusterIP instead of LoadBalancer, we run on bare-metal without a cloud LB.
+      service:
+        type: ClusterIP
 
-        # Bare-metal deployment: bind directly to the host network.
-        # TODO: consider switching to per-port hostPort in `.ports`.
-        hostNetwork: true
+      # Bare-metal deployment: bind directly to the host network.
+      # TODO: consider switching to per-port hostPort in `.ports`.
+      hostNetwork: true
 
-        # Do not create Traefik's default Gateway (we manage our own).
-        gateway:
-          enabled: false
+      # Do not create Traefik's default Gateway (we manage our own).
+      gateway:
+        enabled: false
 
-        gatewayClass:
-          enabled: true
-          name: traefik
+      gatewayClass:
+        enabled: true
+        name: traefik
 
-        # Enable access logs inside the Traefik pods.
-        accessLog:
-          enabled: true
+      # Enable access logs inside the Traefik pods.
+      accessLog:
+        enabled: true
 
-        # Enable scrapping Prometheus metrics.
-        metrics:
-          prometheus:
-            serviceMonitor:
+      # Enable scrapping Prometheus metrics.
+      metrics:
+        prometheus:
+          serviceMonitor:
+            enabled: true
+
+      # Grant NET_BIND_SERVICE so we can bind to ports < 1024 (80 and 443).
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+          add:
+            - NET_BIND_SERVICE
+      podSecurityContext:
+        runAsGroup: 0
+        runAsUser: 0
+        runAsNonRoot: false
+
+      # Ports Traefik listens on.
+      ports:
+        # HTTP
+        web:
+          port: 80
+        # HTTPS
+        websecure:
+          port: 443
+        # KaaS HTTPS API server
+        kaas-https:
+          port: 7443
+          exposedPort: 7443
+          expose:
+            default: true
+          protocol: TCP
+          http:
+            tls:
               enabled: true
+        # KaaS TLS API server (fronted by HAProxy)
+        kaas-api-tls:
+          port: 7444
+          exposedPort: 7444
+          expose:
+            default: true
+          protocol: TCP
+          http:
+            tls:
+              enabled: true
+        # KaaS Konnectivity server
+        kaas-konnectivity:
+          port: 7442
+          exposedPort: 7442
+          expose:
+            default: true
+          protocol: TCP
+          http:
+            tls:
+              enabled: true
+        # Prometheus metrics endpoint
+        metrics:
+          port: 9101
+          exposedPort: 9101
 
-        # Grant NET_BIND_SERVICE so we can bind to ports < 1024 (80 and 443).
-        securityContext:
-          capabilities:
-            drop:
-              - ALL
-            add:
-              - NET_BIND_SERVICE
-        podSecurityContext:
-          runAsGroup: 0
-          runAsUser: 0
-          runAsNonRoot: false
+      # Dashboard is disabled by default to save compute and memory.
+      api:
+        dashboard: false
 
-        # Ports Traefik listens on.
-        ports:
-          # HTTP
-          web:
-            port: 80
-          # HTTPS
-          websecure:
-            port: 443
-          # KaaS HTTPS API server
-          kaas-https:
-            port: 7443
-            exposedPort: 7443
-            expose:
-              default: true
-            protocol: TCP
-            http:
-              tls:
-                enabled: true
-          # KaaS TLS API server (fronted by HAProxy)
-          kaas-api-tls:
-            port: 7444
-            exposedPort: 7444
-            expose:
-              default: true
-            protocol: TCP
-            http:
-              tls:
-                enabled: true
-          # KaaS Konnectivity server
-          kaas-konnectivity:
-            port: 7442
-            exposedPort: 7442
-            expose:
-              default: true
-            protocol: TCP
-            http:
-              tls:
-                enabled: true
-          # Prometheus metrics endpoint
-          metrics:
-            port: 9101
-            exposedPort: 9101
+      # Create the default Traefik IngressClass.
+      ingressClass:
+        enabled: true
 
-        # Dashboard is disabled by default to save compute and memory.
-        api:
-          dashboard: false
+      # Rolling-update strategy tuned for a DaemonSet on hostNetwork.
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
+          maxSurge: 0
 
-        # Create the default Traefik IngressClass.
-        ingressClass:
+      # Also consume Ingress objects that carry ingress-nginx annotations,
+      # so existing deployments keep working during the migration.
+      providers:
+        kubernetesIngressNGINX:
           enabled: true
-
-        # Rolling-update strategy tuned for a DaemonSet on hostNetwork.
-        updateStrategy:
-          type: RollingUpdate
-          rollingUpdate:
-            maxUnavailable: 1
-            maxSurge: 0
-
-        # Also consume Ingress objects that carry ingress-nginx annotations,
-        # so existing deployments keep working during the migration.
-        providers:
-          kubernetesIngressNGINX:
-            enabled: true
-            watchIngressWithoutClass: true
-          kubernetesGateway:
-            enabled: true
+          watchIngressWithoutClass: true
+        kubernetesGateway:
+          enabled: true
 
   ###########################################################################
   #                            MANAGEMENT COMPONENTS                        #
@@ -1649,28 +1649,28 @@ apps:
     helm:
       chart: superphenix-console
       releaseName: superphenix-console
-      values:
-        # -- Public domain the console is exposed on.
-        # This value is also used to configure the API and Kratos.
-        domain: console.example.org
+    values:
+      # -- Public domain the console is exposed on.
+      # This value is also used to configure the API and Kratos.
+      domain: console.example.org
 
-        config:
-          # TODO: Why do we not specify the protocol here but we do for authURL?
-          apiUrl: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/api'
-          authUrl: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/accounts'
+      config:
+        # TODO: Why do we not specify the protocol here but we do for authURL?
+        apiUrl: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/api'
+        authUrl: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/accounts'
 
-        ingress:
-          enabled: true
-          # annotations:
-          #  cert-manager.io/cluster-issuer: letsencrypt
-          hosts:
-            - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-              paths:
-                - path: /
-          tls:
-            - secretName: superphenix-console-tls
-              hosts:
-                - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+      ingress:
+        enabled: true
+        # annotations:
+        #  cert-manager.io/cluster-issuer: letsencrypt
+        hosts:
+          - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+            paths:
+              - path: /
+        tls:
+          - secretName: superphenix-console-tls
+            hosts:
+              - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
   # -- Superphenix API: backend serving the console and CLI, persists to PostgreSQL and delegates auth to Permify/Kratos.
   superphenix-api:
@@ -1686,73 +1686,73 @@ apps:
     helm:
       chart: superphenix-api
       releaseName: superphenix-api
-      values:
-        # -- Expose the API publicly
-        ingress:
-          enabled: true
-          annotations:
-            nginx.ingress.kubernetes.io/rewrite-target: "/$2"
-            #  cert-manager.io/cluster-issuer: letsencrypt
-          hosts:
-            - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-              paths:
-                - path: "/api(/|$)(.*)"
-          tls:
-            - secretName: superphenix-api-tls
-              hosts:
-                - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+    values:
+      # -- Expose the API publicly
+      ingress:
+        enabled: true
+        annotations:
+          nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+          #  cert-manager.io/cluster-issuer: letsencrypt
+        hosts:
+          - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+            paths:
+              - path: "/api(/|$)(.*)"
+        tls:
+          - secretName: superphenix-api-tls
+            hosts:
+              - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
-        config:
-          # -- Database storing users, organizations, projects and other API state.
-          database:
-            host: "postgres.{{ $.Release.Namespace }}.svc"
-            port: 5432
-            database: superphenix
-            username: superphenix
-            password: "{{ $.Values.apps.postgres.helm.values.auth.password }}"
+      config:
+        # -- Database storing users, organizations, projects and other API state.
+        database:
+          host: "postgres.{{ $.Release.Namespace }}.svc"
+          port: 5432
+          database: superphenix
+          username: superphenix
+          password: "{{ $.Values.apps.postgres.helm.values.auth.password }}"
 
-          swagger:
-            baseURL: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/api'
+        swagger:
+          baseURL: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/api'
 
-          argoCdUrl: "https://argocd.example.org"
-          argoController:
-            appProjectNamespace: "{{ $.Release.Namespace }}"
+        argoCdUrl: "https://argocd.example.org"
+        argoController:
+          appProjectNamespace: "{{ $.Release.Namespace }}"
 
-          # -- Permify endpoint used for authorization checks.
-          permify:
-            url: "permify.{{ $.Release.Namespace }}.svc:3478"
+        # -- Permify endpoint used for authorization checks.
+        permify:
+          url: "permify.{{ $.Release.Namespace }}.svc:3478"
 
-          authentication:
-            kratosEndpoint: "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
+        authentication:
+          kratosEndpoint: "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
 
-          session:
-            defaultReturnUrl: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/callback'
-            cookies:
-              domain: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-            cors:
-              allowedOrigins:
-                - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+        session:
+          defaultReturnUrl: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/callback'
+          cookies:
+            domain: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+          cors:
+            allowedOrigins:
+              - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
-          azs:
-            # This is the default local AZ for hyperconverged deployments
-            # It can be disabled by setting ".local: null"
-            local:
-              name: "Local AZ"
-              controllerUrl: 'http://superphenix-controller.{{ (index $.Values.apps "superphenix-controller").namespace }}.svc.cluster.local:8080'
-              authSecret: "secret!"
-              destination: "in-cluster"
+        azs:
+          # This is the default local AZ for hyperconverged deployments
+          # It can be disabled by setting ".local: null"
+          local:
+            name: "Local AZ"
+            controllerUrl: 'http://superphenix-controller.{{ (index $.Values.apps "superphenix-controller").namespace }}.svc.cluster.local:8080'
+            authSecret: "secret!"
+            destination: "in-cluster"
 
-          userSettings:
-            userIsActiveOnCreate: true
-            enableProjectDefaultResources: true
+        userSettings:
+          userIsActiveOnCreate: true
+          enableProjectDefaultResources: true
 
-          productsConfig:
-            argoApp:
-              kubernetes:
-                azDomains:
-                  local:
-                    internal: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-                    external: '%s.{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+        productsConfig:
+          argoApp:
+            kubernetes:
+              azDomains:
+                local:
+                  internal: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+                  external: '%s.{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
   # -- Ory Kratos: identity, session and self-service flows backing the Superphenix console.
   kratos:
@@ -1767,208 +1767,208 @@ apps:
     helm:
       chart: kratos
       releaseName: kratos
-      values:
-        # -- Kratos global secret used to derive signing secrets. MUST be overridden per environment.
-        globalSecret: "change-me-to-something-random-at-least-16-char-long"
+    values:
+      # -- Kratos global secret used to derive signing secrets. MUST be overridden per environment.
+      globalSecret: "change-me-to-something-random-at-least-16-char-long"
 
-        secret:
-          enableDefaultAnnotations: false
-          extraAnnotations:
-            argocd.argoproj.io/hook: PreSync
-            argocd.argoproj.io/sync-wave: "-10"
+      secret:
+        enableDefaultAnnotations: false
+        extraAnnotations:
+          argocd.argoproj.io/hook: PreSync
+          argocd.argoproj.io/sync-wave: "-10"
 
-        image:
-          tag: v1.1.0
+      image:
+        tag: v1.1.0
 
-        kratos:
-          config:
-            # -- Kratos DSN stores users, sessions, recovery codes and verification data.
-            dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
+      kratos:
+        config:
+          # -- Kratos DSN stores users, sessions, recovery codes and verification data.
+          dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
 
-            secrets:
-              default:
-                - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "default" | sha256sum | trunc 32 }}'
-              cookie:
-                - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cookie" | sha256sum | trunc 32 }}'
-              cipher:
-                - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cipher" | sha256sum | trunc 32 }}'
+          secrets:
+            default:
+              - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "default" | sha256sum | trunc 32 }}'
+            cookie:
+              - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cookie" | sha256sum | trunc 32 }}'
+            cipher:
+              - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cipher" | sha256sum | trunc 32 }}'
 
-            # -- Kratos public/admin listener configuration.
-            serve:
-              public:
-                # -- URL on which Kratos will listen, defaults to the same as the console
-                # The ingress adds a path prefix, that is not passed to Kratos. It is only used
-                # to avoid routing conflicts between the different elements of the console.
-                base_url: https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/accounts
-                cors:
-                  enabled: true
-                  allowed_origins:
-                    - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-                  allow_credentials: true
-                  # Do we still need this or is this from back when the domains were different between
-                  # the console and Kratos?
-                  allowed_methods:
-                    - POST
-                    - GET
-                    - PUT
-                    - PATCH
-                    - DELETE
-                  allowed_headers:
-                    - Authorization
-                    - Cookie
-                    - Content-Type
-                    - Max-Age
-                    - X-Session-Token
-                    - X-XSRF-TOKEN
-                    - X-CSRF-TOKEN
-                  exposed_headers:
-                    - Content-Type
-                    - Set-Cookie
-                request_log:
-                  disable_for_health: true
+          # -- Kratos public/admin listener configuration.
+          serve:
+            public:
+              # -- URL on which Kratos will listen, defaults to the same as the console
+              # The ingress adds a path prefix, that is not passed to Kratos. It is only used
+              # to avoid routing conflicts between the different elements of the console.
+              base_url: https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/accounts
+              cors:
+                enabled: true
+                allowed_origins:
+                  - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+                allow_credentials: true
+                # Do we still need this or is this from back when the domains were different between
+                # the console and Kratos?
+                allowed_methods:
+                  - POST
+                  - GET
+                  - PUT
+                  - PATCH
+                  - DELETE
+                allowed_headers:
+                  - Authorization
+                  - Cookie
+                  - Content-Type
+                  - Max-Age
+                  - X-Session-Token
+                  - X-XSRF-TOKEN
+                  - X-CSRF-TOKEN
+                exposed_headers:
+                  - Content-Type
+                  - Set-Cookie
+              request_log:
+                disable_for_health: true
 
-            # -- Identity schemas used at registration.
-            identity:
-              default_schema_id: default
-              schemas:
-                - id: default
-                  url: file:///etc/config/identity.default.schema.json
+          # -- Identity schemas used at registration.
+          identity:
+            default_schema_id: default
+            schemas:
+              - id: default
+                url: file:///etc/config/identity.default.schema.json
 
-            # -- Mail server configuration to send verification/recovery emails.
-            # It must be specified, even if not in use.
-            courier:
-              smtp:
-                connection_uri: smtps://dummy@example.org:password@localhost:465/
-                from_address: superphenix@example.org
-                from_name: "Superphenix Console"
+          # -- Mail server configuration to send verification/recovery emails.
+          # It must be specified, even if not in use.
+          courier:
+            smtp:
+              connection_uri: smtps://dummy@example.org:password@localhost:465/
+              from_address: superphenix@example.org
+              from_name: "Superphenix Console"
 
-            selfservice:
-              # -- Enable code-based (one-time code) authentication.
-              methods:
-                code:
-                  enabled: true
-                  config:
-                    lifespan: "15m"
+          selfservice:
+            # -- Enable code-based (one-time code) authentication.
+            methods:
+              code:
+                enabled: true
+                config:
+                  lifespan: "15m"
 
-              # -- Default post-flow redirect target.
-              default_browser_return_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/'
+            # -- Default post-flow redirect target.
+            default_browser_return_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/'
 
-              # -- Allowed post-flow redirect targets.
-              allowed_return_urls:
-                - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/'
+            # -- Allowed post-flow redirect targets.
+            allowed_return_urls:
+              - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/'
 
-              # -- Kratos self-service flow configuration (login, registration, recovery, ...).
-              flows:
-                recovery:
-                  enabled: true
-                  ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/recovery'
-                  after:
+            # -- Kratos self-service flow configuration (login, registration, recovery, ...).
+            flows:
+              recovery:
+                enabled: true
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/recovery'
+                after:
+                  hooks:
+                    - hook: revoke_active_sessions
+              verification:
+                enabled: false
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/verification'
+                use: code
+                lifespan: "1h"
+                notify_unknown_recipients: false
+              registration:
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/registration'
+                after:
+                  password:
                     hooks:
-                      - hook: revoke_active_sessions
-                verification:
-                  enabled: false
-                  ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/verification'
-                  use: code
-                  lifespan: "1h"
-                  notify_unknown_recipients: false
-                registration:
-                  ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/registration'
-                  after:
-                    password:
-                      hooks:
-                        - hook: show_verification_ui
-                    code:
-                      hooks:
-                        - hook: show_verification_ui
-                    webauthn:
-                      hooks:
-                        - hook: show_verification_ui
-                login:
-                  ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/login'
-                  # after:
-                  #  hooks:
-                  #    - hook: require_verified_address
-                error:
-                  ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/error'
-                settings:
-                  ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/settings'
-                  # Force re-authentication before a password change if the session is older than 15 minutes.
-                  privileged_session_max_age: 15m
+                      - hook: show_verification_ui
+                  code:
+                    hooks:
+                      - hook: show_verification_ui
+                  webauthn:
+                    hooks:
+                      - hook: show_verification_ui
+              login:
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/login'
+                # after:
+                #  hooks:
+                #    - hook: require_verified_address
+              error:
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/error'
+              settings:
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/settings'
+                # Force re-authentication before a password change if the session is older than 15 minutes.
+                privileged_session_max_age: 15m
 
-            # -- Session cookie settings.
-            cookies:
-              domain: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-              same_site: Strict
+          # -- Session cookie settings.
+          cookies:
+            domain: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+            same_site: Strict
 
-          # -- Run database migrations automatically on Kratos upgrades.
-          automigration:
-            enabled: true
+        # -- Run database migrations automatically on Kratos upgrades.
+        automigration:
+          enabled: true
 
-          # -- Contents of the identity schema files referenced by `config.identity.schemas`.
-          identitySchemas:
-            "identity.default.schema.json": |
-              {
-                "$id": "https://schemas.ory.sh/presets/kratos/identity.email.schema.json",
-                "$schema": "http://json-schema.org/draft-07/schema#",
-                "title": "Person",
-                "type": "object",
-                "properties": {
-                  "traits": {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string",
-                        "format": "email",
-                        "title": "Email",
-                        "ory.sh/kratos": {
-                          "credentials": {
-                            "password": {
-                              "identifier": true
-                            }
-                          },
-                          "recovery": {
-                            "via": "email"
-                          },
-                          "verification": {
-                            "via": "email"
+        # -- Contents of the identity schema files referenced by `config.identity.schemas`.
+        identitySchemas:
+          "identity.default.schema.json": |
+            {
+              "$id": "https://schemas.ory.sh/presets/kratos/identity.email.schema.json",
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "title": "Person",
+              "type": "object",
+              "properties": {
+                "traits": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string",
+                      "format": "email",
+                      "title": "Email",
+                      "ory.sh/kratos": {
+                        "credentials": {
+                          "password": {
+                            "identifier": true
                           }
-                        }
-                      },
-                      "name": {
-                        "type": "object",
-                        "properties": {
-                          "first": {
-                            "type": "string",
-                            "title": "First name"
-                          },
-                          "last": {
-                            "type": "string",
-                            "title": "Last name"
-                          }
+                        },
+                        "recovery": {
+                          "via": "email"
+                        },
+                        "verification": {
+                          "via": "email"
                         }
                       }
                     },
-                    "required": ["email"],
-                    "additionalProperties": false
-                  }
+                    "name": {
+                      "type": "object",
+                      "properties": {
+                        "first": {
+                          "type": "string",
+                          "title": "First name"
+                        },
+                        "last": {
+                          "type": "string",
+                          "title": "Last name"
+                        }
+                      }
+                    }
+                  },
+                  "required": ["email"],
+                  "additionalProperties": false
                 }
               }
+            }
 
-        ingress:
-          public:
-            enabled: true
-            annotations:
-              nginx.ingress.kubernetes.io/rewrite-target: "/$2"
-              #  cert-manager.io/cluster-issuer: letsencrypt
-            hosts:
-              - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-                paths:
-                  - path: /accounts(/|$)(.*)
-                    pathType: ImplementationSpecific
-            tls:
-              - secretName: kratos-public-tls
-                hosts:
-                  - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+      ingress:
+        public:
+          enabled: true
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+            #  cert-manager.io/cluster-issuer: letsencrypt
+          hosts:
+            - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+              paths:
+                - path: /accounts(/|$)(.*)
+                  pathType: ImplementationSpecific
+          tls:
+            - secretName: kratos-public-tls
+              hosts:
+                - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
   # -- Permify: authorization service consulted by the Superphenix API to enforce permissions.
   permify:
@@ -1983,23 +1983,23 @@ apps:
     helm:
       chart: permify
       releaseName: permify
-      values:
-        # -- Number of instances of Permify to run.
-        replicaCount: 1
+    values:
+      # -- Number of instances of Permify to run.
+      replicaCount: 1
 
-        app:
-          # -- Database connection used to store Permify tuples and schemas.
-          database:
-            engine: postgres
-            uri: 'postgres://superphenix:{{ (index $.Values.apps "postgres").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify'
-            garbage_collection:
-              enabled: false
-
-          # -- Distributed mode is disabled (single-instance deployment).
-          distributed:
+      app:
+        # -- Database connection used to store Permify tuples and schemas.
+        database:
+          engine: postgres
+          uri: 'postgres://superphenix:{{ (index $.Values.apps "postgres").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify'
+          garbage_collection:
             enabled: false
-            address: "permify.{{ $.Release.Namespace }}.svc:5000"
-            port: 5000
+
+        # -- Distributed mode is disabled (single-instance deployment).
+        distributed:
+          enabled: false
+          address: "permify.{{ $.Release.Namespace }}.svc:5000"
+          port: 5000
 
   # -- PostgreSQL: shared database backing the Superphenix API, Kratos and Permify.
   postgres:
@@ -2014,26 +2014,26 @@ apps:
     helm:
       chart: postgres
       releaseName: postgres
-      values:
-        # -- Primary user/database credentials.
-        # SECURITY: `password` MUST be overridden per environment.
-        auth:
-          database: superphenix
-          username: superphenix
-          password: "changeme!"
+    values:
+      # -- Primary user/database credentials.
+      # SECURITY: `password` MUST be overridden per environment.
+      auth:
+        database: superphenix
+        username: superphenix
+        password: "changeme!"
 
-        # -- Persistent volume size. Sufficient for most deployments.
-        persistence:
-          size: 8Gi
+      # -- Persistent volume size. Sufficient for most deployments.
+      persistence:
+        size: 8Gi
 
-        # -- Additional databases created at initialization for Kratos and Permify.
-        initdb:
-          scripts:
-            setup.sql: |
-              CREATE DATABASE kratos;
-              CREATE DATABASE permify;
-              GRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;
-              GRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;
+      # -- Additional databases created at initialization for Kratos and Permify.
+      initdb:
+        scripts:
+          setup.sql: |
+            CREATE DATABASE kratos;
+            CREATE DATABASE permify;
+            GRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;
+            GRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;
 
   # -- Talos Operator: manages bare-metal Talos nodes (PXE boot, machine configuration). Disabled by default.
   talos-operator:
@@ -2048,9 +2048,9 @@ apps:
     helm:
       chart: "talos-operator"
       releaseName: "talos-operator"
-      values:
-        featureFlags:
-          enablePxeBootStack: true
+    values:
+      featureFlags:
+        enablePxeBootStack: true
 
   # -- iDRAC Exporter: Prometheus exporter for Dell iDRAC BMCs. Disabled by default.
   idrac-exporter:
@@ -2086,53 +2086,53 @@ apps:
     helm:
       chart: "misc"
       releaseName: "misc"
-      values:
-        effectiveMode: '{{ include "superphenix-system.effectiveMode" . }}'
-        modes:
-          external-subnet: [Hyperconverged, DecoupledWorkload]
-          external-subnet-nad: [Hyperconverged, DecoupledWorkload]
-        objects:
-          # -- This is the physical network in which the NAT gateways will be created.
-          # The NAT gateways will take IPs at random within that subnet, so ensure the `excludeIps field
-          # encompasses any IPs that are already in use. Ideally, the range of that subnet (or part of it)
-          # must be reserved to SPX.
-          external-subnet:
-            apiVersion: kubeovn.io/v1
-            kind: Subnet
-            metadata:
-              name: external-subnet
-            spec:
-              # NAT gateways work exclusively for IPv4. IPv6 doesn't need NATing.
-              protocol: IPv4
-              # The CIDR of the physical network in which the NAT gateways will be created.
-              cidrBlock: 192.168.1.0/24
-              # The gateway where the NATed traffic must be forwarded.
-              gateway: 192.168.1.254
-              # IPs that must not be picked up by the NAT gateway.
-              # You can include individual IPs, or ranges of IPs (separate the IPs using "..")
-              excludeIps:
-                - 192.168.1.0..192.168.1.200
-                - 192.168.1.254
-              provider: external-subnet.kube-system
-          # - This is where you specify what physical port must be used by the NAT gateways.
-          # Override the "config" and change the "master" to a physical interface, bond or VLAN.
-          # The interface must have the same name on every node of the cluster. Use link aliases
-          # to give a secondary name to your interfaces if they do not fulfill that requirement.
-          external-subnet-nad:
-            apiVersion: "k8s.cni.cncf.io/v1"
-            kind: NetworkAttachmentDefinition
-            metadata:
-              name: external-subnet
-              namespace: kube-system
-            spec:
-              config: '{
-                  "cniVersion": "0.3.0",
-                  "type": "macvlan",
-                  "master": "enp0s31f6",
-                  "mode": "bridge",
-                  "ipam": {
-                    "type": "kube-ovn",
-                    "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
-                    "provider": "external-subnet.kube-system"
-                  }
-                }'
+    values:
+      effectiveMode: '{{ include "superphenix-system.effectiveMode" . }}'
+      modes:
+        external-subnet: [Hyperconverged, DecoupledWorkload]
+        external-subnet-nad: [Hyperconverged, DecoupledWorkload]
+      objects:
+        # -- This is the physical network in which the NAT gateways will be created.
+        # The NAT gateways will take IPs at random within that subnet, so ensure the `excludeIps field
+        # encompasses any IPs that are already in use. Ideally, the range of that subnet (or part of it)
+        # must be reserved to SPX.
+        external-subnet:
+          apiVersion: kubeovn.io/v1
+          kind: Subnet
+          metadata:
+            name: external-subnet
+          spec:
+            # NAT gateways work exclusively for IPv4. IPv6 doesn't need NATing.
+            protocol: IPv4
+            # The CIDR of the physical network in which the NAT gateways will be created.
+            cidrBlock: 192.168.1.0/24
+            # The gateway where the NATed traffic must be forwarded.
+            gateway: 192.168.1.254
+            # IPs that must not be picked up by the NAT gateway.
+            # You can include individual IPs, or ranges of IPs (separate the IPs using "..")
+            excludeIps:
+              - 192.168.1.0..192.168.1.200
+              - 192.168.1.254
+            provider: external-subnet.kube-system
+        # - This is where you specify what physical port must be used by the NAT gateways.
+        # Override the "config" and change the "master" to a physical interface, bond or VLAN.
+        # The interface must have the same name on every node of the cluster. Use link aliases
+        # to give a secondary name to your interfaces if they do not fulfill that requirement.
+        external-subnet-nad:
+          apiVersion: "k8s.cni.cncf.io/v1"
+          kind: NetworkAttachmentDefinition
+          metadata:
+            name: external-subnet
+            namespace: kube-system
+          spec:
+            config: '{
+                "cniVersion": "0.3.0",
+                "type": "macvlan",
+                "master": "enp0s31f6",
+                "mode": "bridge",
+                "ipam": {
+                  "type": "kube-ovn",
+                  "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
+                  "provider": "external-subnet.kube-system"
+                }
+              }'

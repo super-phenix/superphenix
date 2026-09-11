@@ -95,21 +95,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "cert-manager",
-      "releaseName": "cert-manager",
-      "values": {
-        "crds": {
-          "enabled": true
-        },
-        "enableCertificateOwnerRef": true,
-        "extraObjects": [
-          "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress:\n          class: traefik\n"
-        ],
-        "prometheus": {
-          "servicemonitor": {
-            "enabled": true
-          }
-        }
-      }
+      "releaseName": "cert-manager"
     },
     "modes": [
       "Hyperconverged",
@@ -119,6 +105,20 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "cert-manager-system",
     "repoURL": "https://charts.jetstack.io",
     "targetRevision": "1.21.1",
+    "values": {
+      "crds": {
+        "enabled": true
+      },
+      "enableCertificateOwnerRef": true,
+      "extraObjects": [
+        "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress:\n          class: traefik\n"
+      ],
+      "prometheus": {
+        "servicemonitor": {
+          "enabled": true
+        }
+      }
+    },
     "wave": "-10"
   },
   "cilium": {
@@ -132,59 +132,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "cilium",
-      "releaseName": "cilium",
-      "values": {
-        "cgroup": {
-          "autoMount": {
-            "enabled": false
-          },
-          "hostRoot": "/sys/fs/cgroup"
-        },
-        "envoy": {
-          "enabled": false
-        },
-        "hubble": {
-          "enabled": false
-        },
-        "ipam": {
-          "mode": "kubernetes"
-        },
-        "ipv4": {
-          "enabled": true
-        },
-        "ipv6": {
-          "enabled": true
-        },
-        "k8s": {
-          "requireIPv4PodCIDR": true,
-          "requireIPv6PodCIDR": true
-        },
-        "k8sServiceHost": "localhost",
-        "k8sServicePort": 7445,
-        "kubeProxyReplacement": true,
-        "securityContext": {
-          "capabilities": {
-            "ciliumAgent": [
-              "CHOWN",
-              "KILL",
-              "NET_ADMIN",
-              "NET_RAW",
-              "IPC_LOCK",
-              "SYS_ADMIN",
-              "SYS_RESOURCE",
-              "DAC_OVERRIDE",
-              "FOWNER",
-              "SETGID",
-              "SETUID"
-            ],
-            "cleanCiliumState": [
-              "NET_ADMIN",
-              "SYS_ADMIN",
-              "SYS_RESOURCE"
-            ]
-          }
-        }
-      }
+      "releaseName": "cilium"
     },
     "modes": [
       "DecoupledStorage"
@@ -192,6 +140,58 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "kube-system",
     "repoURL": "https://helm.cilium.io/",
     "targetRevision": "1.17.2",
+    "values": {
+      "cgroup": {
+        "autoMount": {
+          "enabled": false
+        },
+        "hostRoot": "/sys/fs/cgroup"
+      },
+      "envoy": {
+        "enabled": false
+      },
+      "hubble": {
+        "enabled": false
+      },
+      "ipam": {
+        "mode": "kubernetes"
+      },
+      "ipv4": {
+        "enabled": true
+      },
+      "ipv6": {
+        "enabled": true
+      },
+      "k8s": {
+        "requireIPv4PodCIDR": true,
+        "requireIPv6PodCIDR": true
+      },
+      "k8sServiceHost": "localhost",
+      "k8sServicePort": 7445,
+      "kubeProxyReplacement": true,
+      "securityContext": {
+        "capabilities": {
+          "ciliumAgent": [
+            "CHOWN",
+            "KILL",
+            "NET_ADMIN",
+            "NET_RAW",
+            "IPC_LOCK",
+            "SYS_ADMIN",
+            "SYS_RESOURCE",
+            "DAC_OVERRIDE",
+            "FOWNER",
+            "SETGID",
+            "SETUID"
+          ],
+          "cleanCiliumState": [
+            "NET_ADMIN",
+            "SYS_ADMIN",
+            "SYS_RESOURCE"
+          ]
+        }
+      }
+    },
     "wave": "-100"
   },
   "cluster-api-operator": {
@@ -205,29 +205,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "cluster-api-operator",
-      "releaseName": "cluster-api-operator",
-      "values": {
-        "bootstrap": {
-          "kubeadm": {
-            "version": "v1.12.10"
-          }
-        },
-        "controlPlane": {
-          "kamaji": {
-            "version": "v0.19.0"
-          }
-        },
-        "core": {
-          "cluster-api": {
-            "version": "v1.12.10"
-          }
-        },
-        "infrastructure": {
-          "kubevirt": {
-            "version": "v0.11.2"
-          }
-        }
-      }
+      "releaseName": "cluster-api-operator"
     },
     "modes": [
       "Hyperconverged",
@@ -236,6 +214,28 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "capi-operator-system",
     "repoURL": "https://kubernetes-sigs.github.io/cluster-api-operator",
     "targetRevision": "0.28.0",
+    "values": {
+      "bootstrap": {
+        "kubeadm": {
+          "version": "v1.12.10"
+        }
+      },
+      "controlPlane": {
+        "kamaji": {
+          "version": "v0.20.0"
+        }
+      },
+      "core": {
+        "cluster-api": {
+          "version": "v1.12.10"
+        }
+      },
+      "infrastructure": {
+        "kubevirt": {
+          "version": "v0.11.2"
+        }
+      }
+    },
     "wave": "15"
   },
   "coredns": {
@@ -251,26 +251,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "coredns",
-      "releaseName": "coredns",
-      "values": {
-        "prometheus": {
-          "monitor": {
-            "enabled": true
-          },
-          "service": {
-            "enabled": true
-          }
-        },
-        "replicaCount": 2,
-        "service": {
-          "clusterIP": "fd00:100:ffff::a",
-          "clusterIPs": [
-            "fd00:100:ffff::a",
-            "10.16.0.10"
-          ],
-          "ipFamilyPolicy": "RequireDualStack"
-        }
-      }
+      "releaseName": "coredns"
     },
     "modes": [
       "Hyperconverged",
@@ -280,6 +261,25 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "coredns-system",
     "repoURL": "https://coredns.github.io/helm",
     "targetRevision": "1.47.0",
+    "values": {
+      "prometheus": {
+        "monitor": {
+          "enabled": true
+        },
+        "service": {
+          "enabled": true
+        }
+      },
+      "replicaCount": 2,
+      "service": {
+        "clusterIP": "fd00:100:ffff::a",
+        "clusterIPs": [
+          "fd00:100:ffff::a",
+          "10.16.0.10"
+        ],
+        "ipFamilyPolicy": "RequireDualStack"
+      }
+    },
     "wave": "-100"
   },
   "csi-addons": {
@@ -339,19 +339,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "etcd-operator",
-      "releaseName": "etcd-operator",
-      "values": {
-        "etcdOperator": {
-          "vpa": {
-            "enabled": false
-          }
-        },
-        "kubeRbacProxy": {
-          "vpa": {
-            "enabled": false
-          }
-        }
-      }
+      "releaseName": "etcd-operator"
     },
     "modes": [
       "Hyperconverged",
@@ -360,6 +348,18 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "etcd-operator-system",
     "repoURL": "ghcr.io/cozystack/charts",
     "targetRevision": "0.5.3",
+    "values": {
+      "etcdOperator": {
+        "vpa": {
+          "enabled": false
+        }
+      },
+      "kubeRbacProxy": {
+        "vpa": {
+          "enabled": false
+        }
+      }
+    },
     "wave": "5"
   },
   "gateway-api": {
@@ -435,14 +435,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "kaas-datastore",
-      "releaseName": "kaas-datastore",
-      "values": {
-        "dataStores": {
-          "default": {
-            "version": "3.6.7"
-          }
-        }
-      }
+      "releaseName": "kaas-datastore"
     },
     "modes": [
       "Hyperconverged",
@@ -451,6 +444,13 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "kaas-datastore-system",
     "repoURL": "ghcr.io/super-phenix/charts",
     "targetRevision": "",
+    "values": {
+      "dataStores": {
+        "default": {
+          "version": "3.6.7"
+        }
+      }
+    },
     "wave": "5"
   },
   "kamaji": {
@@ -464,47 +464,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "helm": {
       "chart": "kamaji",
-      "releaseName": "kamaji",
-      "values": {
-        "affinity": {
-          "podAntiAffinity": {
-            "preferredDuringSchedulingIgnoredDuringExecution": [
-              {
-                "podAffinityTerm": {
-                  "labelSelector": {
-                    "matchLabels": {
-                      "app.kubernetes.io/name": "kamaji"
-                    }
-                  },
-                  "topologyKey": "kubernetes.io/hostname"
-                },
-                "weight": 1
-              }
-            ]
-          }
-        },
-        "defaultDatastoreName": "default",
-        "extraArgs": [
-          "--certificate-expiration-deadline=336h"
-        ],
-        "image": {
-          "tag": "26.7.3-edge"
-        },
-        "kamaji-etcd": {
-          "deploy": false
-        },
-        "replicaCount": 3,
-        "resources": {
-          "limits": {
-            "cpu": "1000m",
-            "memory": "2Gi"
-          },
-          "requests": {
-            "cpu": "100m",
-            "memory": "200Mi"
-          }
-        }
-      }
+      "releaseName": "kamaji"
     },
     "modes": [
       "Hyperconverged",
@@ -513,2378 +473,6 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "namespace": "kamaji-system",
     "repoURL": "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm",
     "targetRevision": "26.7.22",
-    "wave": "10"
-  },
-  "kratos": {
-    "automation": {
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "kratos",
-      "releaseName": "kratos",
-      "values": {
-        "globalSecret": "change-me-to-something-random-at-least-16-char-long",
-        "image": {
-          "tag": "v1.1.0"
-        },
-        "ingress": {
-          "public": {
-            "annotations": {
-              "nginx.ingress.kubernetes.io/rewrite-target": "/$2"
-            },
-            "enabled": true,
-            "hosts": [
-              {
-                "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-                "paths": [
-                  {
-                    "path": "/accounts(/|$)(.*)",
-                    "pathType": "ImplementationSpecific"
-                  }
-                ]
-              }
-            ],
-            "tls": [
-              {
-                "hosts": [
-                  "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-                ],
-                "secretName": "kratos-public-tls"
-              }
-            ]
-          }
-        },
-        "kratos": {
-          "automigration": {
-            "enabled": true
-          },
-          "config": {
-            "cookies": {
-              "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-              "same_site": "Strict"
-            },
-            "courier": {
-              "smtp": {
-                "connection_uri": "smtps://dummy@example.org:password@localhost:465/",
-                "from_address": "superphenix@example.org",
-                "from_name": "Superphenix Console"
-              }
-            },
-            "dsn": "postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable",
-            "identity": {
-              "default_schema_id": "default",
-              "schemas": [
-                {
-                  "id": "default",
-                  "url": "file:///etc/config/identity.default.schema.json"
-                }
-              ]
-            },
-            "secrets": {
-              "cipher": [
-                "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cipher\" | sha256sum | trunc 32 }}"
-              ],
-              "cookie": [
-                "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cookie\" | sha256sum | trunc 32 }}"
-              ],
-              "default": [
-                "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"default\" | sha256sum | trunc 32 }}"
-              ]
-            },
-            "selfservice": {
-              "allowed_return_urls": [
-                "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
-              ],
-              "default_browser_return_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/",
-              "flows": {
-                "error": {
-                  "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
-                },
-                "login": {
-                  "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
-                },
-                "recovery": {
-                  "after": {
-                    "hooks": [
-                      {
-                        "hook": "revoke_active_sessions"
-                      }
-                    ]
-                  },
-                  "enabled": true,
-                  "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
-                },
-                "registration": {
-                  "after": {
-                    "code": {
-                      "hooks": [
-                        {
-                          "hook": "show_verification_ui"
-                        }
-                      ]
-                    },
-                    "password": {
-                      "hooks": [
-                        {
-                          "hook": "show_verification_ui"
-                        }
-                      ]
-                    },
-                    "webauthn": {
-                      "hooks": [
-                        {
-                          "hook": "show_verification_ui"
-                        }
-                      ]
-                    }
-                  },
-                  "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
-                },
-                "settings": {
-                  "privileged_session_max_age": "15m",
-                  "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
-                },
-                "verification": {
-                  "enabled": false,
-                  "lifespan": "1h",
-                  "notify_unknown_recipients": false,
-                  "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
-                  "use": "code"
-                }
-              },
-              "methods": {
-                "code": {
-                  "config": {
-                    "lifespan": "15m"
-                  },
-                  "enabled": true
-                }
-              }
-            },
-            "serve": {
-              "public": {
-                "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
-                "cors": {
-                  "allow_credentials": true,
-                  "allowed_headers": [
-                    "Authorization",
-                    "Cookie",
-                    "Content-Type",
-                    "Max-Age",
-                    "X-Session-Token",
-                    "X-XSRF-TOKEN",
-                    "X-CSRF-TOKEN"
-                  ],
-                  "allowed_methods": [
-                    "POST",
-                    "GET",
-                    "PUT",
-                    "PATCH",
-                    "DELETE"
-                  ],
-                  "allowed_origins": [
-                    "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-                  ],
-                  "enabled": true,
-                  "exposed_headers": [
-                    "Content-Type",
-                    "Set-Cookie"
-                  ]
-                },
-                "request_log": {
-                  "disable_for_health": true
-                }
-              }
-            }
-          },
-          "identitySchemas": {
-            "identity.default.schema.json": "{\n  \"$id\": \"https://schemas.ory.sh/presets/kratos/identity.email.schema.json\",\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Person\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"traits\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"email\": {\n          \"type\": \"string\",\n          \"format\": \"email\",\n          \"title\": \"Email\",\n          \"ory.sh/kratos\": {\n            \"credentials\": {\n              \"password\": {\n                \"identifier\": true\n              }\n            },\n            \"recovery\": {\n              \"via\": \"email\"\n            },\n            \"verification\": {\n              \"via\": \"email\"\n            }\n          }\n        },\n        \"name\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"first\": {\n              \"type\": \"string\",\n              \"title\": \"First name\"\n            },\n            \"last\": {\n              \"type\": \"string\",\n              \"title\": \"Last name\"\n            }\n          }\n        }\n      },\n      \"required\": [\"email\"],\n      \"additionalProperties\": false\n    }\n  }\n}\n"
-          }
-        },
-        "secret": {
-          "enableDefaultAnnotations": false,
-          "extraAnnotations": {
-            "argocd.argoproj.io/hook": "PreSync",
-            "argocd.argoproj.io/sync-wave": "-10"
-          }
-        }
-      }
-    },
-    "modes": [
-      "Management"
-    ],
-    "repoURL": "https://k8s.ory.sh/helm/charts",
-    "targetRevision": "0.43.1"
-  },
-  "kubeovn": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "kube-ovn-v2",
-      "releaseName": "kube-ovn",
-      "values": {
-        "apiNad": {
-          "enabled": true
-        },
-        "extraObjects": [
-          {
-            "apiVersion": "kubeovn.io/v1",
-            "kind": "Subnet",
-            "metadata": {
-              "name": "system-blackhole"
-            },
-            "spec": {
-              "acls": [
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip"
-                },
-                {
-                  "action": "drop",
-                  "direction": "to-lport",
-                  "match": "ip"
-                }
-              ],
-              "cidrBlock": "fd00:666::/64",
-              "disableGatewayCheck": true,
-              "protocol": "IPv6",
-              "provider": "system-blackhole.kube-system.ovn",
-              "vpc": "system-blackhole-vpc"
-            }
-          },
-          {
-            "apiVersion": "kubeovn.io/v1",
-            "kind": "Vpc",
-            "metadata": {
-              "name": "system-blackhole-vpc"
-            },
-            "spec": {}
-          },
-          {
-            "apiVersion": "k8s.cni.cncf.io/v1",
-            "kind": "NetworkAttachmentDefinition",
-            "metadata": {
-              "name": "system-blackhole",
-              "namespace": "kube-system"
-            },
-            "spec": {
-              "config": "{ \"cniVersion\": \"0.3.0\", \"type\": \"kube-ovn\", \"server_socket\": \"/run/openvswitch/kube-ovn-daemon.sock\", \"provider\": \"system-blackhole.kube-system.ovn\" }"
-            }
-          },
-          {
-            "apiVersion": "kubeovn.io/v1",
-            "kind": "Subnet",
-            "metadata": {
-              "name": "system-isolated-egress"
-            },
-            "spec": {
-              "acls": [
-                {
-                  "action": "allow-related",
-                  "direction": "from-lport",
-                  "match": "ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a",
-                  "priority": 1001
-                },
-                {
-                  "action": "allow-related",
-                  "direction": "from-lport",
-                  "match": "ip4.src == 10.32.0.1 || ip6.src == fd00:110::1",
-                  "priority": 1001
-                },
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip4.dst == 10.0.0.0/8 \u0026\u0026 ip4.dst != 10.32.0.1 \u0026\u0026 ip4.src == 10.0.0.0/8",
-                  "priority": 1000
-                },
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip4.dst == 172.16.0.0/12 \u0026\u0026 ip",
-                  "priority": 1000
-                },
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip4.dst == 192.168.0.0/16 \u0026\u0026 ip",
-                  "priority": 1000
-                },
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip4.dst == 100.64.0.0/10 \u0026\u0026 ip",
-                  "priority": 1000
-                },
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip4.dst == 169.254.0.0/16 \u0026\u0026 ip",
-                  "priority": 1000
-                },
-                {
-                  "action": "drop",
-                  "direction": "from-lport",
-                  "match": "ip6.dst == fc00::/7 \u0026\u0026 ip6.dst != fd00:110::1 \u0026\u0026 ip6.src == fd00:110::/64",
-                  "priority": 1000
-                }
-              ],
-              "allowEWTraffic": false,
-              "cidrBlock": "10.32.0.0/16,fd00:110::/64",
-              "gatewayType": "distributed",
-              "mtu": 1380,
-              "natOutgoing": true,
-              "protocol": "Dual",
-              "provider": "system-isolated-egress.kube-system.ovn",
-              "vpc": "ovn-cluster"
-            }
-          },
-          {
-            "apiVersion": "k8s.cni.cncf.io/v1",
-            "kind": "NetworkAttachmentDefinition",
-            "metadata": {
-              "name": "system-isolated-egress",
-              "namespace": "kube-system"
-            },
-            "spec": {
-              "config": "{ \"cniVersion\": \"0.3.0\", \"type\": \"kube-ovn\", \"server_socket\": \"/run/openvswitch/kube-ovn-daemon.sock\", \"provider\": \"system-isolated-egress.kube-system.ovn\" }"
-            }
-          }
-        ],
-        "features": {
-          "enableNetworkPolicies": true
-        },
-        "masterNodes": "invalid,invalid,invalid",
-        "masterNodesLabels": {
-          "kube-ovn/role": null,
-          "node-role.kubernetes.io/control-plane": ""
-        },
-        "natGw": {
-          "namePrefix": "nat-gateway"
-        },
-        "networking": {
-          "join": {
-            "cidr": {
-              "v4": "100.64.0.0/12",
-              "v6": "fd00:100:64::/112"
-            }
-          },
-          "pods": {
-            "cidr": {
-              "v4": "10.0.0.0/12",
-              "v6": "fd00:100:0000:0::/96"
-            },
-            "gateways": {
-              "v4": "10.0.0.1",
-              "v6": "fd00:100:0000:0::1"
-            }
-          },
-          "services": {
-            "cidr": {
-              "v4": "10.16.0.0/12",
-              "v6": "fd00:100:ffff:0::/112"
-            }
-          },
-          "stack": "Dual"
-        },
-        "ovsOvn": {
-          "disableModulesManagement": true,
-          "ovnDirectory": "/var/lib/ovn",
-          "ovsDirectory": "/var/lib/openvswitch"
-        },
-        "validatingWebhook": {
-          "enabled": true
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "kube-system",
-    "repoURL": "oci://ghcr.io/kubeovn/charts/kube-ovn-v2",
-    "targetRevision": "v1.16.0",
-    "wave": "-100"
-  },
-  "kubevirt": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "directory": {
-      "recurse": true
-    },
-    "enabled": true,
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "kubevirt-system",
-    "path": "v1.7.3/",
-    "repoURL": "https://github.com/super-phenix/kubevirt-manifests.git",
-    "targetRevision": "HEAD",
-    "wave": "5"
-  },
-  "kubevirt-config": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "kubevirt",
-      "releaseName": "kubevirt-config",
-      "values": {
-        "config": {
-          "configuration": {
-            "autoCPULimitNamespaceLabelSelector": {
-              "matchExpressions": [
-                {
-                  "key": "superphenix.net/projectID",
-                  "operator": "Exists"
-                }
-              ]
-            },
-            "cpuModel": "Broadwell-noTSX-IBRS",
-            "developerConfiguration": {
-              "cpuAllocationRatio": 10,
-              "featureGates": [
-                "BlockVolume",
-                "ExpandDisks",
-                "Snapshot",
-                "HotplugVolumes"
-              ],
-              "memoryOvercommit": 200
-            },
-            "evictionStrategy": "LiveMigrate",
-            "ksmConfiguration": {
-              "nodeLabelSelector": {}
-            },
-            "migrations": {
-              "allowAutoConverge": false,
-              "allowPostCopy": false,
-              "allowWorkloadDisruption": true,
-              "bandwidthPerMigration": "64Mi",
-              "completionTimeoutPerGiB": 120,
-              "parallelMigrationsPerCluster": 10,
-              "parallelOutboundMigrationsPerNode": 10,
-              "progressTimeout": 150
-            },
-            "network": {
-              "binding": {
-                "managedtap": {
-                  "domainAttachmentType": "managedTap"
-                }
-              }
-            },
-            "virtualMachineInstancesPerNode": 100,
-            "vmRolloutStrategy": "LiveUpdate",
-            "vmStateStorageClass": "default.spx-rbd-3x"
-          },
-          "imagePullPolicy": "IfNotPresent",
-          "monitorAccount": "prometheus-kube-prometheus-prometheus",
-          "monitorNamespace": "prometheus-system",
-          "serviceMonitorNamespace": "kubevirt",
-          "workloadUpdateStrategy": {
-            "workloadUpdateMethods": [
-              "LiveMigrate"
-            ]
-          }
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "kubevirt-system",
-    "repoURL": "oci://ghcr.io/super-phenix/charts/kubevirt",
-    "targetRevision": "0.1.0",
-    "wave": "5"
-  },
-  "local-path-provisioner": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": false,
-    "helm": {
-      "chart": "local-path-provisioner",
-      "releaseName": "local-path-provisioner",
-      "values": {
-        "storageClass": {
-          "defaultClass": false,
-          "name": "local-path"
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "local-path-storage",
-    "repoURL": "https://rancher.github.io/local-path-provisioner",
-    "targetRevision": "0.0.31",
-    "wave": "0"
-  },
-  "loki": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": false,
-    "helm": {
-      "chart": "loki",
-      "releaseName": "loki",
-      "values": {
-        "backend": {
-          "replicas": 0
-        },
-        "bloomCompactor": {
-          "replicas": 0
-        },
-        "bloomGateway": {
-          "replicas": 0
-        },
-        "chunksCache": {
-          "enabled": false
-        },
-        "compactor": {
-          "replicas": 0
-        },
-        "deploymentMode": "SingleBinary",
-        "distributor": {
-          "replicas": 0
-        },
-        "gateway": {
-          "enabled": false
-        },
-        "global": {
-          "clusterDomain": "",
-          "dnsNamespace": "kube-system",
-          "dnsService": "coredns"
-        },
-        "indexGateway": {
-          "replicas": 0
-        },
-        "ingester": {
-          "replicas": 0
-        },
-        "loki": {
-          "auth_enabled": true,
-          "commonConfig": {
-            "replication_factor": 1
-          },
-          "compactor": {
-            "compaction_interval": "10m",
-            "delete_request_store": "filesystem",
-            "retention_delete_delay": "2h",
-            "retention_delete_worker_count": 150,
-            "retention_enabled": true
-          },
-          "limits_config": {
-            "retention_period": "14d"
-          },
-          "schemaConfig": {
-            "configs": [
-              {
-                "from": "2024-12-01",
-                "index": {
-                  "period": "24h",
-                  "prefix": "loki_index_"
-                },
-                "object_store": "filesystem",
-                "schema": "v13",
-                "store": "tsdb"
-              }
-            ]
-          },
-          "storage": {
-            "type": "filesystem"
-          }
-        },
-        "lokiCanary": {
-          "enabled": false
-        },
-        "minio": {
-          "enabled": false
-        },
-        "monitoring": {
-          "serviceMonitor": {
-            "enabled": true
-          }
-        },
-        "querier": {
-          "replicas": 0
-        },
-        "queryFrontend": {
-          "replicas": 0
-        },
-        "queryScheduler": {
-          "replicas": 0
-        },
-        "read": {
-          "replicas": 0
-        },
-        "resultsCache": {
-          "enabled": false
-        },
-        "singleBinary": {
-          "persistence": {
-            "enableStatefulSetAutoDeletePVC": false,
-            "size": "50Gi"
-          },
-          "replicas": 1
-        },
-        "test": {
-          "enabled": false
-        },
-        "write": {
-          "replicas": 0
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "loki-system",
-    "repoURL": "https://grafana.github.io/helm-charts",
-    "targetRevision": "6.43.0",
-    "wave": "100"
-  },
-  "metrics-server": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "metrics-server",
-      "releaseName": "metrics-server",
-      "values": {
-        "defaultArgs": [
-          "--cert-dir=/tmp",
-          "--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
-          "--kubelet-use-node-status-port",
-          "--kubelet-insecure-tls",
-          "--metric-resolution=15s"
-        ],
-        "metrics": {
-          "enabled": true
-        },
-        "replicas": 3,
-        "serviceMonitor": {
-          "enabled": true
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "metrics-server-system",
-    "repoURL": "https://kubernetes-sigs.github.io/metrics-server/",
-    "targetRevision": "3.13.1",
-    "wave": "-10"
-  },
-  "misc": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": [
-        "SkipDryRunOnMissingResource=true"
-      ]
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "misc",
-      "releaseName": "misc",
-      "values": {
-        "effectiveMode": "{{ include \"superphenix-system.effectiveMode\" . }}",
-        "modes": {
-          "external-subnet": [
-            "Hyperconverged",
-            "DecoupledWorkload"
-          ],
-          "external-subnet-nad": [
-            "Hyperconverged",
-            "DecoupledWorkload"
-          ]
-        },
-        "objects": {
-          "external-subnet": {
-            "apiVersion": "kubeovn.io/v1",
-            "kind": "Subnet",
-            "metadata": {
-              "name": "external-subnet"
-            },
-            "spec": {
-              "cidrBlock": "192.168.1.0/24",
-              "excludeIps": [
-                "192.168.1.0..192.168.1.200",
-                "192.168.1.254"
-              ],
-              "gateway": "192.168.1.254",
-              "protocol": "IPv4",
-              "provider": "external-subnet.kube-system"
-            }
-          },
-          "external-subnet-nad": {
-            "apiVersion": "k8s.cni.cncf.io/v1",
-            "kind": "NetworkAttachmentDefinition",
-            "metadata": {
-              "name": "external-subnet",
-              "namespace": "kube-system"
-            },
-            "spec": {
-              "config": "{ \"cniVersion\": \"0.3.0\", \"type\": \"macvlan\", \"master\": \"enp0s31f6\", \"mode\": \"bridge\", \"ipam\": { \"type\": \"kube-ovn\", \"server_socket\": \"/run/openvswitch/kube-ovn-daemon.sock\", \"provider\": \"external-subnet.kube-system\" } }"
-            }
-          }
-        }
-      }
-    },
-    "namespace": "default",
-    "repoURL": "ghcr.io/super-phenix/charts",
-    "targetRevision": "0.0.0",
-    "wave": "100"
-  },
-  "multus": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "multus",
-      "releaseName": "multus",
-      "values": {
-        "tolerations": [
-          {
-            "effect": "NoSchedule",
-            "operator": "Exists"
-          },
-          {
-            "effect": "NoExecute",
-            "operator": "Exists"
-          }
-        ]
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "kube-system",
-    "repoURL": "oci://ghcr.io/super-phenix/charts/multus",
-    "targetRevision": "0.1.0",
-    "wave": "-100"
-  },
-  "permify": {
-    "automation": {
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "permify",
-      "releaseName": "permify",
-      "values": {
-        "app": {
-          "database": {
-            "engine": "postgres",
-            "garbage_collection": {
-              "enabled": false
-            },
-            "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
-          },
-          "distributed": {
-            "address": "permify.{{ $.Release.Namespace }}.svc:5000",
-            "enabled": false,
-            "port": 5000
-          }
-        },
-        "replicaCount": 1
-      }
-    },
-    "modes": [
-      "Management"
-    ],
-    "repoURL": "https://permify.github.io/helm-charts",
-    "targetRevision": "0.3.*"
-  },
-  "policies": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "spx-policies",
-      "releaseName": "spx-policies"
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "kube-system",
-    "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
-    "targetRevision": "0.1.0"
-  },
-  "postgres": {
-    "automation": {
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "postgres",
-      "releaseName": "postgres",
-      "values": {
-        "auth": {
-          "database": "superphenix",
-          "password": "changeme!",
-          "username": "superphenix"
-        },
-        "initdb": {
-          "scripts": {
-            "setup.sql": "CREATE DATABASE kratos;\nCREATE DATABASE permify;\nGRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;\nGRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;\n"
-          }
-        },
-        "persistence": {
-          "size": "8Gi"
-        }
-      }
-    },
-    "modes": [
-      "Management"
-    ],
-    "repoURL": "oci://registry-1.docker.io/cloudpirates/postgres",
-    "targetRevision": "0.19.12"
-  },
-  "prometheus-stack": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": [
-        "ServerSideApply=true"
-      ]
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "kube-prometheus-stack",
-      "releaseName": "prometheus",
-      "values": {
-        "alertmanager": {
-          "enabled": false
-        },
-        "defaultRules": {
-          "create": false
-        },
-        "grafana": {
-          "additionalDataSources": [
-            {
-              "editable": false,
-              "jsonData": {
-                "httpHeaderName1": "X-Scope-OrgID"
-              },
-              "name": "Loki",
-              "secureJsonData": {
-                "httpHeaderValue1": "1"
-              },
-              "type": "loki",
-              "url": "http://loki.loki-system:3100"
-            }
-          ],
-          "adminPassword": "",
-          "ingress": {
-            "annotations": {
-              "cert-manager.io/cluster-issuer": "letsencrypt"
-            },
-            "enabled": true,
-            "hosts": [
-              "invalid"
-            ],
-            "tls": [
-              {
-                "hosts": [
-                  "invalid"
-                ],
-                "secretName": "grafana-tls"
-              }
-            ]
-          }
-        },
-        "kubeControllerManager": {
-          "service": {
-            "selector": {
-              "k8s-app": "kube-controller-manager"
-            }
-          }
-        },
-        "kubeEtcd": {
-          "service": {
-            "selector": {
-              "k8s-app": "kube-controller-manager"
-            }
-          },
-          "serviceMonitor": {
-            "metricRelabelings": [
-              {
-                "action": "labeldrop",
-                "regex": "pod"
-              }
-            ],
-            "relabelings": [
-              {
-                "action": "replace",
-                "regex": "^(.*)$",
-                "replacement": "$1",
-                "separator": ";",
-                "sourceLabels": [
-                  "__meta_kubernetes_pod_node_name"
-                ],
-                "targetLabel": "nodename"
-              }
-            ]
-          }
-        },
-        "kubeScheduler": {
-          "service": {
-            "selector": {
-              "k8s-app": "kube-scheduler"
-            }
-          }
-        },
-        "prometheus": {
-          "prometheusSpec": {
-            "podMonitorSelectorNilUsesHelmValues": false,
-            "retention": "30d",
-            "retentionSize": "45GB",
-            "serviceMonitorSelectorNilUsesHelmValues": false,
-            "storageSpec": {
-              "volumeClaimTemplate": {
-                "spec": {
-                  "resources": {
-                    "requests": {
-                      "storage": "50Gi"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "prometheus-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "https://prometheus-community.github.io/helm-charts",
-    "targetRevision": "88.2.0",
-    "wave": "100"
-  },
-  "promtail": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": false,
-    "helm": {
-      "chart": "promtail",
-      "releaseName": "promtail",
-      "values": {
-        "config": {
-          "clients": [
-            {
-              "tenant_id": 1,
-              "url": "http://loki.loki-system:3100/loki/api/v1/push"
-            }
-          ]
-        },
-        "serviceMonitor": {
-          "enabled": true
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "promtail-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "https://grafana.github.io/helm-charts",
-    "targetRevision": "6.17.1",
-    "wave": "100"
-  },
-  "rook-connection": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": [
-        "RespectIgnoreDifferences=true"
-      ]
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "spx-rook-connection",
-      "releaseName": "spx-rook-connection",
-      "values": {
-        "clusters": [
-          {
-            "blockPools": [
-              {
-                "name": "spx-rbd-3x",
-                "storageClasses": [
-                  {
-                    "default": true,
-                    "fs": "ext4",
-                    "name": "spx-rbd-3x"
-                  }
-                ]
-              }
-            ],
-            "clusterID": "spx-storage",
-            "csi": {
-              "rbdNodeSecretName": "rook-csi-rbd-node",
-              "rbdProvisionerSecretName": "rook-csi-rbd-provisioner",
-              "secretNamespace": "spx-storage"
-            },
-            "enabled": "{{ eq $.Values.cluster.deploymentTopology \"Hyperconverged\" }}",
-            "local": true,
-            "name": "spx-storage"
-          }
-        ]
-      }
-    },
-    "ignoreDifferences": [
-      {
-        "jsonPointers": [
-          "/data/data",
-          "/data/mapping"
-        ],
-        "kind": "ConfigMap"
-      }
-    ],
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "rook-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "path": ".",
-    "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
-    "targetRevision": "0.2.1",
-    "wave": "0"
-  },
-  "rook-local-cluster": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "rook-ceph-cluster",
-      "releaseName": "rook-local-cluster",
-      "values": {
-        "cephBlockPools": [
-          {
-            "name": "spx-rbd-3x",
-            "spec": {
-              "enableCrushUpdates": true,
-              "enableRBDStats": true,
-              "failureDomain": "host",
-              "replicated": {
-                "size": 3
-              }
-            },
-            "storageClass": {
-              "allowVolumeExpansion": true,
-              "enabled": "{{- eq $.Values.cluster.deploymentTopology \"DecoupledStorage\" | ternary \"true\" \"\" -}}",
-              "isDefault": true,
-              "mountOptions": [
-                "discard"
-              ],
-              "name": "spx-storage.spx-rbd-3x",
-              "parameters": {
-                "csi.storage.k8s.io/controller-expand-secret-name": "rook-csi-rbd-provisioner",
-                "csi.storage.k8s.io/controller-expand-secret-namespace": "spx-storage",
-                "csi.storage.k8s.io/fstype": "ext4",
-                "csi.storage.k8s.io/node-stage-secret-name": "rook-csi-rbd-node",
-                "csi.storage.k8s.io/node-stage-secret-namespace": "spx-storage",
-                "csi.storage.k8s.io/provisioner-secret-name": "rook-csi-rbd-provisioner",
-                "csi.storage.k8s.io/provisioner-secret-namespace": "spx-storage",
-                "imageFeatures": "layering,fast-diff,object-map,deep-flatten,exclusive-lock",
-                "imageFormat": "2"
-              },
-              "reclaimPolicy": "Delete",
-              "volumeBindingMode": "Immediate"
-            }
-          }
-        ],
-        "cephClusterSpec": {
-          "cephConfig": {
-            "global": {
-              "rbd_mirroring_max_mirroring_snapshots": "30",
-              "rbd_move_to_trash_on_remove": "true",
-              "rbd_move_to_trash_on_remove_expire_seconds": "604800"
-            }
-          },
-          "crashCollector": {
-            "daysToRetain": 30,
-            "disable": false
-          },
-          "dashboard": {
-            "enabled": true,
-            "prometheusEndpoint": "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090",
-            "prometheusEndpointSSLVerify": false,
-            "ssl": false
-          },
-          "mgr": {
-            "modules": [
-              {
-                "enabled": true,
-                "name": "rook"
-              }
-            ]
-          },
-          "network": {
-            "ipFamily": "IPv4",
-            "provider": "host"
-          },
-          "storage": {
-            "useAllDevices": true
-          }
-        },
-        "cephFileSystems": [],
-        "cephObjectStores": [],
-        "clusterName": "{{ $.Values.cluster.name }}",
-        "ingress": {
-          "dashboard": {
-            "annotations": {
-              "cert-manager.io/cluster-issuer": "letsencrypt"
-            },
-            "host": {
-              "name": "ceph.example.org",
-              "path": "/"
-            },
-            "tls": [
-              {
-                "hosts": [
-                  "ceph.example.org"
-                ],
-                "secretName": "ceph-dashboard-tls"
-              }
-            ]
-          }
-        },
-        "monitoring": {
-          "enabled": true
-        },
-        "operatorNamespace": "rook-system",
-        "toolbox": {
-          "enabled": true
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage"
-    ],
-    "namespace": "spx-storage",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "https://charts.rook.io/release",
-    "targetRevision": "1.16.3",
-    "wave": "0"
-  },
-  "rook-operator": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "rook-ceph",
-      "releaseName": "rook-operator",
-      "values": {
-        "csi": {
-          "csiAddons": {
-            "enabled": true
-          },
-          "csiAddonsRBDProvisionerPort": 9071,
-          "enableCephfsDriver": false,
-          "enableOMAPGenerator": true,
-          "serviceMonitor": {
-            "enabled": true
-          }
-        },
-        "discoveryDaemonInterval": "5m",
-        "enableDiscoveryDaemon": true,
-        "enforceHostNetwork": true,
-        "monitoring": {
-          "enabled": true
-        },
-        "obcAllowAdditionalConfigFields": "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle",
-        "useOperatorHostNetwork": true
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "rook-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "https://charts.rook.io/release",
-    "targetRevision": "1.16.5",
-    "wave": "-5"
-  },
-  "snapscheduler": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "snapscheduler",
-      "releaseName": "snapscheduler",
-      "values": {
-        "enableOwnerReferences": true,
-        "replicaCount": 2
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "snapscheduler-system",
-    "repoURL": "https://backube.github.io/helm-charts/",
-    "targetRevision": "*",
-    "wave": "0"
-  },
-  "superphenix-api": {
-    "automation": {
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "superphenix-api",
-      "releaseName": "superphenix-api",
-      "values": {
-        "config": {
-          "argoCdUrl": "https://argocd.example.org",
-          "argoController": {
-            "appProjectNamespace": "{{ $.Release.Namespace }}"
-          },
-          "authentication": {
-            "kratosEndpoint": "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
-          },
-          "azs": {
-            "local": {
-              "authSecret": "secret!",
-              "controllerUrl": "http://superphenix-controller.{{ (index $.Values.apps \"superphenix-controller\").namespace }}.svc.cluster.local:8080",
-              "destination": "in-cluster",
-              "name": "Local AZ"
-            }
-          },
-          "database": {
-            "database": "superphenix",
-            "host": "postgres.{{ $.Release.Namespace }}.svc",
-            "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
-            "port": 5432,
-            "username": "superphenix"
-          },
-          "permify": {
-            "url": "permify.{{ $.Release.Namespace }}.svc:3478"
-          },
-          "productsConfig": {
-            "argoApp": {
-              "kubernetes": {
-                "azDomains": {
-                  "local": {
-                    "external": "%s.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-                    "internal": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-                  }
-                }
-              }
-            }
-          },
-          "session": {
-            "cookies": {
-              "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-            },
-            "cors": {
-              "allowedOrigins": [
-                "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-              ]
-            },
-            "defaultReturnUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/callback"
-          },
-          "swagger": {
-            "baseURL": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api"
-          },
-          "userSettings": {
-            "enableProjectDefaultResources": true,
-            "userIsActiveOnCreate": true
-          }
-        },
-        "ingress": {
-          "annotations": {
-            "nginx.ingress.kubernetes.io/rewrite-target": "/$2"
-          },
-          "enabled": true,
-          "hosts": [
-            {
-              "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-              "paths": [
-                {
-                  "path": "/api(/|$)(.*)"
-                }
-              ]
-            }
-          ],
-          "tls": [
-            {
-              "hosts": [
-                "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-              ],
-              "secretName": "superphenix-api-tls"
-            }
-          ]
-        }
-      }
-    },
-    "modes": [
-      "Management"
-    ],
-    "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-api",
-    "targetRevision": ""
-  },
-  "superphenix-console": {
-    "automation": {
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "superphenix-console",
-      "releaseName": "superphenix-console",
-      "values": {
-        "config": {
-          "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api",
-          "authUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
-        },
-        "domain": "console.example.org",
-        "ingress": {
-          "enabled": true,
-          "hosts": [
-            {
-              "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-              "paths": [
-                {
-                  "path": "/"
-                }
-              ]
-            }
-          ],
-          "tls": [
-            {
-              "hosts": [
-                "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-              ],
-              "secretName": "superphenix-console-tls"
-            }
-          ]
-        }
-      }
-    },
-    "modes": [
-      "Management"
-    ],
-    "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
-    "targetRevision": "0.4.4"
-  },
-  "superphenix-controller": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": [
-        "SkipDryRunOnMissingResource=true"
-      ]
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "superphenix-controller",
-      "releaseName": "superphenix-controller",
-      "values": {
-        "config": {
-          "containerDiskCatalog": {
-            "windows-virtio-drivers": {
-              "bus": "sata",
-              "displayName": "Windows VirtIO Driver",
-              "image": "quay.io/kubevirt/virtio-container-disk:v1.7.0",
-              "recommended": true,
-              "supportedOS": [
-                "windows"
-              ]
-            }
-          },
-          "http": {
-            "authSecret": "secret!"
-          },
-          "productsConfig": {
-            "blockStorage": {
-              "storageClassMapping": {
-                "default": "spx-storage.spx-rbd-3x"
-              }
-            },
-            "eipDefault": {
-              "externalSubnet": "external-subnet"
-            },
-            "natGatewayDefault": {
-              "bgpSpeaker": {
-                "enabled": false
-              },
-              "defaultRoutes": [
-                {
-                  "cidr": "198.18.0.0/16",
-                  "nextHopIP": "gateway"
-                }
-              ],
-              "externalSubnets": [
-                "external-subnet"
-              ]
-            }
-          }
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "superphenix-system",
-    "repoURL": "ghcr.io/super-phenix/charts",
-    "targetRevision": "",
-    "wave": "10"
-  },
-  "talos-backup": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": false,
-    "helm": {
-      "chart": "talos-backup",
-      "releaseName": "talos-backup"
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "talos-backup",
-    "repoURL": "oci://ghcr.io/super-phenix/charts/talos-backup",
-    "targetRevision": "0.1.0"
-  },
-  "talos-operator": {
-    "automation": {
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true
-    },
-    "enabled": false,
-    "helm": {
-      "chart": "talos-operator",
-      "releaseName": "talos-operator",
-      "values": {
-        "featureFlags": {
-          "enablePxeBootStack": true
-        }
-      }
-    },
-    "modes": [
-      "Management"
-    ],
-    "repoURL": "https://alperencelik.github.io/helm-charts",
-    "targetRevision": "0.6.1"
-  },
-  "traefik": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "traefik",
-      "releaseName": "traefik",
-      "values": {
-        "accessLog": {
-          "enabled": true
-        },
-        "api": {
-          "dashboard": false
-        },
-        "deployment": {
-          "enabled": true,
-          "kind": "DaemonSet"
-        },
-        "gateway": {
-          "enabled": false
-        },
-        "gatewayClass": {
-          "enabled": true,
-          "name": "traefik"
-        },
-        "global": {
-          "checkNewVersion": false
-        },
-        "hostNetwork": true,
-        "ingressClass": {
-          "enabled": true
-        },
-        "metrics": {
-          "prometheus": {
-            "serviceMonitor": {
-              "enabled": true
-            }
-          }
-        },
-        "podSecurityContext": {
-          "runAsGroup": 0,
-          "runAsNonRoot": false,
-          "runAsUser": 0
-        },
-        "ports": {
-          "kaas-api-tls": {
-            "expose": {
-              "default": true
-            },
-            "exposedPort": 7444,
-            "http": {
-              "tls": {
-                "enabled": true
-              }
-            },
-            "port": 7444,
-            "protocol": "TCP"
-          },
-          "kaas-https": {
-            "expose": {
-              "default": true
-            },
-            "exposedPort": 7443,
-            "http": {
-              "tls": {
-                "enabled": true
-              }
-            },
-            "port": 7443,
-            "protocol": "TCP"
-          },
-          "kaas-konnectivity": {
-            "expose": {
-              "default": true
-            },
-            "exposedPort": 7442,
-            "http": {
-              "tls": {
-                "enabled": true
-              }
-            },
-            "port": 7442,
-            "protocol": "TCP"
-          },
-          "metrics": {
-            "exposedPort": 9101,
-            "port": 9101
-          },
-          "web": {
-            "port": 80
-          },
-          "websecure": {
-            "port": 443
-          }
-        },
-        "providers": {
-          "kubernetesGateway": {
-            "enabled": true
-          },
-          "kubernetesIngressNGINX": {
-            "enabled": true,
-            "watchIngressWithoutClass": true
-          }
-        },
-        "securityContext": {
-          "capabilities": {
-            "add": [
-              "NET_BIND_SERVICE"
-            ],
-            "drop": [
-              "ALL"
-            ]
-          }
-        },
-        "service": {
-          "type": "ClusterIP"
-        },
-        "updateStrategy": {
-          "rollingUpdate": {
-            "maxSurge": 0,
-            "maxUnavailable": 1
-          },
-          "type": "RollingUpdate"
-        }
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload",
-      "DecoupledStorage"
-    ],
-    "namespace": "traefik-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "https://traefik.github.io/charts",
-    "targetRevision": "41.0.1",
-    "wave": "0"
-  },
-  "tuned": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": false,
-    "helm": {
-      "chart": "tuned",
-      "releaseName": "tuned"
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledStorage",
-      "DecoupledWorkload"
-    ],
-    "namespace": "tuned-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "oci://ghcr.io/super-phenix/charts/tuned",
-    "targetRevision": "0.1.0",
-    "wave": "0"
-  },
-  "velero": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "velero",
-      "releaseName": "velero",
-      "values": {
-        "configuration": {
-          "backupStorageLocation": [],
-          "defaultItemOperationTimeout": "8h",
-          "features": "EnableCSI",
-          "namespace": "velero-system",
-          "restoreResourcePriorities": "vpc.kubeovn.io,subnet.kubeovn.io,vpc-nat-gateway.kubeovn.io,iptables-eip.kubeovn.io,iptables-fip-rule.kubeovn.io,iptables-snat-rule.kubeovn.io,iptables-dnat-rule.kubeovn.io,switch-lb-rule.kubeovn.io,networkpolicy.networking.k8s.io,network-attachment-definition.k8s.cni.cncf.io,controllerrevision.apps,datauploads.velero.io,persistentvolume,persistentvolumeclaim,datavolume.cdi.kubevirt.io,secret,virtualmachine.kubevirt.io,cluster.cluster.x-k8s.io,kubevirtcluster.infrastructure.cluster.x-k8s.io,configmap,issuer.cert-manager.io,certificate.cert-manager.io,serviceaccount,role.rbac.authorization.k8s.io,rolebinding.rbac.authorization.k8s.io,clusterrole.rbac.authorization.k8s.io,clusterrolebinding.rbac.authorization.k8s.io,etcdmember.etcd-operator.cozystack.io,etcdcluster.etcd-operator.cozystack.io,etcdcluster.etcd.aenix.io,datastore.kamaji.clastix.io,gateway.gateway.networking.k8s.io,tlsroute.gateway.networking.k8s.io,deployment.apps,kamajicontrolplane.controlplane.cluster.x-k8s.io,kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io,kubevirtmachinetemplate.infrastructure.cluster.x-k8s.io,kubeadmconfig.bootstrap.cluster.x-k8s.io,kubevirtmachine.infrastructure.cluster.x-k8s.io,machine.cluster.x-k8s.io,machineset.cluster.x-k8s.io,machinedeployment.cluster.x-k8s.io,mutatingadmissionpolicy.admissionregistration.k8s.io,mutatingadmissionpolicybinding.admissionregistration.k8s.io"
-        },
-        "credentials": {
-          "secretContents": {
-            "cloud": ""
-          }
-        },
-        "deployNodeAgent": true,
-        "extraObjects": [
-          {
-            "apiVersion": "v1",
-            "data": {
-              "node-agent-config.json": "{\n    \"loadConcurrency\": {\n        \"globalConfig\": 40\n    }\n}\n"
-            },
-            "kind": "ConfigMap",
-            "metadata": {
-              "name": "node-agent-config",
-              "namespace": "velero-system"
-            }
-          }
-        ],
-        "initContainers": [
-          {
-            "image": "velero/velero-plugin-for-aws:v1.12.1",
-            "imagePullPolicy": "IfNotPresent",
-            "name": "velero-plugin-for-aws",
-            "volumeMounts": [
-              {
-                "mountPath": "/target",
-                "name": "plugins"
-              }
-            ]
-          },
-          {
-            "image": "quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0",
-            "imagePullPolicy": "IfNotPresent",
-            "name": "velero-plugin-for-kubevirt",
-            "volumeMounts": [
-              {
-                "mountPath": "/target",
-                "name": "plugins"
-              }
-            ]
-          },
-          {
-            "image": "ghcr.io/super-phenix/superphenix-velero-plugin:v0.1.0",
-            "imagePullPolicy": "IfNotPresent",
-            "name": "velero-plugin-for-superphenix",
-            "volumeMounts": [
-              {
-                "mountPath": "/target",
-                "name": "plugins"
-              }
-            ]
-          }
-        ],
-        "metrics": {
-          "serviceMonitor": {
-            "enabled": true
-          }
-        },
-        "nodeAgent": {
-          "extraArgs": [
-            "--node-agent-configmap=node-agent-config"
-          ]
-        },
-        "snapshotsEnabled": false
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "velero-system",
-    "nsLabels": {
-      "pod-security.kubernetes.io/enforce": "privileged"
-    },
-    "repoURL": "https://vmware-tanzu.github.io/helm-charts",
-    "targetRevision": "12.0.0",
-    "wave": "0"
-  },
-  "volume-replicator": {
-    "automation": {
-      "cleanupOnDeletion": false,
-      "enabled": true,
-      "prune": true,
-      "selfHeal": true,
-      "syncOptions": {}
-    },
-    "enabled": true,
-    "helm": {
-      "chart": "volume-replicator",
-      "releaseName": "volume-replicator",
-      "values": {
-        "exclusionRegex": "^prime-.*$|^tmp-.*$"
-      }
-    },
-    "modes": [
-      "Hyperconverged",
-      "DecoupledWorkload"
-    ],
-    "namespace": "volume-replicator",
-    "repoURL": "ghcr.io/super-phenix/helm-charts",
-    "targetRevision": "0.5.1"
-  }
-}
-</pre>
-</td>
-			<td>Per-application settings. Each key defines an Argo CD Application that is generated conditionally based on `enabled` and `modes` (see the README).</td>
-		</tr>
-		<tr>
-			<td>apps.cdi</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "cdi",
-    "releaseName": "cdi"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "cdi-system",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/cdi",
-  "targetRevision": "0.1.0",
-  "wave": "5"
-}
-</pre>
-</td>
-			<td>Containerized Data Importer (CDI) for KubeVirt. Provisions VM disks from images, PVCs or uploads.</td>
-		</tr>
-		<tr>
-			<td>apps.cert-manager</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "cert-manager",
-    "releaseName": "cert-manager",
-    "values": {
-      "crds": {
-        "enabled": true
-      },
-      "enableCertificateOwnerRef": true,
-      "extraObjects": [
-        "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress:\n          class: traefik\n"
-      ],
-      "prometheus": {
-        "servicemonitor": {
-          "enabled": true
-        }
-      }
-    }
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "cert-manager-system",
-  "repoURL": "https://charts.jetstack.io",
-  "targetRevision": "1.21.1",
-  "wave": "-10"
-}
-</pre>
-</td>
-			<td>cert-manager: issues and renews TLS certificates, including via Let's Encrypt ACME.</td>
-		</tr>
-		<tr>
-			<td>apps.cilium</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "cilium",
-    "releaseName": "cilium",
-    "values": {
-      "cgroup": {
-        "autoMount": {
-          "enabled": false
-        },
-        "hostRoot": "/sys/fs/cgroup"
-      },
-      "envoy": {
-        "enabled": false
-      },
-      "hubble": {
-        "enabled": false
-      },
-      "ipam": {
-        "mode": "kubernetes"
-      },
-      "ipv4": {
-        "enabled": true
-      },
-      "ipv6": {
-        "enabled": true
-      },
-      "k8s": {
-        "requireIPv4PodCIDR": true,
-        "requireIPv6PodCIDR": true
-      },
-      "k8sServiceHost": "localhost",
-      "k8sServicePort": 7445,
-      "kubeProxyReplacement": true,
-      "securityContext": {
-        "capabilities": {
-          "ciliumAgent": [
-            "CHOWN",
-            "KILL",
-            "NET_ADMIN",
-            "NET_RAW",
-            "IPC_LOCK",
-            "SYS_ADMIN",
-            "SYS_RESOURCE",
-            "DAC_OVERRIDE",
-            "FOWNER",
-            "SETGID",
-            "SETUID"
-          ],
-          "cleanCiliumState": [
-            "NET_ADMIN",
-            "SYS_ADMIN",
-            "SYS_RESOURCE"
-          ]
-        }
-      }
-    }
-  },
-  "modes": [
-    "DecoupledStorage"
-  ],
-  "namespace": "kube-system",
-  "repoURL": "https://helm.cilium.io/",
-  "targetRevision": "1.17.2",
-  "wave": "-100"
-}
-</pre>
-</td>
-			<td>Cilium CNI, used on storage clusters where the Kube-OVN overlay is not needed. TODO: Consider phasing Cilium out and using Kube-OVN everywhere.</td>
-		</tr>
-		<tr>
-			<td>apps.cluster-api-operator</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "cluster-api-operator",
-    "releaseName": "cluster-api-operator",
-    "values": {
-      "bootstrap": {
-        "kubeadm": {
-          "version": "v1.12.10"
-        }
-      },
-      "controlPlane": {
-        "kamaji": {
-          "version": "v0.19.0"
-        }
-      },
-      "core": {
-        "cluster-api": {
-          "version": "v1.12.10"
-        }
-      },
-      "infrastructure": {
-        "kubevirt": {
-          "version": "v0.11.2"
-        }
-      }
-    }
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "capi-operator-system",
-  "repoURL": "https://kubernetes-sigs.github.io/cluster-api-operator",
-  "targetRevision": "0.28.0",
-  "wave": "15"
-}
-</pre>
-</td>
-			<td>Cluster API operator: installs the providers used by the KaaS stack (core, bootstrap, infra, control-plane).</td>
-		</tr>
-		<tr>
-			<td>apps.coredns</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": [
-      "SkipDryRunOnMissingResource=true"
-    ]
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "coredns",
-    "releaseName": "coredns",
-    "values": {
-      "prometheus": {
-        "monitor": {
-          "enabled": true
-        },
-        "service": {
-          "enabled": true
-        }
-      },
-      "replicaCount": 2,
-      "service": {
-        "clusterIP": "fd00:100:ffff::a",
-        "clusterIPs": [
-          "fd00:100:ffff::a",
-          "10.16.0.10"
-        ],
-        "ipFamilyPolicy": "RequireDualStack"
-      }
-    }
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "coredns-system",
-  "repoURL": "https://coredns.github.io/helm",
-  "targetRevision": "1.47.0",
-  "wave": "-100"
-}
-</pre>
-</td>
-			<td>CoreDNS used for DNS resolution within the Kubernetes clusters</td>
-		</tr>
-		<tr>
-			<td>apps.csi-addons</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "csi-addons",
-    "releaseName": "csi-addons"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "csi-addons-system",
-  "path": ".",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/csi-addons",
-  "targetRevision": "0.1.0",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>csi-addons: adds features such as volume replication and reclaim-space to the CSI drivers.</td>
-		</tr>
-		<tr>
-			<td>apps.csi-snapshotter</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "external-snapshotter",
-    "releaseName": "external-snapshotter"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "csi-snapshotter-system",
-  "path": ".",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/external-snapshotter",
-  "targetRevision": "0.1.0",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>external-snapshotter: adds VolumeSnapshot support to the CSI drivers.</td>
-		</tr>
-		<tr>
-			<td>apps.etcd-operator</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "etcd-operator",
-    "releaseName": "etcd-operator",
-    "values": {
-      "etcdOperator": {
-        "vpa": {
-          "enabled": false
-        }
-      },
-      "kubeRbacProxy": {
-        "vpa": {
-          "enabled": false
-        }
-      }
-    }
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "etcd-operator-system",
-  "repoURL": "ghcr.io/cozystack/charts",
-  "targetRevision": "0.5.3",
-  "wave": "5"
-}
-</pre>
-</td>
-			<td>etcd-operator: manages the etcd datastores backing Kamaji control planes.</td>
-		</tr>
-		<tr>
-			<td>apps.gateway-api</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "directory": {
-    "recurse": true
-  },
-  "enabled": true,
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kube-system",
-  "path": "config/crd/standard",
-  "repoURL": "https://github.com/kubernetes-sigs/gateway-api.git",
-  "targetRevision": "v1.6.1",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>Gateway API standard CRDs (installed cluster-wide).</td>
-		</tr>
-		<tr>
-			<td>apps.idrac-exporter</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": false,
-  "helm": {
-    "chart": "idrac-exporter",
-    "releaseName": "idrac-exporter",
-    "values": {}
-  },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "https://mrlhansen.github.io/idrac_exporter",
-  "targetRevision": "2.6.1"
-}
-</pre>
-</td>
-			<td>iDRAC Exporter: Prometheus exporter for Dell iDRAC BMCs. Disabled by default.</td>
-		</tr>
-		<tr>
-			<td>apps.kaas-controller</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kaas-controller",
-    "releaseName": "kaas-controller"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kaas-system",
-  "repoURL": "ghcr.io/super-phenix/charts",
-  "targetRevision": "",
-  "wave": "15"
-}
-</pre>
-</td>
-			<td>KaaS controller: extra CRDs and controllers backing the Kubernetes-as-a-Service stack.</td>
-		</tr>
-		<tr>
-			<td>apps.kaas-datastore</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kaas-datastore",
-    "releaseName": "kaas-datastore",
-    "values": {
-      "dataStores": {
-        "default": {
-          "version": "3.6.7"
-        }
-      }
-    }
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kaas-datastore-system",
-  "repoURL": "ghcr.io/super-phenix/charts",
-  "targetRevision": "",
-  "wave": "5"
-}
-</pre>
-</td>
-			<td>KaaS datastore: provisions etcd clusters (via etcd-operator) used as Kamaji datastores.</td>
-		</tr>
-		<tr>
-			<td>apps.kamaji</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kamaji",
-    "releaseName": "kamaji",
     "values": {
       "affinity": {
         "podAntiAffinity": {
@@ -2924,35 +512,25 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "memory": "200Mi"
         }
       }
-    }
+    },
+    "wave": "10"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kamaji-system",
-  "repoURL": "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm",
-  "targetRevision": "26.7.22",
-  "wave": "10"
-}
-</pre>
-</td>
-			<td>Kamaji: hosted Kubernetes control-plane provider used by the KaaS stack.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
+  "kratos": {
+    "automation": {
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kratos",
-    "releaseName": "kratos",
+    "helm": {
+      "chart": "kratos",
+      "releaseName": "kratos"
+    },
+    "modes": [
+      "Management"
+    ],
+    "repoURL": "https://k8s.ory.sh/helm/charts",
+    "targetRevision": "0.43.1",
     "values": {
       "globalSecret": "change-me-to-something-random-at-least-16-char-long",
       "image": {
@@ -3141,268 +719,26 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       }
     }
   },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "https://k8s.ory.sh/helm/charts",
-  "targetRevision": "0.43.1"
-}
-</pre>
-</td>
-			<td>Ory Kratos: identity, session and self-service flows backing the Superphenix console.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.globalSecret</td>
-			<td>string</td>
-			<td><pre lang="json">
-"change-me-to-something-random-at-least-16-char-long"
-</pre>
-</td>
-			<td>Kratos global secret used to derive signing secrets. MUST be overridden per environment.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.automigration</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "enabled": true
-}
-</pre>
-</td>
-			<td>Run database migrations automatically on Kratos upgrades.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.cookies</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-  "same_site": "Strict"
-}
-</pre>
-</td>
-			<td>Session cookie settings.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.courier</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "smtp": {
-    "connection_uri": "smtps://dummy@example.org:password@localhost:465/",
-    "from_address": "superphenix@example.org",
-    "from_name": "Superphenix Console"
-  }
-}
-</pre>
-</td>
-			<td>Mail server configuration to send verification/recovery emails. It must be specified, even if not in use.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.dsn</td>
-			<td>string</td>
-			<td><pre lang="json">
-"postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable"
-</pre>
-</td>
-			<td>Kratos DSN stores users, sessions, recovery codes and verification data.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.identity</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "default_schema_id": "default",
-  "schemas": [
-    {
-      "id": "default",
-      "url": "file:///etc/config/identity.default.schema.json"
-    }
-  ]
-}
-</pre>
-</td>
-			<td>Identity schemas used at registration.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.selfservice.allowed_return_urls</td>
-			<td>list</td>
-			<td><pre lang="json">
-[
-  "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
-]
-</pre>
-</td>
-			<td>Allowed post-flow redirect targets.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.selfservice.default_browser_return_url</td>
-			<td>string</td>
-			<td><pre lang="json">
-"https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
-</pre>
-</td>
-			<td>Default post-flow redirect target.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.selfservice.flows</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "error": {
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
-  },
-  "login": {
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
-  },
-  "recovery": {
-    "after": {
-      "hooks": [
-        {
-          "hook": "revoke_active_sessions"
-        }
-      ]
-    },
-    "enabled": true,
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
-  },
-  "registration": {
-    "after": {
-      "code": {
-        "hooks": [
-          {
-            "hook": "show_verification_ui"
-          }
-        ]
-      },
-      "password": {
-        "hooks": [
-          {
-            "hook": "show_verification_ui"
-          }
-        ]
-      },
-      "webauthn": {
-        "hooks": [
-          {
-            "hook": "show_verification_ui"
-          }
-        ]
-      }
-    },
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
-  },
-  "settings": {
-    "privileged_session_max_age": "15m",
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
-  },
-  "verification": {
-    "enabled": false,
-    "lifespan": "1h",
-    "notify_unknown_recipients": false,
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
-    "use": "code"
-  }
-}
-</pre>
-</td>
-			<td>Kratos self-service flow configuration (login, registration, recovery, ...).</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.selfservice.methods</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "code": {
-    "config": {
-      "lifespan": "15m"
-    },
-    "enabled": true
-  }
-}
-</pre>
-</td>
-			<td>Enable code-based (one-time code) authentication.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.serve</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "public": {
-    "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
-    "cors": {
-      "allow_credentials": true,
-      "allowed_headers": [
-        "Authorization",
-        "Cookie",
-        "Content-Type",
-        "Max-Age",
-        "X-Session-Token",
-        "X-XSRF-TOKEN",
-        "X-CSRF-TOKEN"
-      ],
-      "allowed_methods": [
-        "POST",
-        "GET",
-        "PUT",
-        "PATCH",
-        "DELETE"
-      ],
-      "allowed_origins": [
-        "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-      ],
+  "kubeovn": {
+    "automation": {
+      "cleanupOnDeletion": false,
       "enabled": true,
-      "exposed_headers": [
-        "Content-Type",
-        "Set-Cookie"
-      ]
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
     },
-    "request_log": {
-      "disable_for_health": true
-    }
-  }
-}
-</pre>
-</td>
-			<td>Kratos public/admin listener configuration.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.config.serve.public.base_url</td>
-			<td>string</td>
-			<td><pre lang="json">
-"https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
-</pre>
-</td>
-			<td>URL on which Kratos will listen, defaults to the same as the console The ingress adds a path prefix, that is not passed to Kratos. It is only used to avoid routing conflicts between the different elements of the console.</td>
-		</tr>
-		<tr>
-			<td>apps.kratos.helm.values.kratos.identitySchemas</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "identity.default.schema.json": "{\n  \"$id\": \"https://schemas.ory.sh/presets/kratos/identity.email.schema.json\",\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Person\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"traits\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"email\": {\n          \"type\": \"string\",\n          \"format\": \"email\",\n          \"title\": \"Email\",\n          \"ory.sh/kratos\": {\n            \"credentials\": {\n              \"password\": {\n                \"identifier\": true\n              }\n            },\n            \"recovery\": {\n              \"via\": \"email\"\n            },\n            \"verification\": {\n              \"via\": \"email\"\n            }\n          }\n        },\n        \"name\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"first\": {\n              \"type\": \"string\",\n              \"title\": \"First name\"\n            },\n            \"last\": {\n              \"type\": \"string\",\n              \"title\": \"Last name\"\n            }\n          }\n        }\n      },\n      \"required\": [\"email\"],\n      \"additionalProperties\": false\n    }\n  }\n}\n"
-}
-</pre>
-</td>
-			<td>Contents of the identity schema files referenced by `config.identity.schemas`.</td>
-		</tr>
-		<tr>
-			<td>apps.kubeovn</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kube-ovn-v2",
-    "releaseName": "kube-ovn",
+    "helm": {
+      "chart": "kube-ovn-v2",
+      "releaseName": "kube-ovn"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "kube-system",
+    "repoURL": "oci://ghcr.io/kubeovn/charts/kube-ovn-v2",
+    "targetRevision": "v1.16.0",
     "values": {
       "apiNad": {
         "enabled": true
@@ -3460,56 +796,6 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             "name": "system-isolated-egress"
           },
           "spec": {
-            "acls": [
-              {
-                "action": "allow-related",
-                "direction": "from-lport",
-                "match": "ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a",
-                "priority": 1001
-              },
-              {
-                "action": "allow-related",
-                "direction": "from-lport",
-                "match": "ip4.src == 10.32.0.1 || ip6.src == fd00:110::1",
-                "priority": 1001
-              },
-              {
-                "action": "drop",
-                "direction": "from-lport",
-                "match": "ip4.dst == 10.0.0.0/8 \u0026\u0026 ip4.dst != 10.32.0.1 \u0026\u0026 ip4.src == 10.0.0.0/8",
-                "priority": 1000
-              },
-              {
-                "action": "drop",
-                "direction": "from-lport",
-                "match": "ip4.dst == 172.16.0.0/12 \u0026\u0026 ip",
-                "priority": 1000
-              },
-              {
-                "action": "drop",
-                "direction": "from-lport",
-                "match": "ip4.dst == 192.168.0.0/16 \u0026\u0026 ip",
-                "priority": 1000
-              },
-              {
-                "action": "drop",
-                "direction": "from-lport",
-                "match": "ip4.dst == 100.64.0.0/10 \u0026\u0026 ip",
-                "priority": 1000
-              },
-              {
-                "action": "drop",
-                "direction": "from-lport",
-                "match": "ip4.dst == 169.254.0.0/16 \u0026\u0026 ip",
-                "priority": 1000
-              },
-              {
-                "action": "drop",
-                "direction": "from-lport",
-                "match": "ip6.dst == fc00::/7 \u0026\u0026 ip6.dst != fd00:110::1 \u0026\u0026 ip6.src == fd00:110::/64",
-                "priority": 1000
-              }
-            ],
             "allowEWTraffic": false,
             "cidrBlock": "10.32.0.0/16,fd00:110::/64",
             "gatewayType": "distributed",
@@ -3576,67 +862,51 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "validatingWebhook": {
         "enabled": true
       }
-    }
+    },
+    "wave": "-100"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kube-system",
-  "repoURL": "oci://ghcr.io/kubeovn/charts/kube-ovn-v2",
-  "targetRevision": "v1.16.0",
-  "wave": "-100"
-}
-</pre>
-</td>
-			<td>Kube-OVN is used as the CNI for the workload layer</td>
-		</tr>
-		<tr>
-			<td>apps.kubevirt</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "kubevirt": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "directory": {
+      "recurse": true
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "kubevirt-system",
+    "path": "v1.7.3/",
+    "repoURL": "https://github.com/super-phenix/kubevirt-manifests.git",
+    "targetRevision": "HEAD",
+    "wave": "5"
   },
-  "directory": {
-    "recurse": true
-  },
-  "enabled": true,
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kubevirt-system",
-  "path": "v1.7.3/",
-  "repoURL": "https://github.com/super-phenix/kubevirt-manifests.git",
-  "targetRevision": "HEAD",
-  "wave": "5"
-}
-</pre>
-</td>
-			<td>KubeVirt: virtualization runtime that lets Kubernetes schedule VMs alongside containers.</td>
-		</tr>
-		<tr>
-			<td>apps.kubevirt-config</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "kubevirt-config": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kubevirt",
-    "releaseName": "kubevirt-config",
+    "helm": {
+      "chart": "kubevirt",
+      "releaseName": "kubevirt-config"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "kubevirt-system",
+    "repoURL": "oci://ghcr.io/super-phenix/charts/kubevirt",
+    "targetRevision": "0.1.0",
     "values": {
       "config": {
         "configuration": {
@@ -3694,73 +964,69 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           ]
         }
       }
-    }
+    },
+    "wave": "5"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kubevirt-system",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/kubevirt",
-  "targetRevision": "0.1.0",
-  "wave": "5"
-}
-</pre>
-</td>
-			<td>KubeVirt configuration injected into the operator.</td>
-		</tr>
-		<tr>
-			<td>apps.local-path-provisioner</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": false,
-  "helm": {
-    "chart": "local-path-provisioner",
-    "releaseName": "local-path-provisioner",
+  "local-path-provisioner": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "local-path-provisioner",
+      "releaseName": "local-path-provisioner"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "local-storage-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "oci://ghcr.io/rancher/local-path-provisioner/charts/local-path-provisioner",
+    "targetRevision": "0.0.37",
     "values": {
       "storageClass": {
         "defaultClass": false,
-        "name": "local-path"
+        "name": "local-path",
+        "nodePathmap": [
+          {
+            "node": "DEFAULT_PATH_FOR_NON_LISTED_NODES",
+            "paths": [
+              "/var/local-path-provisioner"
+            ]
+          }
+        ]
       }
-    }
+    },
+    "wave": "0"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "local-path-storage",
-  "repoURL": "https://rancher.github.io/local-path-provisioner",
-  "targetRevision": "0.0.31",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>Rancher Local Path Provisioner provides local storage using host paths.</td>
-		</tr>
-		<tr>
-			<td>apps.loki</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": false,
-  "helm": {
-    "chart": "loki",
-    "releaseName": "loki",
+  "loki": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "loki",
+      "releaseName": "loki"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "loki-system",
+    "repoURL": "https://grafana.github.io/helm-charts",
+    "targetRevision": "6.43.0",
     "values": {
       "backend": {
         "replicas": 0
@@ -3867,40 +1133,66 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "write": {
         "replicas": 0
       }
-    }
+    },
+    "wave": "100"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "loki-system",
-  "repoURL": "https://grafana.github.io/helm-charts",
-  "targetRevision": "6.43.0",
-  "wave": "100"
-}
-</pre>
-</td>
-			<td>Loki: log aggregation backend with a Prometheus-like query language (LogQL).</td>
-		</tr>
-		<tr>
-			<td>apps.misc</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "metrics-server": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": [
-      "SkipDryRunOnMissingResource=true"
-    ]
+    "helm": {
+      "chart": "metrics-server",
+      "releaseName": "metrics-server"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "metrics-server-system",
+    "repoURL": "https://kubernetes-sigs.github.io/metrics-server/",
+    "targetRevision": "3.13.1",
+    "values": {
+      "defaultArgs": [
+        "--cert-dir=/tmp",
+        "--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname",
+        "--kubelet-use-node-status-port",
+        "--kubelet-insecure-tls",
+        "--metric-resolution=15s"
+      ],
+      "metrics": {
+        "enabled": true
+      },
+      "replicas": 3,
+      "serviceMonitor": {
+        "enabled": true
+      }
+    },
+    "wave": "-10"
   },
-  "enabled": true,
-  "helm": {
-    "chart": "misc",
-    "releaseName": "misc",
+  "misc": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": [
+        "SkipDryRunOnMissingResource=true"
+      ]
+    },
+    "enabled": true,
+    "helm": {
+      "chart": "misc",
+      "releaseName": "misc"
+    },
+    "namespace": "default",
+    "repoURL": "ghcr.io/super-phenix/charts",
+    "targetRevision": "0.0.0",
     "values": {
       "effectiveMode": "{{ include \"superphenix-system.effectiveMode\" . }}",
       "modes": {
@@ -3943,58 +1235,29 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           }
         }
       }
-    }
+    },
+    "wave": "100"
   },
-  "namespace": "default",
-  "repoURL": "ghcr.io/super-phenix/charts",
-  "targetRevision": "0.0.0",
-  "wave": "100"
-}
-</pre>
-</td>
-			<td>misc: arbitrary YAML objects passed through the values. Useful to create objects on the clusters for anything not natively supported by other charts.</td>
-		</tr>
-		<tr>
-			<td>apps.misc.helm.values.objects.external-subnet</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "apiVersion": "kubeovn.io/v1",
-  "kind": "Subnet",
-  "metadata": {
-    "name": "external-subnet"
-  },
-  "spec": {
-    "cidrBlock": "192.168.1.0/24",
-    "excludeIps": [
-      "192.168.1.0..192.168.1.200",
-      "192.168.1.254"
-    ],
-    "gateway": "192.168.1.254",
-    "protocol": "IPv4",
-    "provider": "external-subnet.kube-system"
-  }
-}
-</pre>
-</td>
-			<td>This is the physical network in which the NAT gateways will be created. The NAT gateways will take IPs at random within that subnet, so ensure the `excludeIps field encompasses any IPs that are already in use. Ideally, the range of that subnet (or part of it) must be reserved to SPX.</td>
-		</tr>
-		<tr>
-			<td>apps.multus</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "multus": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "multus",
-    "releaseName": "multus",
+    "helm": {
+      "chart": "multus",
+      "releaseName": "multus"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "kube-system",
+    "repoURL": "oci://ghcr.io/super-phenix/charts/multus",
+    "targetRevision": "0.1.0",
     "values": {
       "tolerations": [
         {
@@ -4006,35 +1269,25 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "operator": "Exists"
         }
       ]
-    }
+    },
+    "wave": "-100"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kube-system",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/multus",
-  "targetRevision": "0.1.0",
-  "wave": "-100"
-}
-</pre>
-</td>
-			<td>Multus CNI meta-plugin, enables multi-homed pods and VMs.</td>
-		</tr>
-		<tr>
-			<td>apps.permify</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
+  "permify": {
+    "automation": {
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "permify",
-    "releaseName": "permify",
+    "helm": {
+      "chart": "permify",
+      "releaseName": "permify"
+    },
+    "modes": [
+      "Management"
+    ],
+    "repoURL": "https://permify.github.io/helm-charts",
+    "targetRevision": "0.3.*",
     "values": {
       "app": {
         "database": {
@@ -4053,96 +1306,43 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "replicaCount": 1
     }
   },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "https://permify.github.io/helm-charts",
-  "targetRevision": "0.3.*"
-}
-</pre>
-</td>
-			<td>Permify: authorization service consulted by the Superphenix API to enforce permissions.</td>
-		</tr>
-		<tr>
-			<td>apps.permify.helm.values.app.database</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "engine": "postgres",
-  "garbage_collection": {
-    "enabled": false
-  },
-  "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
-}
-</pre>
-</td>
-			<td>Database connection used to store Permify tuples and schemas.</td>
-		</tr>
-		<tr>
-			<td>apps.permify.helm.values.app.distributed</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "address": "permify.{{ $.Release.Namespace }}.svc:5000",
-  "enabled": false,
-  "port": 5000
-}
-</pre>
-</td>
-			<td>Distributed mode is disabled (single-instance deployment).</td>
-		</tr>
-		<tr>
-			<td>apps.permify.helm.values.replicaCount</td>
-			<td>int</td>
-			<td><pre lang="json">
-1
-</pre>
-</td>
-			<td>Number of instances of Permify to run.</td>
-		</tr>
-		<tr>
-			<td>apps.policies</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "policies": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
+    "helm": {
+      "chart": "spx-policies",
+      "releaseName": "spx-policies"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "kube-system",
+    "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
+    "targetRevision": "0.1.0"
   },
-  "enabled": true,
-  "helm": {
-    "chart": "spx-policies",
-    "releaseName": "spx-policies"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "kube-system",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
-  "targetRevision": "0.1.0"
-}
-</pre>
-</td>
-			<td>spx-policies: Kyverno policies that enforce Superphenix RFCs and protect against known bugs and attacks.</td>
-		</tr>
-		<tr>
-			<td>apps.postgres</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
+  "postgres": {
+    "automation": {
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "postgres",
-    "releaseName": "postgres",
+    "helm": {
+      "chart": "postgres",
+      "releaseName": "postgres"
+    },
+    "modes": [
+      "Management"
+    ],
+    "repoURL": "oci://registry-1.docker.io/cloudpirates/postgres",
+    "targetRevision": "0.19.12",
     "values": {
       "auth": {
         "database": "superphenix",
@@ -4159,71 +1359,32 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       }
     }
   },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "oci://registry-1.docker.io/cloudpirates/postgres",
-  "targetRevision": "0.19.12"
-}
-</pre>
-</td>
-			<td>PostgreSQL: shared database backing the Superphenix API, Kratos and Permify.</td>
-		</tr>
-		<tr>
-			<td>apps.postgres.helm.values.auth</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "database": "superphenix",
-  "password": "changeme!",
-  "username": "superphenix"
-}
-</pre>
-</td>
-			<td>Primary user/database credentials. SECURITY: `password` MUST be overridden per environment.</td>
-		</tr>
-		<tr>
-			<td>apps.postgres.helm.values.initdb</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "scripts": {
-    "setup.sql": "CREATE DATABASE kratos;\nCREATE DATABASE permify;\nGRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;\nGRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;\n"
-  }
-}
-</pre>
-</td>
-			<td>Additional databases created at initialization for Kratos and Permify.</td>
-		</tr>
-		<tr>
-			<td>apps.postgres.helm.values.persistence</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "size": "8Gi"
-}
-</pre>
-</td>
-			<td>Persistent volume size. Sufficient for most deployments.</td>
-		</tr>
-		<tr>
-			<td>apps.prometheus-stack</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "prometheus-stack": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": [
+        "ServerSideApply=true"
+      ]
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": [
-      "ServerSideApply=true"
-    ]
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "kube-prometheus-stack",
-    "releaseName": "prometheus",
+    "helm": {
+      "chart": "kube-prometheus-stack",
+      "releaseName": "prometheus"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "prometheus-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "https://prometheus-community.github.io/helm-charts",
+    "targetRevision": "88.2.0",
     "values": {
       "alertmanager": {
         "enabled": false
@@ -4325,41 +1486,33 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           }
         }
       }
-    }
+    },
+    "wave": "100"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "prometheus-system",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
-  },
-  "repoURL": "https://prometheus-community.github.io/helm-charts",
-  "targetRevision": "88.2.0",
-  "wave": "100"
-}
-</pre>
-</td>
-			<td>kube-prometheus-stack: metrics collection, storage and Grafana dashboards.</td>
-		</tr>
-		<tr>
-			<td>apps.promtail</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": false,
-  "helm": {
-    "chart": "promtail",
-    "releaseName": "promtail",
+  "promtail": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "promtail",
+      "releaseName": "promtail"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "promtail-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "https://grafana.github.io/helm-charts",
+    "targetRevision": "6.17.1",
     "values": {
       "config": {
         "clients": [
@@ -4372,43 +1525,44 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "serviceMonitor": {
         "enabled": true
       }
-    }
+    },
+    "wave": "100"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "promtail-system",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
-  },
-  "repoURL": "https://grafana.github.io/helm-charts",
-  "targetRevision": "6.17.1",
-  "wave": "100"
-}
-</pre>
-</td>
-			<td>Promtail: node-local agent that ships container logs to Loki. TODO: This chart is deprecated. This component is non-critical, but we should phase it out. It went EOL on Grafana's side and should be replaced by Alloy.</td>
-		</tr>
-		<tr>
-			<td>apps.rook-connection</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "rook-connection": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": [
+        "RespectIgnoreDifferences=true"
+      ]
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": [
-      "RespectIgnoreDifferences=true"
-    ]
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "spx-rook-connection",
-    "releaseName": "spx-rook-connection",
+    "helm": {
+      "chart": "spx-rook-connection",
+      "releaseName": "spx-rook-connection"
+    },
+    "ignoreDifferences": [
+      {
+        "jsonPointers": [
+          "/data/data",
+          "/data/mapping"
+        ],
+        "kind": "ConfigMap"
+      }
+    ],
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "rook-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "path": ".",
+    "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
+    "targetRevision": "0.2.1",
     "values": {
       "clusters": [
         {
@@ -4435,81 +1589,32 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "name": "spx-storage"
         }
       ]
-    }
+    },
+    "wave": "0"
   },
-  "ignoreDifferences": [
-    {
-      "jsonPointers": [
-        "/data/data",
-        "/data/mapping"
-      ],
-      "kind": "ConfigMap"
-    }
-  ],
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "rook-system",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
-  },
-  "path": ".",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
-  "targetRevision": "0.2.1",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>Rook connection to a Ceph cluster. Deployed on hyperconverged clusters and workload clusters that consume storage from a remote storage cluster.</td>
-		</tr>
-		<tr>
-			<td>apps.rook-connection.helm.values.clusters[0]</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "blockPools": [
-    {
-      "name": "spx-rbd-3x",
-      "storageClasses": [
-        {
-          "default": true,
-          "fs": "ext4",
-          "name": "spx-rbd-3x"
-        }
-      ]
-    }
-  ],
-  "clusterID": "spx-storage",
-  "csi": {
-    "rbdNodeSecretName": "rook-csi-rbd-node",
-    "rbdProvisionerSecretName": "rook-csi-rbd-provisioner",
-    "secretNamespace": "spx-storage"
-  },
-  "enabled": "{{ eq $.Values.cluster.deploymentTopology \"Hyperconverged\" }}",
-  "local": true,
-  "name": "spx-storage"
-}
-</pre>
-</td>
-			<td>This is the configuration for the local Ceph cluster when running hyperconverged. If you're adding an override to connect another Ceph cluster, remember to copy and paste this configuration to avoid losing the default values.</td>
-		</tr>
-		<tr>
-			<td>apps.rook-local-cluster</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "rook-local-cluster": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "rook-ceph-cluster",
-    "releaseName": "rook-local-cluster",
+    "helm": {
+      "chart": "rook-ceph-cluster",
+      "releaseName": "rook-local-cluster"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage"
+    ],
+    "namespace": "spx-storage",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "https://charts.rook.io/release",
+    "targetRevision": "1.16.3",
     "values": {
       "cephBlockPools": [
         {
@@ -4609,40 +1714,33 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "toolbox": {
         "enabled": true
       }
-    }
+    },
+    "wave": "0"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage"
-  ],
-  "namespace": "spx-storage",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
-  },
-  "repoURL": "https://charts.rook.io/release",
-  "targetRevision": "1.16.3",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>Local Rook/Ceph cluster deployed on storage-capable clusters (hyperconverged or decoupled storage).</td>
-		</tr>
-		<tr>
-			<td>apps.rook-operator</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "rook-operator": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "rook-ceph",
-    "releaseName": "rook-operator",
+    "helm": {
+      "chart": "rook-ceph",
+      "releaseName": "rook-operator"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "rook-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "https://charts.rook.io/release",
+    "targetRevision": "1.16.5",
     "values": {
       "csi": {
         "csiAddons": {
@@ -4663,73 +1761,51 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       },
       "obcAllowAdditionalConfigFields": "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle",
       "useOperatorHostNetwork": true
-    }
+    },
+    "wave": "-5"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "rook-system",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
-  },
-  "repoURL": "https://charts.rook.io/release",
-  "targetRevision": "1.16.5",
-  "wave": "-5"
-}
-</pre>
-</td>
-			<td>Rook operator, required on any cluster that interacts with Ceph/Rook. Workload clusters need it to provision an external connection to a centralized storage cluster; centralized storage clusters need it to provision a local Ceph cluster that acts as the remote backend for "client" clusters.</td>
-		</tr>
-		<tr>
-			<td>apps.snapscheduler</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "snapscheduler": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "snapscheduler",
-    "releaseName": "snapscheduler",
+    "helm": {
+      "chart": "snapscheduler",
+      "releaseName": "snapscheduler"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "snapscheduler-system",
+    "repoURL": "https://backube.github.io/helm-charts/",
+    "targetRevision": "*",
     "values": {
       "enableOwnerReferences": true,
       "replicaCount": 2
-    }
+    },
+    "wave": "0"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "snapscheduler-system",
-  "repoURL": "https://backube.github.io/helm-charts/",
-  "targetRevision": "*",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>snapscheduler: periodic VolumeSnapshot scheduler for PVCs.</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-api</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
+  "superphenix-api": {
+    "automation": {
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "superphenix-api",
-    "releaseName": "superphenix-api",
+    "helm": {
+      "chart": "superphenix-api",
+      "releaseName": "superphenix-api"
+    },
+    "modes": [
+      "Management"
+    ],
+    "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-api",
+    "targetRevision": "",
     "values": {
       "config": {
         "argoCdUrl": "https://argocd.example.org",
@@ -4814,88 +1890,22 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       }
     }
   },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-api",
-  "targetRevision": ""
-}
-</pre>
-</td>
-			<td>Superphenix API: backend serving the console and CLI, persists to PostgreSQL and delegates auth to Permify/Kratos.</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-api.helm.values.config.database</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "database": "superphenix",
-  "host": "postgres.{{ $.Release.Namespace }}.svc",
-  "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
-  "port": 5432,
-  "username": "superphenix"
-}
-</pre>
-</td>
-			<td>Database storing users, organizations, projects and other API state.</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-api.helm.values.config.permify</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "url": "permify.{{ $.Release.Namespace }}.svc:3478"
-}
-</pre>
-</td>
-			<td>Permify endpoint used for authorization checks.</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-api.helm.values.ingress</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "annotations": {
-    "nginx.ingress.kubernetes.io/rewrite-target": "/$2"
-  },
-  "enabled": true,
-  "hosts": [
-    {
-      "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-      "paths": [
-        {
-          "path": "/api(/|$)(.*)"
-        }
-      ]
-    }
-  ],
-  "tls": [
-    {
-      "hosts": [
-        "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
-      ],
-      "secretName": "superphenix-api-tls"
-    }
-  ]
-}
-</pre>
-</td>
-			<td>Expose the API publicly</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-console</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
+  "superphenix-console": {
+    "automation": {
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "superphenix-console",
-    "releaseName": "superphenix-console",
+    "helm": {
+      "chart": "superphenix-console",
+      "releaseName": "superphenix-console"
+    },
+    "modes": [
+      "Management"
+    ],
+    "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
+    "targetRevision": "0.5.0",
     "values": {
       "config": {
         "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api",
@@ -4925,43 +1935,28 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       }
     }
   },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
-  "targetRevision": "0.4.4"
-}
-</pre>
-</td>
-			<td>Superphenix Console: web UI exposed to end users.</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-console.helm.values.domain</td>
-			<td>string</td>
-			<td><pre lang="json">
-"console.example.org"
-</pre>
-</td>
-			<td>Public domain the console is exposed on. This value is also used to configure the API and Kratos.</td>
-		</tr>
-		<tr>
-			<td>apps.superphenix-controller</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "superphenix-controller": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": [
+        "SkipDryRunOnMissingResource=true"
+      ]
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": [
-      "SkipDryRunOnMissingResource=true"
-    ]
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "superphenix-controller",
-    "releaseName": "superphenix-controller",
+    "helm": {
+      "chart": "superphenix-controller",
+      "releaseName": "superphenix-controller"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "superphenix-system",
+    "repoURL": "ghcr.io/super-phenix/charts",
+    "targetRevision": "",
     "values": {
       "config": {
         "containerDiskCatalog": {
@@ -5003,97 +1998,77 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           }
         }
       }
-    }
+    },
+    "wave": "10"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload"
-  ],
-  "namespace": "superphenix-system",
-  "repoURL": "ghcr.io/super-phenix/charts",
-  "targetRevision": "",
-  "wave": "10"
-}
-</pre>
-</td>
-			<td>Superphenix controller deployed on every availability-zone cluster.</td>
-		</tr>
-		<tr>
-			<td>apps.talos-backup</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
+  "talos-backup": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "talos-backup",
+      "releaseName": "talos-backup"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "talos-backup",
+    "repoURL": "oci://ghcr.io/super-phenix/charts/talos-backup",
+    "targetRevision": "0.1.0"
   },
-  "enabled": false,
-  "helm": {
-    "chart": "talos-backup",
-    "releaseName": "talos-backup"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "talos-backup",
-  "repoURL": "oci://ghcr.io/super-phenix/charts/talos-backup",
-  "targetRevision": "0.1.0"
-}
-</pre>
-</td>
-			<td>talos-backup: CronJob that periodically pushes etcd snapshots to S3 for disaster recovery.</td>
-		</tr>
-		<tr>
-			<td>apps.talos-operator</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true
-  },
-  "enabled": false,
-  "helm": {
-    "chart": "talos-operator",
-    "releaseName": "talos-operator",
+  "talos-operator": {
+    "automation": {
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "talos-operator",
+      "releaseName": "talos-operator"
+    },
+    "modes": [
+      "Management"
+    ],
+    "repoURL": "https://alperencelik.github.io/helm-charts",
+    "targetRevision": "0.6.1",
     "values": {
       "featureFlags": {
         "enablePxeBootStack": true
       }
     }
   },
-  "modes": [
-    "Management"
-  ],
-  "repoURL": "https://alperencelik.github.io/helm-charts",
-  "targetRevision": "0.6.1"
-}
-</pre>
-</td>
-			<td>Talos Operator: manages bare-metal Talos nodes (PXE boot, machine configuration). Disabled by default.</td>
-		</tr>
-		<tr>
-			<td>apps.traefik</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "traefik": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "traefik",
-    "releaseName": "traefik",
+    "helm": {
+      "chart": "traefik",
+      "releaseName": "traefik"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload",
+      "DecoupledStorage"
+    ],
+    "namespace": "traefik-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "https://traefik.github.io/charts",
+    "targetRevision": "41.0.1",
     "values": {
       "accessLog": {
         "enabled": true
@@ -5211,75 +2186,58 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "type": "RollingUpdate"
       }
-    }
+    },
+    "wave": "0"
   },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledWorkload",
-    "DecoupledStorage"
-  ],
-  "namespace": "traefik-system",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
+  "tuned": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "tuned",
+      "releaseName": "tuned"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "tuned-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "oci://ghcr.io/super-phenix/charts/tuned",
+    "targetRevision": "0.1.0",
+    "wave": "0"
   },
-  "repoURL": "https://traefik.github.io/charts",
-  "targetRevision": "41.0.1",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>Traefik: primary Ingress and Gateway API controller.</td>
-		</tr>
-		<tr>
-			<td>apps.tuned</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
+  "velero": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
     "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": false,
-  "helm": {
-    "chart": "tuned",
-    "releaseName": "tuned"
-  },
-  "modes": [
-    "Hyperconverged",
-    "DecoupledStorage",
-    "DecoupledWorkload"
-  ],
-  "namespace": "tuned-system",
-  "nsLabels": {
-    "pod-security.kubernetes.io/enforce": "privileged"
-  },
-  "repoURL": "oci://ghcr.io/super-phenix/charts/tuned",
-  "targetRevision": "0.1.0",
-  "wave": "0"
-}
-</pre>
-</td>
-			<td>TuneD: node-level performance-tuning daemon (Superphenix-specific profiles). Disabled by default.</td>
-		</tr>
-		<tr>
-			<td>apps.velero</td>
-			<td>object</td>
-			<td><pre lang="json">
-{
-  "automation": {
-    "cleanupOnDeletion": false,
-    "enabled": true,
-    "prune": true,
-    "selfHeal": true,
-    "syncOptions": {}
-  },
-  "enabled": true,
-  "helm": {
-    "chart": "velero",
-    "releaseName": "velero",
+    "helm": {
+      "chart": "velero",
+      "releaseName": "velero"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "velero-system",
+    "nsLabels": {
+      "pod-security.kubernetes.io/enforce": "privileged"
+    },
+    "repoURL": "https://vmware-tanzu.github.io/helm-charts",
+    "targetRevision": "12.0.0",
     "values": {
       "configuration": {
         "backupStorageLocation": [],
@@ -5353,7 +2311,2897 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         ]
       },
       "snapshotsEnabled": false
+    },
+    "wave": "0"
+  },
+  "volume-replicator": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": true,
+    "helm": {
+      "chart": "volume-replicator",
+      "releaseName": "volume-replicator"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "volume-replicator",
+    "repoURL": "ghcr.io/super-phenix/helm-charts",
+    "targetRevision": "0.5.1",
+    "values": {
+      "exclusionRegex": "^prime-.*$|^tmp-.*$"
     }
+  }
+}
+</pre>
+</td>
+			<td>Per-application settings. Each key defines an Argo CD Application that is generated conditionally based on `enabled` and `modes` (see the README).</td>
+		</tr>
+		<tr>
+			<td>apps.cdi</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "cdi",
+    "releaseName": "cdi"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "cdi-system",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/cdi",
+  "targetRevision": "0.1.0",
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>Containerized Data Importer (CDI) for KubeVirt. Provisions VM disks from images, PVCs or uploads.</td>
+		</tr>
+		<tr>
+			<td>apps.cert-manager</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "cert-manager",
+    "releaseName": "cert-manager"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "cert-manager-system",
+  "repoURL": "https://charts.jetstack.io",
+  "targetRevision": "1.21.1",
+  "values": {
+    "crds": {
+      "enabled": true
+    },
+    "enableCertificateOwnerRef": true,
+    "extraObjects": [
+      "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress:\n          class: traefik\n"
+    ],
+    "prometheus": {
+      "servicemonitor": {
+        "enabled": true
+      }
+    }
+  },
+  "wave": "-10"
+}
+</pre>
+</td>
+			<td>cert-manager: issues and renews TLS certificates, including via Let's Encrypt ACME.</td>
+		</tr>
+		<tr>
+			<td>apps.cilium</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "cilium",
+    "releaseName": "cilium"
+  },
+  "modes": [
+    "DecoupledStorage"
+  ],
+  "namespace": "kube-system",
+  "repoURL": "https://helm.cilium.io/",
+  "targetRevision": "1.17.2",
+  "values": {
+    "cgroup": {
+      "autoMount": {
+        "enabled": false
+      },
+      "hostRoot": "/sys/fs/cgroup"
+    },
+    "envoy": {
+      "enabled": false
+    },
+    "hubble": {
+      "enabled": false
+    },
+    "ipam": {
+      "mode": "kubernetes"
+    },
+    "ipv4": {
+      "enabled": true
+    },
+    "ipv6": {
+      "enabled": true
+    },
+    "k8s": {
+      "requireIPv4PodCIDR": true,
+      "requireIPv6PodCIDR": true
+    },
+    "k8sServiceHost": "localhost",
+    "k8sServicePort": 7445,
+    "kubeProxyReplacement": true,
+    "securityContext": {
+      "capabilities": {
+        "ciliumAgent": [
+          "CHOWN",
+          "KILL",
+          "NET_ADMIN",
+          "NET_RAW",
+          "IPC_LOCK",
+          "SYS_ADMIN",
+          "SYS_RESOURCE",
+          "DAC_OVERRIDE",
+          "FOWNER",
+          "SETGID",
+          "SETUID"
+        ],
+        "cleanCiliumState": [
+          "NET_ADMIN",
+          "SYS_ADMIN",
+          "SYS_RESOURCE"
+        ]
+      }
+    }
+  },
+  "wave": "-100"
+}
+</pre>
+</td>
+			<td>Cilium CNI, used on storage clusters where the Kube-OVN overlay is not needed. TODO: Consider phasing Cilium out and using Kube-OVN everywhere.</td>
+		</tr>
+		<tr>
+			<td>apps.cluster-api-operator</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "cluster-api-operator",
+    "releaseName": "cluster-api-operator"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "capi-operator-system",
+  "repoURL": "https://kubernetes-sigs.github.io/cluster-api-operator",
+  "targetRevision": "0.28.0",
+  "values": {
+    "bootstrap": {
+      "kubeadm": {
+        "version": "v1.12.10"
+      }
+    },
+    "controlPlane": {
+      "kamaji": {
+        "version": "v0.20.0"
+      }
+    },
+    "core": {
+      "cluster-api": {
+        "version": "v1.12.10"
+      }
+    },
+    "infrastructure": {
+      "kubevirt": {
+        "version": "v0.11.2"
+      }
+    }
+  },
+  "wave": "15"
+}
+</pre>
+</td>
+			<td>Cluster API operator: installs the providers used by the KaaS stack (core, bootstrap, infra, control-plane).</td>
+		</tr>
+		<tr>
+			<td>apps.coredns</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": [
+      "SkipDryRunOnMissingResource=true"
+    ]
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "coredns",
+    "releaseName": "coredns"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "coredns-system",
+  "repoURL": "https://coredns.github.io/helm",
+  "targetRevision": "1.47.0",
+  "values": {
+    "prometheus": {
+      "monitor": {
+        "enabled": true
+      },
+      "service": {
+        "enabled": true
+      }
+    },
+    "replicaCount": 2,
+    "service": {
+      "clusterIP": "fd00:100:ffff::a",
+      "clusterIPs": [
+        "fd00:100:ffff::a",
+        "10.16.0.10"
+      ],
+      "ipFamilyPolicy": "RequireDualStack"
+    }
+  },
+  "wave": "-100"
+}
+</pre>
+</td>
+			<td>CoreDNS used for DNS resolution within the Kubernetes clusters</td>
+		</tr>
+		<tr>
+			<td>apps.csi-addons</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "csi-addons",
+    "releaseName": "csi-addons"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "csi-addons-system",
+  "path": ".",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/csi-addons",
+  "targetRevision": "0.1.0",
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>csi-addons: adds features such as volume replication and reclaim-space to the CSI drivers.</td>
+		</tr>
+		<tr>
+			<td>apps.csi-snapshotter</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "external-snapshotter",
+    "releaseName": "external-snapshotter"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "csi-snapshotter-system",
+  "path": ".",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/external-snapshotter",
+  "targetRevision": "0.1.0",
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>external-snapshotter: adds VolumeSnapshot support to the CSI drivers.</td>
+		</tr>
+		<tr>
+			<td>apps.etcd-operator</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "etcd-operator",
+    "releaseName": "etcd-operator"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "etcd-operator-system",
+  "repoURL": "ghcr.io/cozystack/charts",
+  "targetRevision": "0.5.3",
+  "values": {
+    "etcdOperator": {
+      "vpa": {
+        "enabled": false
+      }
+    },
+    "kubeRbacProxy": {
+      "vpa": {
+        "enabled": false
+      }
+    }
+  },
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>etcd-operator: manages the etcd datastores backing Kamaji control planes.</td>
+		</tr>
+		<tr>
+			<td>apps.gateway-api</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "directory": {
+    "recurse": true
+  },
+  "enabled": true,
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kube-system",
+  "path": "config/crd/standard",
+  "repoURL": "https://github.com/kubernetes-sigs/gateway-api.git",
+  "targetRevision": "v1.6.1",
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>Gateway API standard CRDs (installed cluster-wide).</td>
+		</tr>
+		<tr>
+			<td>apps.idrac-exporter</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "idrac-exporter",
+    "releaseName": "idrac-exporter",
+    "values": {}
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "https://mrlhansen.github.io/idrac_exporter",
+  "targetRevision": "2.6.1"
+}
+</pre>
+</td>
+			<td>iDRAC Exporter: Prometheus exporter for Dell iDRAC BMCs. Disabled by default.</td>
+		</tr>
+		<tr>
+			<td>apps.kaas-controller</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kaas-controller",
+    "releaseName": "kaas-controller"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kaas-system",
+  "repoURL": "ghcr.io/super-phenix/charts",
+  "targetRevision": "",
+  "wave": "15"
+}
+</pre>
+</td>
+			<td>KaaS controller: extra CRDs and controllers backing the Kubernetes-as-a-Service stack.</td>
+		</tr>
+		<tr>
+			<td>apps.kaas-datastore</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kaas-datastore",
+    "releaseName": "kaas-datastore"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kaas-datastore-system",
+  "repoURL": "ghcr.io/super-phenix/charts",
+  "targetRevision": "",
+  "values": {
+    "dataStores": {
+      "default": {
+        "version": "3.6.7"
+      }
+    }
+  },
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>KaaS datastore: provisions etcd clusters (via etcd-operator) used as Kamaji datastores.</td>
+		</tr>
+		<tr>
+			<td>apps.kamaji</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kamaji",
+    "releaseName": "kamaji"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kamaji-system",
+  "repoURL": "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm",
+  "targetRevision": "26.7.22",
+  "values": {
+    "affinity": {
+      "podAntiAffinity": {
+        "preferredDuringSchedulingIgnoredDuringExecution": [
+          {
+            "podAffinityTerm": {
+              "labelSelector": {
+                "matchLabels": {
+                  "app.kubernetes.io/name": "kamaji"
+                }
+              },
+              "topologyKey": "kubernetes.io/hostname"
+            },
+            "weight": 1
+          }
+        ]
+      }
+    },
+    "defaultDatastoreName": "default",
+    "extraArgs": [
+      "--certificate-expiration-deadline=336h"
+    ],
+    "image": {
+      "tag": "26.7.3-edge"
+    },
+    "kamaji-etcd": {
+      "deploy": false
+    },
+    "replicaCount": 3,
+    "resources": {
+      "limits": {
+        "cpu": "1000m",
+        "memory": "2Gi"
+      },
+      "requests": {
+        "cpu": "100m",
+        "memory": "200Mi"
+      }
+    }
+  },
+  "wave": "10"
+}
+</pre>
+</td>
+			<td>Kamaji: hosted Kubernetes control-plane provider used by the KaaS stack.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kratos",
+    "releaseName": "kratos"
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "https://k8s.ory.sh/helm/charts",
+  "targetRevision": "0.43.1",
+  "values": {
+    "globalSecret": "change-me-to-something-random-at-least-16-char-long",
+    "image": {
+      "tag": "v1.1.0"
+    },
+    "ingress": {
+      "public": {
+        "annotations": {
+          "nginx.ingress.kubernetes.io/rewrite-target": "/$2"
+        },
+        "enabled": true,
+        "hosts": [
+          {
+            "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+            "paths": [
+              {
+                "path": "/accounts(/|$)(.*)",
+                "pathType": "ImplementationSpecific"
+              }
+            ]
+          }
+        ],
+        "tls": [
+          {
+            "hosts": [
+              "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+            ],
+            "secretName": "kratos-public-tls"
+          }
+        ]
+      }
+    },
+    "kratos": {
+      "automigration": {
+        "enabled": true
+      },
+      "config": {
+        "cookies": {
+          "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+          "same_site": "Strict"
+        },
+        "courier": {
+          "smtp": {
+            "connection_uri": "smtps://dummy@example.org:password@localhost:465/",
+            "from_address": "superphenix@example.org",
+            "from_name": "Superphenix Console"
+          }
+        },
+        "dsn": "postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable",
+        "identity": {
+          "default_schema_id": "default",
+          "schemas": [
+            {
+              "id": "default",
+              "url": "file:///etc/config/identity.default.schema.json"
+            }
+          ]
+        },
+        "secrets": {
+          "cipher": [
+            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cipher\" | sha256sum | trunc 32 }}"
+          ],
+          "cookie": [
+            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cookie\" | sha256sum | trunc 32 }}"
+          ],
+          "default": [
+            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"default\" | sha256sum | trunc 32 }}"
+          ]
+        },
+        "selfservice": {
+          "allowed_return_urls": [
+            "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+          ],
+          "default_browser_return_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/",
+          "flows": {
+            "error": {
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
+            },
+            "login": {
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
+            },
+            "recovery": {
+              "after": {
+                "hooks": [
+                  {
+                    "hook": "revoke_active_sessions"
+                  }
+                ]
+              },
+              "enabled": true,
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
+            },
+            "registration": {
+              "after": {
+                "code": {
+                  "hooks": [
+                    {
+                      "hook": "show_verification_ui"
+                    }
+                  ]
+                },
+                "password": {
+                  "hooks": [
+                    {
+                      "hook": "show_verification_ui"
+                    }
+                  ]
+                },
+                "webauthn": {
+                  "hooks": [
+                    {
+                      "hook": "show_verification_ui"
+                    }
+                  ]
+                }
+              },
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
+            },
+            "settings": {
+              "privileged_session_max_age": "15m",
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
+            },
+            "verification": {
+              "enabled": false,
+              "lifespan": "1h",
+              "notify_unknown_recipients": false,
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
+              "use": "code"
+            }
+          },
+          "methods": {
+            "code": {
+              "config": {
+                "lifespan": "15m"
+              },
+              "enabled": true
+            }
+          }
+        },
+        "serve": {
+          "public": {
+            "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
+            "cors": {
+              "allow_credentials": true,
+              "allowed_headers": [
+                "Authorization",
+                "Cookie",
+                "Content-Type",
+                "Max-Age",
+                "X-Session-Token",
+                "X-XSRF-TOKEN",
+                "X-CSRF-TOKEN"
+              ],
+              "allowed_methods": [
+                "POST",
+                "GET",
+                "PUT",
+                "PATCH",
+                "DELETE"
+              ],
+              "allowed_origins": [
+                "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+              ],
+              "enabled": true,
+              "exposed_headers": [
+                "Content-Type",
+                "Set-Cookie"
+              ]
+            },
+            "request_log": {
+              "disable_for_health": true
+            }
+          }
+        }
+      },
+      "identitySchemas": {
+        "identity.default.schema.json": "{\n  \"$id\": \"https://schemas.ory.sh/presets/kratos/identity.email.schema.json\",\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Person\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"traits\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"email\": {\n          \"type\": \"string\",\n          \"format\": \"email\",\n          \"title\": \"Email\",\n          \"ory.sh/kratos\": {\n            \"credentials\": {\n              \"password\": {\n                \"identifier\": true\n              }\n            },\n            \"recovery\": {\n              \"via\": \"email\"\n            },\n            \"verification\": {\n              \"via\": \"email\"\n            }\n          }\n        },\n        \"name\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"first\": {\n              \"type\": \"string\",\n              \"title\": \"First name\"\n            },\n            \"last\": {\n              \"type\": \"string\",\n              \"title\": \"Last name\"\n            }\n          }\n        }\n      },\n      \"required\": [\"email\"],\n      \"additionalProperties\": false\n    }\n  }\n}\n"
+      }
+    },
+    "secret": {
+      "enableDefaultAnnotations": false,
+      "extraAnnotations": {
+        "argocd.argoproj.io/hook": "PreSync",
+        "argocd.argoproj.io/sync-wave": "-10"
+      }
+    }
+  }
+}
+</pre>
+</td>
+			<td>Ory Kratos: identity, session and self-service flows backing the Superphenix console.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.globalSecret</td>
+			<td>string</td>
+			<td><pre lang="json">
+"change-me-to-something-random-at-least-16-char-long"
+</pre>
+</td>
+			<td>Kratos global secret used to derive signing secrets. MUST be overridden per environment.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.automigration</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "enabled": true
+}
+</pre>
+</td>
+			<td>Run database migrations automatically on Kratos upgrades.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.cookies</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+  "same_site": "Strict"
+}
+</pre>
+</td>
+			<td>Session cookie settings.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.courier</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "smtp": {
+    "connection_uri": "smtps://dummy@example.org:password@localhost:465/",
+    "from_address": "superphenix@example.org",
+    "from_name": "Superphenix Console"
+  }
+}
+</pre>
+</td>
+			<td>Mail server configuration to send verification/recovery emails. It must be specified, even if not in use.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.dsn</td>
+			<td>string</td>
+			<td><pre lang="json">
+"postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable"
+</pre>
+</td>
+			<td>Kratos DSN stores users, sessions, recovery codes and verification data.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.identity</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "default_schema_id": "default",
+  "schemas": [
+    {
+      "id": "default",
+      "url": "file:///etc/config/identity.default.schema.json"
+    }
+  ]
+}
+</pre>
+</td>
+			<td>Identity schemas used at registration.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.selfservice.allowed_return_urls</td>
+			<td>list</td>
+			<td><pre lang="json">
+[
+  "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+]
+</pre>
+</td>
+			<td>Allowed post-flow redirect targets.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.selfservice.default_browser_return_url</td>
+			<td>string</td>
+			<td><pre lang="json">
+"https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+</pre>
+</td>
+			<td>Default post-flow redirect target.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.selfservice.flows</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "error": {
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
+  },
+  "login": {
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
+  },
+  "recovery": {
+    "after": {
+      "hooks": [
+        {
+          "hook": "revoke_active_sessions"
+        }
+      ]
+    },
+    "enabled": true,
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
+  },
+  "registration": {
+    "after": {
+      "code": {
+        "hooks": [
+          {
+            "hook": "show_verification_ui"
+          }
+        ]
+      },
+      "password": {
+        "hooks": [
+          {
+            "hook": "show_verification_ui"
+          }
+        ]
+      },
+      "webauthn": {
+        "hooks": [
+          {
+            "hook": "show_verification_ui"
+          }
+        ]
+      }
+    },
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
+  },
+  "settings": {
+    "privileged_session_max_age": "15m",
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
+  },
+  "verification": {
+    "enabled": false,
+    "lifespan": "1h",
+    "notify_unknown_recipients": false,
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
+    "use": "code"
+  }
+}
+</pre>
+</td>
+			<td>Kratos self-service flow configuration (login, registration, recovery, ...).</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.selfservice.methods</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "code": {
+    "config": {
+      "lifespan": "15m"
+    },
+    "enabled": true
+  }
+}
+</pre>
+</td>
+			<td>Enable code-based (one-time code) authentication.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.serve</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "public": {
+    "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
+    "cors": {
+      "allow_credentials": true,
+      "allowed_headers": [
+        "Authorization",
+        "Cookie",
+        "Content-Type",
+        "Max-Age",
+        "X-Session-Token",
+        "X-XSRF-TOKEN",
+        "X-CSRF-TOKEN"
+      ],
+      "allowed_methods": [
+        "POST",
+        "GET",
+        "PUT",
+        "PATCH",
+        "DELETE"
+      ],
+      "allowed_origins": [
+        "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+      ],
+      "enabled": true,
+      "exposed_headers": [
+        "Content-Type",
+        "Set-Cookie"
+      ]
+    },
+    "request_log": {
+      "disable_for_health": true
+    }
+  }
+}
+</pre>
+</td>
+			<td>Kratos public/admin listener configuration.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.config.serve.public.base_url</td>
+			<td>string</td>
+			<td><pre lang="json">
+"https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
+</pre>
+</td>
+			<td>URL on which Kratos will listen, defaults to the same as the console The ingress adds a path prefix, that is not passed to Kratos. It is only used to avoid routing conflicts between the different elements of the console.</td>
+		</tr>
+		<tr>
+			<td>apps.kratos.values.kratos.identitySchemas</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "identity.default.schema.json": "{\n  \"$id\": \"https://schemas.ory.sh/presets/kratos/identity.email.schema.json\",\n  \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n  \"title\": \"Person\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"traits\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"email\": {\n          \"type\": \"string\",\n          \"format\": \"email\",\n          \"title\": \"Email\",\n          \"ory.sh/kratos\": {\n            \"credentials\": {\n              \"password\": {\n                \"identifier\": true\n              }\n            },\n            \"recovery\": {\n              \"via\": \"email\"\n            },\n            \"verification\": {\n              \"via\": \"email\"\n            }\n          }\n        },\n        \"name\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"first\": {\n              \"type\": \"string\",\n              \"title\": \"First name\"\n            },\n            \"last\": {\n              \"type\": \"string\",\n              \"title\": \"Last name\"\n            }\n          }\n        }\n      },\n      \"required\": [\"email\"],\n      \"additionalProperties\": false\n    }\n  }\n}\n"
+}
+</pre>
+</td>
+			<td>Contents of the identity schema files referenced by `config.identity.schemas`.</td>
+		</tr>
+		<tr>
+			<td>apps.kubeovn</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kube-ovn-v2",
+    "releaseName": "kube-ovn"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kube-system",
+  "repoURL": "oci://ghcr.io/kubeovn/charts/kube-ovn-v2",
+  "targetRevision": "v1.16.0",
+  "values": {
+    "apiNad": {
+      "enabled": true
+    },
+    "extraObjects": [
+      {
+        "apiVersion": "kubeovn.io/v1",
+        "kind": "Subnet",
+        "metadata": {
+          "name": "system-blackhole"
+        },
+        "spec": {
+          "acls": [
+            {
+              "action": "drop",
+              "direction": "from-lport",
+              "match": "ip"
+            },
+            {
+              "action": "drop",
+              "direction": "to-lport",
+              "match": "ip"
+            }
+          ],
+          "cidrBlock": "fd00:666::/64",
+          "disableGatewayCheck": true,
+          "protocol": "IPv6",
+          "provider": "system-blackhole.kube-system.ovn",
+          "vpc": "system-blackhole-vpc"
+        }
+      },
+      {
+        "apiVersion": "kubeovn.io/v1",
+        "kind": "Vpc",
+        "metadata": {
+          "name": "system-blackhole-vpc"
+        },
+        "spec": {}
+      },
+      {
+        "apiVersion": "k8s.cni.cncf.io/v1",
+        "kind": "NetworkAttachmentDefinition",
+        "metadata": {
+          "name": "system-blackhole",
+          "namespace": "kube-system"
+        },
+        "spec": {
+          "config": "{ \"cniVersion\": \"0.3.0\", \"type\": \"kube-ovn\", \"server_socket\": \"/run/openvswitch/kube-ovn-daemon.sock\", \"provider\": \"system-blackhole.kube-system.ovn\" }"
+        }
+      },
+      {
+        "apiVersion": "kubeovn.io/v1",
+        "kind": "Subnet",
+        "metadata": {
+          "name": "system-isolated-egress"
+        },
+        "spec": {
+          "allowEWTraffic": false,
+          "cidrBlock": "10.32.0.0/16,fd00:110::/64",
+          "gatewayType": "distributed",
+          "mtu": 1380,
+          "natOutgoing": true,
+          "protocol": "Dual",
+          "provider": "system-isolated-egress.kube-system.ovn",
+          "vpc": "ovn-cluster"
+        }
+      },
+      {
+        "apiVersion": "k8s.cni.cncf.io/v1",
+        "kind": "NetworkAttachmentDefinition",
+        "metadata": {
+          "name": "system-isolated-egress",
+          "namespace": "kube-system"
+        },
+        "spec": {
+          "config": "{ \"cniVersion\": \"0.3.0\", \"type\": \"kube-ovn\", \"server_socket\": \"/run/openvswitch/kube-ovn-daemon.sock\", \"provider\": \"system-isolated-egress.kube-system.ovn\" }"
+        }
+      }
+    ],
+    "features": {
+      "enableNetworkPolicies": true
+    },
+    "masterNodes": "invalid,invalid,invalid",
+    "masterNodesLabels": {
+      "kube-ovn/role": null,
+      "node-role.kubernetes.io/control-plane": ""
+    },
+    "natGw": {
+      "namePrefix": "nat-gateway"
+    },
+    "networking": {
+      "join": {
+        "cidr": {
+          "v4": "100.64.0.0/12",
+          "v6": "fd00:100:64::/112"
+        }
+      },
+      "pods": {
+        "cidr": {
+          "v4": "10.0.0.0/12",
+          "v6": "fd00:100:0000:0::/96"
+        },
+        "gateways": {
+          "v4": "10.0.0.1",
+          "v6": "fd00:100:0000:0::1"
+        }
+      },
+      "services": {
+        "cidr": {
+          "v4": "10.16.0.0/12",
+          "v6": "fd00:100:ffff:0::/112"
+        }
+      },
+      "stack": "Dual"
+    },
+    "ovsOvn": {
+      "disableModulesManagement": true,
+      "ovnDirectory": "/var/lib/ovn",
+      "ovsDirectory": "/var/lib/openvswitch"
+    },
+    "validatingWebhook": {
+      "enabled": true
+    }
+  },
+  "wave": "-100"
+}
+</pre>
+</td>
+			<td>Kube-OVN is used as the CNI for the workload layer</td>
+		</tr>
+		<tr>
+			<td>apps.kubevirt</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "directory": {
+    "recurse": true
+  },
+  "enabled": true,
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kubevirt-system",
+  "path": "v1.7.3/",
+  "repoURL": "https://github.com/super-phenix/kubevirt-manifests.git",
+  "targetRevision": "HEAD",
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>KubeVirt: virtualization runtime that lets Kubernetes schedule VMs alongside containers.</td>
+		</tr>
+		<tr>
+			<td>apps.kubevirt-config</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kubevirt",
+    "releaseName": "kubevirt-config"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kubevirt-system",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/kubevirt",
+  "targetRevision": "0.1.0",
+  "values": {
+    "config": {
+      "configuration": {
+        "autoCPULimitNamespaceLabelSelector": {
+          "matchExpressions": [
+            {
+              "key": "superphenix.net/projectID",
+              "operator": "Exists"
+            }
+          ]
+        },
+        "cpuModel": "Broadwell-noTSX-IBRS",
+        "developerConfiguration": {
+          "cpuAllocationRatio": 10,
+          "featureGates": [
+            "BlockVolume",
+            "ExpandDisks",
+            "Snapshot",
+            "HotplugVolumes"
+          ],
+          "memoryOvercommit": 200
+        },
+        "evictionStrategy": "LiveMigrate",
+        "ksmConfiguration": {
+          "nodeLabelSelector": {}
+        },
+        "migrations": {
+          "allowAutoConverge": false,
+          "allowPostCopy": false,
+          "allowWorkloadDisruption": true,
+          "bandwidthPerMigration": "64Mi",
+          "completionTimeoutPerGiB": 120,
+          "parallelMigrationsPerCluster": 10,
+          "parallelOutboundMigrationsPerNode": 10,
+          "progressTimeout": 150
+        },
+        "network": {
+          "binding": {
+            "managedtap": {
+              "domainAttachmentType": "managedTap"
+            }
+          }
+        },
+        "virtualMachineInstancesPerNode": 100,
+        "vmRolloutStrategy": "LiveUpdate",
+        "vmStateStorageClass": "default.spx-rbd-3x"
+      },
+      "imagePullPolicy": "IfNotPresent",
+      "monitorAccount": "prometheus-kube-prometheus-prometheus",
+      "monitorNamespace": "prometheus-system",
+      "serviceMonitorNamespace": "kubevirt",
+      "workloadUpdateStrategy": {
+        "workloadUpdateMethods": [
+          "LiveMigrate"
+        ]
+      }
+    }
+  },
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>KubeVirt configuration injected into the operator.</td>
+		</tr>
+		<tr>
+			<td>apps.local-path-provisioner</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "local-path-provisioner",
+    "releaseName": "local-path-provisioner"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "local-storage-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "oci://ghcr.io/rancher/local-path-provisioner/charts/local-path-provisioner",
+  "targetRevision": "0.0.37",
+  "values": {
+    "storageClass": {
+      "defaultClass": false,
+      "name": "local-path",
+      "nodePathmap": [
+        {
+          "node": "DEFAULT_PATH_FOR_NON_LISTED_NODES",
+          "paths": [
+            "/var/local-path-provisioner"
+          ]
+        }
+      ]
+    }
+  },
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>Local Path Provisioner provides local storage using host paths. This is useful for VM/containers that need a lot of IOPS and/or throughput. The drawback is that those VM/containers can't be scheduled elsewhere than the node on which they landed. If that node is wiped, the data is also lost.</td>
+		</tr>
+		<tr>
+			<td>apps.loki</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "loki",
+    "releaseName": "loki"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "loki-system",
+  "repoURL": "https://grafana.github.io/helm-charts",
+  "targetRevision": "6.43.0",
+  "values": {
+    "backend": {
+      "replicas": 0
+    },
+    "bloomCompactor": {
+      "replicas": 0
+    },
+    "bloomGateway": {
+      "replicas": 0
+    },
+    "chunksCache": {
+      "enabled": false
+    },
+    "compactor": {
+      "replicas": 0
+    },
+    "deploymentMode": "SingleBinary",
+    "distributor": {
+      "replicas": 0
+    },
+    "gateway": {
+      "enabled": false
+    },
+    "global": {
+      "clusterDomain": "",
+      "dnsNamespace": "kube-system",
+      "dnsService": "coredns"
+    },
+    "indexGateway": {
+      "replicas": 0
+    },
+    "ingester": {
+      "replicas": 0
+    },
+    "loki": {
+      "auth_enabled": true,
+      "commonConfig": {
+        "replication_factor": 1
+      },
+      "compactor": {
+        "compaction_interval": "10m",
+        "delete_request_store": "filesystem",
+        "retention_delete_delay": "2h",
+        "retention_delete_worker_count": 150,
+        "retention_enabled": true
+      },
+      "limits_config": {
+        "retention_period": "14d"
+      },
+      "schemaConfig": {
+        "configs": [
+          {
+            "from": "2024-12-01",
+            "index": {
+              "period": "24h",
+              "prefix": "loki_index_"
+            },
+            "object_store": "filesystem",
+            "schema": "v13",
+            "store": "tsdb"
+          }
+        ]
+      },
+      "storage": {
+        "type": "filesystem"
+      }
+    },
+    "lokiCanary": {
+      "enabled": false
+    },
+    "minio": {
+      "enabled": false
+    },
+    "monitoring": {
+      "serviceMonitor": {
+        "enabled": true
+      }
+    },
+    "querier": {
+      "replicas": 0
+    },
+    "queryFrontend": {
+      "replicas": 0
+    },
+    "queryScheduler": {
+      "replicas": 0
+    },
+    "read": {
+      "replicas": 0
+    },
+    "resultsCache": {
+      "enabled": false
+    },
+    "singleBinary": {
+      "persistence": {
+        "enableStatefulSetAutoDeletePVC": false,
+        "size": "50Gi"
+      },
+      "replicas": 1
+    },
+    "test": {
+      "enabled": false
+    },
+    "write": {
+      "replicas": 0
+    }
+  },
+  "wave": "100"
+}
+</pre>
+</td>
+			<td>Loki: log aggregation backend with a Prometheus-like query language (LogQL).</td>
+		</tr>
+		<tr>
+			<td>apps.misc</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": [
+      "SkipDryRunOnMissingResource=true"
+    ]
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "misc",
+    "releaseName": "misc"
+  },
+  "namespace": "default",
+  "repoURL": "ghcr.io/super-phenix/charts",
+  "targetRevision": "0.0.0",
+  "values": {
+    "effectiveMode": "{{ include \"superphenix-system.effectiveMode\" . }}",
+    "modes": {
+      "external-subnet": [
+        "Hyperconverged",
+        "DecoupledWorkload"
+      ],
+      "external-subnet-nad": [
+        "Hyperconverged",
+        "DecoupledWorkload"
+      ]
+    },
+    "objects": {
+      "external-subnet": {
+        "apiVersion": "kubeovn.io/v1",
+        "kind": "Subnet",
+        "metadata": {
+          "name": "external-subnet"
+        },
+        "spec": {
+          "cidrBlock": "192.168.1.0/24",
+          "excludeIps": [
+            "192.168.1.0..192.168.1.200",
+            "192.168.1.254"
+          ],
+          "gateway": "192.168.1.254",
+          "protocol": "IPv4",
+          "provider": "external-subnet.kube-system"
+        }
+      },
+      "external-subnet-nad": {
+        "apiVersion": "k8s.cni.cncf.io/v1",
+        "kind": "NetworkAttachmentDefinition",
+        "metadata": {
+          "name": "external-subnet",
+          "namespace": "kube-system"
+        },
+        "spec": {
+          "config": "{ \"cniVersion\": \"0.3.0\", \"type\": \"macvlan\", \"master\": \"enp0s31f6\", \"mode\": \"bridge\", \"ipam\": { \"type\": \"kube-ovn\", \"server_socket\": \"/run/openvswitch/kube-ovn-daemon.sock\", \"provider\": \"external-subnet.kube-system\" } }"
+        }
+      }
+    }
+  },
+  "wave": "100"
+}
+</pre>
+</td>
+			<td>misc: arbitrary YAML objects passed through the values. Useful to create objects on the clusters for anything not natively supported by other charts.</td>
+		</tr>
+		<tr>
+			<td>apps.misc.values.objects.external-subnet</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "apiVersion": "kubeovn.io/v1",
+  "kind": "Subnet",
+  "metadata": {
+    "name": "external-subnet"
+  },
+  "spec": {
+    "cidrBlock": "192.168.1.0/24",
+    "excludeIps": [
+      "192.168.1.0..192.168.1.200",
+      "192.168.1.254"
+    ],
+    "gateway": "192.168.1.254",
+    "protocol": "IPv4",
+    "provider": "external-subnet.kube-system"
+  }
+}
+</pre>
+</td>
+			<td>This is the physical network in which the NAT gateways will be created. The NAT gateways will take IPs at random within that subnet, so ensure the `excludeIps field encompasses any IPs that are already in use. Ideally, the range of that subnet (or part of it) must be reserved to SPX.</td>
+		</tr>
+		<tr>
+			<td>apps.multus</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "multus",
+    "releaseName": "multus"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kube-system",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/multus",
+  "targetRevision": "0.1.0",
+  "values": {
+    "tolerations": [
+      {
+        "effect": "NoSchedule",
+        "operator": "Exists"
+      },
+      {
+        "effect": "NoExecute",
+        "operator": "Exists"
+      }
+    ]
+  },
+  "wave": "-100"
+}
+</pre>
+</td>
+			<td>Multus CNI meta-plugin, enables multi-homed pods and VMs.</td>
+		</tr>
+		<tr>
+			<td>apps.permify</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "permify",
+    "releaseName": "permify"
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "https://permify.github.io/helm-charts",
+  "targetRevision": "0.3.*",
+  "values": {
+    "app": {
+      "database": {
+        "engine": "postgres",
+        "garbage_collection": {
+          "enabled": false
+        },
+        "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
+      },
+      "distributed": {
+        "address": "permify.{{ $.Release.Namespace }}.svc:5000",
+        "enabled": false,
+        "port": 5000
+      }
+    },
+    "replicaCount": 1
+  }
+}
+</pre>
+</td>
+			<td>Permify: authorization service consulted by the Superphenix API to enforce permissions.</td>
+		</tr>
+		<tr>
+			<td>apps.permify.values.app.database</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "engine": "postgres",
+  "garbage_collection": {
+    "enabled": false
+  },
+  "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
+}
+</pre>
+</td>
+			<td>Database connection used to store Permify tuples and schemas.</td>
+		</tr>
+		<tr>
+			<td>apps.permify.values.app.distributed</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "address": "permify.{{ $.Release.Namespace }}.svc:5000",
+  "enabled": false,
+  "port": 5000
+}
+</pre>
+</td>
+			<td>Distributed mode is disabled (single-instance deployment).</td>
+		</tr>
+		<tr>
+			<td>apps.permify.values.replicaCount</td>
+			<td>int</td>
+			<td><pre lang="json">
+1
+</pre>
+</td>
+			<td>Number of instances of Permify to run.</td>
+		</tr>
+		<tr>
+			<td>apps.policies</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "spx-policies",
+    "releaseName": "spx-policies"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "kube-system",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
+  "targetRevision": "0.1.0"
+}
+</pre>
+</td>
+			<td>spx-policies: Kyverno policies that enforce Superphenix RFCs and protect against known bugs and attacks.</td>
+		</tr>
+		<tr>
+			<td>apps.postgres</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "postgres",
+    "releaseName": "postgres"
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "oci://registry-1.docker.io/cloudpirates/postgres",
+  "targetRevision": "0.19.12",
+  "values": {
+    "auth": {
+      "database": "superphenix",
+      "password": "changeme!",
+      "username": "superphenix"
+    },
+    "initdb": {
+      "scripts": {
+        "setup.sql": "CREATE DATABASE kratos;\nCREATE DATABASE permify;\nGRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;\nGRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;\n"
+      }
+    },
+    "persistence": {
+      "size": "8Gi"
+    }
+  }
+}
+</pre>
+</td>
+			<td>PostgreSQL: shared database backing the Superphenix API, Kratos and Permify.</td>
+		</tr>
+		<tr>
+			<td>apps.postgres.values.auth</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "database": "superphenix",
+  "password": "changeme!",
+  "username": "superphenix"
+}
+</pre>
+</td>
+			<td>Primary user/database credentials. SECURITY: `password` MUST be overridden per environment.</td>
+		</tr>
+		<tr>
+			<td>apps.postgres.values.initdb</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "scripts": {
+    "setup.sql": "CREATE DATABASE kratos;\nCREATE DATABASE permify;\nGRANT ALL PRIVILEGES ON DATABASE kratos TO superphenix;\nGRANT ALL PRIVILEGES ON DATABASE permify TO superphenix;\n"
+  }
+}
+</pre>
+</td>
+			<td>Additional databases created at initialization for Kratos and Permify.</td>
+		</tr>
+		<tr>
+			<td>apps.postgres.values.persistence</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "size": "8Gi"
+}
+</pre>
+</td>
+			<td>Persistent volume size. Sufficient for most deployments.</td>
+		</tr>
+		<tr>
+			<td>apps.prometheus-stack</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": [
+      "ServerSideApply=true"
+    ]
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "kube-prometheus-stack",
+    "releaseName": "prometheus"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "prometheus-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "https://prometheus-community.github.io/helm-charts",
+  "targetRevision": "88.2.0",
+  "values": {
+    "alertmanager": {
+      "enabled": false
+    },
+    "defaultRules": {
+      "create": false
+    },
+    "grafana": {
+      "additionalDataSources": [
+        {
+          "editable": false,
+          "jsonData": {
+            "httpHeaderName1": "X-Scope-OrgID"
+          },
+          "name": "Loki",
+          "secureJsonData": {
+            "httpHeaderValue1": "1"
+          },
+          "type": "loki",
+          "url": "http://loki.loki-system:3100"
+        }
+      ],
+      "adminPassword": "",
+      "ingress": {
+        "annotations": {
+          "cert-manager.io/cluster-issuer": "letsencrypt"
+        },
+        "enabled": true,
+        "hosts": [
+          "invalid"
+        ],
+        "tls": [
+          {
+            "hosts": [
+              "invalid"
+            ],
+            "secretName": "grafana-tls"
+          }
+        ]
+      }
+    },
+    "kubeControllerManager": {
+      "service": {
+        "selector": {
+          "k8s-app": "kube-controller-manager"
+        }
+      }
+    },
+    "kubeEtcd": {
+      "service": {
+        "selector": {
+          "k8s-app": "kube-controller-manager"
+        }
+      },
+      "serviceMonitor": {
+        "metricRelabelings": [
+          {
+            "action": "labeldrop",
+            "regex": "pod"
+          }
+        ],
+        "relabelings": [
+          {
+            "action": "replace",
+            "regex": "^(.*)$",
+            "replacement": "$1",
+            "separator": ";",
+            "sourceLabels": [
+              "__meta_kubernetes_pod_node_name"
+            ],
+            "targetLabel": "nodename"
+          }
+        ]
+      }
+    },
+    "kubeScheduler": {
+      "service": {
+        "selector": {
+          "k8s-app": "kube-scheduler"
+        }
+      }
+    },
+    "prometheus": {
+      "prometheusSpec": {
+        "podMonitorSelectorNilUsesHelmValues": false,
+        "retention": "30d",
+        "retentionSize": "45GB",
+        "serviceMonitorSelectorNilUsesHelmValues": false,
+        "storageSpec": {
+          "volumeClaimTemplate": {
+            "spec": {
+              "resources": {
+                "requests": {
+                  "storage": "50Gi"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "wave": "100"
+}
+</pre>
+</td>
+			<td>kube-prometheus-stack: metrics collection, storage and Grafana dashboards.</td>
+		</tr>
+		<tr>
+			<td>apps.promtail</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "promtail",
+    "releaseName": "promtail"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "promtail-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "https://grafana.github.io/helm-charts",
+  "targetRevision": "6.17.1",
+  "values": {
+    "config": {
+      "clients": [
+        {
+          "tenant_id": 1,
+          "url": "http://loki.loki-system:3100/loki/api/v1/push"
+        }
+      ]
+    },
+    "serviceMonitor": {
+      "enabled": true
+    }
+  },
+  "wave": "100"
+}
+</pre>
+</td>
+			<td>Promtail: node-local agent that ships container logs to Loki. TODO: This chart is deprecated. This component is non-critical, but we should phase it out. It went EOL on Grafana's side and should be replaced by Alloy.</td>
+		</tr>
+		<tr>
+			<td>apps.rook-connection</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": [
+      "RespectIgnoreDifferences=true"
+    ]
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "spx-rook-connection",
+    "releaseName": "spx-rook-connection"
+  },
+  "ignoreDifferences": [
+    {
+      "jsonPointers": [
+        "/data/data",
+        "/data/mapping"
+      ],
+      "kind": "ConfigMap"
+    }
+  ],
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "rook-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "path": ".",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
+  "targetRevision": "0.2.1",
+  "values": {
+    "clusters": [
+      {
+        "blockPools": [
+          {
+            "name": "spx-rbd-3x",
+            "storageClasses": [
+              {
+                "default": true,
+                "fs": "ext4",
+                "name": "spx-rbd-3x"
+              }
+            ]
+          }
+        ],
+        "clusterID": "spx-storage",
+        "csi": {
+          "rbdNodeSecretName": "rook-csi-rbd-node",
+          "rbdProvisionerSecretName": "rook-csi-rbd-provisioner",
+          "secretNamespace": "spx-storage"
+        },
+        "enabled": "{{ eq $.Values.cluster.deploymentTopology \"Hyperconverged\" }}",
+        "local": true,
+        "name": "spx-storage"
+      }
+    ]
+  },
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>Rook connection to a Ceph cluster. Deployed on hyperconverged clusters and workload clusters that consume storage from a remote storage cluster.</td>
+		</tr>
+		<tr>
+			<td>apps.rook-connection.values.clusters[0]</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "blockPools": [
+    {
+      "name": "spx-rbd-3x",
+      "storageClasses": [
+        {
+          "default": true,
+          "fs": "ext4",
+          "name": "spx-rbd-3x"
+        }
+      ]
+    }
+  ],
+  "clusterID": "spx-storage",
+  "csi": {
+    "rbdNodeSecretName": "rook-csi-rbd-node",
+    "rbdProvisionerSecretName": "rook-csi-rbd-provisioner",
+    "secretNamespace": "spx-storage"
+  },
+  "enabled": "{{ eq $.Values.cluster.deploymentTopology \"Hyperconverged\" }}",
+  "local": true,
+  "name": "spx-storage"
+}
+</pre>
+</td>
+			<td>This is the configuration for the local Ceph cluster when running hyperconverged. If you're adding an override to connect another Ceph cluster, remember to copy and paste this configuration to avoid losing the default values.</td>
+		</tr>
+		<tr>
+			<td>apps.rook-local-cluster</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "rook-ceph-cluster",
+    "releaseName": "rook-local-cluster"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage"
+  ],
+  "namespace": "spx-storage",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "https://charts.rook.io/release",
+  "targetRevision": "1.16.3",
+  "values": {
+    "cephBlockPools": [
+      {
+        "name": "spx-rbd-3x",
+        "spec": {
+          "enableCrushUpdates": true,
+          "enableRBDStats": true,
+          "failureDomain": "host",
+          "replicated": {
+            "size": 3
+          }
+        },
+        "storageClass": {
+          "allowVolumeExpansion": true,
+          "enabled": "{{- eq $.Values.cluster.deploymentTopology \"DecoupledStorage\" | ternary \"true\" \"\" -}}",
+          "isDefault": true,
+          "mountOptions": [
+            "discard"
+          ],
+          "name": "spx-storage.spx-rbd-3x",
+          "parameters": {
+            "csi.storage.k8s.io/controller-expand-secret-name": "rook-csi-rbd-provisioner",
+            "csi.storage.k8s.io/controller-expand-secret-namespace": "spx-storage",
+            "csi.storage.k8s.io/fstype": "ext4",
+            "csi.storage.k8s.io/node-stage-secret-name": "rook-csi-rbd-node",
+            "csi.storage.k8s.io/node-stage-secret-namespace": "spx-storage",
+            "csi.storage.k8s.io/provisioner-secret-name": "rook-csi-rbd-provisioner",
+            "csi.storage.k8s.io/provisioner-secret-namespace": "spx-storage",
+            "imageFeatures": "layering,fast-diff,object-map,deep-flatten,exclusive-lock",
+            "imageFormat": "2"
+          },
+          "reclaimPolicy": "Delete",
+          "volumeBindingMode": "Immediate"
+        }
+      }
+    ],
+    "cephClusterSpec": {
+      "cephConfig": {
+        "global": {
+          "rbd_mirroring_max_mirroring_snapshots": "30",
+          "rbd_move_to_trash_on_remove": "true",
+          "rbd_move_to_trash_on_remove_expire_seconds": "604800"
+        }
+      },
+      "crashCollector": {
+        "daysToRetain": 30,
+        "disable": false
+      },
+      "dashboard": {
+        "enabled": true,
+        "prometheusEndpoint": "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090",
+        "prometheusEndpointSSLVerify": false,
+        "ssl": false
+      },
+      "mgr": {
+        "modules": [
+          {
+            "enabled": true,
+            "name": "rook"
+          }
+        ]
+      },
+      "network": {
+        "ipFamily": "IPv4",
+        "provider": "host"
+      },
+      "storage": {
+        "useAllDevices": true
+      }
+    },
+    "cephFileSystems": [],
+    "cephObjectStores": [],
+    "clusterName": "{{ $.Values.cluster.name }}",
+    "ingress": {
+      "dashboard": {
+        "annotations": {
+          "cert-manager.io/cluster-issuer": "letsencrypt"
+        },
+        "host": {
+          "name": "ceph.example.org",
+          "path": "/"
+        },
+        "tls": [
+          {
+            "hosts": [
+              "ceph.example.org"
+            ],
+            "secretName": "ceph-dashboard-tls"
+          }
+        ]
+      }
+    },
+    "monitoring": {
+      "enabled": true
+    },
+    "operatorNamespace": "rook-system",
+    "toolbox": {
+      "enabled": true
+    }
+  },
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>Local Rook/Ceph cluster deployed on storage-capable clusters (hyperconverged or decoupled storage).</td>
+		</tr>
+		<tr>
+			<td>apps.rook-operator</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "rook-ceph",
+    "releaseName": "rook-operator"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "rook-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "https://charts.rook.io/release",
+  "targetRevision": "1.16.5",
+  "values": {
+    "csi": {
+      "csiAddons": {
+        "enabled": true
+      },
+      "csiAddonsRBDProvisionerPort": 9071,
+      "enableCephfsDriver": false,
+      "enableOMAPGenerator": true,
+      "serviceMonitor": {
+        "enabled": true
+      }
+    },
+    "discoveryDaemonInterval": "5m",
+    "enableDiscoveryDaemon": true,
+    "enforceHostNetwork": true,
+    "monitoring": {
+      "enabled": true
+    },
+    "obcAllowAdditionalConfigFields": "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle",
+    "useOperatorHostNetwork": true
+  },
+  "wave": "-5"
+}
+</pre>
+</td>
+			<td>Rook operator, required on any cluster that interacts with Ceph/Rook. Workload clusters need it to provision an external connection to a centralized storage cluster; centralized storage clusters need it to provision a local Ceph cluster that acts as the remote backend for "client" clusters.</td>
+		</tr>
+		<tr>
+			<td>apps.snapscheduler</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "snapscheduler",
+    "releaseName": "snapscheduler"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "snapscheduler-system",
+  "repoURL": "https://backube.github.io/helm-charts/",
+  "targetRevision": "*",
+  "values": {
+    "enableOwnerReferences": true,
+    "replicaCount": 2
+  },
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>snapscheduler: periodic VolumeSnapshot scheduler for PVCs.</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-api</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "superphenix-api",
+    "releaseName": "superphenix-api"
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-api",
+  "targetRevision": "",
+  "values": {
+    "config": {
+      "argoCdUrl": "https://argocd.example.org",
+      "argoController": {
+        "appProjectNamespace": "{{ $.Release.Namespace }}"
+      },
+      "authentication": {
+        "kratosEndpoint": "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
+      },
+      "azs": {
+        "local": {
+          "authSecret": "secret!",
+          "controllerUrl": "http://superphenix-controller.{{ (index $.Values.apps \"superphenix-controller\").namespace }}.svc.cluster.local:8080",
+          "destination": "in-cluster",
+          "name": "Local AZ"
+        }
+      },
+      "database": {
+        "database": "superphenix",
+        "host": "postgres.{{ $.Release.Namespace }}.svc",
+        "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
+        "port": 5432,
+        "username": "superphenix"
+      },
+      "permify": {
+        "url": "permify.{{ $.Release.Namespace }}.svc:3478"
+      },
+      "productsConfig": {
+        "argoApp": {
+          "kubernetes": {
+            "azDomains": {
+              "local": {
+                "external": "%s.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+                "internal": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+              }
+            }
+          }
+        }
+      },
+      "session": {
+        "cookies": {
+          "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+        },
+        "cors": {
+          "allowedOrigins": [
+            "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+          ]
+        },
+        "defaultReturnUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/callback"
+      },
+      "swagger": {
+        "baseURL": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api"
+      },
+      "userSettings": {
+        "enableProjectDefaultResources": true,
+        "userIsActiveOnCreate": true
+      }
+    },
+    "ingress": {
+      "annotations": {
+        "nginx.ingress.kubernetes.io/rewrite-target": "/$2"
+      },
+      "enabled": true,
+      "hosts": [
+        {
+          "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+          "paths": [
+            {
+              "path": "/api(/|$)(.*)"
+            }
+          ]
+        }
+      ],
+      "tls": [
+        {
+          "hosts": [
+            "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+          ],
+          "secretName": "superphenix-api-tls"
+        }
+      ]
+    }
+  }
+}
+</pre>
+</td>
+			<td>Superphenix API: backend serving the console and CLI, persists to PostgreSQL and delegates auth to Permify/Kratos.</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-api.values.config.database</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "database": "superphenix",
+  "host": "postgres.{{ $.Release.Namespace }}.svc",
+  "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
+  "port": 5432,
+  "username": "superphenix"
+}
+</pre>
+</td>
+			<td>Database storing users, organizations, projects and other API state.</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-api.values.config.permify</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "url": "permify.{{ $.Release.Namespace }}.svc:3478"
+}
+</pre>
+</td>
+			<td>Permify endpoint used for authorization checks.</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-api.values.ingress</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "annotations": {
+    "nginx.ingress.kubernetes.io/rewrite-target": "/$2"
+  },
+  "enabled": true,
+  "hosts": [
+    {
+      "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+      "paths": [
+        {
+          "path": "/api(/|$)(.*)"
+        }
+      ]
+    }
+  ],
+  "tls": [
+    {
+      "hosts": [
+        "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+      ],
+      "secretName": "superphenix-api-tls"
+    }
+  ]
+}
+</pre>
+</td>
+			<td>Expose the API publicly</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-console</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "superphenix-console",
+    "releaseName": "superphenix-console"
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
+  "targetRevision": "0.5.0",
+  "values": {
+    "config": {
+      "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api",
+      "authUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
+    },
+    "domain": "console.example.org",
+    "ingress": {
+      "enabled": true,
+      "hosts": [
+        {
+          "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+          "paths": [
+            {
+              "path": "/"
+            }
+          ]
+        }
+      ],
+      "tls": [
+        {
+          "hosts": [
+            "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+          ],
+          "secretName": "superphenix-console-tls"
+        }
+      ]
+    }
+  }
+}
+</pre>
+</td>
+			<td>Superphenix Console: web UI exposed to end users.</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-console.values.domain</td>
+			<td>string</td>
+			<td><pre lang="json">
+"console.example.org"
+</pre>
+</td>
+			<td>Public domain the console is exposed on. This value is also used to configure the API and Kratos.</td>
+		</tr>
+		<tr>
+			<td>apps.superphenix-controller</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": [
+      "SkipDryRunOnMissingResource=true"
+    ]
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "superphenix-controller",
+    "releaseName": "superphenix-controller"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "superphenix-system",
+  "repoURL": "ghcr.io/super-phenix/charts",
+  "targetRevision": "",
+  "values": {
+    "config": {
+      "containerDiskCatalog": {
+        "windows-virtio-drivers": {
+          "bus": "sata",
+          "displayName": "Windows VirtIO Driver",
+          "image": "quay.io/kubevirt/virtio-container-disk:v1.7.0",
+          "recommended": true,
+          "supportedOS": [
+            "windows"
+          ]
+        }
+      },
+      "http": {
+        "authSecret": "secret!"
+      },
+      "productsConfig": {
+        "blockStorage": {
+          "storageClassMapping": {
+            "default": "spx-storage.spx-rbd-3x"
+          }
+        },
+        "eipDefault": {
+          "externalSubnet": "external-subnet"
+        },
+        "natGatewayDefault": {
+          "bgpSpeaker": {
+            "enabled": false
+          },
+          "defaultRoutes": [
+            {
+              "cidr": "198.18.0.0/16",
+              "nextHopIP": "gateway"
+            }
+          ],
+          "externalSubnets": [
+            "external-subnet"
+          ]
+        }
+      }
+    }
+  },
+  "wave": "10"
+}
+</pre>
+</td>
+			<td>Superphenix controller deployed on every availability-zone cluster.</td>
+		</tr>
+		<tr>
+			<td>apps.talos-backup</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "talos-backup",
+    "releaseName": "talos-backup"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "talos-backup",
+  "repoURL": "oci://ghcr.io/super-phenix/charts/talos-backup",
+  "targetRevision": "0.1.0"
+}
+</pre>
+</td>
+			<td>talos-backup: CronJob that periodically pushes etcd snapshots to S3 for disaster recovery.</td>
+		</tr>
+		<tr>
+			<td>apps.talos-operator</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "talos-operator",
+    "releaseName": "talos-operator"
+  },
+  "modes": [
+    "Management"
+  ],
+  "repoURL": "https://alperencelik.github.io/helm-charts",
+  "targetRevision": "0.6.1",
+  "values": {
+    "featureFlags": {
+      "enablePxeBootStack": true
+    }
+  }
+}
+</pre>
+</td>
+			<td>Talos Operator: manages bare-metal Talos nodes (PXE boot, machine configuration). Disabled by default.</td>
+		</tr>
+		<tr>
+			<td>apps.traefik</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "traefik",
+    "releaseName": "traefik"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload",
+    "DecoupledStorage"
+  ],
+  "namespace": "traefik-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "https://traefik.github.io/charts",
+  "targetRevision": "41.0.1",
+  "values": {
+    "accessLog": {
+      "enabled": true
+    },
+    "api": {
+      "dashboard": false
+    },
+    "deployment": {
+      "enabled": true,
+      "kind": "DaemonSet"
+    },
+    "gateway": {
+      "enabled": false
+    },
+    "gatewayClass": {
+      "enabled": true,
+      "name": "traefik"
+    },
+    "global": {
+      "checkNewVersion": false
+    },
+    "hostNetwork": true,
+    "ingressClass": {
+      "enabled": true
+    },
+    "metrics": {
+      "prometheus": {
+        "serviceMonitor": {
+          "enabled": true
+        }
+      }
+    },
+    "podSecurityContext": {
+      "runAsGroup": 0,
+      "runAsNonRoot": false,
+      "runAsUser": 0
+    },
+    "ports": {
+      "kaas-api-tls": {
+        "expose": {
+          "default": true
+        },
+        "exposedPort": 7444,
+        "http": {
+          "tls": {
+            "enabled": true
+          }
+        },
+        "port": 7444,
+        "protocol": "TCP"
+      },
+      "kaas-https": {
+        "expose": {
+          "default": true
+        },
+        "exposedPort": 7443,
+        "http": {
+          "tls": {
+            "enabled": true
+          }
+        },
+        "port": 7443,
+        "protocol": "TCP"
+      },
+      "kaas-konnectivity": {
+        "expose": {
+          "default": true
+        },
+        "exposedPort": 7442,
+        "http": {
+          "tls": {
+            "enabled": true
+          }
+        },
+        "port": 7442,
+        "protocol": "TCP"
+      },
+      "metrics": {
+        "exposedPort": 9101,
+        "port": 9101
+      },
+      "web": {
+        "port": 80
+      },
+      "websecure": {
+        "port": 443
+      }
+    },
+    "providers": {
+      "kubernetesGateway": {
+        "enabled": true
+      },
+      "kubernetesIngressNGINX": {
+        "enabled": true,
+        "watchIngressWithoutClass": true
+      }
+    },
+    "securityContext": {
+      "capabilities": {
+        "add": [
+          "NET_BIND_SERVICE"
+        ],
+        "drop": [
+          "ALL"
+        ]
+      }
+    },
+    "service": {
+      "type": "ClusterIP"
+    },
+    "updateStrategy": {
+      "rollingUpdate": {
+        "maxSurge": 0,
+        "maxUnavailable": 1
+      },
+      "type": "RollingUpdate"
+    }
+  },
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>Traefik: primary Ingress and Gateway API controller.</td>
+		</tr>
+		<tr>
+			<td>apps.tuned</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "tuned",
+    "releaseName": "tuned"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "tuned-system",
+  "nsLabels": {
+    "pod-security.kubernetes.io/enforce": "privileged"
+  },
+  "repoURL": "oci://ghcr.io/super-phenix/charts/tuned",
+  "targetRevision": "0.1.0",
+  "wave": "0"
+}
+</pre>
+</td>
+			<td>TuneD: node-level performance-tuning daemon (Superphenix-specific profiles). Disabled by default.</td>
+		</tr>
+		<tr>
+			<td>apps.velero</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "velero",
+    "releaseName": "velero"
   },
   "modes": [
     "Hyperconverged",
@@ -5365,6 +5213,80 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "repoURL": "https://vmware-tanzu.github.io/helm-charts",
   "targetRevision": "12.0.0",
+  "values": {
+    "configuration": {
+      "backupStorageLocation": [],
+      "defaultItemOperationTimeout": "8h",
+      "features": "EnableCSI",
+      "namespace": "velero-system",
+      "restoreResourcePriorities": "vpc.kubeovn.io,subnet.kubeovn.io,vpc-nat-gateway.kubeovn.io,iptables-eip.kubeovn.io,iptables-fip-rule.kubeovn.io,iptables-snat-rule.kubeovn.io,iptables-dnat-rule.kubeovn.io,switch-lb-rule.kubeovn.io,networkpolicy.networking.k8s.io,network-attachment-definition.k8s.cni.cncf.io,controllerrevision.apps,datauploads.velero.io,persistentvolume,persistentvolumeclaim,datavolume.cdi.kubevirt.io,secret,virtualmachine.kubevirt.io,cluster.cluster.x-k8s.io,kubevirtcluster.infrastructure.cluster.x-k8s.io,configmap,issuer.cert-manager.io,certificate.cert-manager.io,serviceaccount,role.rbac.authorization.k8s.io,rolebinding.rbac.authorization.k8s.io,clusterrole.rbac.authorization.k8s.io,clusterrolebinding.rbac.authorization.k8s.io,etcdmember.etcd-operator.cozystack.io,etcdcluster.etcd-operator.cozystack.io,etcdcluster.etcd.aenix.io,datastore.kamaji.clastix.io,gateway.gateway.networking.k8s.io,tlsroute.gateway.networking.k8s.io,deployment.apps,kamajicontrolplane.controlplane.cluster.x-k8s.io,kubeadmconfigtemplate.bootstrap.cluster.x-k8s.io,kubevirtmachinetemplate.infrastructure.cluster.x-k8s.io,kubeadmconfig.bootstrap.cluster.x-k8s.io,kubevirtmachine.infrastructure.cluster.x-k8s.io,machine.cluster.x-k8s.io,machineset.cluster.x-k8s.io,machinedeployment.cluster.x-k8s.io,mutatingadmissionpolicy.admissionregistration.k8s.io,mutatingadmissionpolicybinding.admissionregistration.k8s.io"
+    },
+    "credentials": {
+      "secretContents": {
+        "cloud": ""
+      }
+    },
+    "deployNodeAgent": true,
+    "extraObjects": [
+      {
+        "apiVersion": "v1",
+        "data": {
+          "node-agent-config.json": "{\n    \"loadConcurrency\": {\n        \"globalConfig\": 40\n    }\n}\n"
+        },
+        "kind": "ConfigMap",
+        "metadata": {
+          "name": "node-agent-config",
+          "namespace": "velero-system"
+        }
+      }
+    ],
+    "initContainers": [
+      {
+        "image": "velero/velero-plugin-for-aws:v1.12.1",
+        "imagePullPolicy": "IfNotPresent",
+        "name": "velero-plugin-for-aws",
+        "volumeMounts": [
+          {
+            "mountPath": "/target",
+            "name": "plugins"
+          }
+        ]
+      },
+      {
+        "image": "quay.io/kubevirt/kubevirt-velero-plugin:v0.8.0",
+        "imagePullPolicy": "IfNotPresent",
+        "name": "velero-plugin-for-kubevirt",
+        "volumeMounts": [
+          {
+            "mountPath": "/target",
+            "name": "plugins"
+          }
+        ]
+      },
+      {
+        "image": "ghcr.io/super-phenix/superphenix-velero-plugin:v0.1.0",
+        "imagePullPolicy": "IfNotPresent",
+        "name": "velero-plugin-for-superphenix",
+        "volumeMounts": [
+          {
+            "mountPath": "/target",
+            "name": "plugins"
+          }
+        ]
+      }
+    ],
+    "metrics": {
+      "serviceMonitor": {
+        "enabled": true
+      }
+    },
+    "nodeAgent": {
+      "extraArgs": [
+        "--node-agent-configmap=node-agent-config"
+      ]
+    },
+    "snapshotsEnabled": false
+  },
   "wave": "0"
 }
 </pre>
@@ -5386,10 +5308,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "enabled": true,
   "helm": {
     "chart": "volume-replicator",
-    "releaseName": "volume-replicator",
-    "values": {
-      "exclusionRegex": "^prime-.*$|^tmp-.*$"
-    }
+    "releaseName": "volume-replicator"
   },
   "modes": [
     "Hyperconverged",
@@ -5397,7 +5316,10 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "volume-replicator",
   "repoURL": "ghcr.io/super-phenix/helm-charts",
-  "targetRevision": "0.5.1"
+  "targetRevision": "0.5.1",
+  "values": {
+    "exclusionRegex": "^prime-.*$|^tmp-.*$"
+  }
 }
 </pre>
 </td>
