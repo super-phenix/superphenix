@@ -79,12 +79,29 @@ data:
               hs.status = "Healthy"
               return hs
 
+      cmp:
+        create: true
+        plugins:
+          uuidv5:
+            init:
+              command:
+                - bash
+                - "-c"
+                - set -e && set -o pipefail && /clone.sh $ARGOCD_ENV_REPO
+            generate:
+              command:
+                - bash
+                - "-c"
+                - set -e && set -o pipefail && helm template $ARGOCD_ENV_RELEASE --include-crds -n $ARGOCD_APP_NAMESPACE ${ARGOCD_ENV_HELM_PARAMS} ${ARGOCD_ENV_HELM_VALUEFILES} -f <(echo "$ARGOCD_ENV_HELM_VALUES") . | /parser.sh
+
       # Parameters injected to ArgoCD
       params:
         # The default behavior of the ApplicationSet controller is unsatisfactory when it comes to globbing, patch it
         # https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Git-File-Globbing/
         applicationsetcontroller.enable.new.git.file.globbing: "true"
         server.insecure: true
+        # Authorize applications in any SPX project namespace
+        application.namespace: "spx-*"
 
       # Override ArgoCD style to differentiate this ArgoCD from others
       styles: |
@@ -189,6 +206,32 @@ data:
           # We simply skip the dry-run in that case
           annotations:
             argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+      extraContainers:
+        - name: cmp-uuidv5
+          image: ghcr.io/super-phenix/uuidv5:latest
+          imagePullPolicy: Always
+          args:
+            - "/var/run/argocd/argocd-cmp-server"
+            - "--loglevel=debug"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+          volumeMounts:
+            - mountPath: /var/run/argocd
+              name: var-files
+            - mountPath: /home/argocd/cmp-server/plugins
+              name: plugins
+            - mountPath: /home/argocd/cmp-server/config/plugin.yaml
+              subPath: uuidv5.yaml
+              name: argocd-cmp-cm
+            - mountPath: /tmp
+              name: cmp-tmp
+      volumes:
+        - name: argocd-cmp-cm
+          configMap:
+            name: argocd-cmp-cm
+        - name: cmp-tmp
+          emptyDir: {}
 
     redis:
       {{- if .Values.installOnClusterWithoutCNI }}

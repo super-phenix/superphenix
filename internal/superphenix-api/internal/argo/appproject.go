@@ -45,8 +45,8 @@ func (c *Client) ensureAppProject(ctx context.Context, orgaId, projectId string)
 			Description:              fmt.Sprintf("Project to deploy Superphénix resources in project spx-%s", projectId),
 			//  Only permit applications to deploy to Superphenix clusters in their project namespace
 			Destinations: []v1alpha1.ApplicationDestination{
-				{Name: "spx-*", Namespace: namespace},
-				{Name: "spx-*", Namespace: "velero-system"},
+				{Name: "*", Namespace: namespace},
+				{Name: "*", Namespace: "velero-system"},
 			},
 		},
 	}

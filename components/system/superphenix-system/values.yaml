@@ -1706,6 +1706,8 @@ apps:
                 - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
           azs:
+            # This is the default local AZ for hyperconverged deployments
+            # It can be disabled by setting ".local: null"
             local:
               name: "Local AZ"
               controllerUrl: 'http://superphenix-controller.{{ (index $.Values.apps "superphenix-controller").namespace }}.svc.cluster.local:8080'
@@ -1715,6 +1717,14 @@ apps:
           userSettings:
             userIsActiveOnCreate: true
             enableProjectDefaultResources: true
+
+          productsConfig:
+            argoApp:
+              kubernetes:
+                azDomains:
+                  local:
+                    internal: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+                    external: '%s.{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
 
   # -- Ory Kratos: identity, session and self-service flows backing the Superphenix console.
   kratos:
