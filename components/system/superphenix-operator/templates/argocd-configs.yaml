@@ -209,7 +209,7 @@ data:
       extraContainers:
         - name: cmp-uuidv5
           image: ghcr.io/super-phenix/uuidv5:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           args:
             - "/var/run/argocd/argocd-cmp-server"
             - "--loglevel=debug"

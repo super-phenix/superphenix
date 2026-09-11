@@ -1105,7 +1105,6 @@ apps:
                 # Use Talos EPHEMERAL volume, wiping this partition will lose the data
                 - /var/local-path-provisioner
 
-
   # -- volume-replicator: Kubernetes controller that automates RBD mirroring between Ceph clusters (disaster-recovery).
   volume-replicator:
     enabled: true

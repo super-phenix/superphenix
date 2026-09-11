@@ -197,7 +197,7 @@ spec:
               mountPath: "/var/run/tenant-kubeconfig"
       containers:
         - name: csi-driver
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           image: quay.io/kubevirt/kubevirt-csi-driver:{{ $csiVersions.csiDriverVersion }}
           args:
             - "--endpoint=$(CSI_ENDPOINT)"
