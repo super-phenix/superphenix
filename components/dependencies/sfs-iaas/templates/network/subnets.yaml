@@ -49,8 +49,9 @@ spec:
 
   # Router Advertisement enabled, we bypass Kubevirt and send replies to requests directly
   enableIPv6RA: true
-  # MTU 1500
-  mtu: {{ $subnet.mtu | default 1500 }}
+  {{- with $subnet.mtu }}
+  mtu: {{ . }}
+  {{- end }}
   # Subnets must be isolated, do not use the IP of the hypervisors when trying to go out
   natOutgoing: false
   {{- with $subnet.private}}
