@@ -1076,6 +1076,37 @@ apps:
                     fs: "ext4"
                     default: true
 
+  # -- Local Path Provisioner provides local storage using host paths.
+  # This is useful for VM/containers that need a lot of IOPS and/or throughput.
+  # The drawback is that those VM/containers can't be scheduled elsewhere than the node on which they landed.
+  # If that node is wiped, the data is also lost.
+  local-path-provisioner:
+    enabled: false
+    wave: "0"
+    modes: [Hyperconverged, DecoupledWorkload]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions: {}
+    namespace: "local-storage-system"
+    repoURL: "https://rancher.github.io/local-path-provisioner"
+    targetRevision: "0.0.31"
+    helm:
+      chart: "local-path-provisioner"
+      releaseName: "local-path-provisioner"
+      values:
+        storageClass:
+          name: local-path
+          defaultClass: false
+          nodePathmap:
+            - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+              paths:
+                # Use Talos EPHEMERAL volume, wiping this partition will lose the data
+                - /var/local-path-provisioner
+
+
   # -- volume-replicator: Kubernetes controller that automates RBD mirroring between Ceph clusters (disaster-recovery).
   volume-replicator:
     enabled: true
@@ -1324,9 +1355,10 @@ apps:
     helm:
       chart: "kaas-datastore"
       releaseName: "kaas-datastore"
-      # No datastores are deployed by default; they must be declared in the
-      # config.yaml of each workload cluster.
-      values: {}
+      values:
+        dataStores:
+          default:
+            version: 3.6.7
 
   # -- Kamaji: hosted Kubernetes control-plane provider used by the KaaS stack.
   kamaji:
@@ -1349,8 +1381,7 @@ apps:
         image:
           tag: "26.7.3-edge" # https://github.com/clastix/kamaji/releases
         replicaCount: 3
-        # Disable the default datastore as the actual datastore is overridden per cluster via config.yaml.
-        defaultDatastoreName: ""
+        defaultDatastoreName: "default"
         extraArgs:
           # Rotate tenant-cluster certificates 14 days before expiry (336h == 14d).
           - --certificate-expiration-deadline=336h

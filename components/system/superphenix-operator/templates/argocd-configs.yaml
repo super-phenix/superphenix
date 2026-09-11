@@ -101,7 +101,7 @@ data:
         applicationsetcontroller.enable.new.git.file.globbing: "true"
         server.insecure: true
         # Authorize applications in any SPX project namespace
-        application.namespace: "spx-*"
+        application.namespaces: "spx-*"
 
       # Override ArgoCD style to differentiate this ArgoCD from others
       styles: |
