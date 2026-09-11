@@ -7888,6 +7888,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgaId}/api/spx-ctrl/{projectId}/summary": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectRead"
+                        ]
+                    }
+                ],
+                "description": "Report the project resources of each product type the caller is allowed to read:\ncounts, spread over the AZs, product creation quota usage and last created ones.\nGitOps-managed resources are not reported.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Superphenix Controller"
+                ],
+                "summary": "Retrieve a project resource overview",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource counts per product type",
+                        "schema": {
+                            "$ref": "#/definitions/summary.ProjectSummaryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgaId}/api/spx-ctrl/{projectId}/vpc": {
             "get": {
                 "security": [
@@ -10241,6 +10295,68 @@ const docTemplate = `{
                             "type": "boolean"
                         }
                     }
+                }
+            }
+        },
+        "summary.ProjectQuota": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "used": {
+                    "type": "integer"
+                }
+            }
+        },
+        "summary.ProjectSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "counts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "countsByAz": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                },
+                "quota": {
+                    "$ref": "#/definitions/summary.ProjectQuota"
+                },
+                "recent": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/summary.RecentProduct"
+                    }
+                }
+            }
+        },
+        "summary.RecentProduct": {
+            "type": "object",
+            "properties": {
+                "codeAz": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "eid": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                },
+                "productType": {
+                    "type": "string"
                 }
             }
         },

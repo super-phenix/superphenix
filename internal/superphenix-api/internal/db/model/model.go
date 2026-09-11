@@ -3,6 +3,8 @@ package model
 import (
 	"time"
 
+	pwPermission "github.com/super-phenix/superphenix/pkg/permify-wrapper/pkg/base/v1/permission"
+
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
@@ -23,6 +25,23 @@ const (
 	ProductTypeBaaS          = "baas"
 	ProductTypeBucket        = "bucket"
 )
+
+// ProductTypeReadPermission maps each product type to the permission that gates reading it.
+var ProductTypeReadPermission = map[string]string{
+	ProductTypeInstance:      pwPermission.ProjectInstanceRead,
+	ProductTypeVPC:           pwPermission.ProjectVPCRead,
+	ProductTypeSubnet:        pwPermission.ProjectSubnetRead,
+	ProductTypeEIP:           pwPermission.ProjectEipRead,
+	ProductTypeDisk:          pwPermission.ProjectDiskRead,
+	ProductTypeSnapshot:      pwPermission.ProjectSnapshotRead,
+	ProductTypeSSH:           pwPermission.ProjectSSHRead,
+	ProductTypeVmSnapshot:    pwPermission.ProjectSnapshotRead,
+	ProductTypeLoadBalancer:  pwPermission.ProjectLoadBalancerRead,
+	ProductTypeSecurityGroup: pwPermission.ProjectSecurityGroupRead,
+	ProductTypeKaaS:          pwPermission.ProjectKaaSRead,
+	ProductTypeBaaS:          pwPermission.ProjectBaaSRead,
+	ProductTypeBucket:        pwPermission.ProjectBucketRead,
+}
 
 type Model struct {
 	ID        uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid();not null"`

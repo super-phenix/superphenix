@@ -20,6 +20,7 @@ import (
 	snapshotctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/snapshot"
 	sshctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/ssh"
 	subnetctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/subnet"
+	summaryctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/summary"
 	vmsnapshotctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/vmsnapshot"
 	vpcctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/vpc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/health"
@@ -68,6 +69,7 @@ type Providers struct {
 	SSH           RegisterFunc
 	KaaS          RegisterFunc
 	Metadata      RegisterFunc
+	Summary       RegisterFunc
 	Argo          RegisterFunc
 
 	// admin
@@ -105,6 +107,7 @@ func DefaultProviders() Providers {
 		SSH:           sshctrl.ProvideService,
 		KaaS:          kaasctrl.ProvideService,
 		Metadata:      metadatactrl.ProvideService,
+		Summary:       summaryctrl.ProvideService,
 		Argo:          argoApp.ProvideService,
 
 		AdminPermission: adminPermission.ProvideService,
@@ -121,7 +124,7 @@ func (p Providers) registerPublic(cfg *config.Config, reg *router.Registry) {
 		p.Organization, p.Session, p.APIToken, p.AZ, p.User, p.Group, p.IAM,
 		p.Permission, p.Project, p.ProjectMgr,
 		p.Instance, p.VmSnapshot, p.Disk, p.Bucket, p.Snapshot, p.BaaS, p.VPC, p.Subnet,
-		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.Metadata, p.Argo,
+		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.Metadata, p.Summary, p.Argo,
 	} {
 		if register == nil {
 			log.Debug().Msg("server: skipping nil public provider")

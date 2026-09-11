@@ -29,6 +29,9 @@ const (
 	SpxFindAllResourcesErrorCode = http.StatusInternalServerError
 	SpxFindAllResourcesError     = "Failed to find resources."
 
+	SpxListPermissionsErrorCode = http.StatusInternalServerError
+	SpxListPermissionsError     = "Failed to list permissions."
+
 	SpxResourceNotFound      = "Failed to get resource."
 	SpxAZNotFound            = "Failed to get az."
 	SpxOrgNotFound           = "Failed to get organization."

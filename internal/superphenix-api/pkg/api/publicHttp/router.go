@@ -18,6 +18,7 @@ import (
 	snapshotctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/snapshot"
 	sshctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/ssh"
 	subnetctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/subnet"
+	summaryctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/summary"
 	vmsnapshotctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/vmsnapshot"
 	vpcctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/vpc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/group"
@@ -95,6 +96,7 @@ func wirePublicRoutes() chi.Router {
 	sshctrl.ProvideService(&config.Global, reg)
 	kaasctrl.ProvideService(&config.Global, reg)
 	metadatactrl.ProvideService(&config.Global, reg)
+	summaryctrl.ProvideService(&config.Global, reg)
 	argoApp.ProvideService(&config.Global, reg)
 
 	return BuildPublicRouter(reg)
