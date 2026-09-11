@@ -43,12 +43,15 @@ func TestConfigCaseSensitiveKeys(t *testing.T) {
 		raw             string
 		wantAnnotations map[string]string
 		wantLabels      map[string]string
+		wantMtu         int
+		wantMtuAuto     bool
 	}{
 		{
 			name:            "defaults preserve key case",
 			raw:             "azName: az1\n",
 			wantAnnotations: defaultAnnotations,
 			wantLabels:      defaultLabels,
+			wantMtuAuto:     true,
 		},
 		{
 			name: "user annotations preserve key case and replace the defaults",
@@ -61,6 +64,7 @@ productsConfig:
 `,
 			wantAnnotations: map[string]string{"my.custom/Annotation": "yes"},
 			wantLabels:      defaultLabels,
+			wantMtuAuto:     true,
 		},
 		{
 			name: "user labels preserve key case and replace the defaults",
@@ -71,6 +75,20 @@ disableEditionForResourcesByLabels:
 `,
 			wantAnnotations: defaultAnnotations,
 			wantLabels:      map[string]string{"superphenix.net/managedBy": "operator"},
+			wantMtuAuto:     true,
+		},
+		{
+			name: "user mtu override",
+			raw: `
+productsConfig:
+  subnets:
+    mtu: 1400
+    mtuAutodetection: false
+`,
+			wantAnnotations: defaultAnnotations,
+			wantLabels:      defaultLabels,
+			wantMtu:         1400,
+			wantMtuAuto:     false,
 		},
 	}
 
@@ -78,8 +96,19 @@ disableEditionForResourcesByLabels:
 		t.Run(tt.name, func(t *testing.T) {
 			loadTestDefaults(t)
 
+			if tt.wantMtu == 0 {
+				tt.wantMtu = 1500
+			}
+
 			if err := loadTestUserConfig(t, tt.raw); err != nil {
 				t.Fatalf("Unmarshal() returned an unexpected error: %v", err)
+			}
+
+			if got := Global.ProductsConfig.Subnets.Mtu; got != tt.wantMtu {
+				t.Errorf("mtu = %d, want %d", got, tt.wantMtu)
+			}
+			if got := Global.ProductsConfig.Subnets.MtuAutodetection; got != tt.wantMtuAuto {
+				t.Errorf("mtuAutodetection = %v, want %v", got, tt.wantMtuAuto)
 			}
 
 			if got := Global.ProductsConfig.Datavolume.DefaultAnnotations.Map(); !maps.Equal(got, tt.wantAnnotations) {

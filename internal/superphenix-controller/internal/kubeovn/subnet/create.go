@@ -76,12 +76,14 @@ func (s *CreateSubnetInfo) CreateSubnet(ctx context.Context) error {
 			DHCPv4Options:        fmt.Sprintf(dhcpOptionFormat, dnsV4Server),
 			DHCPv6Options:        fmt.Sprintf(dhcpOptionFormat, dnsV6Server),
 			EnableIPv6RA:         true,
-			Mtu:                  1500,
 			EnableMulticastSnoop: false,
 			NatOutgoing:          false,
 			Private:              s.Network.Private,
 			ExcludeIps:           excludeIps,
 		},
+	}
+	if !k8s.Global.ProductsConfig.Subnets.MtuAutodetection {
+		subnet.Spec.Mtu = uint32(k8s.Global.ProductsConfig.Subnets.Mtu)
 	}
 
 	if _, err := k8s.KubeOvnClient.KubeovnV1().Subnets().Create(ctx, &subnet, metav1.CreateOptions{}); err != nil {

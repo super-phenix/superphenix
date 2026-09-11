@@ -124,6 +124,11 @@ type Config struct {
 			MaxBucketSize       string            `yaml:"maxBucketSize"`
 			MaxBucketObjects    uint64            `yaml:"maxBucketObjects"`
 		} `yaml:"objectStorage"`
+
+		Subnets struct {
+			Mtu              int  `yaml:"mtu"`
+			MtuAutodetection bool `yaml:"mtuAutodetection"`
+		} `yaml:"subnets"`
 	} `yaml:"productsConfig"`
 
 	DisableEditionForResourcesByLabels KeyValueList `yaml:"disableEditionForResourcesByLabels"`
@@ -199,6 +204,9 @@ productsConfig:
     storageClassMapping: {}
     maxBucketSize: "1Ti"
     maxBucketObjects: 1000000
+  subnets:
+    mtu: 1500
+    mtuAutodetection: true
 disableEditionForResourcesByLabels:
   - key: "app.kubernetes.io/name"
     value: "sfs-kaas"
