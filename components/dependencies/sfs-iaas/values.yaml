@@ -111,6 +111,9 @@ subnets: {}
   #    # -- DNS propagated through DHCPv6
   #    dnsv6: 2606:4700:4700::1111
   #
+  #  # -- MTU, defaults to 1500 if nothing specified
+  #  mtu: 1500
+  #
   #  # -- IPs that should be excluded from the IPAM, gateways are automatically added to this list
   #  # @section -- Default Subnet
   #  excludeIps: []
