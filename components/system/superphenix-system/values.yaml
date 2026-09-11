@@ -245,46 +245,43 @@ apps:
               # Node interfaces are ideally configured with MTU 9000; we cap the overlay MTU at 1380 to
               # leave room for the Geneve header and avoid PMTUD-related failures.
               mtu: 1380
-              acls:
+              #acls:
               # Allow traffic to the cluster DNS.
-              - action: allow-related
-                direction: from-lport
-                match: ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a
-                priority: 1001
-
+              #- action: allow-related
+              #  direction: from-lport
+              #  match: ip4.dst == 10.16.0.10 || ip6.dst == fd00:100:ffff::a
+              #  priority: 1001
               # Allow traffic originating from the subnet gateways.
-              - action: allow-related
-                direction: from-lport
-                match: ip4.src == 10.32.0.1 || ip6.src == fd00:110::1
-                priority: 1001
-
+              #- action: allow-related
+              #  direction: from-lport
+              #  match: ip4.src == 10.32.0.1 || ip6.src == fd00:110::1
+              #  priority: 1001
               # Block RFC1918 IPv4 ranges and other non-public IPv4 space.
-              - action: drop
-                direction: from-lport
-                match: ip4.dst == 10.0.0.0/8 && ip4.dst != 10.32.0.1 && ip4.src == 10.0.0.0/8
-                priority: 1000
-              - action: drop
-                direction: from-lport
-                match: ip4.dst == 172.16.0.0/12 && ip
-                priority: 1000
-              - action: drop
-                direction: from-lport
-                match: ip4.dst == 192.168.0.0/16 && ip
-                priority: 1000
-              - action: drop
-                direction: from-lport
-                match: ip4.dst == 100.64.0.0/10 && ip
-                priority: 1000
-              - action: drop
-                direction: from-lport
-                match: ip4.dst == 169.254.0.0/16 && ip
-                priority: 1000
-
+              #- action: drop
+              #  direction: from-lport
+              #  match: ip4.dst == 10.0.0.0/8 && ip4.dst != 10.32.0.1 && ip4.src == 10.0.0.0/8
+              #  priority: 1000
+              #- action: drop
+              #  direction: from-lport
+              #  match: ip4.dst == 172.16.0.0/12 && ip
+              #  priority: 1000
+              #- action: drop
+              #  direction: from-lport
+              #  match: ip4.dst == 192.168.0.0/16 && ip
+              #  priority: 1000
+              #- action: drop
+              #  direction: from-lport
+              #  match: ip4.dst == 100.64.0.0/10 && ip
+              #  priority: 1000
+              #- action: drop
+              #  direction: from-lport
+              #  match: ip4.dst == 169.254.0.0/16 && ip
+              #  priority: 1000
               # Block IPv6 ULA (fc00::/7), except the subnet gateway.
-              - action: drop
-                direction: from-lport
-                match: ip6.dst == fc00::/7 && ip6.dst != fd00:110::1 && ip6.src == fd00:110::/64
-                priority: 1000
+              #- action: drop
+              #  direction: from-lport
+              #  match: ip6.dst == fc00::/7 && ip6.dst != fd00:110::1 && ip6.src == fd00:110::/64
+              #  priority: 1000
 
               # Prevent pods in the subnet from talking to each other.
               allowEWTraffic: false

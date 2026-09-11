@@ -10,7 +10,7 @@ data:
     # Global ArgoCD configuration
     global:
       # Domain used for ingresses, certificates, SSO, notifications, etc.
-      domain: superphenix.net
+      domain: argocd.example.com
       {{- if .Values.installOnClusterWithoutCNI }}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
