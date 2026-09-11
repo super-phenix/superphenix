@@ -1091,8 +1091,10 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     namespace: "local-storage-system"
-    repoURL: "https://rancher.github.io/local-path-provisioner"
-    targetRevision: "0.0.31"
+    nsLabels:
+      pod-security.kubernetes.io/enforce: privileged
+    repoURL: "oci://ghcr.io/rancher/local-path-provisioner/charts/local-path-provisioner"
+    targetRevision: "0.0.37"
     helm:
       chart: "local-path-provisioner"
       releaseName: "local-path-provisioner"
@@ -1643,7 +1645,7 @@ apps:
     enabled: true
     modes: [Management]
     repoURL: "oci://ghcr.io/super-phenix/charts/superphenix-console"
-    targetRevision: "0.4.4"
+    targetRevision: "0.5.0"
     automation:
       enabled: true
       prune: true
@@ -1807,6 +1809,8 @@ apps:
                   allowed_origins:
                     - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
                   allow_credentials: true
+                  # Do we still need this or is this from back when the domains were different between
+                  # the console and Kratos?
                   allowed_methods:
                     - POST
                     - GET
