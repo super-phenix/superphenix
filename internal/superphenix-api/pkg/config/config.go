@@ -308,7 +308,8 @@ productsConfig:
     backup:
       repo:
         repoURL: "oci://ghcr.io/super-phenix/charts/sfs-baas"
-        targetRevision: "0.6.3"
+	    chart: "sfs-baas"
+        targetRevision: "0.2.1"
       schedule:
         minHour: 20
         maxHour: 23
