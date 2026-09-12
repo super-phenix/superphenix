@@ -477,6 +477,13 @@ apps:
               - http01:
                   ingress:
                     class: traefik
+        - |
+          apiVersion: cert-manager.io/v1
+          kind: ClusterIssuer
+          metadata:
+            name: selfsigned
+          spec:
+            selfSigned: {}
 
   # -- kube-prometheus-stack: metrics collection, storage and Grafana dashboards.
   prometheus-stack:
@@ -1631,6 +1638,27 @@ apps:
           watchIngressWithoutClass: true
         kubernetesGateway:
           enabled: true
+
+      # Default TLS store that contains the 1-week long certificate.
+      tlsStore:
+        default:
+          defaultCertificate:
+            secretName: superphenix-self-signed
+
+      extraObjects:
+      - |
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: superphenix-self-signed
+        spec:
+          commonName: superphenix-self-signed
+          secretName: superphenix-self-signed
+          duration: 168h
+          renewBefore: 24h
+          issuerRef:
+            name: selfsigned
+            kind: ClusterIssuer
 
   ###########################################################################
   #                            MANAGEMENT COMPONENTS                        #
