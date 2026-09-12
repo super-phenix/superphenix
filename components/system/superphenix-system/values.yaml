@@ -1684,21 +1684,21 @@ apps:
 
       config:
         # TODO: Why do we not specify the protocol here but we do for authURL?
-        apiUrl: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/api'
-        authUrl: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/accounts'
+        apiUrl: '{{ (index $.Values.apps "superphenix-console").values.domain }}/api'
+        authUrl: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/accounts'
 
       ingress:
         enabled: true
         # annotations:
         #  cert-manager.io/cluster-issuer: letsencrypt
         hosts:
-          - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+          - host: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
             paths:
               - path: /
         tls:
           - secretName: superphenix-console-tls
             hosts:
-              - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+              - '{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
   # -- Superphenix API: backend serving the console and CLI, persists to PostgreSQL and delegates auth to Permify/Kratos.
   superphenix-api:
@@ -1722,13 +1722,13 @@ apps:
           nginx.ingress.kubernetes.io/rewrite-target: "/$2"
           #  cert-manager.io/cluster-issuer: letsencrypt
         hosts:
-          - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+          - host: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
             paths:
               - path: "/api(/|$)(.*)"
         tls:
           - secretName: superphenix-api-tls
             hosts:
-              - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+              - '{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
       config:
         # -- Database storing users, organizations, projects and other API state.
@@ -1737,10 +1737,10 @@ apps:
           port: 5432
           database: superphenix
           username: superphenix
-          password: "{{ $.Values.apps.postgres.helm.values.auth.password }}"
+          password: "{{ $.Values.apps.postgres.values.auth.password }}"
 
         swagger:
-          baseURL: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/api'
+          baseURL: '{{ (index $.Values.apps "superphenix-console").values.domain }}/api'
 
         argoCdUrl: "https://argocd.example.org"
         argoController:
@@ -1754,12 +1754,12 @@ apps:
           kratosEndpoint: "http://kratos-public.{{ $.Release.Namespace }}.svc.cluster.local"
 
         session:
-          defaultReturnUrl: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/callback'
+          defaultReturnUrl: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/callback'
           cookies:
-            domain: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+            domain: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
           cors:
             allowedOrigins:
-              - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+              - 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
         azs:
           # This is the default local AZ for hyperconverged deployments
@@ -1779,8 +1779,8 @@ apps:
             kubernetes:
               azDomains:
                 local:
-                  internal: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
-                  external: '%s.{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+                  internal: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
+                  external: '%s.{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
   # -- Ory Kratos: identity, session and self-service flows backing the Superphenix console.
   kratos:
@@ -1805,21 +1805,18 @@ apps:
           argocd.argoproj.io/hook: PreSync
           argocd.argoproj.io/sync-wave: "-10"
 
-      image:
-        tag: v1.1.0
-
       kratos:
         config:
           # -- Kratos DSN stores users, sessions, recovery codes and verification data.
-          dsn: postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
+          dsn: postgres://superphenix:{{ $.Values.apps.postgres.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable
 
           secrets:
             default:
-              - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "default" | sha256sum | trunc 32 }}'
+              - '{{ printf "%s-%s" (index $.Values.apps "kratos").values.globalSecret "default" | sha256sum | trunc 32 }}'
             cookie:
-              - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cookie" | sha256sum | trunc 32 }}'
+              - '{{ printf "%s-%s" (index $.Values.apps "kratos").values.globalSecret "cookie" | sha256sum | trunc 32 }}'
             cipher:
-              - '{{ printf "%s-%s" (index $.Values.apps "kratos").helm.values.globalSecret "cipher" | sha256sum | trunc 32 }}'
+              - '{{ printf "%s-%s" (index $.Values.apps "kratos").values.globalSecret "cipher" | sha256sum | trunc 32 }}'
 
           # -- Kratos public/admin listener configuration.
           serve:
@@ -1827,11 +1824,11 @@ apps:
               # -- URL on which Kratos will listen, defaults to the same as the console
               # The ingress adds a path prefix, that is not passed to Kratos. It is only used
               # to avoid routing conflicts between the different elements of the console.
-              base_url: https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/accounts
+              base_url: https://{{ (index $.Values.apps "superphenix-console").values.domain }}/accounts
               cors:
                 enabled: true
                 allowed_origins:
-                  - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+                  - 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}'
                 allow_credentials: true
                 # Do we still need this or is this from back when the domains were different between
                 # the console and Kratos?
@@ -1879,28 +1876,28 @@ apps:
                   lifespan: "15m"
 
             # -- Default post-flow redirect target.
-            default_browser_return_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/'
+            default_browser_return_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/'
 
             # -- Allowed post-flow redirect targets.
             allowed_return_urls:
-              - 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/'
+              - 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/'
 
             # -- Kratos self-service flow configuration (login, registration, recovery, ...).
             flows:
               recovery:
                 enabled: true
-                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/recovery'
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/auth/recovery'
                 after:
                   hooks:
                     - hook: revoke_active_sessions
               verification:
                 enabled: false
-                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/verification'
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/auth/verification'
                 use: code
                 lifespan: "1h"
                 notify_unknown_recipients: false
               registration:
-                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/registration'
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/auth/registration'
                 after:
                   password:
                     hooks:
@@ -1912,20 +1909,20 @@ apps:
                     hooks:
                       - hook: show_verification_ui
               login:
-                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/login'
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/auth/login'
                 # after:
                 #  hooks:
                 #    - hook: require_verified_address
               error:
-                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/error'
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/auth/error'
               settings:
-                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").helm.values.domain }}/auth/settings'
+                ui_url: 'https://{{ (index $.Values.apps "superphenix-console").values.domain }}/auth/settings'
                 # Force re-authentication before a password change if the session is older than 15 minutes.
                 privileged_session_max_age: 15m
 
           # -- Session cookie settings.
           cookies:
-            domain: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+            domain: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
             same_site: Strict
 
         # -- Run database migrations automatically on Kratos upgrades.
@@ -1989,14 +1986,14 @@ apps:
             nginx.ingress.kubernetes.io/rewrite-target: "/$2"
             #  cert-manager.io/cluster-issuer: letsencrypt
           hosts:
-            - host: '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+            - host: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
               paths:
                 - path: /accounts(/|$)(.*)
                   pathType: ImplementationSpecific
           tls:
             - secretName: kratos-public-tls
               hosts:
-                - '{{ (index $.Values.apps "superphenix-console").helm.values.domain }}'
+                - '{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
   # -- Permify: authorization service consulted by the Superphenix API to enforce permissions.
   permify:
@@ -2019,7 +2016,7 @@ apps:
         # -- Database connection used to store Permify tuples and schemas.
         database:
           engine: postgres
-          uri: 'postgres://superphenix:{{ (index $.Values.apps "postgres").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify'
+          uri: 'postgres://superphenix:{{ (index $.Values.apps "postgres").values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify'
           garbage_collection:
             enabled: false
 
