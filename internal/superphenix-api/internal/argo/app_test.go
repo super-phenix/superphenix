@@ -32,7 +32,7 @@ func newClient(t *testing.T, objects ...*v1alpha1.Application) *argo.Client {
 	}
 
 	return argo.NewClient(fake.ArgoprojV1alpha1(), k8sfake.NewClientset(), argo.Options{
-		AppProjectNamespace: "self-service-argocd",
+		AppProjectNamespace: "superphenix-system",
 	})
 }
 
@@ -60,7 +60,7 @@ func TestCreateAppSideEffects(t *testing.T) {
 		t.Errorf("Application was not created: %v", err)
 	}
 	// The AppProject name uses a literal "spx-" prefix, independent of spxPrefix.
-	if _, err := c.Apps().AppProjects("self-service-argocd").Get(context.Background(), "spx-"+testProjectId, metav1.GetOptions{}); err != nil {
+	if _, err := c.Apps().AppProjects("superphenix-system").Get(context.Background(), "spx-"+testProjectId, metav1.GetOptions{}); err != nil {
 		t.Errorf("AppProject was not created: %v", err)
 	}
 }

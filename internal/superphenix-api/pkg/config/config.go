@@ -277,7 +277,7 @@ permify:
   url: <permify-host>:<permify-port>
 argoController:
   kubeconfig: ""
-  appProjectNamespace: "self-service-argocd"
+  appProjectNamespace: "superphenix-system"
   garbageCollection:
     enabled: true
     interval: 15m

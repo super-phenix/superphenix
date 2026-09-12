@@ -29,7 +29,7 @@ func TestAppProjectCleanerClean(t *testing.T) {
 	t.Parallel()
 
 	labelMarkKey := "superphenix.net/markedForDeletion"
-	appProjectNamespace := "self-service-argocd"
+	appProjectNamespace := "superphenix-system"
 	pastTimestamp := time.Now().Add(-1 * time.Hour).Format(cleaner.TimestampFormat)
 	futureTimestamp := time.Now().Add(1 * time.Hour).Format(cleaner.TimestampFormat)
 
@@ -135,7 +135,7 @@ func TestAppProjectCleanerMark(t *testing.T) {
 	t.Parallel()
 
 	labelMarkKey := "superphenix.net/markedForDeletion"
-	appProjectNamespace := "self-service-argocd"
+	appProjectNamespace := "superphenix-system"
 	namespace := "test-project"
 	timestamp := time.Now().Add(48 * time.Hour).Format(cleaner.TimestampFormat)
 

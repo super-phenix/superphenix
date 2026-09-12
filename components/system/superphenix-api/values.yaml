@@ -72,7 +72,7 @@ serviceMonitor:
 #   config:
 #     argoController:
 #       kubeconfig: ""                       # empty = in-cluster
-#       appProjectNamespace: self-service-argocd
+#       appProjectNamespace: superphenix-system
 #       garbageCollection:
 #         enabled: true                      # only one replica sweeps (advisory lock)
 #         interval: 15m
