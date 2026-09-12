@@ -1,3 +1,4 @@
+{{- if $.Values.mapping }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -6,4 +7,4 @@ metadata:
   namespace: {{ $.Values.rookOperatorNamespace }}
 data:
   csi-mapping-config-json: '{{ $.Values.mapping }}'
- 
+{{- end }}
