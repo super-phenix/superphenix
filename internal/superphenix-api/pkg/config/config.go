@@ -307,8 +307,8 @@ productsConfig:
       azDomains: {}
     backup:
       repo:
-        repoURL: ""
-        targetRevision: ""
+        repoURL: "oci://ghcr.io/super-phenix/charts/sfs-baas"
+        targetRevision: "0.6.3"
       schedule:
         minHour: 20
         maxHour: 23
