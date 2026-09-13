@@ -950,6 +950,9 @@ apps:
               secretName: ceph-dashboard-tls
 
       cephClusterSpec:
+        cephVersion:
+          image: quay.io/ceph/ceph:v19.2.4
+
         cephConfig:
           global:
             # Always move images to trash before fully deleting them.
