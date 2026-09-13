@@ -179,7 +179,9 @@ apps:
         namePrefix: "nat-gateway"
 
       validatingWebhook:
-        enabled: true
+        # TODO: helm hooks to activate them AFTER the CNI is working?
+        # Cert-manager can't work before that
+        enabled: false
 
       apiNad:
         enabled: true
