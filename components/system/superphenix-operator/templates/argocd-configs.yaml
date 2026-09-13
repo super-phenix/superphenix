@@ -159,6 +159,10 @@ data:
     server:
       {{- if .Values.installOnClusterWithoutCNI }}
       hostNetwork: true
+      # We need to avoid conflicts with other resources listening on port 8080
+      # That's why we set it to 8888
+      containerPorts:
+        server: 8888
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
