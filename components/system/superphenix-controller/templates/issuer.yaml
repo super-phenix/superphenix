@@ -3,6 +3,8 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: {{ include "superphenix-controller.fullname" . }}-webhook-issuer
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
   labels:
     {{- include "superphenix-controller.labels" . | nindent 4 }}
 spec:
