@@ -1558,7 +1558,7 @@ apps:
       metrics:
         prometheus:
           serviceMonitor:
-            enabled: true
+            enabled: false
 
       # Grant NET_BIND_SERVICE so we can bind to ports < 1024 (80 and 443).
       securityContext:
