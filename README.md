@@ -77,7 +77,7 @@ If your goal is independence and total control over your infrastructure, Superph
 
 ## Get started
 
-- [Read the docs](https://docs.superphenix.net), starting with the [Introduction](https://docs.superphenix.net/introduction/)
+- [Read the docs](https://docs.superphenix.net)
 - [Explore the architecture](https://docs.superphenix.net/architecture/)
 - [Install your first cluster](https://docs.superphenix.net/installation/getting-started/)
 - Production deployments and enterprise support: [Rayshift](https://rayshift.net)
