@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/authentication/jwt"
@@ -180,6 +181,9 @@ func (h *Service) GenerateTokens(writer http.ResponseWriter, request *http.Reque
 		Secure:   h.cfg.Session.Cookies.Secure,
 		Value:    tokens[jwt.RefreshToken],
 	})
+	// The access token rides in the callback URL because the SPA needs a way
+	// to pick it up from the redirect target. Callers should treat this URL
+	// as sensitive: allowedOrigins gates which frontends may receive it.
 	http.Redirect(writer, request, fmt.Sprintf("%ssession=%s", urlReturnTo, tokens[jwt.AccessToken]), http.StatusFound)
 }
 
@@ -265,11 +269,17 @@ func parseReturnUrl(ctx context.Context, returnTo string) string {
 		return config.Global.Session.DefaultReturnUrl + "?"
 	}
 
-	// Validate origin against AllowedOrigins
+	// Validate origin against AllowedOrigins. Wildcard "*" is only honoured
+	// when the operator has explicitly set session.cors.allowUnsafeWildcard,
+	// which config validation only permits on non-production deployments.
 	allowed := false
 	origin := fmt.Sprintf("%s://%s", urlParse.Scheme, urlParse.Host)
 	for _, allowedOrigin := range config.Global.Session.Cors.AllowedOrigins {
-		if allowedOrigin == "*" || allowedOrigin == origin {
+		if allowedOrigin == "*" && config.Global.Session.Cors.AllowUnsafeWildcard {
+			allowed = true
+			break
+		}
+		if strings.EqualFold(allowedOrigin, origin) {
 			allowed = true
 			break
 		}

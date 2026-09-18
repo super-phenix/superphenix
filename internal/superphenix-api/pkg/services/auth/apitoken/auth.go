@@ -37,15 +37,14 @@ var ApiTokenAuth = authentication.AuthType{
 func detection(w http.ResponseWriter, r *http.Request) bool {
 	// Detect Authorization Header
 	authHeader := r.Header.Get(tokenHeader)
-	if authHeader != "" {
-		authHeaderParts := strings.Fields(authHeader)
-		// If the authorization header start with api token keywork
-		if strings.ToLower(authHeaderParts[0]) == strings.ToLower(tokenHeaderKeyword) {
-			return true
-		}
+	if authHeader == "" {
+		return false
 	}
-
-	return false
+	authHeaderParts := strings.Fields(authHeader)
+	if len(authHeaderParts) == 0 {
+		return false
+	}
+	return strings.EqualFold(authHeaderParts[0], tokenHeaderKeyword)
 }
 
 func validate(w http.ResponseWriter, r *http.Request) (*http.Request, error) {

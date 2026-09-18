@@ -16,7 +16,11 @@ var (
 	notFoundToken        = errors.New("token not found")
 )
 
-// JwtBearerAuth use Superphenix API JWT in Authorization Header or in Url query params
+// JwtBearerAuth accepts a Superphenix API JWT in the Authorization header or
+// in the "bearer" URL query parameter. URL transport is supported because
+// some clients (websockets, EventSource, prefetch redirects) cannot set
+// custom headers; be aware that tokens in URLs are logged by proxies and
+// leaked in Referer, so prefer the header transport whenever possible.
 var JwtBearerAuth = authentication.AuthType{
 	Name:       "JwtBearer",
 	Detection:  detection,
@@ -34,14 +38,14 @@ func validate(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
 	var claims map[string]interface{}
 	var err error
 
-	if location == "url" {
+	switch location {
+	case "url":
 		log.Info().Msg("Checking authorization from HTTP URL")
 		claims, err = validateFromHTTPURL(r)
-	} else if location == "header" {
+	case "header":
 		log.Info().Msg("Checking authorization from HTTP Header")
 		claims, err = validateFromHTTPHeader(r)
-	} else {
-		// Token not found throw Unauthorized
+	default:
 		log.Err(notFoundToken).Send()
 		return r, notFoundToken
 	}
@@ -69,23 +73,28 @@ func validate(w http.ResponseWriter, r *http.Request) (*http.Request, error) {
 	return r, nil
 }
 
+// detectBearerToken reports where the request carries a bearer token: "url"
+// (bearer= query param), "header" (Authorization: Bearer ...), or "" if
+// neither is present. Malformed or whitespace-only Authorization headers are
+// treated as absent instead of panicking on an empty slice index.
 func detectBearerToken(r *http.Request) string {
-	// Detect Url Query Param Bearer
-	tokenString := r.URL.Query().Get(jwt.TokenHeaderKeyword)
-	if tokenString != "" {
+	// Detect URL query param first: this is used by clients that cannot set
+	// headers (e.g. browser WebSocket handshakes).
+	if r.URL.Query().Get(jwt.TokenHeaderKeyword) != "" {
 		return "url"
 	}
 
-	// Detect Authorization Header
 	authHeader := r.Header.Get(jwt.TokenHeader)
-	if authHeader != "" {
-		authHeaderParts := strings.Fields(authHeader)
-		// If the authorization header start with bearer
-		if strings.ToLower(authHeaderParts[0]) == strings.ToLower(jwt.TokenHeaderKeyword) {
-			return "header"
-		}
+	if authHeader == "" {
+		return ""
 	}
-
+	authHeaderParts := strings.Fields(authHeader)
+	if len(authHeaderParts) == 0 {
+		return ""
+	}
+	if strings.EqualFold(authHeaderParts[0], jwt.TokenHeaderKeyword) {
+		return "header"
+	}
 	return ""
 }
 
@@ -105,8 +114,8 @@ func validateFromHTTPHeader(r *http.Request) (map[string]interface{}, error) {
 	return claims, nil
 }
 
-// validateFromHTTPURL extracts the JWT from the HTTP requests and return the claims or
-// any error while parsing the token if it has failed (expired, invalid...)
+// validateFromHTTPURL extracts the JWT from the URL query params and returns
+// the claims or any error while parsing (expired, invalid, wrong issuer...).
 func validateFromHTTPURL(r *http.Request) (map[string]interface{}, error) {
 	tokenString, err := extractFromHTTPURL(r)
 	if err != nil {
@@ -129,7 +138,7 @@ func extractFromHTTPHeader(r *http.Request) (string, error) {
 	}
 
 	authHeaderParts := strings.Fields(authHeader)
-	if len(authHeaderParts) != jwt.TokenHeaderParts || strings.ToLower(authHeaderParts[0]) != jwt.TokenHeaderKeyword {
+	if len(authHeaderParts) != jwt.TokenHeaderParts || !strings.EqualFold(authHeaderParts[0], jwt.TokenHeaderKeyword) {
 		return "", illFormedTokenHeader
 	}
 

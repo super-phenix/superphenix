@@ -100,25 +100,38 @@ func UpdateRequestContext(ctx context.Context, claims jwt.MapClaims) context.Con
 }
 
 // ParseTokenString parses a JWT string and returns the claims contained in it and any error
-// if parsing has failed (expired, invalid...)
+// if parsing has failed (expired, invalid, wrong issuer/algorithm...).
+//
+// The parser is pinned to HS256 (via WithValidMethods) to prevent algorithm
+// confusion attacks (e.g. "none", or an RSA public key being used as an HMAC
+// secret). The issuer is verified against the configured TokenIssuer so
+// tokens minted by another service sharing the secret cannot be replayed here.
 func ParseTokenString(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-		}
-
-		return Secret, nil
-	})
+	token, err := jwt.Parse(
+		tokenString,
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return Secret, nil
+		},
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
+	)
 
 	if err != nil {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return claims, nil
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, fmt.Errorf("invalid token/invalid claims")
 	}
 
-	return nil, fmt.Errorf("invalid token/invalid claims")
+	if !claims.VerifyIssuer(TokenIssuer, true) {
+		return nil, fmt.Errorf("invalid token issuer")
+	}
+
+	return claims, nil
 }
 
 func IsAudience(claims jwt.MapClaims, audience string) bool {

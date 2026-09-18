@@ -136,6 +136,11 @@ type Config struct {
 
 		Cors struct {
 			AllowedOrigins []string
+			// AllowUnsafeWildcard opts into treating "*" in AllowedOrigins
+			// as a real wildcard. Off by default because the middleware sets
+			// AllowCredentials=true, and "*" then makes parseReturnUrl an open
+			// redirect that leaks tokens. Only enable for local dev / tests.
+			AllowUnsafeWildcard bool `yaml:"allowUnsafeWildcard"`
 		}
 	}
 
@@ -272,7 +277,8 @@ session:
     sameSite: Lax
     secure: false
   cors:
-    allowedOrigins: ["*"]
+    allowedOrigins: ["localhost"]
+    allowUnsafeWildcard: false
 permify:
   url: <permify-host>:<permify-port>
 argoController:
@@ -379,6 +385,55 @@ func LoadConfig() error {
 		return err
 	}
 	populateAZCodes()
+	if err := Global.Validate(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Validate enforces security-sensitive invariants on a loaded configuration.
+// Called at the end of LoadConfig; a non-nil error must abort startup.
+func (c *Config) Validate() error {
+	var errs []string
+
+	// Signing key must be strong: reject empty, the well-known default,
+	// and anything shorter than 32 bytes (HS256 recommended minimum).
+	secret := c.Authentication.JwtSecret
+	switch {
+	case secret == "":
+		errs = append(errs, "authentication.jwtSecret must not be empty")
+	case secret == "secret":
+		errs = append(errs, `authentication.jwtSecret must not be the built-in default "secret"`)
+	case len(secret) < 32:
+		errs = append(errs, fmt.Sprintf("authentication.jwtSecret must be at least 32 bytes, got %d", len(secret)))
+	}
+
+	if c.Authentication.JwtIssuer == "" {
+		errs = append(errs, "authentication.jwtIssuer must not be empty")
+	}
+
+	// AllowCredentials is true on the CORS middleware; combined with a "*"
+	// origin this both violates the CORS spec in every major browser and
+	// turns parseReturnUrl into an open redirect that leaks any token later
+	// appended to the callback URL. Operators can opt in for local dev via
+	// session.cors.allowUnsafeWildcard.
+	hasWildcard := false
+	for _, o := range c.Session.Cors.AllowedOrigins {
+		if o == "*" {
+			hasWildcard = true
+			break
+		}
+	}
+	if hasWildcard && !c.Session.Cors.AllowUnsafeWildcard {
+		errs = append(errs, `session.cors.allowedOrigins contains "*"; set session.cors.allowUnsafeWildcard=true to enable it (dev only)`)
+	}
+	if hasWildcard && c.Session.Cors.AllowUnsafeWildcard {
+		log.Print("WARNING: session.cors.allowedOrigins contains \"*\" and allowUnsafeWildcard is enabled — do not use this configuration in production")
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("invalid configuration:\n  - %s", strings.Join(errs, "\n  - "))
+	}
 	return nil
 }
 

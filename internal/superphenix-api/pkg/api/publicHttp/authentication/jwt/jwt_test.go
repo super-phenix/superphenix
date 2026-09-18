@@ -89,6 +89,16 @@ func TestJwtBearerAuth(t *testing.T) {
 			expectedResult: true,
 		},
 		{
+			name: "Detection - Whitespace-only header does not panic",
+			setupRequest: func() *http.Request {
+				req := httptest.NewRequest("GET", "/", nil)
+				req.Header.Set("Authorization", "   ")
+				return req
+			},
+			mockBehavior:   func() {},
+			expectedResult: false,
+		},
+		{
 			name: "Validation - Invalid token format",
 			setupRequest: func() *http.Request {
 				req := httptest.NewRequest("GET", "/", nil)

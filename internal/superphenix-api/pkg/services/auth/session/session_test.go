@@ -629,11 +629,16 @@ func Test_getSameSite(t *testing.T) {
 func Test_parseReturnUrl(t *testing.T) {
 	// Backup and restore configuration
 	oldAllowedOrigins := config.Global.Session.Cors.AllowedOrigins
-	defer func() { config.Global.Session.Cors.AllowedOrigins = oldAllowedOrigins }()
+	oldAllowUnsafeWildcard := config.Global.Session.Cors.AllowUnsafeWildcard
+	defer func() {
+		config.Global.Session.Cors.AllowedOrigins = oldAllowedOrigins
+		config.Global.Session.Cors.AllowUnsafeWildcard = oldAllowUnsafeWildcard
+	}()
 
 	type args struct {
-		returnTo       string
-		allowedOrigins []string
+		returnTo            string
+		allowedOrigins      []string
+		allowUnsafeWildcard bool
 	}
 	tests := []struct {
 		name string
@@ -642,12 +647,17 @@ func Test_parseReturnUrl(t *testing.T) {
 	}{
 		{
 			name: "Empty input",
-			args: args{returnTo: "", allowedOrigins: []string{"*"}},
+			args: args{returnTo: "", allowedOrigins: []string{"http://localhost:4200"}},
 			want: "http://localhost:4200/callback?",
 		},
 		{
-			name: "Valid input - allowed with *",
-			args: args{returnTo: "http://localhost:4201/private/home", allowedOrigins: []string{"*"}},
+			name: `Wildcard "*" is ignored when allowUnsafeWildcard is false`,
+			args: args{returnTo: "http://attacker.example/steal", allowedOrigins: []string{"*"}},
+			want: "http://localhost:4200/callback?",
+		},
+		{
+			name: `Wildcard "*" is honoured when allowUnsafeWildcard is true`,
+			args: args{returnTo: "http://localhost:4201/private/home", allowedOrigins: []string{"*"}, allowUnsafeWildcard: true},
 			want: "http://localhost:4201/callback?return_to=/private/home&",
 		},
 		{
@@ -656,24 +666,30 @@ func Test_parseReturnUrl(t *testing.T) {
 			want: "http://localhost:4201/callback?return_to=/private/home&",
 		},
 		{
+			name: "Valid input - allowed with case-insensitive host match",
+			args: args{returnTo: "http://LOCALHOST:4201/private/home", allowedOrigins: []string{"http://localhost:4201"}},
+			want: "http://LOCALHOST:4201/callback?return_to=/private/home&",
+		},
+		{
 			name: "Valid input - NOT allowed",
 			args: args{returnTo: "http://attacker.com/steal", allowedOrigins: []string{"http://localhost:4201"}},
 			want: "http://localhost:4200/callback?",
 		},
 		{
 			name: "Malformed url",
-			args: args{returnTo: "localhost:4201/private/home", allowedOrigins: []string{"*"}},
+			args: args{returnTo: "localhost:4201/private/home", allowedOrigins: []string{"http://localhost:4201"}},
 			want: "http://localhost:4200/callback?",
 		},
 		{
 			name: "Valid input - no path (root)",
-			args: args{returnTo: "http://localhost:4200", allowedOrigins: []string{"*"}},
+			args: args{returnTo: "http://localhost:4200", allowedOrigins: []string{"http://localhost:4200"}},
 			want: "http://localhost:4200/callback?return_to=/&",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config.Global.Session.Cors.AllowedOrigins = tt.args.allowedOrigins
+			config.Global.Session.Cors.AllowUnsafeWildcard = tt.args.allowUnsafeWildcard
 			if got := parseReturnUrl(context.Background(), tt.args.returnTo); got != tt.want {
 				t.Errorf("parseReturnUrl() = %v, want %v", got, tt.want)
 			}
