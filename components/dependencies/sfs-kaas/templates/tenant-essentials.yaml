@@ -60,30 +60,22 @@ data:
 
   values.yaml: |-
     # Values for essential cluster components.
-    {{- if hasKey $cluster "kaasEssentials" }}
-    {{- if or (hasKey $cluster.kaasEssentials "storageClasses") (hasKey $cluster.kaasEssentials "snapshotClasses")}}
     kubevirtCsi:
-      {{- with $cluster.kaasEssentials }}
-      {{- if hasKey $cluster.kaasEssentials "storageClasses" }}
       storageClasses:
-        {{- range $key, $class := .storageClasses }}
+        {{- range $key, $class := $.Values.storageClassMapping }}
         {{ $key }}:
-          isDefaultClass: {{ $class.isDefaultClass | default false }}
-          tenantClass: {{ $class.tenantClass }}
-          infraClass: {{ get $.Values.storageClassMapping $class.infraClass }}
+          isDefaultClass: {{ (dig $key "isDefaultClass" (regexMatch "default" $class) $cluster.kaasEssentials.storageClasses) }}
+          tenantClass: {{ $key }}
+          infraClass: {{ $class }}
         {{- end }}
-      {{- end }}
-      {{- if hasKey $cluster.kaasEssentials "snapshotClasses" }}
+      
       snapshotClasses:
-        {{- range $key, $class := .snapshotClasses }}
+        {{- range $key, $class := $.Values.storageClassMapping }}
         {{ $key }}:
-          isDefaultClass: {{ $class.isDefaultClass | default false }}
-          tenantClass: {{ $class.tenantClass }}
-          infraClass: {{ get $.Values.storageClassMapping $class.infraClass }}
+          isDefaultClass: {{ (dig $key "isDefaultClass" (regexMatch "default" $class) $cluster.kaasEssentials.storageClasses) }}
+          tenantClass: {{ $key }}
+          infraClass: {{ $class }}
         {{- end }}
-      {{- end }}
-      {{- end }}
-    {{- end }}
 
     # Cluster information to be written in the spx-cluster-info configmap
     cluster:
@@ -94,7 +86,6 @@ data:
     # Values from clusters.<cluster>.kaasEssentials.values are imported here
     {{- if hasKey $cluster.kaasEssentials "values" }}
     {{- $cluster.kaasEssentials.values | toYaml | nindent 4 }}
-    {{- end }}
     {{- end }}
 
 ---
