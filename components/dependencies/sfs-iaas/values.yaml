@@ -322,6 +322,9 @@ vms:
 #            # The protocol (IPv4 only, IPv6 only or Dual stack) will be inferred from the configuration of the subnet
 #            enabled: true
 #
+#            # -- MAC address of the interface (optional, auto-generated if unspecified)
+#            macAddress: "52:54:00:00:00:01"
+#
 #            # -- Protocol can be "IPv4", "IPv6" or "Dual"
 #            protocol: "Dual"
 #

@@ -42,14 +42,22 @@ spec:
         {{ printf "%s.%s.ovn.kubernetes.io/allow_live_migration: 'true'" $subnetID $.Release.Namespace }}
 
         {{- if and .static .static.enabled }}
-        {{- $ipAnnotation := printf "%s.%s.ovn.kubernetes.io/ip_address" $subnetID $.Release.Namespace }}
-        {{- if eq .static.protocol "Dual" }}
-        {{ printf "%s: '%s,%s'" $ipAnnotation .static.ipv4 .static.ipv6 }}
-        {{- else if eq .static.protocol "IPv4" }}
-        {{ printf "%s: '%s'" $ipAnnotation .static.ipv4 }}
-        {{- else if eq .static.protocol "IPv6" }}
-        {{ printf "%s: '%s'" $ipAnnotation .static.ipv6 }}
+        {{- $ipv4 := and .static.ipv4 (or (eq .static.protocol "IPv4") (eq .static.protocol "Dual")) -}}
+        {{- $ipv6 := and .static.ipv6 (or (eq .static.protocol "IPv6") (eq .static.protocol "Dual")) -}}
+        {{- if and $ipv4 $ipv6 }}
+        {{ printf "%s.%s.ovn.kubernetes.io/ip_address: '%s,%s'" $subnetID $.Release.Namespace .static.ipv4 .static.ipv6 }}
+        {{- else if $ipv4 }}
+        {{ printf "%s.%s.ovn.kubernetes.io/ip_address: '%s'" $subnetID $.Release.Namespace .static.ipv4 }}
+        {{- else if $ipv6 }}
+        {{ printf "%s.%s.ovn.kubernetes.io/ip_address: '%s'" $subnetID $.Release.Namespace .static.ipv6 }}
         {{- end }}
+        {{- end }}
+
+        {{- if and .static .static.enabled .static.macAddress }}
+        {{- if not (regexMatch "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$" .static.macAddress) }}
+        {{- fail (printf "Invalid MAC address: %s for interface in VM %s" .static.macAddress $effectiveID) }}
+        {{- end }}
+        {{ printf "%s.%s.ovn.kubernetes.io/mac_address: '%s'" $subnetID $.Release.Namespace .static.macAddress }}
         {{- end }}
 
         {{- end }}
@@ -127,6 +135,9 @@ spec:
             state: {{ .state | default "up" }}
             {{- with .model }}
             model: {{ . }}
+            {{- end }}
+            {{- if and .static .static.enabled .static.macAddress }}
+            macAddress: {{ .static.macAddress | quote }}
             {{- end }}
             binding:
               name: managedtap
