@@ -135,6 +135,8 @@ type VirtualMachineInstanceNetworkInterface struct {
 	Name string `json:"name,omitempty"`
 	// List of all IP addresses of a Virtual Machine interface
 	IPs []string `json:"ipAddresses,omitempty"`
+	// LinkState reports the current operational link state. values: up, down.
+	LinkState string `json:"linkState,omitempty"`
 }
 
 type DomainSpec struct {

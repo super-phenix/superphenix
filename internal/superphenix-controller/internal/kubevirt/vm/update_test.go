@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/informers"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 
@@ -13,6 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/cache"
 	v1 "kubevirt.io/api/core/v1"
 	"kubevirt.io/client-go/kubecli"
 )
@@ -389,6 +391,148 @@ func TestCheckDiskOrder(t *testing.T) {
 				if err != nil {
 					t.Errorf("expected no error but got: %v", err)
 				}
+			}
+		})
+	}
+}
+
+func TestUpdateVM_NetworkInterfaceState(t *testing.T) {
+	const (
+		namespace = "prj-test"
+		name      = "vm-1"
+	)
+
+	subnet1 := newSubnetUnstructured("sub-1", namespace, "10.0.0.0/24")
+	subnet2 := newSubnetUnstructured("sub-2", namespace, "10.0.1.0/24")
+	setFakeSubnetWatcher(t, subnet1, subnet2)
+
+	idxSSH := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{"namespace": cache.MetaNamespaceIndexFunc})
+	oldSSH, hadSSH := informers.WatcherSet[informers.SSH]
+	informers.WatcherSet[informers.SSH] = informers.Watcher{Indexer: idxSSH}
+	t.Cleanup(func() {
+		if hadSSH {
+			informers.WatcherSet[informers.SSH] = oldSSH
+		} else {
+			delete(informers.WatcherSet, informers.SSH)
+		}
+	})
+
+	tests := []struct {
+		name       string
+		networks   []Network
+		wantStates map[string]v1.InterfaceState
+	}{
+		{
+			name: "toggle secondary interface down",
+			networks: []Network{
+				{Order: 0, SubnetEId: "sub-1", Model: "virtio", Enabled: nil},
+				{Order: 1, SubnetEId: "sub-2", Model: "virtio", Enabled: boolPtr(false)},
+			},
+			wantStates: map[string]v1.InterfaceState{
+				"interface-0": v1.InterfaceStateLinkUp,
+				"interface-1": v1.InterfaceStateLinkDown,
+			},
+		},
+		{
+			name: "toggle primary interface down and secondary up",
+			networks: []Network{
+				{Order: 0, SubnetEId: "sub-1", Model: "virtio", Enabled: boolPtr(false)},
+				{Order: 1, SubnetEId: "sub-2", Model: "virtio", Enabled: boolPtr(true)},
+			},
+			wantStates: map[string]v1.InterfaceState{
+				"interface-0": v1.InterfaceStateLinkDown,
+				"interface-1": v1.InterfaceStateLinkUp,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			client := kubecli.NewMockKubevirtClient(ctrl)
+			vmIface := kubecli.NewMockVirtualMachineInterface(ctrl)
+
+			origVirt := config.VirtClient
+			origK8s := config.K8sClient
+			t.Cleanup(func() {
+				config.VirtClient = origVirt
+				config.K8sClient = origK8s
+			})
+			config.VirtClient = client
+			config.K8sClient = fake.NewSimpleClientset()
+
+			existingVM := &v1.VirtualMachine{
+				ObjectMeta: k8smetav1.ObjectMeta{
+					Name:      name,
+					Namespace: namespace,
+					Labels: map[string]string{
+						spxId.SpxLabelProjectID: namespace,
+					},
+				},
+				Spec: v1.VirtualMachineSpec{
+					Template: &v1.VirtualMachineInstanceTemplateSpec{
+						ObjectMeta: k8smetav1.ObjectMeta{
+							Labels: map[string]string{
+								spxId.SpxLabelProjectID: namespace,
+							},
+						},
+						Spec: v1.VirtualMachineInstanceSpec{
+							Domain: v1.DomainSpec{
+								CPU:    &v1.CPU{Cores: 1},
+								Memory: &v1.Memory{},
+							},
+						},
+					},
+				},
+				Status: v1.VirtualMachineStatus{
+					PrintableStatus: v1.VirtualMachineStatusStopped,
+				},
+			}
+
+			var updatedVM *v1.VirtualMachine
+			client.EXPECT().VirtualMachine(namespace).Return(vmIface).AnyTimes()
+			vmIface.EXPECT().Get(gomock.Any(), name, gomock.Any()).Return(existingVM, nil)
+			vmIface.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+				func(ctx context.Context, vm *v1.VirtualMachine, opts k8smetav1.UpdateOptions) (*v1.VirtualMachine, error) {
+					updatedVM = vm
+					return vm, nil
+				},
+			)
+
+			info := UpdateVMInfo{
+				Network: tt.networks,
+			}
+			info.General.RunStrategy = string(v1.RunStrategyAlways)
+			info.General.VMType = "linux"
+			info.Compute.Cpu = 2
+			info.Compute.Memory = 4
+
+			err := UpdateVM(context.Background(), namespace, name, info)
+			if err != nil {
+				t.Fatalf("unexpected error updating VM: %v", err)
+			}
+
+			if updatedVM == nil {
+				t.Fatal("expected VM to be updated via client, but Update was not called")
+			}
+
+			if len(updatedVM.Spec.Template.Spec.Domain.Devices.Interfaces) != len(tt.networks) {
+				t.Fatalf("expected %d interfaces, got %d", len(tt.networks), len(updatedVM.Spec.Template.Spec.Domain.Devices.Interfaces))
+			}
+
+			for _, iface := range updatedVM.Spec.Template.Spec.Domain.Devices.Interfaces {
+				expectedState, ok := tt.wantStates[iface.Name]
+				if !ok {
+					t.Errorf("unexpected interface name %s", iface.Name)
+					continue
+				}
+				if iface.State != expectedState {
+					t.Errorf("interface %s: expected state %q, got %q", iface.Name, expectedState, iface.State)
+				}
+			}
+
+			if len(updatedVM.Spec.Template.Spec.Networks) != len(tt.networks) {
+				t.Fatalf("expected %d networks, got %d", len(tt.networks), len(updatedVM.Spec.Template.Spec.Networks))
 			}
 		})
 	}

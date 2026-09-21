@@ -10,6 +10,7 @@ type Network struct {
 	Order     int    `json:"order"`
 	SubnetEId string `json:"subnetEId"` // Subnet Effective ID
 	Model     string `json:"model"`
+	Enabled   *bool  `json:"enabled,omitempty"`
 	IPv4      string `json:"ipv4,omitempty"`
 	IPv6      string `json:"ipv6,omitempty"`
 }

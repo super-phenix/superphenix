@@ -8820,6 +8820,9 @@ const docTemplate = `{
         "instance.InstanceNetworkBody": {
             "type": "object",
             "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
                 "ipv4": {
                     "type": "string"
                 },

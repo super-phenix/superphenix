@@ -177,6 +177,12 @@ func withNetworks(ctx context.Context, namespace string, networks []Network, vm 
 				Binding: &v1.PluginBinding{Name: "managedtap"},
 			}
 
+			if net.Enabled != nil && !*net.Enabled {
+				netInterface.State = v1.InterfaceStateLinkDown
+			} else {
+				netInterface.State = v1.InterfaceStateLinkUp
+			}
+
 			if net.Model == "virtio" || net.Model == "e1000" {
 				netInterface.Model = net.Model
 			}
