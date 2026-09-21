@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -379,6 +380,108 @@ func TestInstanceBody_NetworkEnabledLifecycle(t *testing.T) {
 				for _, sub := range tt.rejectWireSubstrs {
 					assert.NotContains(t, createWireStr, sub)
 				}
+			}
+		})
+	}
+}
+
+func TestInstanceNetworkBody_MACAddressValidation(t *testing.T) {
+	validate := validator.New()
+
+	tests := []struct {
+		name        string
+		macAddress  string
+		expectError bool
+	}{
+		{
+			name:        "empty MAC address is valid (omitempty)",
+			macAddress:  "",
+			expectError: false,
+		},
+		{
+			name:        "valid colon-delimited MAC address",
+			macAddress:  "52:54:00:11:22:33",
+			expectError: false,
+		},
+		{
+			name:        "valid hyphen-delimited MAC address",
+			macAddress:  "52-54-00-11-22-33",
+			expectError: false,
+		},
+		{
+			name:        "invalid MAC with non-hex characters",
+			macAddress:  "52:54:00:11:22:zz",
+			expectError: true,
+		},
+		{
+			name:        "invalid short MAC address",
+			macAddress:  "52:54:00:11:22",
+			expectError: true,
+		},
+		{
+			name:        "invalid random text",
+			macAddress:  "not-a-mac",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			net := InstanceNetworkBody{
+				Order:      0,
+				SubnetEId:  "sub-1",
+				Model:      "virtio",
+				MACAddress: tt.macAddress,
+			}
+
+			err := validate.Struct(net)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestInstanceNetworkBody_MACAddressSerialization(t *testing.T) {
+	tests := []struct {
+		name         string
+		jsonInput    string
+		expectedMAC  string
+		expectInWire string
+		rejectInWire string
+	}{
+		{
+			name:         "omitted MAC is omitted from JSON",
+			jsonInput:    `{"order":0,"subnetEId":"sub-1","model":"virtio"}`,
+			expectedMAC:  "",
+			rejectInWire: `"macAddress"`,
+		},
+		{
+			name:         "provided MAC is preserved in JSON",
+			jsonInput:    `{"order":0,"subnetEId":"sub-1","model":"virtio","macAddress":"52:54:00:11:22:33"}`,
+			expectedMAC:  "52:54:00:11:22:33",
+			expectInWire: `"macAddress":"52:54:00:11:22:33"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var net InstanceNetworkBody
+			err := json.Unmarshal([]byte(tt.jsonInput), &net)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.expectedMAC, net.MACAddress)
+
+			marshaled, err := json.Marshal(net)
+			require.NoError(t, err)
+
+			if tt.expectInWire != "" {
+				assert.Contains(t, string(marshaled), tt.expectInWire)
+			}
+			if tt.rejectInWire != "" {
+				assert.NotContains(t, string(marshaled), tt.rejectInWire)
 			}
 		})
 	}

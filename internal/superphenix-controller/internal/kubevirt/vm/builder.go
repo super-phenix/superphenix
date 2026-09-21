@@ -155,6 +155,12 @@ func withNetworks(ctx context.Context, namespace string, networks []Network, vm 
 				return err
 			}
 
+			// Reject static MAC that is malformed
+			if err := validateNetworkMAC(net.MACAddress); err != nil {
+				log.Error().Err(err).Any("network", net).Msg("Network not valid, invalid MAC address")
+				return err
+			}
+
 			//	Add annotation
 			vm.Spec.Template.ObjectMeta.Annotations["kubevirt.io/allow-pod-bridge-network-live-migration"] = "true"
 			annotationLiveMig := fmt.Sprintf("%s.%s.ovn.kubernetes.io/allow_live_migration", net.SubnetEId, namespace)
@@ -172,9 +178,16 @@ func withNetworks(ctx context.Context, namespace string, networks []Network, vm 
 				vm.Spec.Template.ObjectMeta.Annotations[ipAnnotation] = net.IPv6
 			}
 
+			// Static MAC
+			if net.MACAddress != "" {
+				macAnnotation := fmt.Sprintf("%s.%s.ovn.kubernetes.io/mac_address", net.SubnetEId, namespace)
+				vm.Spec.Template.ObjectMeta.Annotations[macAnnotation] = net.MACAddress
+			}
+
 			netInterface := v1.Interface{
-				Name:    fmt.Sprintf("interface-%d", net.Order),
-				Binding: &v1.PluginBinding{Name: "managedtap"},
+				Name:       fmt.Sprintf("interface-%d", net.Order),
+				Binding:    &v1.PluginBinding{Name: "managedtap"},
+				MacAddress: net.MACAddress,
 			}
 
 			if net.Enabled != nil && !*net.Enabled {

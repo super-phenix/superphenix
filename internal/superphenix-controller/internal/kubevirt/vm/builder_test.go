@@ -3,6 +3,7 @@ package vm
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/informers"
@@ -289,4 +290,135 @@ func TestWithNetworks_SpecPreservedWhenDisabled(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWithNetworks_MACAddress(t *testing.T) {
+	const namespace = "prj-test"
+	subnet1 := newSubnetUnstructured("sub-1", namespace, "10.0.0.0/24")
+	subnet2 := newSubnetUnstructured("sub-2", namespace, "10.0.1.0/24")
+	setFakeSubnetWatcher(t, subnet1, subnet2)
+
+	t.Run("omitted MAC leaves interface mac empty and creates no mac annotation", func(t *testing.T) {
+		vm := &v1.VirtualMachine{
+			Spec: v1.VirtualMachineSpec{
+				Template: &v1.VirtualMachineInstanceTemplateSpec{
+					ObjectMeta: k8smetav1.ObjectMeta{
+						Annotations: make(map[string]string),
+					},
+				},
+			},
+		}
+
+		networks := []Network{
+			{
+				Order:     0,
+				SubnetEId: "sub-1",
+				Model:     "virtio",
+			},
+		}
+
+		err := withNetworks(context.Background(), namespace, networks, vm)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(vm.Spec.Template.Spec.Domain.Devices.Interfaces) != 1 {
+			t.Fatalf("expected 1 interface, got %d", len(vm.Spec.Template.Spec.Domain.Devices.Interfaces))
+		}
+
+		iface := vm.Spec.Template.Spec.Domain.Devices.Interfaces[0]
+		if iface.MacAddress != "" {
+			t.Errorf("expected empty MacAddress, got %q", iface.MacAddress)
+		}
+
+		macKey := fmt.Sprintf("%s.%s.ovn.kubernetes.io/mac_address", "sub-1", namespace)
+		if _, exists := vm.Spec.Template.ObjectMeta.Annotations[macKey]; exists {
+			t.Errorf("expected no mac_address annotation, but found %q", vm.Spec.Template.ObjectMeta.Annotations[macKey])
+		}
+	})
+
+	t.Run("valid static MAC sets interface mac and ovn annotation", func(t *testing.T) {
+		vm := &v1.VirtualMachine{
+			Spec: v1.VirtualMachineSpec{
+				Template: &v1.VirtualMachineInstanceTemplateSpec{
+					ObjectMeta: k8smetav1.ObjectMeta{
+						Annotations: make(map[string]string),
+					},
+				},
+			},
+		}
+
+		networks := []Network{
+			{
+				Order:      0,
+				SubnetEId:  "sub-1",
+				Model:      "virtio",
+				MACAddress: "52:54:00:11:22:33",
+			},
+			{
+				Order:      1,
+				SubnetEId:  "sub-2",
+				Model:      "virtio",
+				MACAddress: "52-54-00-aa-bb-cc",
+			},
+		}
+
+		err := withNetworks(context.Background(), namespace, networks, vm)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(vm.Spec.Template.Spec.Domain.Devices.Interfaces) != 2 {
+			t.Fatalf("expected 2 interfaces, got %d", len(vm.Spec.Template.Spec.Domain.Devices.Interfaces))
+		}
+
+		iface0 := vm.Spec.Template.Spec.Domain.Devices.Interfaces[0]
+		if iface0.MacAddress != "52:54:00:11:22:33" {
+			t.Errorf("expected iface0 MacAddress 52:54:00:11:22:33, got %q", iface0.MacAddress)
+		}
+
+		iface1 := vm.Spec.Template.Spec.Domain.Devices.Interfaces[1]
+		if iface1.MacAddress != "52-54-00-aa-bb-cc" {
+			t.Errorf("expected iface1 MacAddress 52-54-00-aa-bb-cc, got %q", iface1.MacAddress)
+		}
+
+		macKey1 := fmt.Sprintf("%s.%s.ovn.kubernetes.io/mac_address", "sub-1", namespace)
+		if vm.Spec.Template.ObjectMeta.Annotations[macKey1] != "52:54:00:11:22:33" {
+			t.Errorf("expected mac annotation %q, got %q", "52:54:00:11:22:33", vm.Spec.Template.ObjectMeta.Annotations[macKey1])
+		}
+
+		macKey2 := fmt.Sprintf("%s.%s.ovn.kubernetes.io/mac_address", "sub-2", namespace)
+		if vm.Spec.Template.ObjectMeta.Annotations[macKey2] != "52-54-00-aa-bb-cc" {
+			t.Errorf("expected mac annotation %q, got %q", "52-54-00-aa-bb-cc", vm.Spec.Template.ObjectMeta.Annotations[macKey2])
+		}
+	})
+
+	t.Run("invalid static MAC returns error", func(t *testing.T) {
+		vm := &v1.VirtualMachine{
+			Spec: v1.VirtualMachineSpec{
+				Template: &v1.VirtualMachineInstanceTemplateSpec{
+					ObjectMeta: k8smetav1.ObjectMeta{
+						Annotations: make(map[string]string),
+					},
+				},
+			},
+		}
+
+		networks := []Network{
+			{
+				Order:      0,
+				SubnetEId:  "sub-1",
+				Model:      "virtio",
+				MACAddress: "invalid-mac",
+			},
+		}
+
+		err := withNetworks(context.Background(), namespace, networks, vm)
+		if err == nil {
+			t.Fatalf("expected error for invalid MAC, got nil")
+		}
+		if !strings.HasPrefix(err.Error(), "invalid network mac") {
+			t.Errorf("expected error prefixed 'invalid network mac', got %q", err.Error())
+		}
+	})
 }

@@ -8829,6 +8829,9 @@ const docTemplate = `{
                 "ipv6": {
                     "type": "string"
                 },
+                "macAddress": {
+                    "type": "string"
+                },
                 "model": {
                     "type": "string"
                 },

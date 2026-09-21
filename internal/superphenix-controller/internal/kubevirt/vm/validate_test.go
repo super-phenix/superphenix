@@ -65,3 +65,73 @@ func TestValidateNetworkIP(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateNetworkMAC(t *testing.T) {
+	tests := []struct {
+		name        string
+		mac         string
+		expectError bool
+	}{
+		{
+			name:        "empty MAC (auto-assign)",
+			mac:         "",
+			expectError: false,
+		},
+		{
+			name:        "valid colon-delimited MAC",
+			mac:         "52:54:00:11:22:33",
+			expectError: false,
+		},
+		{
+			name:        "valid hyphen-delimited MAC",
+			mac:         "52-54-00-11-22-33",
+			expectError: false,
+		},
+		{
+			name:        "valid lowercase MAC",
+			mac:         "52:54:00:ab:cd:ef",
+			expectError: false,
+		},
+		{
+			name:        "valid uppercase MAC",
+			mac:         "52:54:00:AB:CD:EF",
+			expectError: false,
+		},
+		{
+			name:        "invalid short MAC",
+			mac:         "52:54:00:11:22",
+			expectError: true,
+		},
+		{
+			name:        "invalid long MAC",
+			mac:         "52:54:00:11:22:33:44",
+			expectError: true,
+		},
+		{
+			name:        "invalid non-hex characters",
+			mac:         "52:54:00:11:22:zz",
+			expectError: true,
+		},
+		{
+			name:        "invalid random text",
+			mac:         "invalid-mac-address",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateNetworkMAC(tt.mac)
+			if tt.expectError {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				if !strings.HasPrefix(err.Error(), "invalid network mac") {
+					t.Fatalf("expected error prefixed %q, got %q", "invalid network mac", err.Error())
+				}
+			} else if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+		})
+	}
+}

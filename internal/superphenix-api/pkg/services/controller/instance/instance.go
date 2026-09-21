@@ -821,12 +821,13 @@ type InstanceAdvancedOptionsBody struct {
 }
 
 type InstanceNetworkBody struct {
-	Order     int    `json:"order"`
-	SubnetEId string `json:"subnetEId"`
-	Model     string `json:"model"`
-	Enabled   *bool  `json:"enabled,omitempty"`
-	IPv4      string `json:"ipv4,omitempty" validate:"omitempty,ipv4"`
-	IPv6      string `json:"ipv6,omitempty" validate:"omitempty,ipv6"`
+	Order      int    `json:"order"`
+	SubnetEId  string `json:"subnetEId"`
+	Model      string `json:"model"`
+	Enabled    *bool  `json:"enabled,omitempty"`
+	IPv4       string `json:"ipv4,omitempty" validate:"omitempty,ipv4"`
+	IPv6       string `json:"ipv6,omitempty" validate:"omitempty,ipv6"`
+	MACAddress string `json:"macAddress,omitempty" validate:"omitempty,mac"`
 }
 
 type InstanceDiskBody struct {
