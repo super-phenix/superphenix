@@ -878,7 +878,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
-    targetRevision: "1.16.5"
+    targetRevision: "1.17.7"
     helm:
       chart: "rook-ceph"
       releaseName: "rook-operator"
@@ -1496,7 +1496,7 @@ apps:
   gateway-api:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledWorkload]
+    modes: [Hyperconverged, DecoupledWorkload, DecoupledStorage]
     automation:
       enabled: true
       selfHeal: true
