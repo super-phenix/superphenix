@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 )
 
 func strSlicePtr(s []string) *[]string { return &s }
@@ -386,7 +386,7 @@ func TestInstanceBody_NetworkEnabledLifecycle(t *testing.T) {
 }
 
 func TestInstanceNetworkBody_MACAddressValidation(t *testing.T) {
-	validate := validator.New()
+	validate := validation.GetValidatorV1().Validator()
 
 	tests := []struct {
 		name        string
@@ -404,9 +404,9 @@ func TestInstanceNetworkBody_MACAddressValidation(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "valid hyphen-delimited MAC address",
+			name:        "reject hyphen-delimited MAC address",
 			macAddress:  "52-54-00-11-22-33",
-			expectError: false,
+			expectError: true,
 		},
 		{
 			name:        "invalid MAC with non-hex characters",

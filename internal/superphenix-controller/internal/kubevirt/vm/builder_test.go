@@ -359,7 +359,7 @@ func TestWithNetworks_MACAddress(t *testing.T) {
 				Order:      1,
 				SubnetEId:  "sub-2",
 				Model:      "virtio",
-				MACAddress: "52-54-00-aa-bb-cc",
+				MACAddress: "52:54:00:aa:bb:cc",
 			},
 		}
 
@@ -378,8 +378,8 @@ func TestWithNetworks_MACAddress(t *testing.T) {
 		}
 
 		iface1 := vm.Spec.Template.Spec.Domain.Devices.Interfaces[1]
-		if iface1.MacAddress != "52-54-00-aa-bb-cc" {
-			t.Errorf("expected iface1 MacAddress 52-54-00-aa-bb-cc, got %q", iface1.MacAddress)
+		if iface1.MacAddress != "52:54:00:aa:bb:cc" {
+			t.Errorf("expected iface1 MacAddress 52:54:00:aa:bb:cc, got %q", iface1.MacAddress)
 		}
 
 		macKey1 := fmt.Sprintf("%s.%s.ovn.kubernetes.io/mac_address", "sub-1", namespace)
@@ -388,8 +388,8 @@ func TestWithNetworks_MACAddress(t *testing.T) {
 		}
 
 		macKey2 := fmt.Sprintf("%s.%s.ovn.kubernetes.io/mac_address", "sub-2", namespace)
-		if vm.Spec.Template.ObjectMeta.Annotations[macKey2] != "52-54-00-aa-bb-cc" {
-			t.Errorf("expected mac annotation %q, got %q", "52-54-00-aa-bb-cc", vm.Spec.Template.ObjectMeta.Annotations[macKey2])
+		if vm.Spec.Template.ObjectMeta.Annotations[macKey2] != "52:54:00:aa:bb:cc" {
+			t.Errorf("expected mac annotation %q, got %q", "52:54:00:aa:bb:cc", vm.Spec.Template.ObjectMeta.Annotations[macKey2])
 		}
 	})
 
@@ -416,6 +416,35 @@ func TestWithNetworks_MACAddress(t *testing.T) {
 		err := withNetworks(context.Background(), namespace, networks, vm)
 		if err == nil {
 			t.Fatalf("expected error for invalid MAC, got nil")
+		}
+		if !strings.HasPrefix(err.Error(), "invalid network mac") {
+			t.Errorf("expected error prefixed 'invalid network mac', got %q", err.Error())
+		}
+	})
+
+	t.Run("hyphen-delimited static MAC returns error", func(t *testing.T) {
+		vm := &v1.VirtualMachine{
+			Spec: v1.VirtualMachineSpec{
+				Template: &v1.VirtualMachineInstanceTemplateSpec{
+					ObjectMeta: k8smetav1.ObjectMeta{
+						Annotations: make(map[string]string),
+					},
+				},
+			},
+		}
+
+		networks := []Network{
+			{
+				Order:      0,
+				SubnetEId:  "sub-1",
+				Model:      "virtio",
+				MACAddress: "52-54-00-11-22-33",
+			},
+		}
+
+		err := withNetworks(context.Background(), namespace, networks, vm)
+		if err == nil {
+			t.Fatalf("expected error for hyphen-delimited MAC, got nil")
 		}
 		if !strings.HasPrefix(err.Error(), "invalid network mac") {
 			t.Errorf("expected error prefixed 'invalid network mac', got %q", err.Error())

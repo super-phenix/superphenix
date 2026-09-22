@@ -83,9 +83,9 @@ func TestValidateNetworkMAC(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "valid hyphen-delimited MAC",
+			name:        "reject hyphen-delimited MAC",
 			mac:         "52-54-00-11-22-33",
-			expectError: false,
+			expectError: true,
 		},
 		{
 			name:        "valid lowercase MAC",

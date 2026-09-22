@@ -54,7 +54,7 @@ spec:
         {{- end }}
 
         {{- if and .static .static.enabled .static.macAddress }}
-        {{- if not (regexMatch "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$" .static.macAddress) }}
+        {{- if not (regexMatch "^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$" .static.macAddress) }}
         {{- fail (printf "Invalid MAC address: %s for interface in VM %s" .static.macAddress $effectiveID) }}
         {{- end }}
         {{ printf "%s.%s.ovn.kubernetes.io/mac_address: '%s'" $subnetID $.Release.Namespace .static.macAddress }}

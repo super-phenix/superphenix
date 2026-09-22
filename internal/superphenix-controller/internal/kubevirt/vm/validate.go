@@ -2,12 +2,10 @@ package vm
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 )
-
-var macRegex = regexp.MustCompile(`^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$`)
 
 // validateNetworkIP checks that any provided static IP falls within the subnet CIDR.
 // Returns an error prefixed "invalid network ip" so the HTTP layer can map it to 400.
@@ -30,7 +28,7 @@ func validateNetworkMAC(mac string) error {
 	if mac == "" {
 		return nil
 	}
-	if !macRegex.MatchString(mac) {
+	if !validation.IsValidMAC(mac) {
 		return fmt.Errorf("invalid network mac: %s is not a valid MAC address", mac)
 	}
 	return nil
