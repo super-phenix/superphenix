@@ -323,6 +323,12 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *operatorv1al
 		}
 	}
 
+	// Sync nodes specs with cluster's status:
+	if err := r.syncNodesSpecs(ctx, cluster); err != nil {
+		log.Error(err, "failed to sync nodes specs")
+		reconcileErr = err
+	}
+
 	if reconcileErr != nil {
 		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	}
