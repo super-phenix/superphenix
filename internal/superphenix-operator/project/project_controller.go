@@ -276,10 +276,12 @@ func (r *Reconciler) reconcileDatabaseBinding(ctx context.Context, proj *operato
 
 	if db.Client != nil {
 		found, err := db.ProjectExists(proj.Spec.ProjectID)
-		if err == nil && found {
-			status = metav1.ConditionTrue
-			reason = operatorv1alpha1.ReasonBoundFound
-			message = "Project is bound to the Superphenix Database"
+		if err == nil {
+			if found {
+				status = metav1.ConditionTrue
+				reason = operatorv1alpha1.ReasonBoundFound
+				message = "Project is bound to the Superphenix Database"
+			}
 		} else if err != nil {
 			return err
 		}
@@ -302,7 +304,52 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 	namespaceName := projectSPXID
 	appName := fmt.Sprintf("gitops-%s", projectSPXID)
 
+	// Fetch referenced Organization to get names and IDs
+	org, err := r.fetchOrganizationForProject(ctx, proj)
+	if err != nil {
+		return err
+	}
+
+	organizationName := org.Spec.Name
+	if organizationName == "" {
+		organizationName = org.Name
+	}
+
+	projectName := proj.Spec.Name
+	if projectName == "" {
+		projectName = proj.Name
+	}
+
+	azs := strings.Join(proj.Status.AvailableZones, ",")
+
 	// Ensure Namespace exists
+	if err := r.ensureNamespace(ctx, namespaceName); err != nil {
+		return err
+	}
+
+	// Determine GitOps parameters
+	repoURL, path, targetRevision := r.resolveManifestLocation(proj)
+
+	// Build Helm parameters
+	helmParams := r.buildHelmParameters(proj, org, organizationName, projectName, azs)
+
+	// Ensure ArgoCD Application exists
+	return r.ensureArgoApplication(ctx, namespaceName, appName, repoURL, path, targetRevision, helmParams)
+}
+
+func (r *Reconciler) fetchOrganizationForProject(ctx context.Context, proj *operatorv1alpha1.Project) (*operatorv1alpha1.Organization, error) {
+	orgNamespace := proj.Spec.OrganizationRef.Namespace
+	if orgNamespace == "" {
+		orgNamespace = proj.Namespace
+	}
+	org := &operatorv1alpha1.Organization{}
+	if err := r.Get(ctx, types.NamespacedName{Name: proj.Spec.OrganizationRef.Name, Namespace: orgNamespace}, org); err != nil {
+		return nil, fmt.Errorf("failed to fetch organization %s: %w", proj.Spec.OrganizationRef.Name, err)
+	}
+	return org, nil
+}
+
+func (r *Reconciler) ensureNamespace(ctx context.Context, namespaceName string) error {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespaceName,
@@ -313,14 +360,15 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 			ns.Labels = make(map[string]string)
 		}
 		ns.Labels["operator.superphenix.net/managed"] = "true"
-		ns.Labels["operator.superphenix.net/project-id"] = proj.Spec.ProjectID
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to reconcile namespace %s: %w", namespaceName, err)
 	}
+	return nil
+}
 
-	// Determine GitOps parameters
+func (r *Reconciler) resolveManifestLocation(proj *operatorv1alpha1.Project) (string, string, string) {
 	repoURL := r.GitOpsConfig.RepoURL
 	path := r.GitOpsConfig.Path
 	targetRevision := r.GitOpsConfig.TargetRevision
@@ -336,8 +384,113 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 			targetRevision = proj.Spec.GitOps.ManifestLocation.TargetRevision
 		}
 	}
+	return repoURL, path, targetRevision
+}
 
-	// Ensure ArgoCD Application exists in that namespace
+func (r *Reconciler) buildHelmParameters(proj *operatorv1alpha1.Project, org *operatorv1alpha1.Organization, organizationName, projectName, azs string) []argov1alpha1.HelmParameter {
+	params := []argov1alpha1.HelmParameter{
+		{
+			Name:  "organization.name",
+			Value: organizationName,
+		},
+		{
+			Name:  "project.name",
+			Value: projectName,
+		},
+		{
+			Name:  "organization.organizationID",
+			Value: org.Spec.OrganizationID,
+		},
+		{
+			Name:  "project.projectID",
+			Value: proj.Spec.ProjectID,
+		},
+		{
+			Name:  "project.availabilityZones",
+			Value: azs,
+		},
+	}
+
+	// Handle GitOps parameters
+	valuesRepoURL := ""
+	username := ""
+	password := ""
+	insecure := false
+	forceHttpBasicAuth := false
+	enableLfs := false
+	sshPrivateKey := ""
+
+	if proj.Spec.GitOps != nil && proj.Spec.GitOps.ValuesLocation != nil {
+		vl := proj.Spec.GitOps.ValuesLocation
+		if vl.RepoURL != "" {
+			valuesRepoURL = vl.RepoURL
+		}
+		if vl.Credentials != nil {
+			if vl.Credentials.Username != "" {
+				username = vl.Credentials.Username
+			}
+			if vl.Credentials.Password != "" {
+				password = vl.Credentials.Password
+			}
+			if vl.Credentials.Insecure {
+				insecure = true
+			}
+			if vl.Credentials.ForceHttpBasicAuth {
+				forceHttpBasicAuth = true
+			}
+			if vl.Credentials.EnableLfs {
+				enableLfs = true
+			}
+			if vl.Credentials.SshPrivateKey != "" {
+				sshPrivateKey = vl.Credentials.SshPrivateKey
+			}
+		}
+	}
+
+	params = append(params, []argov1alpha1.HelmParameter{
+		{
+			Name:  "project.gitops.valuesLocation.repoURL",
+			Value: valuesRepoURL,
+		},
+		{
+			Name:  "project.gitops.valuesLocation.credentials.username",
+			Value: username,
+		},
+		{
+			Name:  "project.gitops.valuesLocation.credentials.password",
+			Value: password,
+		},
+	}...)
+
+	if insecure {
+		params = append(params, argov1alpha1.HelmParameter{
+			Name:  "project.gitops.valuesLocation.credentials.insecure",
+			Value: "true",
+		})
+	}
+	if forceHttpBasicAuth {
+		params = append(params, argov1alpha1.HelmParameter{
+			Name:  "project.gitops.valuesLocation.credentials.forceHttpBasicAuth",
+			Value: "true",
+		})
+	}
+	if enableLfs {
+		params = append(params, argov1alpha1.HelmParameter{
+			Name:  "project.gitops.valuesLocation.credentials.enableLfs",
+			Value: "true",
+		})
+	}
+	if sshPrivateKey != "" {
+		params = append(params, argov1alpha1.HelmParameter{
+			Name:  "project.gitops.valuesLocation.credentials.sshPrivateKey",
+			Value: sshPrivateKey,
+		})
+	}
+
+	return params
+}
+
+func (r *Reconciler) ensureArgoApplication(ctx context.Context, namespaceName, appName, repoURL, path, targetRevision string, helmParams []argov1alpha1.HelmParameter) error {
 	app := &argov1alpha1.Application{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      appName,
@@ -345,20 +498,21 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 		},
 	}
 
-	_, err = controllerutil.CreateOrUpdate(ctx, r.Client, app, func() error {
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, app, func() error {
 		if app.Labels == nil {
 			app.Labels = make(map[string]string)
 		}
 		app.Labels["operator.superphenix.net/managed"] = "true"
 
-		// Note: Standard owner references don't work across namespaces.
-		// We handle cleanup in the project finalizer.
-
 		app.Spec.Source = &argov1alpha1.ApplicationSource{
 			RepoURL:        repoURL,
 			Path:           path,
 			TargetRevision: targetRevision,
+			Helm: &argov1alpha1.ApplicationSourceHelm{
+				Parameters: helmParams,
+			},
 		}
+
 		app.Spec.Destination = argov1alpha1.ApplicationDestination{
 			Server:    "https://kubernetes.default.svc",
 			Namespace: namespaceName,

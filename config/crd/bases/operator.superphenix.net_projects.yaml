@@ -21,8 +21,8 @@ spec:
     - jsonPath: .spec.projectID
       name: ProjectID
       type: string
-    - jsonPath: .spec.nameOverride
-      name: Override
+    - jsonPath: .spec.name
+      name: Name
       type: string
     - jsonPath: .status.conditions[?(@.type=="Bound")].status
       name: Bound
@@ -94,10 +94,50 @@ spec:
                         description: TargetRevision overrides the default target revision.
                         type: string
                     type: object
+                  valuesLocation:
+                    description: ValuesLocation defines where the GitOps values are
+                      located.
+                    properties:
+                      credentials:
+                        description: Credentials defines the Git credentials for the
+                          values repository.
+                        properties:
+                          enableLfs:
+                            description: EnableLfs enables Git LFS.
+                            type: boolean
+                          forceHttpBasicAuth:
+                            description: ForceHttpBasicAuth forces HTTP Basic Auth.
+                            type: boolean
+                          insecure:
+                            description: Insecure allows connecting to an insecure
+                              Git repository.
+                            type: boolean
+                          password:
+                            description: Password for Git authentication.
+                            type: string
+                          sshPrivateKey:
+                            description: SshPrivateKey for SSH authentication.
+                            type: string
+                          username:
+                            description: Username for Git authentication.
+                            type: string
+                        type: object
+                      path:
+                        description: Path overrides the default path for values.
+                        type: string
+                      repoURL:
+                        description: RepoURL overrides the default repository URL
+                          for values.
+                        type: string
+                      targetRevision:
+                        description: TargetRevision overrides the default target revision
+                          for values.
+                        type: string
+                    type: object
                 type: object
-              nameOverride:
+              name:
                 description: |-
-                  NameOverride allows overriding the name used in labels.
+                  Name allows overriding the name used in labels.
                   It must be a valid Kubernetes label value (RFC 1123/6399).
                 maxLength: 63
                 pattern: ^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$

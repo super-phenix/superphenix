@@ -69,14 +69,35 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 
 	log.V(1).Info("Reconciling Organization", "name", org.Name, "namespace", org.Namespace)
-	
-	// Finalizer logic
+
+	// Handle Finalizers
+	stop, res, err := r.reconcileFinalizers(ctx, org)
+	if err != nil || stop {
+		return res, err
+	}
+
+	// Reconcile Database Binding
+	if err := r.reconcileDatabaseBinding(ctx, org); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	org.Status.ObservedGeneration = org.Generation
+	if err := r.Status().Update(ctx, org); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) reconcileFinalizers(ctx context.Context, org *operatorv1alpha1.Organization) (bool, ctrl.Result, error) {
+	log := logf.FromContext(ctx)
+
 	if !org.ObjectMeta.DeletionTimestamp.IsZero() {
 		if controllerutil.ContainsFinalizer(org, FinalizerName) {
 			// Check if any Project references this Organization
 			projectList := &operatorv1alpha1.ProjectList{}
 			if err := r.List(ctx, projectList); err != nil {
-				return ctrl.Result{}, err
+				return true, ctrl.Result{}, err
 			}
 
 			referenced := false
@@ -90,38 +111,43 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 			if referenced {
 				log.Info("Organization is still referenced by one or more Projects, blocking deletion", "name", org.Name)
-				return ctrl.Result{RequeueAfter: time.Minute}, nil
+				return true, ctrl.Result{RequeueAfter: time.Minute}, nil
 			}
 
 			controllerutil.RemoveFinalizer(org, FinalizerName)
 			if err := r.Update(ctx, org); err != nil {
-				return ctrl.Result{}, err
+				return true, ctrl.Result{}, err
 			}
 		}
-		return ctrl.Result{}, nil
+		return true, ctrl.Result{}, nil
 	}
 
 	if !controllerutil.ContainsFinalizer(org, FinalizerName) {
 		controllerutil.AddFinalizer(org, FinalizerName)
 		if err := r.Update(ctx, org); err != nil {
-			return ctrl.Result{}, err
+			return true, ctrl.Result{}, err
 		}
-		return ctrl.Result{}, nil
+		return true, ctrl.Result{}, nil
 	}
 
-	// Set Bound condition.
+	return false, ctrl.Result{}, nil
+}
+
+func (r *Reconciler) reconcileDatabaseBinding(ctx context.Context, org *operatorv1alpha1.Organization) error {
 	status := metav1.ConditionFalse
 	reason := operatorv1alpha1.ReasonBoundFailed
 	message := "Organization not found in Superphenix Database"
 
 	if db.Client != nil {
 		found, err := db.OrganizationExists(org.Spec.OrganizationID)
-		if err == nil && found {
-			status = metav1.ConditionTrue
-			reason = operatorv1alpha1.ReasonBoundFound
-			message = "Organization is bound to the Superphenix Database"
+		if err == nil {
+			if found {
+				status = metav1.ConditionTrue
+				reason = operatorv1alpha1.ReasonBoundFound
+				message = "Organization is bound to the Superphenix Database"
+			}
 		} else if err != nil {
-			return ctrl.Result{}, err
+			return err
 		}
 	} else {
 		message = "Superphenix Database connection not initialized"
@@ -134,11 +160,5 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Message:            message,
 		ObservedGeneration: org.Generation,
 	})
-	org.Status.ObservedGeneration = org.Generation
-
-	if err := r.Status().Update(ctx, org); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
+	return nil
 }

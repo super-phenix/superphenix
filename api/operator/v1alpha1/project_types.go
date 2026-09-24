@@ -32,12 +32,12 @@ type ProjectSpec struct {
 	// +kubebuilder:validation:Pattern=`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`
 	ProjectID string `json:"projectID"`
 
-	// NameOverride allows overriding the name used in labels.
+	// Name allows overriding the name used in labels.
 	// It must be a valid Kubernetes label value (RFC 1123/6399).
 	// +optional
 	// +kubebuilder:validation:MaxLength=63
 	// +kubebuilder:validation:Pattern=`^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$`
-	NameOverride string `json:"nameOverride,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// OrganizationRef references the Organization resource this project belongs to.
 	// +kubebuilder:validation:Required
@@ -57,6 +57,10 @@ type ProjectGitOpsSpec struct {
 	// ManifestLocation defines where the GitOps manifests are located.
 	// +optional
 	ManifestLocation *ProjectManifestLocationSpec `json:"manifestLocation,omitempty"`
+
+	// ValuesLocation defines where the GitOps values are located.
+	// +optional
+	ValuesLocation *ProjectValuesLocationSpec `json:"valuesLocation,omitempty"`
 }
 
 // ProjectManifestLocationSpec defines the location of GitOps manifests.
@@ -72,6 +76,52 @@ type ProjectManifestLocationSpec struct {
 	// TargetRevision overrides the default target revision.
 	// +optional
 	TargetRevision string `json:"targetRevision,omitempty"`
+}
+
+// ProjectValuesLocationSpec defines the location of GitOps values.
+type ProjectValuesLocationSpec struct {
+	// RepoURL overrides the default repository URL for values.
+	// +optional
+	RepoURL string `json:"repoURL,omitempty"`
+
+	// Path overrides the default path for values.
+	// +optional
+	Path string `json:"path,omitempty"`
+
+	// TargetRevision overrides the default target revision for values.
+	// +optional
+	TargetRevision string `json:"targetRevision,omitempty"`
+
+	// Credentials defines the Git credentials for the values repository.
+	// +optional
+	Credentials *ProjectGitCredentialsSpec `json:"credentials,omitempty"`
+}
+
+// ProjectGitCredentialsSpec defines the Git credentials for a repository.
+type ProjectGitCredentialsSpec struct {
+	// Username for Git authentication.
+	// +optional
+	Username string `json:"username,omitempty"`
+
+	// Password for Git authentication.
+	// +optional
+	Password string `json:"password,omitempty"`
+
+	// Insecure allows connecting to an insecure Git repository.
+	// +optional
+	Insecure bool `json:"insecure,omitempty"`
+
+	// ForceHttpBasicAuth forces HTTP Basic Auth.
+	// +optional
+	ForceHttpBasicAuth bool `json:"forceHttpBasicAuth,omitempty"`
+
+	// EnableLfs enables Git LFS.
+	// +optional
+	EnableLfs bool `json:"enableLfs,omitempty"`
+
+	// SshPrivateKey for SSH authentication.
+	// +optional
+	SshPrivateKey string `json:"sshPrivateKey,omitempty"`
 }
 
 // AvailabilityZoneReference defines a reference to a Cluster resource.
@@ -119,7 +169,7 @@ type ProjectStatus struct {
 // +kubebuilder:resource:scope=Namespaced
 // +kubebuilder:printcolumn:name="Organization",type=string,JSONPath=`.spec.organizationRef.name`
 // +kubebuilder:printcolumn:name="ProjectID",type=string,JSONPath=`.spec.projectID`
-// +kubebuilder:printcolumn:name="Override",type=string,JSONPath=`.spec.nameOverride`
+// +kubebuilder:printcolumn:name="Name",type=string,JSONPath=`.spec.name`
 // +kubebuilder:printcolumn:name="Bound",type=string,JSONPath=`.status.conditions[?(@.type=="Bound")].status`
 // +kubebuilder:printcolumn:name="Available AZs",type=string,JSONPath=`.status.availableZones`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`

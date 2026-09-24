@@ -157,34 +157,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	if !cluster.ObjectMeta.DeletionTimestamp.IsZero() {
 		// The cluster is being deleted and the finalizer is present, so clean it up
 		if controllerutil.ContainsFinalizer(cluster, FinalizerName) {
-			// Check if any Project references this Cluster in AvailabilityZones
-			projectList := &operatorv1alpha1.ProjectList{}
-			if err := r.List(ctx, projectList); err != nil {
-				return ctrl.Result{}, err
-			}
-
-			referenced := false
-			for _, p := range projectList.Items {
-				for _, az := range p.Spec.AvailabilityZones {
-					azNamespace := az.Namespace
-					if azNamespace == "" {
-						azNamespace = p.Namespace
-					}
-					if az.Name == cluster.Name && azNamespace == cluster.Namespace {
-						referenced = true
-						break
-					}
-				}
-				if referenced {
-					break
-				}
-			}
-
-			if referenced {
-				logf.FromContext(ctx).Info("Cluster is still referenced by one or more Projects, blocking deletion", "name", cluster.Name)
-				return ctrl.Result{RequeueAfter: time.Minute}, nil
-			}
-
 			if err := r.cleanupCluster(ctx, cluster); err != nil {
 				// Update status with the cleanup error
 				if _, syncErr := r.syncStatus(ctx, cluster, nil, "", 0, nil, err, nil); syncErr != nil {

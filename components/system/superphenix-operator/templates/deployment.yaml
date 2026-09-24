@@ -58,6 +58,15 @@ spec:
             - --operator-namespace=$(OPERATOR_NAMESPACE)
             - --argocd-default-config=/etc/superphenix/argocd/default/values.yaml
             - --argocd-ha-config=/etc/superphenix/argocd/ha/values.yaml
+            {{- if .Values.config.gitops.repoURL }}
+            - --gitops-repo-url={{ .Values.config.gitops.repoURL }}
+            {{- end }}
+            {{- if .Values.config.gitops.path }}
+            - --gitops-path={{ .Values.config.gitops.path }}
+            {{- end }}
+            {{- if .Values.config.gitops.targetRevision }}
+            - --gitops-target-revision={{ .Values.config.gitops.targetRevision }}
+            {{- end }}
             {{- if .Values.config.system.repoURL }}
             - --system-chart-url={{ .Values.config.system.repoURL }}
             {{- end }}

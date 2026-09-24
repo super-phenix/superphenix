@@ -1,0 +1,31 @@
+# -- Organization information
+organization:
+  # -- Organization ID (does not include the "spx" prefix)
+  organizationID: ""
+  # -- Name of the organization
+  name: ""
+
+# -- Project information
+project:
+  # -- Project ID (does not include the "spx" prefix)
+  projectID: ""
+  # -- Name af the project
+  name: ""
+  # -- Availability zones as defined in the Project status (comma separated)
+  availabilityZones: ""
+  # -- GitOps configuration
+  gitops:
+    # -- Values location configuration
+    valuesLocation:
+      repoURL: ""
+      # path and targetRevision are not used by the secret template, but good to have for completeness
+      path: ""
+      targetRevision: ""
+      # -- Credentials for the values repository
+      credentials:
+        username: ""
+        password: ""
+        insecure: false
+        forceHttpBasicAuth: false
+        enableLfs: false
+        sshPrivateKey: ""

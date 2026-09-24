@@ -8,7 +8,7 @@ metadata:
   namespace: spx
 spec:
   projectID: 6ba7b810-9dad-41d1-80b4-00c04fd430c8
-  nameOverride: proj-sample-override
+  name: proj-sample-override
   organizationRef:
     name: organization-sample
   availabilityZones:
@@ -18,3 +18,10 @@ spec:
       repoURL: https://github.com/super-phenix/project-gitops-sample.git
       path: ./manifests
       targetRevision: main
+    valuesLocation:
+      repoURL: https://github.com/super-phenix/project-values-sample.git
+      path: ./values
+      targetRevision: prod
+      credentials:
+        username: git-user
+        password: git-password
