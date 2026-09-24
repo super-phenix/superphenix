@@ -307,6 +307,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/billing/resource/{resourceId}": {
+            "get": {
+                "description": "Get Resource Name by Resource ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin endpoint",
+                    "Billing",
+                    "v1"
+                ],
+                "summary": "Get Resource Name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resourceId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Resource Name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/readyz": {
             "get": {
                 "description": "Check that both public and admin HTTP servers are reachable",

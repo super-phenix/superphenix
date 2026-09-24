@@ -88,3 +88,37 @@ func (h *Service) GetOrgaName(w http.ResponseWriter, r *http.Request) {
 	}
 	ch.String(w, http.StatusOK, orga.Name)
 }
+
+// GetResourceName retrieve the resource name by Resource ID
+//
+//	@Summary		Get Resource Name
+//	@Description	Get Resource Name by Resource ID
+//	@Tags			Admin endpoint, Billing, v1
+//	@Produce		json
+//	@Param			resourceId	path		string	true	"Resource ID"
+//	@Success		200			string		"Resource Name"
+//	@Failure		400			{string}	string	"Error"
+//	@Failure		404			{string}	string	"Error"
+//
+//	@Router			/billing/resource/{resourceId} [get]
+func (h *Service) GetResourceName(w http.ResponseWriter, r *http.Request) {
+	resourceId := chi.URLParam(r, "resourceId")
+
+	resourceUuid, err := uuid.Parse(resourceId)
+	if err != nil {
+		log.Error().Err(err).Str("resourceId", resourceId).Msg("Failed to parse resourceId")
+		httpError.Http(w, r, http.StatusBadRequest).Msg(consts.SpxWrongPathParam)
+		return
+	}
+	product, err := crud.FindUnscoped[model.Product, model.Product](model.Product{
+		Model: model.Model{
+			ID: resourceUuid,
+		},
+	})
+	if err != nil {
+		log.Error().Err(err).Str("resourceId", resourceId).Msg(consts.SpxResourceNotFound)
+		httpError.Http(w, r, http.StatusNotFound).Msg(consts.SpxResourceNotFound)
+		return
+	}
+	ch.String(w, http.StatusOK, product.ProductName)
+}
