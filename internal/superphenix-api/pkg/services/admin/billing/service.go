@@ -14,6 +14,7 @@ const ModuleName = "billing"
 type API interface {
 	GetProjectName(http.ResponseWriter, *http.Request)
 	GetOrgaName(http.ResponseWriter, *http.Request)
+	GetResourceName(http.ResponseWriter, *http.Request)
 }
 
 // Service is the default implementation of API.
@@ -36,6 +37,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		Routes: []router.Route{
 			router.Get("/project/{projectId}", s.GetProjectName),
 			router.Get("/organization/{orgaId}", s.GetOrgaName),
+			router.Get("/resource/{resourceId}", s.GetResourceName),
 		},
 	}
 }
