@@ -3,6 +3,8 @@
 # It should be run by config/default
 resources:
 - bases/operator.superphenix.net_clusters.yaml
+- bases/operator.superphenix.net_organizations.yaml
+- bases/operator.superphenix.net_projects.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

@@ -18,4 +18,22 @@ resources:
   kind: Cluster
   path: github.com/super-phenix/superphenix/cmd/superphenix-operator/api/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: superphenix.net
+  group: operator
+  kind: Organization
+  path: github.com/super-phenix/superphenix/cmd/superphenix-operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: superphenix.net
+  group: operator
+  kind: Project
+  path: github.com/super-phenix/superphenix/cmd/superphenix-operator/api/v1alpha1
+  version: v1alpha1
 version: "3"

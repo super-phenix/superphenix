@@ -1,0 +1,20 @@
+apiVersion: operator.superphenix.net/v1alpha1
+kind: Project
+metadata:
+  labels:
+    app.kubernetes.io/name: superphenix-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: project-sample
+  namespace: spx
+spec:
+  projectID: 6ba7b810-9dad-41d1-80b4-00c04fd430c8
+  nameOverride: proj-sample-override
+  organizationRef:
+    name: organization-sample
+  availabilityZones:
+    - name: cluster-sample
+  gitops:
+    manifestLocation:
+      repoURL: https://github.com/super-phenix/project-gitops-sample.git
+      path: ./manifests
+      targetRevision: main

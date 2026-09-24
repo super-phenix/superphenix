@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"crypto/tls"
 	"flag"
@@ -30,8 +31,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
+	argov1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+	"github.com/super-phenix/superphenix/internal/superphenix-operator/db"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/cluster"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/management"
+	"github.com/super-phenix/superphenix/internal/superphenix-operator/organization"
+	"github.com/super-phenix/superphenix/internal/superphenix-operator/project"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/telemetry"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
 	"github.com/super-phenix/superphenix/pkg/argocd"
@@ -47,6 +52,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(argov1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -79,6 +85,14 @@ func main() {
 	var telemetryEndpoint string
 	var disableVersionValidation bool
 	var installWithoutCNI bool
+	var dbHost string
+	var dbPort string
+	var dbUser string
+	var dbPassword string
+	var dbName string
+	var gitopsRepoURL string
+	var gitopsPath string
+	var gitopsTargetRevision string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -115,6 +129,14 @@ func main() {
 	flag.StringVar(&telemetryEndpoint, "telemetry-endpoint", telemetry.DefaultEndpoint, "URL of the telemetry ingest endpoint")
 	flag.BoolVar(&disableVersionValidation, "disable-version-validation", false, "Disable validation of versions entirely")
 	flag.BoolVar(&installWithoutCNI, "install-without-cni", false, "Whether to install components without a CNI. Necessary when deploying the operator on a cluster without a CNI.")
+	flag.StringVar(&dbHost, "db-host", os.Getenv("DB_HOST"), "The host of the Superphenix Database")
+	flag.StringVar(&dbPort, "db-port", os.Getenv("DB_PORT"), "The port of the Superphenix Database")
+	flag.StringVar(&dbUser, "db-user", os.Getenv("DB_USER"), "The user of the Superphenix Database")
+	flag.StringVar(&dbPassword, "db-password", os.Getenv("DB_PASSWORD"), "The password of the Superphenix Database")
+	flag.StringVar(&dbName, "db-name", os.Getenv("DB_NAME"), "The name of the Superphenix Database")
+	flag.StringVar(&gitopsRepoURL, "gitops-repo-url", os.Getenv("GITOPS_REPO_URL"), "Default repository URL for project GitOps applications")
+	flag.StringVar(&gitopsPath, "gitops-path", cmp.Or(os.Getenv("GITOPS_PATH"), "."), "Default path for project GitOps applications")
+	flag.StringVar(&gitopsTargetRevision, "gitops-target-revision", cmp.Or(os.Getenv("GITOPS_TARGET_REVISION"), "HEAD"), "Default target revision for project GitOps applications")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -122,6 +144,24 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	// Initialize Database connection
+	if dbHost != "" {
+		setupLog.Info("Initializing Superphenix Database connection", "host", dbHost, "port", dbPort, "database", dbName)
+		go func() {
+			for {
+				if err := db.InitDatabase(dbHost, dbUser, dbPassword, dbName, dbPort); err != nil {
+					setupLog.Error(err, "Failed to initialize database connection, retrying in 30s")
+					time.Sleep(30 * time.Second)
+					continue
+				}
+				setupLog.Info("Successfully connected to Superphenix Database")
+				break
+			}
+		}()
+	} else {
+		setupLog.Info("Superphenix Database connection parameters not provided; database-related features will be disabled")
+	}
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
@@ -257,6 +297,29 @@ func main() {
 		DisableVersionValidation: disableVersionValidation,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "Failed to create controller", "controller", "Cluster")
+		os.Exit(1)
+	}
+
+	if err := (&organization.Reconciler{
+		Client:            mgr.GetClient(),
+		Scheme:            mgr.GetScheme(),
+		OperatorNamespace: operatorNamespace,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "Organization")
+		os.Exit(1)
+	}
+
+	if err := (&project.Reconciler{
+		Client:            mgr.GetClient(),
+		Scheme:            mgr.GetScheme(),
+		OperatorNamespace: operatorNamespace,
+		GitOpsConfig: project.GitOpsConfig{
+			RepoURL:        gitopsRepoURL,
+			Path:           gitopsPath,
+			TargetRevision: gitopsTargetRevision,
+		},
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "Failed to create controller", "controller", "Project")
 		os.Exit(1)
 	}
 

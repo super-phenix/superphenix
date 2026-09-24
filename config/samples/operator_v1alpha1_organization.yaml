@@ -1,0 +1,11 @@
+apiVersion: operator.superphenix.net/v1alpha1
+kind: Organization
+metadata:
+  labels:
+    app.kubernetes.io/name: superphenix-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: organization-sample
+  namespace: spx
+spec:
+  organizationID: 550e8400-e29b-41d4-a716-446655440000
+  nameOverride: org-sample-override

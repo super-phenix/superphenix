@@ -8,21 +8,11 @@ rules:
   - ""
   resources:
   - configmaps
+  - namespaces
   - secrets
   verbs:
   - create
   - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - create
   - get
   - list
   - patch
@@ -51,6 +41,8 @@ rules:
   - operator.superphenix.net
   resources:
   - clusters
+  - organizations
+  - projects
   verbs:
   - create
   - delete
@@ -63,12 +55,16 @@ rules:
   - operator.superphenix.net
   resources:
   - clusters/finalizers
+  - organizations/finalizers
+  - projects/finalizers
   verbs:
   - update
 - apiGroups:
   - operator.superphenix.net
   resources:
   - clusters/status
+  - organizations/status
+  - projects/status
   verbs:
   - get
   - patch
