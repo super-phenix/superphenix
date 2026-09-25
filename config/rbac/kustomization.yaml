@@ -25,4 +25,10 @@ resources:
 - cluster_admin_role.yaml
 - cluster_editor_role.yaml
 - cluster_viewer_role.yaml
+- organization_admin_role.yaml
+- organization_editor_role.yaml
+- organization_viewer_role.yaml
+- project_admin_role.yaml
+- project_editor_role.yaml
+- project_viewer_role.yaml
 

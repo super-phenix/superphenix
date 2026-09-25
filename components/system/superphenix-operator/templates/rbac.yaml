@@ -8,36 +8,42 @@ rules:
   - apiGroups:
       - ""
     resources:
+m      - configmaps
       - namespaces
-    verbs:
-      - create
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
       - secrets
-      - configmaps
     verbs:
+      - create
+      - delete
       - get
       - list
-      - watch
-      - create
-      - update
       - patch
+      - update
+      - watch
   - apiGroups:
       - '*'
     resources:
       - '*'
     verbs:
       - '*'
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - applications
+      - appprojects
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
   - apiGroups:
       - operator.superphenix.net
     resources:
       - clusters
+      - organizations
+      - projects
     verbs:
       - create
       - delete
@@ -50,12 +56,16 @@ rules:
       - operator.superphenix.net
     resources:
       - clusters/finalizers
+      - organizations/finalizers
+      - projects/finalizers
     verbs:
       - update
   - apiGroups:
       - operator.superphenix.net
     resources:
       - clusters/status
+      - organizations/status
+      - projects/status
     verbs:
       - get
       - patch

@@ -147,6 +147,14 @@ config:
     # -- Version of the system chart. If none provided, inherits from the operator chart.
     version: ""
 
+  gitops:
+    # -- Default repository URL for project GitOps applications.
+    repoURL: ""
+    # -- Default path for project GitOps applications.
+    path: "."
+    # -- Default target revision for project GitOps applications.
+    targetRevision: "HEAD"
+
   # -- talos-manager chart deployed by the cluster controller for every managed cluster.
   talosManager:
     chart:

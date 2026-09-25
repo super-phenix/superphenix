@@ -40,6 +40,7 @@ var (
 // +kubebuilder:rbac:groups=operator.superphenix.net,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=operator.superphenix.net,resources=clusters/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=operator.superphenix.net,resources=clusters/finalizers,verbs=update
+// +kubebuilder:rbac:groups=operator.superphenix.net,resources=projects,verbs=get;list;watch
 // +kubebuilder:rbac:groups=argoproj.io,resources=applications;appprojects,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=secrets;configmaps,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch

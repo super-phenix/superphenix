@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.project.name | lower | replace " " "-" }}-gitops-info
+  namespace: {{ .Release.Namespace }}
+data:
+  organizationName: {{ .Values.organization.name | quote }}
+  projectName: {{ .Values.project.name | quote }}
+  organizationID: {{ .Values.organization.organizationID | quote }}
+  projectID: {{ .Values.project.projectID | quote }}
+  availabilityZones: {{ .Values.project.availabilityZones | quote }}
