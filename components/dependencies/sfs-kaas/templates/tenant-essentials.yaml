@@ -8,6 +8,7 @@
 {{- $kubeVersion := $cluster.kubeVersion }}
 {{- $kubeMinor := substr 1 5 $kubeVersion -}}
 {{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
+{{- $controlplaneUrl := printf "https://%s:%d" $fqdn (int $controlPlaneDefaults.network.apiServer.port) }}
 
 ---
 apiVersion: v1
@@ -29,13 +30,13 @@ data:
     
     echo -e "[+] Target cluster:\n\tID: {{ $clusterID }}\n\tName: {{ $cluster.name }}"
     echo "[+] Checking if TCP is ready."
-    curl -kf https://{{ $fqdn }}:{{ $controlPlaneDefaults.network.apiServer.port }}/version -o /dev/null
+    curl -kf {{ $controlplaneUrl }}/version -o /dev/null
     while [ $? != 0 ]
     do
       echo "[+] Waiting 120s for TCP to be ready."
       sleep 120
       echo "[+] Checking if TCP is ready."
-      curl -kf https://{{ $fqdn }}:{{ $controlPlaneDefaults.network.apiServer.port }}/version -o /dev/null
+      curl -kf {{ $controlplaneUrl }}/version -o /dev/null
     done
 
     echo "[+] Running helm upgrade."
@@ -43,7 +44,6 @@ data:
       --version {{ $cluster.kaasEssentials.chartVersion | default $.Chart.Version }} \
       --namespace kube-system \
       --kubeconfig /var/run/kubeconfig \
-      --set cluster.kubeVersion={{ $kubeVersion }} \
       --set controlPlane.fqdn={{ $fqdn | quote }} \
       --set controlPlane.network.apiServer.port={{ $controlPlaneDefaults.network.apiServer.port | quote }} \
       --set controlPlane.network.apiServer.proxyPort={{ $controlPlaneDefaults.network.apiServer.proxyPort | quote }} \
@@ -90,6 +90,8 @@ data:
       clusterID: {{ $clusterID }}
       friendlyName: {{ $cluster.kaasEssentials.clusterFriendlyName | default $cluster.name | quote }}
       name: {{ $cluster.name | quote }}
+      kubeVersion: {{ $kubeVersion }}
+      controlplaneUrl: {{ $controlplaneUrl }}
 
     # Values from clusters.<cluster>.kaasEssentials.values are imported here
     {{- if hasKey $cluster.kaasEssentials "values" }}
