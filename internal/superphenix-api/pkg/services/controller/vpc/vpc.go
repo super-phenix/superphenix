@@ -57,9 +57,9 @@ func (h *Service) ListVPCs(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeVPC)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeVPC.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeVPC).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeVPC.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -118,11 +118,11 @@ func (h *Service) ListAZVPCs(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeVPC, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeVPC.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeVPC).
+			Str("resourceType", model.ProductTypeVPC.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -241,7 +241,7 @@ func (h *Service) CreateVPC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vpc, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeVPC, azDb.Code, org.ID, projectEntity.ID)
+	vpc, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeVPC.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -309,7 +309,7 @@ func (h *Service) UpdateVPC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	productEid := chi.URLParam(r, "effectiveId")
-	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeVPC, azDb.Code, projectEntity.ID); err != nil {
+	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeVPC.Name, azDb.Code, projectEntity.ID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
 			return

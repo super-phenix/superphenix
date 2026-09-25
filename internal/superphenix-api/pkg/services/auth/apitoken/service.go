@@ -11,6 +11,9 @@ import (
 
 const ModuleName = "api-token"
 
+// auditResource is the resource type of the audit events of this module.
+var auditResource = router.Resource{Name: "api-token", Label: "API Token"}
+
 // API is the overridable seam for the API token endpoints; the methods are the HTTP handlers.
 type API interface {
 	CreateAPIToken(http.ResponseWriter, *http.Request)
@@ -37,9 +40,10 @@ func Module(s API) router.Module {
 		Name:  ModuleName,
 		Mount: "/v1",
 		Routes: []router.Route{
-			router.Post("/api-token", s.CreateAPIToken, jwtAuth),
+			router.Post("/api-token", s.CreateAPIToken, jwtAuth).Audited(auditResource, router.ActionCreate, ""),
 			router.Get("/api-token", s.ListAPIToken, jwtAuth),
-			router.Delete("/api-token/{tokenId}", s.RevokeAPIToken, jwtAuth),
+			router.Delete("/api-token/{tokenId}", s.RevokeAPIToken, jwtAuth).
+				Audited(auditResource, router.ActionDelete, "tokenId"),
 		},
 	}
 }

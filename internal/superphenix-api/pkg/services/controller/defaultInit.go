@@ -54,7 +54,7 @@ func initializeVPC(ctx context.Context, orgUUID, projectUUID uuid.UUID, az confi
 		ProductName:   config.Global.ProductsConfig.DefaultVPC.ProductName,
 		CodeAZ:        az.Code,
 		ProjectId:     projectUUID,
-		ProductTypeId: model.ProductTypeVPC,
+		ProductTypeId: model.ProductTypeVPC.Name,
 	})
 	if err != nil {
 		log.Err(err).Str("projectId", projectUUID.String()).Msg("Failed to save VPC in DB")
@@ -119,7 +119,7 @@ func initializeSubnet(ctx context.Context, orgUUID, projectUUID uuid.UUID, az co
 		ProductName:   config.Global.ProductsConfig.DefaultSubnet.ProductName,
 		CodeAZ:        az.Code,
 		ProjectId:     projectUUID,
-		ProductTypeId: model.ProductTypeSubnet,
+		ProductTypeId: model.ProductTypeSubnet.Name,
 	})
 	if err != nil {
 		log.Err(err).Str("projectId", projectUUID.String()).Msg("Failed to save Subnet in DB")

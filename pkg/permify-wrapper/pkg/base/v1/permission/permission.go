@@ -10,6 +10,8 @@ const (
 	OrganizationIAMWrite          = "OrganizationIAMWrite"
 	OrganizationBillingRead       = "OrganizationBillingRead"
 	OrganizationBillingWrite      = "OrganizationBillingWrite"
+	OrganizationAuditLogRead      = "OrganizationAuditLogRead"
+	OrganizationAuditLogWrite     = "OrganizationAuditLogWrite"
 	OrganizationProjectManagement = "OrganizationProjectManagement"
 	ProjectRead                   = "ProjectRead"
 
@@ -64,6 +66,8 @@ var PermissionsEntityMap = map[string]string{
 	OrganizationIAMWrite:          entity.Organization,
 	OrganizationBillingRead:       entity.Organization,
 	OrganizationBillingWrite:      entity.Organization,
+	OrganizationAuditLogRead:      entity.Organization,
+	OrganizationAuditLogWrite:     entity.Organization,
 	OrganizationProjectManagement: entity.Organization,
 	ProjectRead:                   entity.Project,
 

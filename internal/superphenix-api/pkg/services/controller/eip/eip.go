@@ -56,9 +56,9 @@ func (h *Service) ListEips(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeEIP)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeEIP.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeEIP).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeEIP.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -117,11 +117,11 @@ func (h *Service) ListAZEips(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	products, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeEIP, azDb.Code)
+	products, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeEIP.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeEIP).
+			Str("resourceType", model.ProductTypeEIP.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -243,7 +243,7 @@ func (h *Service) CreateEip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	eip, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeEIP, azDb.Code, org.ID, projectEntity.ID)
+	eip, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeEIP.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -314,7 +314,7 @@ func (h *Service) UpdateEip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	productEid := chi.URLParam(r, "effectiveId")
-	eip, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeEIP, azDb.Code, projectEntity.ID)
+	eip, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeEIP.Name, azDb.Code, projectEntity.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)

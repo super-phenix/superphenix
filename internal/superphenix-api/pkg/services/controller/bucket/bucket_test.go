@@ -88,7 +88,7 @@ func TestCombineListResult(t *testing.T) {
 		EffectiveID:   "spx-eid-db",
 		ProductName:   "db-bucket",
 		CodeAZ:        "az1",
-		ProductTypeId: model.ProductTypeBucket,
+		ProductTypeId: model.ProductTypeBucket.Name,
 	}
 	dbProduct.ID = dbId
 
@@ -123,7 +123,7 @@ func TestCombineListResult(t *testing.T) {
 					EId:           "spx-eid-db",
 					ProductName:   "db-bucket",
 					CodeAZ:        "az1",
-					ProductTypeId: model.ProductTypeBucket,
+					ProductTypeId: model.ProductTypeBucket.Name,
 					Gitops:        "false",
 				},
 			}},
@@ -153,7 +153,7 @@ func TestCombineListResult(t *testing.T) {
 					EId:           "spx-eid-db",
 					ProductName:   "db-bucket",
 					CodeAZ:        "az1",
-					ProductTypeId: model.ProductTypeBucket,
+					ProductTypeId: model.ProductTypeBucket.Name,
 					Gitops:        "false",
 				},
 				Bucket: map[string]interface{}{"name": "spx-eid-db"},

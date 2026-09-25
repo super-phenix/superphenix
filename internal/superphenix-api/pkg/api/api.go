@@ -39,6 +39,8 @@ import (
 //	@scope.OrganizationIAMWrite				Grants write access to organization IAM
 //	@scope.OrganizationBillingRead			Grants read access to organization billing
 //	@scope.OrganizationBillingWrite			Grants write access to organization billing
+//	@scope.OrganizationAuditLogRead			Grants read access to the organization audit log
+//	@scope.OrganizationAuditLogWrite		Grants write access to the organization audit log retention
 //	@scope.OrganizationProjectManagement	Grants project management access in organization
 //	@scope.ProjectInstanceRead				Grants read access to instance in project
 //	@scope.ProjectInstanceTerminal			Grants terminal access to instance in project

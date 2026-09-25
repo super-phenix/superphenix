@@ -56,9 +56,9 @@ func (h *Service) ListSnapshots(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeSnapshot)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeSnapshot.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeSnapshot).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeSnapshot.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -117,11 +117,11 @@ func (h *Service) ListAZSnapshots(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeSnapshot, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeSnapshot.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeSnapshot).
+			Str("resourceType", model.ProductTypeSnapshot.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -242,7 +242,7 @@ func (h *Service) CreateSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snapshot, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeSnapshot, azDb.Code, org.ID, projectEntity.ID)
+	snapshot, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeSnapshot.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -328,7 +328,7 @@ func (h *Service) UpdateSnapshot(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeSnapshot, azDb.Code, projectEntity.ID); err != nil {
+	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeSnapshot.Name, azDb.Code, projectEntity.ID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
 			return

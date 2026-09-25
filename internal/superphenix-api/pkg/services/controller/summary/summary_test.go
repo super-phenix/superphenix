@@ -33,12 +33,12 @@ func TestFilterReadable(t *testing.T) {
 		{
 			name:    "snapshot read gates both snapshot types",
 			granted: map[string]bool{pwPermission.ProjectSnapshotRead: true},
-			want:    []string{model.ProductTypeSnapshot, model.ProductTypeVmSnapshot},
+			want:    []string{model.ProductTypeSnapshot.Name, model.ProductTypeVmSnapshot.Name},
 		},
 		{
 			name:    "two unrelated products",
 			granted: map[string]bool{pwPermission.ProjectKaaSRead: true, pwPermission.ProjectBucketRead: true},
-			want:    []string{model.ProductTypeBucket, model.ProductTypeKaaS},
+			want:    []string{model.ProductTypeBucket.Name, model.ProductTypeKaaS.Name},
 		},
 		{
 			name:    "permission that gates no product type",

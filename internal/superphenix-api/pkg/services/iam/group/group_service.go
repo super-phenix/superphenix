@@ -15,6 +15,12 @@ import (
 
 const moduleName = "group"
 
+// auditResource is the resource type of the audit events of this module.
+var auditResource = router.Resource{Name: "iam.group", Label: "IAM Group"}
+
+// auditActionSave covers the routes that create or update depending on the body.
+const auditActionSave = "save"
+
 // API is the overridable seam for the IAM group endpoints; the methods are the HTTP handlers.
 type API interface {
 	ListPermissionSets(http.ResponseWriter, *http.Request)
@@ -52,9 +58,12 @@ func Module(s API) router.Module {
 			router.Get("/organization/{orgaId}/iam/permissionSets", s.ListPermissionSets, jwtOrToken, orgaRead, iamRead),
 			router.Get("/organization/{orgaId}/iam/group", s.GetAllOrganizationGroups, jwtOrToken, orgaRead, iamRead),
 			router.Get("/organization/{orgaId}/iam/group/{groupId}", s.GetOrganizationGroup, jwtOrToken, orgaRead, iamRead),
-			router.Post("/organization/{orgaId}/iam/group", s.CreateOrUpdateOrganizationGroup, jwtOrToken, orgaRead, iamWrite),
-			router.Post("/organization/{orgaId}/iam/group/{groupId}/duplicate", s.DuplicateOrganizationGroup, jwtOrToken, orgaRead, iamWrite),
-			router.Delete("/organization/{orgaId}/iam/group", s.DeleteOrganizationGroup, jwtOrToken, orgaRead, iamWrite),
+			router.Post("/organization/{orgaId}/iam/group", s.CreateOrUpdateOrganizationGroup, jwtOrToken, orgaRead, iamWrite).
+				Audited(auditResource, auditActionSave, ""),
+			router.Post("/organization/{orgaId}/iam/group/{groupId}/duplicate", s.DuplicateOrganizationGroup, jwtOrToken, orgaRead, iamWrite).
+				Audited(auditResource, "duplicate", "groupId"),
+			router.Delete("/organization/{orgaId}/iam/group", s.DeleteOrganizationGroup, jwtOrToken, orgaRead, iamWrite).
+				AuditedByQuery(auditResource, router.ActionDelete, "groupId"),
 		},
 	}
 }

@@ -30,6 +30,7 @@ func main() {
 	startMetrics()
 	spxId.SetFrameworkPrefix(config.Global.SpxPrefix)
 	app.StartGarbageCollection(ctx, &config.Global)
+	app.StartAuditLogGC(ctx, &config.Global)
 
 	api.StartAPI()
 }

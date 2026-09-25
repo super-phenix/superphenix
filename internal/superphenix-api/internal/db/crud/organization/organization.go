@@ -252,3 +252,20 @@ func convertUserAndRoleToUserRole(users []*model.User, roles []*model.UserOrgani
 	}
 	return result
 }
+
+// SetAuditRetentionDays stores the audit log retention override. Nil goes back to the default.
+func SetAuditRetentionDays(orgaId uuid.UUID, days *int) error {
+	return db.Client.Model(&model.Organization{}).
+		Where("id = ?", orgaId).
+		Update("audit_retention_days", days).Error
+}
+
+// FindAllWithAuditRetention returns the organizations holding a retention override, deleted
+// ones included.
+func FindAllWithAuditRetention(ctx context.Context) ([]model.Organization, error) {
+	var list []model.Organization
+	result := db.Client.WithContext(ctx).Unscoped().Model(&model.Organization{}).
+		Where("audit_retention_days IS NOT NULL").
+		Find(&list)
+	return list, result.Error
+}

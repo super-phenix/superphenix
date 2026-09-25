@@ -15,6 +15,7 @@ relationships:
   - "organization:1#IAMFullAccess@group:2#assignee"
   - "organization:1#SettingsEdition@group:2#assignee"
   - "organization:1#BillingFullAccess@group:2#assignee"
+  - "organization:1#AuditLogFullAccess@group:2#assignee"
   - "organization:1#ProjectManagement@group:2#assignee"
   - "organization:1#spx_member@group:3#assignee"
   - "organization:1#BillingFullAccess@group:3#assignee"
@@ -166,6 +167,8 @@ scenarios:
           OrganizationIAMWrite: true
           OrganizationBillingRead: true
           OrganizationBillingWrite: true
+          OrganizationAuditLogRead: true
+          OrganizationAuditLogWrite: true
           OrganizationProjectManagement: true
       - entity: project:1
         subject: user:1
@@ -248,6 +251,8 @@ scenarios:
           OrganizationIAMWrite: true
           OrganizationBillingRead: true
           OrganizationBillingWrite: true
+          OrganizationAuditLogRead: true
+          OrganizationAuditLogWrite: true
           OrganizationProjectManagement: true
       - entity: project:1
         subject: user:2
@@ -330,6 +335,8 @@ scenarios:
           OrganizationIAMWrite: false
           OrganizationBillingRead: true
           OrganizationBillingWrite: true
+          OrganizationAuditLogRead: false
+          OrganizationAuditLogWrite: false
           OrganizationProjectManagement: false
       - entity: project:1
         subject: user:3
@@ -408,6 +415,8 @@ scenarios:
           OrganizationIAMWrite: false
           OrganizationBillingRead: false
           OrganizationBillingWrite: false
+          OrganizationAuditLogRead: false
+          OrganizationAuditLogWrite: false
           OrganizationProjectManagement: true
       - entity: project:1
         subject: user:4
@@ -490,6 +499,8 @@ scenarios:
           OrganizationIAMWrite: false
           OrganizationBillingRead: false
           OrganizationBillingWrite: false
+          OrganizationAuditLogRead: false
+          OrganizationAuditLogWrite: false
           OrganizationProjectManagement: false
       - entity: project:1
         subject: user:5
@@ -570,6 +581,8 @@ scenarios:
           OrganizationIAMWrite: false
           OrganizationBillingRead: false
           OrganizationBillingWrite: false
+          OrganizationAuditLogRead: false
+          OrganizationAuditLogWrite: false
           OrganizationProjectManagement: false
       - entity: project:1
         subject: user:6
@@ -650,6 +663,8 @@ scenarios:
           OrganizationIAMWrite: false
           OrganizationBillingRead: false
           OrganizationBillingWrite: false
+          OrganizationAuditLogRead: false
+          OrganizationAuditLogWrite: false
           OrganizationProjectManagement: false
       - entity: project:1
         subject: user:7
@@ -728,6 +743,8 @@ scenarios:
           OrganizationIAMWrite: false
           OrganizationBillingRead: false
           OrganizationBillingWrite: false
+          OrganizationAuditLogRead: false
+          OrganizationAuditLogWrite: false
           OrganizationProjectManagement: false
       - entity: project:1
         subject: user:8

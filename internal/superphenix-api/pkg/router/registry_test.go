@@ -323,3 +323,187 @@ func TestOverrideOfDisabledModuleRouteStaysOff(t *testing.T) {
 		t.Error("override handler ran; a disabled module's route must not be resurrected by an override")
 	}
 }
+
+func TestAuditorWrapsAuditedRoutes(t *testing.T) {
+	tests := []struct {
+		name       string
+		route      func(rec *[]string) router.Route
+		override   func(rec *[]string) *router.Route
+		setAuditor bool
+		want       []string
+	}{
+		{
+			name: "audited route gets the audit middleware first",
+			route: func(rec *[]string) router.Route {
+				return router.Post("/x", handler(rec, "h"), tag(rec, "route")).
+					Audited(router.Resource{Name: "disk"}, router.ActionCreate, "")
+			},
+			setAuditor: true,
+			want:       []string{"g", "audit:disk.create", "mod", "route", "h"},
+		},
+		{
+			name: "undeclared route is not wrapped",
+			route: func(rec *[]string) router.Route {
+				return router.Post("/x", handler(rec, "h"), tag(rec, "route"))
+			},
+			setAuditor: true,
+			want:       []string{"g", "mod", "route", "h"},
+		},
+		{
+			name: "skipped route is not wrapped",
+			route: func(rec *[]string) router.Route {
+				return router.Post("/x", handler(rec, "h"), tag(rec, "route")).NotAudited("read-only")
+			},
+			setAuditor: true,
+			want:       []string{"g", "mod", "route", "h"},
+		},
+		{
+			name: "no auditor leaves the chain untouched",
+			route: func(rec *[]string) router.Route {
+				return router.Post("/x", handler(rec, "h"), tag(rec, "route")).
+					Audited(router.Resource{Name: "disk"}, router.ActionCreate, "")
+			},
+			want: []string{"g", "mod", "route", "h"},
+		},
+		{
+			name: "override inherits the declaration",
+			route: func(rec *[]string) router.Route {
+				return router.Post("/x", handler(rec, "h")).Audited(router.Resource{Name: "disk"}, router.ActionCreate, "")
+			},
+			override: func(rec *[]string) *router.Route {
+				rt := router.Post("/x", handler(rec, "ov"), tag(rec, "ovmw"))
+				return &rt
+			},
+			setAuditor: true,
+			want:       []string{"g", "audit:disk.create", "ovmw", "ov"},
+		},
+		{
+			name: "override can redeclare",
+			route: func(rec *[]string) router.Route {
+				return router.Post("/x", handler(rec, "h")).Audited(router.Resource{Name: "disk"}, router.ActionCreate, "")
+			},
+			override: func(rec *[]string) *router.Route {
+				rt := router.Post("/x", handler(rec, "ov")).Audited(router.Resource{Name: "disk"}, "import", "")
+				return &rt
+			},
+			setAuditor: true,
+			want:       []string{"g", "audit:disk.import", "ov"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var rec []string
+			reg := router.New().
+				Use("g", tag(&rec, "g")).
+				Register(router.Module{
+					Name:        "m",
+					Mount:       "/v1",
+					Middlewares: []router.Middleware{tag(&rec, "mod")},
+					Routes:      []router.Route{tt.route(&rec)},
+				})
+			if tt.setAuditor {
+				reg.SetAuditor(func(a router.Audit) router.Middleware {
+					return tag(&rec, "audit:"+a.EventType())
+				})
+			}
+			if tt.override != nil {
+				reg.OverrideRoute(http.MethodPost, "/v1/x", *tt.override(&rec))
+			}
+
+			if rr := do(build(reg), http.MethodPost, "/v1/x"); rr.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", rr.Code)
+			}
+			if !reflect.DeepEqual(rec, tt.want) {
+				t.Errorf("chain = %v, want %v", rec, tt.want)
+			}
+		})
+	}
+}
+
+func TestDeclaredListsNestedAndDisabledRoutes(t *testing.T) {
+	var rec []string
+	reg := router.New().
+		Register(router.Module{
+			Name:  "on",
+			Mount: "/v1",
+			Groups: []router.Group{{
+				Prefix: "/g",
+				Routes: []router.Route{router.Delete("/x", handler(&rec, "h")).Audited(router.Resource{Name: "disk"}, router.ActionDelete, "id")},
+			}},
+		}).
+		Register(router.Module{
+			Name:    "off",
+			Mount:   "/v2",
+			Enabled: func() bool { return false },
+			Routes:  []router.Route{router.Get("/y", handler(&rec, "h"))},
+		})
+
+	want := []router.RouteInfo{
+		{
+			Method: http.MethodDelete, Pattern: "/v1/g/x",
+			Audit: &router.Audit{Resource: router.Resource{Name: "disk"}, Action: router.ActionDelete, ResourceParam: "id"},
+		},
+		{Method: http.MethodGet, Pattern: "/v2/y"},
+	}
+	if got := reg.Declared(); !reflect.DeepEqual(got, want) {
+		t.Errorf("Declared() = %+v, want %+v", got, want)
+	}
+}
+
+func TestRouteInfoOrganizationScoped(t *testing.T) {
+	tests := []struct {
+		name string
+		info router.RouteInfo
+		want bool
+	}{
+		{
+			name: "orgaId in the pattern",
+			info: router.RouteInfo{Pattern: "/v1/organization/{orgaId}/x", Audit: &router.Audit{}},
+			want: true,
+		},
+		{
+			name: "handler reports the organization",
+			info: router.RouteInfo{Pattern: "/v1/organization", Audit: &router.Audit{ReportsOrganization: true}},
+			want: true,
+		},
+		{
+			name: "user route",
+			info: router.RouteInfo{Pattern: "/v1/api-token", Audit: &router.Audit{}},
+			want: false,
+		},
+		{
+			name: "undeclared route",
+			info: router.RouteInfo{Pattern: "/v1/user"},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.info.OrganizationScoped(); got != tt.want {
+				t.Errorf("OrganizationScoped() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestReportingOrganization(t *testing.T) {
+	tests := []struct {
+		name  string
+		route router.Route
+		want  bool
+	}{
+		{name: "audited route", route: router.Post("/x", nil).Audited(router.Resource{Name: "organization"}, router.ActionCreate, ""), want: true},
+		{name: "undeclared route stays undeclared", route: router.Post("/x", nil), want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.route.ReportingOrganization()
+			if (got.Audit != nil && got.Audit.ReportsOrganization) != tt.want {
+				t.Errorf("ReportsOrganization = %v, want %v", got.Audit, tt.want)
+			}
+		})
+	}
+}

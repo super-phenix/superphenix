@@ -3,6 +3,7 @@ package loadbalancer
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -50,9 +51,12 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{loadBalancerWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/load-balancer", s.CreateLoadBalancer, quota),
-				router.Post("/{az}/{projectId}/load-balancer/{effectiveId}", s.UpdateLoadBalancer),
-				router.Delete("/{az}/{projectId}/load-balancer/{effectiveId}", s.DeleteLoadBalancer),
+				router.Post("/{az}/{projectId}/load-balancer", s.CreateLoadBalancer, quota).
+					Audited(model.ProductTypeLoadBalancer, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/load-balancer/{effectiveId}", s.UpdateLoadBalancer).
+					Audited(model.ProductTypeLoadBalancer, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/load-balancer/{effectiveId}", s.DeleteLoadBalancer).
+					Audited(model.ProductTypeLoadBalancer, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

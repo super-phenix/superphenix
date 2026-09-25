@@ -7,6 +7,7 @@ import (
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/gc"
+	auditGc "github.com/super-phenix/superphenix/internal/superphenix-api/internal/audit/gc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/group"
@@ -103,4 +104,19 @@ func StartGarbageCollection(ctx context.Context, cfg *config.Config) {
 	}
 
 	go gc.InitGarbageCollection(ctx, argo, db.Client)
+}
+
+// StartAuditLogGC runs the audit log retention sweep in the background until ctx is
+// cancelled. One replica sweeps per tick.
+func StartAuditLogGC(ctx context.Context, cfg *config.Config) {
+	if !cfg.AuditLog.Enabled || !cfg.AuditLog.GarbageCollection.Enabled {
+		return
+	}
+
+	if err := ProvideInfra(cfg); err != nil {
+		log.Error().Err(err).Msg("Failed to initialize infrastructure, audit log garbage collection not started")
+		return
+	}
+
+	go auditGc.New(cfg.AuditLog).Run(ctx)
 }

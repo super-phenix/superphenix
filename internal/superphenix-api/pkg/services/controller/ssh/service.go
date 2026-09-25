@@ -3,6 +3,7 @@ package ssh
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -49,8 +50,10 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{sshWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/ssh", s.CreateSSH, quota),
-				router.Delete("/{az}/{projectId}/ssh/{effectiveId}", s.DeleteSSH),
+				router.Post("/{az}/{projectId}/ssh", s.CreateSSH, quota).
+					Audited(model.ProductTypeSSH, router.ActionCreate, ""),
+				router.Delete("/{az}/{projectId}/ssh/{effectiveId}", s.DeleteSSH).
+					Audited(model.ProductTypeSSH, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

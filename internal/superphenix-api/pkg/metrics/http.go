@@ -45,6 +45,12 @@ var (
 		Name:      "http_request_count",
 		Help:      "Requests received by status code and method",
 	}, HTTPLabels)
+
+	AuditWriteErrors = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: Namespace,
+		Name:      "audit_write_errors_total",
+		Help:      "Audit events that could not be written",
+	})
 )
 
 // MiddlewareHTTP records metrics about the HTTP requests received by the API

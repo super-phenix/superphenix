@@ -3,6 +3,7 @@ package snapshot
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -50,9 +51,12 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{snapshotWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/snapshot", s.CreateSnapshot, quota),
-				router.Post("/{az}/{projectId}/snapshot/{effectiveId}", s.UpdateSnapshot),
-				router.Delete("/{az}/{projectId}/snapshot/{effectiveId}", s.DeleteSnapshot),
+				router.Post("/{az}/{projectId}/snapshot", s.CreateSnapshot, quota).
+					Audited(model.ProductTypeSnapshot, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/snapshot/{effectiveId}", s.UpdateSnapshot).
+					Audited(model.ProductTypeSnapshot, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/snapshot/{effectiveId}", s.DeleteSnapshot).
+					Audited(model.ProductTypeSnapshot, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

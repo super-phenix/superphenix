@@ -56,9 +56,9 @@ func (h *Service) ListSecurityGroups(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeSecurityGroup)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeSecurityGroup.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeSecurityGroup).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeSecurityGroup.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -118,11 +118,11 @@ func (h *Service) ListAZSecurityGroups(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeSecurityGroup, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeSecurityGroup.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeSecurityGroup).
+			Str("resourceType", model.ProductTypeSecurityGroup.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -241,7 +241,7 @@ func (h *Service) CreateSecurityGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	securityGroup, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeSecurityGroup, azDb.Code, org.ID, projectEntity.ID)
+	securityGroup, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeSecurityGroup.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -315,7 +315,7 @@ func (h *Service) UpdateSecurityGroup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeSecurityGroup, azDb.Code, projectEntity.ID); err != nil {
+	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeSecurityGroup.Name, azDb.Code, projectEntity.ID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
 			return

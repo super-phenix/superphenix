@@ -10,6 +10,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/group"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/user"
 	httpModel "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	groupsvc "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/group"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/project"
 	httpError "github.com/super-phenix/superphenix/pkg/utils/error"
@@ -230,6 +231,9 @@ func (e *Service) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+
+	audit.SetOrganization(r.Context(), orga.ID)
+	audit.SetResource(r.Context(), orga.ID.String())
 
 	// Organization initialization in Permify
 	if err := InitOrganization(r.Context(), orga, userUuid); err != nil {

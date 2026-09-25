@@ -54,9 +54,9 @@ func (h *Service) ListSSHs(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeSSH)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeSSH.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeSSH).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeSSH.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -115,11 +115,11 @@ func (h *Service) ListAZSSHs(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeSSH, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeSSH.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeSSH).
+			Str("resourceType", model.ProductTypeSSH.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -239,7 +239,7 @@ func (h *Service) CreateSSH(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ssh, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeSSH, azDb.Code, org.ID, projectEntity.ID)
+	ssh, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeSSH.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)

@@ -13,6 +13,7 @@ import (
 	apiToken "github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/api-token"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	httpModel "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	"github.com/super-phenix/superphenix/pkg/utils/decoder"
 	httpError "github.com/super-phenix/superphenix/pkg/utils/error"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
@@ -90,11 +91,13 @@ func (h *Service) CreateAPIToken(w http.ResponseWriter, r *http.Request) {
 		ExpiresAt:      expiresAt,
 	}
 
-	if _, err := apiToken.Save(token); err != nil {
+	saved, err := apiToken.Save(token)
+	if err != nil {
 		log.Error().Err(err).Msg("Failed to save api token")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to save api token")
 		return
 	}
+	audit.SetResource(r.Context(), saved.ID.String())
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")

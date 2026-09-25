@@ -48,31 +48,31 @@ func TestCountByTypeForProject(t *testing.T) {
 	}{
 		{
 			name:         "counts the requested types",
-			productTypes: []string{model.ProductTypeInstance, model.ProductTypeDisk},
+			productTypes: []string{model.ProductTypeInstance.Name, model.ProductTypeDisk.Name},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"product_type_id", "count"}).
-					AddRow(model.ProductTypeInstance, 3).
-					AddRow(model.ProductTypeDisk, 5)
+					AddRow(model.ProductTypeInstance.Name, 3).
+					AddRow(model.ProductTypeDisk.Name, 5)
 				mock.ExpectQuery(`SELECT product_type_id, count\(\*\) as count FROM "products"`).
 					WillReturnRows(rows)
 			},
 			want: map[string]int64{
-				model.ProductTypeInstance: 3,
-				model.ProductTypeDisk:     5,
+				model.ProductTypeInstance.Name: 3,
+				model.ProductTypeDisk.Name:     5,
 			},
 		},
 		{
 			name:         "a requested type with no row counts zero",
-			productTypes: []string{model.ProductTypeInstance, model.ProductTypeKaaS},
+			productTypes: []string{model.ProductTypeInstance.Name, model.ProductTypeKaaS.Name},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"product_type_id", "count"}).
-					AddRow(model.ProductTypeInstance, 2)
+					AddRow(model.ProductTypeInstance.Name, 2)
 				mock.ExpectQuery(`SELECT product_type_id, count\(\*\) as count FROM "products"`).
 					WillReturnRows(rows)
 			},
 			want: map[string]int64{
-				model.ProductTypeInstance: 2,
-				model.ProductTypeKaaS:     0,
+				model.ProductTypeInstance.Name: 2,
+				model.ProductTypeKaaS.Name:     0,
 			},
 		},
 		{
@@ -83,7 +83,7 @@ func TestCountByTypeForProject(t *testing.T) {
 		},
 		{
 			name:         "propagates the query error",
-			productTypes: []string{model.ProductTypeInstance},
+			productTypes: []string{model.ProductTypeInstance.Name},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(`SELECT product_type_id, count\(\*\) as count FROM "products"`).
 					WillReturnError(errors.New("boom"))
@@ -125,7 +125,7 @@ func TestCountByAZForProject(t *testing.T) {
 	}{
 		{
 			name:         "groups the counts by AZ",
-			productTypes: []string{model.ProductTypeInstance, model.ProductTypeDisk},
+			productTypes: []string{model.ProductTypeInstance.Name, model.ProductTypeDisk.Name},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"code_az", "count"}).
 					AddRow("az1", 4).
@@ -137,7 +137,7 @@ func TestCountByAZForProject(t *testing.T) {
 		},
 		{
 			name:         "an AZ without product is absent",
-			productTypes: []string{model.ProductTypeInstance},
+			productTypes: []string{model.ProductTypeInstance.Name},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"code_az", "count"})
 				mock.ExpectQuery(`SELECT code_az, count\(\*\) as count FROM "products"`).
@@ -153,7 +153,7 @@ func TestCountByAZForProject(t *testing.T) {
 		},
 		{
 			name:         "propagates the query error",
-			productTypes: []string{model.ProductTypeInstance},
+			productTypes: []string{model.ProductTypeInstance.Name},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(`SELECT code_az, count\(\*\) as count FROM "products"`).
 					WillReturnError(errors.New("boom"))
@@ -198,12 +198,12 @@ func TestFindLastCreatedByProject(t *testing.T) {
 	}{
 		{
 			name:         "returns the products newest first",
-			productTypes: []string{model.ProductTypeInstance},
+			productTypes: []string{model.ProductTypeInstance.Name},
 			limit:        5,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				rows := sqlmock.NewRows([]string{"id", "product_name", "product_type_id", "code_az"}).
-					AddRow(firstId, "web-01", model.ProductTypeInstance, "az1").
-					AddRow(secondId, "web-02", model.ProductTypeInstance, "az2")
+					AddRow(firstId, "web-01", model.ProductTypeInstance.Name, "az1").
+					AddRow(secondId, "web-02", model.ProductTypeInstance.Name, "az2")
 				mock.ExpectQuery(`SELECT \* FROM "products"`).WillReturnRows(rows)
 			},
 			wantNames: []string{"web-01", "web-02"},
@@ -217,14 +217,14 @@ func TestFindLastCreatedByProject(t *testing.T) {
 		},
 		{
 			name:         "a non-positive limit does not query",
-			productTypes: []string{model.ProductTypeInstance},
+			productTypes: []string{model.ProductTypeInstance.Name},
 			limit:        0,
 			mockSetup:    func(_ sqlmock.Sqlmock) {},
 			wantNames:    []string{},
 		},
 		{
 			name:         "propagates the query error",
-			productTypes: []string{model.ProductTypeInstance},
+			productTypes: []string{model.ProductTypeInstance.Name},
 			limit:        5,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(`SELECT \* FROM "products"`).WillReturnError(errors.New("boom"))

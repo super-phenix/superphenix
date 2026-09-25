@@ -3,6 +3,7 @@ package vpc
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -50,9 +51,12 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{vpcWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/vpc", s.CreateVPC, quota),
-				router.Post("/{az}/{projectId}/vpc/{effectiveId}", s.UpdateVPC),
-				router.Delete("/{az}/{projectId}/vpc/{effectiveId}", s.DeleteVPC),
+				router.Post("/{az}/{projectId}/vpc", s.CreateVPC, quota).
+					Audited(model.ProductTypeVPC, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/vpc/{effectiveId}", s.UpdateVPC).
+					Audited(model.ProductTypeVPC, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/vpc/{effectiveId}", s.DeleteVPC).
+					Audited(model.ProductTypeVPC, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

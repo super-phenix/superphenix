@@ -56,9 +56,9 @@ func (h *Service) ListLoadBalancers(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeLoadBalancer)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeLoadBalancer.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeLoadBalancer).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeLoadBalancer.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -118,11 +118,11 @@ func (h *Service) ListAZLoadBalancers(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeLoadBalancer, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeLoadBalancer.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeLoadBalancer).
+			Str("resourceType", model.ProductTypeLoadBalancer.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -241,7 +241,7 @@ func (h *Service) CreateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	loadBalancer, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeLoadBalancer, azDb.Code, org.ID, projectEntity.ID)
+	loadBalancer, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeLoadBalancer.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -314,7 +314,7 @@ func (h *Service) UpdateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeLoadBalancer, azDb.Code, projectEntity.ID); err != nil {
+	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeLoadBalancer.Name, azDb.Code, projectEntity.ID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
 			return

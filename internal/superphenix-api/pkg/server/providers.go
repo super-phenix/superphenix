@@ -24,6 +24,7 @@ import (
 	vmsnapshotctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/vmsnapshot"
 	vpcctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/vpc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/health"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/auditlog"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/group"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/membership"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/organization"
@@ -55,6 +56,7 @@ type Providers struct {
 	Permission    RegisterFunc
 	Project       RegisterFunc
 	ProjectMgr    RegisterFunc
+	AuditLog      RegisterFunc
 	Instance      RegisterFunc
 	VmSnapshot    RegisterFunc
 	Disk          RegisterFunc
@@ -93,6 +95,7 @@ func DefaultProviders() Providers {
 		Permission:    permission.ProvideService,
 		Project:       project.ProvideService,
 		ProjectMgr:    manager.ProvideService,
+		AuditLog:      auditlog.ProvideService,
 		Instance:      instancectrl.ProvideService,
 		VmSnapshot:    vmsnapshotctrl.ProvideService,
 		Disk:          diskctrl.ProvideService,
@@ -122,7 +125,7 @@ func DefaultProviders() Providers {
 func (p Providers) registerPublic(cfg *config.Config, reg *router.Registry) {
 	for _, register := range []RegisterFunc{
 		p.Organization, p.Session, p.APIToken, p.AZ, p.User, p.Group, p.IAM,
-		p.Permission, p.Project, p.ProjectMgr,
+		p.Permission, p.Project, p.ProjectMgr, p.AuditLog,
 		p.Instance, p.VmSnapshot, p.Disk, p.Bucket, p.Snapshot, p.BaaS, p.VPC, p.Subnet,
 		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.Metadata, p.Summary, p.Argo,
 	} {

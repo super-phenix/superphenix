@@ -3,6 +3,7 @@ package baas
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
@@ -55,10 +56,13 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{baasWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/baas", s.CreateBaaS, quota),
+				router.Post("/{az}/{projectId}/baas", s.CreateBaaS, quota).
+					Audited(model.ProductTypeBaaS, router.ActionCreate, ""),
 				router.Get("/{az}/{projectId}/baas/{effectiveId}/app", s.GetForUpdateBaaS),
-				router.Post("/{az}/{projectId}/baas/{effectiveId}", s.UpdateBaaS),
-				router.Delete("/{az}/{projectId}/baas/{effectiveId}", s.DeleteBaaS),
+				router.Post("/{az}/{projectId}/baas/{effectiveId}", s.UpdateBaaS).
+					Audited(model.ProductTypeBaaS, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/baas/{effectiveId}", s.DeleteBaaS).
+					Audited(model.ProductTypeBaaS, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

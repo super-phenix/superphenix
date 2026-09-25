@@ -59,11 +59,11 @@ func (h *Service) ListBaaS(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(projectDb.ID.String(), model.ProductTypeBaaS)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(projectDb.ID.String(), model.ProductTypeBaaS.Name)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeBaaS).
+			Str("resourceType", model.ProductTypeBaaS.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -188,7 +188,7 @@ func (h *Service) CreateBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	baasDb, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeBaaS, azDb.Code, orgDb.ID, projectDb.ID)
+	baasDb, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeBaaS.Name, azDb.Code, orgDb.ID, projectDb.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -327,7 +327,7 @@ func (h *Service) UpdateBaaS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	baasDb, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeBaaS, azDb.Code, projectDb.ID)
+	baasDb, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeBaaS.Name, azDb.Code, projectDb.ID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save product in database")
 		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)

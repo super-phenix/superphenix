@@ -3,6 +3,7 @@ package disk
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -45,7 +46,8 @@ func Module(cfg *config.Config, s API) router.Module {
 	)
 	return controller.NewControllerModule(moduleName,
 		[]router.Route{
-			router.Get("/{az}/{projectId}/disk/{effectiveId}/unmount", s.Unmount, instanceRead, diskRead, instanceWrite),
+			router.Get("/{az}/{projectId}/disk/{effectiveId}/unmount", s.Unmount, instanceRead, diskRead, instanceWrite).
+				Audited(model.ProductTypeDisk, controller.ActionUnmount, controller.ParamEffectiveID),
 		},
 		router.Group{
 			Middlewares: []router.Middleware{diskRead},
@@ -57,9 +59,12 @@ func Module(cfg *config.Config, s API) router.Module {
 			Groups: []router.Group{{
 				Middlewares: []router.Middleware{diskWrite},
 				Routes: []router.Route{
-					router.Post("/{az}/{projectId}/disk", s.CreateDisk, quota),
-					router.Post("/{az}/{projectId}/disk/{effectiveId}", s.UpdateDisk),
-					router.Delete("/{az}/{projectId}/disk/{effectiveId}", s.DeleteDisk),
+					router.Post("/{az}/{projectId}/disk", s.CreateDisk, quota).
+						Audited(model.ProductTypeDisk, router.ActionCreate, ""),
+					router.Post("/{az}/{projectId}/disk/{effectiveId}", s.UpdateDisk).
+						Audited(model.ProductTypeDisk, router.ActionUpdate, controller.ParamEffectiveID),
+					router.Delete("/{az}/{projectId}/disk/{effectiveId}", s.DeleteDisk).
+						Audited(model.ProductTypeDisk, router.ActionDelete, controller.ParamEffectiveID),
 				},
 			}},
 		},

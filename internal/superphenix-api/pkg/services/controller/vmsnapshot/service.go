@@ -3,6 +3,7 @@ package vmsnapshot
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -52,10 +53,14 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{snapshotWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/instance-snapshot", s.CreateVmSnapshot, quota),
-				router.Delete("/{az}/{projectId}/instance-snapshot/{effectiveId}", s.DeleteVmSnapshot),
-				router.Get("/{az}/{projectId}/instance-snapshot/{effectiveId}/restore", s.RestoreVmSnapshot, instanceWrite),
-				router.Post("/{az}/{projectId}/instance-snapshot/{effectiveId}/clone", s.CloneVmSnapshot, instanceWrite),
+				router.Post("/{az}/{projectId}/instance-snapshot", s.CreateVmSnapshot, quota).
+					Audited(model.ProductTypeVmSnapshot, router.ActionCreate, ""),
+				router.Delete("/{az}/{projectId}/instance-snapshot/{effectiveId}", s.DeleteVmSnapshot).
+					Audited(model.ProductTypeVmSnapshot, router.ActionDelete, controller.ParamEffectiveID),
+				router.Get("/{az}/{projectId}/instance-snapshot/{effectiveId}/restore", s.RestoreVmSnapshot, instanceWrite).
+					Audited(model.ProductTypeVmSnapshot, controller.ActionRestore, controller.ParamEffectiveID),
+				router.Post("/{az}/{projectId}/instance-snapshot/{effectiveId}/clone", s.CloneVmSnapshot, instanceWrite).
+					Audited(model.ProductTypeVmSnapshot, controller.ActionClone, controller.ParamEffectiveID),
 			},
 		}},
 	})

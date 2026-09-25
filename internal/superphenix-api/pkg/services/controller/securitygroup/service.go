@@ -3,6 +3,7 @@ package securitygroup
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -50,9 +51,12 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{securityGroupWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/security-group", s.CreateSecurityGroup, quota),
-				router.Post("/{az}/{projectId}/security-group/{effectiveId}", s.UpdateSecurityGroup),
-				router.Delete("/{az}/{projectId}/security-group/{effectiveId}", s.DeleteSecurityGroup),
+				router.Post("/{az}/{projectId}/security-group", s.CreateSecurityGroup, quota).
+					Audited(model.ProductTypeSecurityGroup, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/security-group/{effectiveId}", s.UpdateSecurityGroup).
+					Audited(model.ProductTypeSecurityGroup, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/security-group/{effectiveId}", s.DeleteSecurityGroup).
+					Audited(model.ProductTypeSecurityGroup, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

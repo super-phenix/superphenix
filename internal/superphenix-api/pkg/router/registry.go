@@ -4,6 +4,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog/log"
@@ -19,6 +20,84 @@ type Route struct {
 	Pattern     string // relative to the owning module's Mount
 	Handler     http.HandlerFunc
 	Middlewares []Middleware // route-specific chain, applied in order
+	Audit       *Audit       // nil = not declared; see Audited and NotAudited
+}
+
+// Audit actions shared by most resources. Any other verb is a plain string.
+const (
+	ActionCreate = "create"
+	ActionUpdate = "update"
+	ActionDelete = "delete"
+)
+
+// Resource is an audited resource: Name is the identifier stored with the events,
+// Label how the console shows it.
+type Resource struct {
+	Name  string
+	Label string
+}
+
+// Audit declares how a route shows up in the audit log. The event type is
+// Resource.Name + "." + Action.
+type Audit struct {
+	Resource Resource
+	Action   string
+	// ReportsOrganization marks a route without {orgaId} whose handler sets the
+	// organization. Its events belong to the organization log.
+	ReportsOrganization bool
+	// ResourceParam is the URL param holding the resource ID. Empty when the ID
+	// is not in the URL, in which case the handler reports it.
+	ResourceParam string
+	// ResourceQuery is the query param holding the resource ID, for the routes
+	// that take it there.
+	ResourceQuery string
+	// Skip marks a non-GET route that changes nothing. SkipReason says why.
+	Skip       bool
+	SkipReason string
+}
+
+// EventType is the name stored with the event, e.g. "instance.create".
+func (a Audit) EventType() string { return a.Resource.Name + "." + a.Action }
+
+// Audited returns the route declared as an audited action.
+func (rt Route) Audited(resource Resource, action, resourceParam string) Route {
+	rt.Audit = &Audit{Resource: resource, Action: action, ResourceParam: resourceParam}
+	return rt
+}
+
+// AuditedByQuery is Audited for a route whose resource ID is a query param.
+func (rt Route) AuditedByQuery(resource Resource, action, resourceQuery string) Route {
+	rt.Audit = &Audit{Resource: resource, Action: action, ResourceQuery: resourceQuery}
+	return rt
+}
+
+// ReportingOrganization sets Audit.ReportsOrganization on an audited route.
+func (rt Route) ReportingOrganization() Route {
+	if rt.Audit == nil {
+		log.Warn().Str("pattern", rt.Pattern).Msg("ReportingOrganization on a route that is not audited")
+		return rt
+	}
+	rt.Audit.ReportsOrganization = true
+	return rt
+}
+
+// NotAudited returns the route declared as deliberately left out of the audit log.
+func (rt Route) NotAudited(reason string) Route {
+	rt.Audit = &Audit{Skip: true, SkipReason: reason}
+	return rt
+}
+
+// RouteInfo describes one declared route at its full mounted path.
+type RouteInfo struct {
+	Method  string
+	Pattern string
+	Audit   *Audit
+}
+
+// OrganizationScoped tells whether the events of the route belong to an
+// organization log.
+func (info RouteInfo) OrganizationScoped() bool {
+	return strings.Contains(info.Pattern, "{orgaId}") || (info.Audit != nil && info.Audit.ReportsOrganization)
 }
 
 // methodAny is the sentinel Method for a Route that handles every HTTP verb. It
@@ -99,6 +178,8 @@ type Registry struct {
 
 	routeOverrides map[string]Route // key: routeKey(method, fullPattern)
 	routeRemovals  map[string]bool  // key: routeKey(method, fullPattern)
+
+	auditor func(Audit) Middleware // nil = auditing off
 }
 
 // New returns an empty Registry.
@@ -115,7 +196,46 @@ func (r *Registry) Reset() *Registry {
 	r.modules = nil
 	r.routeOverrides = map[string]Route{}
 	r.routeRemovals = map[string]bool{}
+	r.auditor = nil
 	return r
+}
+
+// SetAuditor sets the factory building the audit middleware of each audited
+// route. Build puts that middleware first in the route chain, ahead of
+// authentication.
+func (r *Registry) SetAuditor(auditor func(Audit) Middleware) *Registry {
+	r.auditor = auditor
+	return r
+}
+
+// Declared lists every declared route, including those of disabled modules,
+// ignoring overrides and removals.
+func (r *Registry) Declared() []RouteInfo {
+	var out []RouteInfo
+	for _, m := range r.modules {
+		out = collectDeclared(m.Mount, m.Routes, m.Groups, out)
+	}
+	return out
+}
+
+func collectDeclared(prefix string, routes []Route, groups []Group, out []RouteInfo) []RouteInfo {
+	for _, rt := range routes {
+		out = append(out, RouteInfo{Method: rt.Method, Pattern: prefix + rt.Pattern, Audit: rt.Audit})
+	}
+	for _, g := range groups {
+		out = collectDeclared(prefix+g.Prefix, g.Routes, g.Groups, out)
+	}
+	return out
+}
+
+// withAudit prepends the audit middleware to chain when the route is audited.
+func (r *Registry) withAudit(audit *Audit, chain []Middleware) []Middleware {
+	if r.auditor == nil || audit == nil || audit.Skip {
+		return chain
+	}
+	out := make([]Middleware, 0, len(chain)+1)
+	out = append(out, r.auditor(*audit))
+	return append(out, chain...)
 }
 
 func routeKey(method, fullPattern string) string { return method + " " + fullPattern }
@@ -322,12 +442,17 @@ func (r *Registry) flatten(prefix string, shared []Middleware, routes []Route, g
 		if ov, ok := r.routeOverrides[key]; ok {
 			// An override replaces the whole post-global chain: shared middlewares
 			// are intentionally not re-applied.
+			// The original declaration is kept when the override has none.
 			consumed[key] = true
+			audit := ov.Audit
+			if audit == nil {
+				audit = rt.Audit
+			}
 			*out = append(*out, resolvedRoute{
 				method:  rt.Method,
 				pattern: full,
 				handler: ov.Handler,
-				chain:   ov.Middlewares,
+				chain:   r.withAudit(audit, ov.Middlewares),
 			})
 			continue
 		}
@@ -339,7 +464,7 @@ func (r *Registry) flatten(prefix string, shared []Middleware, routes []Route, g
 			method:  rt.Method,
 			pattern: full,
 			handler: rt.Handler,
-			chain:   chain,
+			chain:   r.withAudit(rt.Audit, chain),
 		})
 	}
 

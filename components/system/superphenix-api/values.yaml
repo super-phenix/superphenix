@@ -80,6 +80,18 @@ serviceMonitor:
 #         labelMarkKey: superphenix.net/markedForDeletion
 #         delay: 48h
 #         debug: false                       # true = dry run, logs instead of deleting
+#     auditLog:
+#       enabled: true                        # false = nothing is recorded
+#       retention:
+#         defaultDays: 90                    # organizations without an override
+#         minDays: 1                         # bounds of the per-organization override
+#         maxDays: 365
+#         userDays: 90                       # events outside organizations (tokens, logins)
+#       garbageCollection:
+#         enabled: true                      # only one replica sweeps (advisory lock)
+#         interval: 1h
+#         timeout: 10m
+#         batchSize: 5000                    # events hard deleted per statement
 #
 # The KaaS/BaaS repos, kubeVersions and schedules live under
 # `config.productsConfig.argoApp.{kubernetes,backup}`.

@@ -2,11 +2,11 @@ package gc
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/advisorylock"
 	gcLog "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	"github.com/google/uuid"
@@ -49,30 +49,24 @@ func CallWithTimeout(ctx context.Context, c *argo.Client, db *gorm.DB) {
 	processId := uuid.New().String()
 	collectionCtx = context.WithValue(collectionCtx, gcLog.ProcessIdKey, fmt.Sprintf("collection-%s", processId))
 
-	processDone := make(chan bool, 1)
-
-	go garbageCollection(collectionCtx, c, db, processDone)
 	l := gcLog.GetProcessLogger(collectionCtx)
-	select {
-	case <-processDone:
-		l.Info().Ctx(collectionCtx).Msg("Operation completed successfully.")
-	case <-collectionCtx.Done():
-		l.Error().Ctx(collectionCtx).Msg("Operation canceled or timed out.")
+	if err := garbageCollection(collectionCtx, c, db); err != nil {
+		l.Error().Ctx(collectionCtx).Err(err).Msg("Garbage collection failed.")
+		return
 	}
+	l.Info().Ctx(collectionCtx).Msg("Operation completed successfully.")
 }
 
-func garbageCollection(ctx context.Context, c *argo.Client, db *gorm.DB, processDone chan<- bool) {
+func garbageCollection(ctx context.Context, c *argo.Client, db *gorm.DB) error {
 	logger := gcLog.GetProcessLogger(ctx)
 
-	conn, release, err := acquireSweepLock(ctx, db)
+	release, acquired, err := advisorylock.TryLock(ctx, db, sweepLockID)
 	if err != nil {
-		logger.Error().Err(err).Msg("Failed to acquire garbage collection lock")
-		return
+		return fmt.Errorf("acquire garbage collection lock: %w", err)
 	}
-	if conn == nil {
+	if !acquired {
 		logger.Debug().Msg("Garbage collection already running on another replica, skipping")
-		processDone <- true
-		return
+		return nil
 	}
 	defer release()
 
@@ -86,15 +80,15 @@ func garbageCollection(ctx context.Context, c *argo.Client, db *gorm.DB, process
 		logger.Error().Err(err).Msg(appCleaner.ErrorMessage())
 	}
 
-	if ctx.Err() != nil {
-		return
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	// Wait 1 min to ensure argo apps have been fully deleted
 	select {
 	case <-time.After(1 * time.Minute):
 	case <-ctx.Done():
-		return
+		return ctx.Err()
 	}
 
 	// Level 2 - Clean App Projects after applications are gone
@@ -103,44 +97,5 @@ func garbageCollection(ctx context.Context, c *argo.Client, db *gorm.DB, process
 	}
 
 	logger.Info().Msgf("Garbage collection finished at : %s", time.Now().String())
-	processDone <- true
-}
-
-// acquireSweepLock takes the advisory lock on a dedicated connection — the lock
-// is session-scoped, so it must be released on the same connection it was taken.
-// A nil conn with a nil error means another replica holds it. If this replica
-// crashes, its session ends and Postgres releases the lock on its own.
-func acquireSweepLock(ctx context.Context, db *gorm.DB) (*sql.Conn, func(), error) {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	conn, err := sqlDB.Conn(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var acquired bool
-	if err := conn.QueryRowContext(ctx, "SELECT pg_try_advisory_lock($1)", sweepLockID).Scan(&acquired); err != nil {
-		conn.Close()
-		return nil, nil, err
-	}
-
-	if !acquired {
-		conn.Close()
-		return nil, nil, nil
-	}
-
-	release := func() {
-		// Use a fresh context: the sweep's may already be cancelled or timed out.
-		unlockCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
-		defer cancel()
-		if _, err := conn.ExecContext(unlockCtx, "SELECT pg_advisory_unlock($1)", sweepLockID); err != nil {
-			log.Error().Err(err).Msg("Failed to release garbage collection lock")
-		}
-		conn.Close()
-	}
-
-	return conn, release, nil
+	return nil
 }

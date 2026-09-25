@@ -15,6 +15,9 @@ import (
 
 const moduleName = "iam"
 
+// auditResource is the resource type of the audit events of this module.
+var auditResource = router.Resource{Name: "iam.member", Label: "IAM Member"}
+
 // API is the overridable seam for the IAM invite endpoints; the methods are the HTTP handlers.
 type API interface {
 	InviteIntoOrganization(http.ResponseWriter, *http.Request)
@@ -44,8 +47,10 @@ func Module(s API) router.Module {
 		Name:  moduleName,
 		Mount: "/v1",
 		Routes: []router.Route{
-			router.Post("/organization/{orgaId}/iam/invite", s.InviteIntoOrganization, jwtOrToken, orgaRead, iamWrite),
-			router.Delete("/organization/{orgaId}/iam/invite", s.RemoveFromOrganization, jwtOrToken, orgaRead, iamWrite),
+			router.Post("/organization/{orgaId}/iam/invite", s.InviteIntoOrganization, jwtOrToken, orgaRead, iamWrite).
+				Audited(auditResource, "invite", ""),
+			router.Delete("/organization/{orgaId}/iam/invite", s.RemoveFromOrganization, jwtOrToken, orgaRead, iamWrite).
+				AuditedByQuery(auditResource, "remove", "userId"),
 		},
 	}
 }

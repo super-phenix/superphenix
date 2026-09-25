@@ -42,7 +42,8 @@ func Module(s API) router.Module {
 		Name:  ModuleName,
 		Mount: "/v1",
 		Routes: []router.Route{
-			router.Post("/organization/{orgaId}/iam/permissions", s.ListPermissions, jwtOrToken, orgaRead),
+			router.Post("/organization/{orgaId}/iam/permissions", s.ListPermissions, jwtOrToken, orgaRead).
+				NotAudited("read-only list"),
 		},
 	}
 }

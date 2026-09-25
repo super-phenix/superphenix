@@ -3,6 +3,8 @@ package model
 import (
 	"time"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
+
 	pwPermission "github.com/super-phenix/superphenix/pkg/permify-wrapper/pkg/base/v1/permission"
 
 	"github.com/google/uuid"
@@ -10,37 +12,38 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	ProductTypeInstance      = "instance"
-	ProductTypeVPC           = "vpc"
-	ProductTypeSubnet        = "subnet"
-	ProductTypeEIP           = "eip"
-	ProductTypeDisk          = "disk"
-	ProductTypeSnapshot      = "snapshot"
-	ProductTypeSSH           = "ssh"
-	ProductTypeVmSnapshot    = "vmSnapshot"
-	ProductTypeLoadBalancer  = "loadBalancer"
-	ProductTypeSecurityGroup = "securityGroup"
-	ProductTypeKaaS          = "kaas"
-	ProductTypeBaaS          = "baas"
-	ProductTypeBucket        = "bucket"
+// Product types as audited resources; Name is the product_types key.
+var (
+	ProductTypeInstance      = router.Resource{Name: "instance", Label: "Instance"}
+	ProductTypeVmSnapshot    = router.Resource{Name: "vmSnapshot", Label: "Instance Snapshot"}
+	ProductTypeDisk          = router.Resource{Name: "disk", Label: "Disk"}
+	ProductTypeSnapshot      = router.Resource{Name: "snapshot", Label: "Snapshot"}
+	ProductTypeBaaS          = router.Resource{Name: "baas", Label: "Backup"}
+	ProductTypeBucket        = router.Resource{Name: "bucket", Label: "Object Storage"}
+	ProductTypeVPC           = router.Resource{Name: "vpc", Label: "VPC"}
+	ProductTypeSubnet        = router.Resource{Name: "subnet", Label: "Subnet"}
+	ProductTypeEIP           = router.Resource{Name: "eip", Label: "Elastic IP"}
+	ProductTypeLoadBalancer  = router.Resource{Name: "loadBalancer", Label: "Load Balancer"}
+	ProductTypeSecurityGroup = router.Resource{Name: "securityGroup", Label: "Security Group"}
+	ProductTypeKaaS          = router.Resource{Name: "kaas", Label: "Kubernetes"}
+	ProductTypeSSH           = router.Resource{Name: "ssh", Label: "SSH Keys"}
 )
 
 // ProductTypeReadPermission maps each product type to the permission that gates reading it.
 var ProductTypeReadPermission = map[string]string{
-	ProductTypeInstance:      pwPermission.ProjectInstanceRead,
-	ProductTypeVPC:           pwPermission.ProjectVPCRead,
-	ProductTypeSubnet:        pwPermission.ProjectSubnetRead,
-	ProductTypeEIP:           pwPermission.ProjectEipRead,
-	ProductTypeDisk:          pwPermission.ProjectDiskRead,
-	ProductTypeSnapshot:      pwPermission.ProjectSnapshotRead,
-	ProductTypeSSH:           pwPermission.ProjectSSHRead,
-	ProductTypeVmSnapshot:    pwPermission.ProjectSnapshotRead,
-	ProductTypeLoadBalancer:  pwPermission.ProjectLoadBalancerRead,
-	ProductTypeSecurityGroup: pwPermission.ProjectSecurityGroupRead,
-	ProductTypeKaaS:          pwPermission.ProjectKaaSRead,
-	ProductTypeBaaS:          pwPermission.ProjectBaaSRead,
-	ProductTypeBucket:        pwPermission.ProjectBucketRead,
+	ProductTypeInstance.Name:      pwPermission.ProjectInstanceRead,
+	ProductTypeVPC.Name:           pwPermission.ProjectVPCRead,
+	ProductTypeSubnet.Name:        pwPermission.ProjectSubnetRead,
+	ProductTypeEIP.Name:           pwPermission.ProjectEipRead,
+	ProductTypeDisk.Name:          pwPermission.ProjectDiskRead,
+	ProductTypeSnapshot.Name:      pwPermission.ProjectSnapshotRead,
+	ProductTypeSSH.Name:           pwPermission.ProjectSSHRead,
+	ProductTypeVmSnapshot.Name:    pwPermission.ProjectSnapshotRead,
+	ProductTypeLoadBalancer.Name:  pwPermission.ProjectLoadBalancerRead,
+	ProductTypeSecurityGroup.Name: pwPermission.ProjectSecurityGroupRead,
+	ProductTypeKaaS.Name:          pwPermission.ProjectKaaSRead,
+	ProductTypeBaaS.Name:          pwPermission.ProjectBaaSRead,
+	ProductTypeBucket.Name:        pwPermission.ProjectBucketRead,
 }
 
 type Model struct {
@@ -93,6 +96,9 @@ type Organization struct {
 
 	// PredefinedCatalogVersion is the catalog version this organization is reconciled against.
 	PredefinedCatalogVersion int `gorm:"not null;default:0"`
+
+	// AuditRetentionDays overrides the configured audit log retention. Nil means the default.
+	AuditRetentionDays *int
 }
 
 type Project struct {
@@ -165,6 +171,40 @@ type ApiToken struct {
 	TokenEncrypted string `gorm:"index;not null"`
 }
 
+const (
+	AuditStatusAttempted = "attempted"
+	AuditStatusSuccess   = "success"
+	AuditStatusFailed    = "failed"
+)
+
+// AuditEvent is one audited action. Rows are append-only and hard deleted by the retention
+// sweep. OrganizationId and ProjectId have no foreign key.
+type AuditEvent struct {
+	ID uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid();not null;index:idx_audit_events_org_started,priority:3,sort:desc"`
+
+	OrganizationId *uuid.UUID `gorm:"type:uuid;index:idx_audit_events_org_started,priority:1"`
+	ProjectId      *uuid.UUID `gorm:"type:uuid"`
+
+	EventType    string `gorm:"not null"`
+	ResourceType string `gorm:"not null"`
+	ResourceId   *string
+
+	UserId    *uuid.UUID `gorm:"type:uuid;index:idx_audit_events_user_started,priority:1,where:organization_id IS NULL"`
+	UserEmail *string
+	AuthType  *string
+
+	// SourceIp is the client address taken from the proxy headers, RemoteAddr the raw peer.
+	SourceIp   string
+	RemoteAddr string
+
+	Status     string `gorm:"not null"`
+	StatusCode *int
+	RequestId  string
+
+	StartedAt   time.Time `gorm:"not null;index:idx_audit_events_org_started,priority:2,sort:desc;index:idx_audit_events_started;index:idx_audit_events_user_started,priority:2,sort:desc"`
+	CompletedAt *time.Time
+}
+
 func AutoMigrate(db *gorm.DB) error {
 	if err := db.AutoMigrate(
 		&User{},
@@ -177,6 +217,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&ProductType{},
 		&Product{},
 		&ApiToken{},
+		&AuditEvent{},
 	); err != nil {
 		log.Error().Msg("Failed to auto migrate")
 		return err

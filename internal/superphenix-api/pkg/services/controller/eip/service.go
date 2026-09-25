@@ -3,6 +3,7 @@ package eip
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -50,9 +51,12 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{eipWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/eip", s.CreateEip, quota),
-				router.Post("/{az}/{projectId}/eip/{effectiveId}", s.UpdateEip),
-				router.Delete("/{az}/{projectId}/eip/{effectiveId}", s.DeleteEip),
+				router.Post("/{az}/{projectId}/eip", s.CreateEip, quota).
+					Audited(model.ProductTypeEIP, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/eip/{effectiveId}", s.UpdateEip).
+					Audited(model.ProductTypeEIP, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/eip/{effectiveId}", s.DeleteEip).
+					Audited(model.ProductTypeEIP, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

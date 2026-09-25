@@ -15,6 +15,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/user"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/authentication"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 )
@@ -300,6 +301,7 @@ func parseReturnUrl(ctx context.Context, returnTo string) string {
 }
 
 func contactAdminResponse(w http.ResponseWriter, r *http.Request) {
+	audit.Fail(r.Context())
 	http.Redirect(w, r, fmt.Sprintf("%snot_active=%t", config.Global.Session.DefaultReturnUrl+"?", true), http.StatusFound)
 	return
 }

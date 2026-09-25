@@ -3,6 +3,7 @@ package bucket
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -57,9 +58,12 @@ func Module(cfg *config.Config, s API) router.Module {
 			Groups: []router.Group{{
 				Middlewares: []router.Middleware{bucketWrite},
 				Routes: []router.Route{
-					router.Post("/{az}/{projectId}/bucket", s.CreateBucket, quota),
-					router.Post("/{az}/{projectId}/bucket/{effectiveId}", s.UpdateBucket),
-					router.Delete("/{az}/{projectId}/bucket/{effectiveId}", s.DeleteBucket),
+					router.Post("/{az}/{projectId}/bucket", s.CreateBucket, quota).
+						Audited(model.ProductTypeBucket, router.ActionCreate, ""),
+					router.Post("/{az}/{projectId}/bucket/{effectiveId}", s.UpdateBucket).
+						Audited(model.ProductTypeBucket, router.ActionUpdate, controller.ParamEffectiveID),
+					router.Delete("/{az}/{projectId}/bucket/{effectiveId}", s.DeleteBucket).
+						Audited(model.ProductTypeBucket, router.ActionDelete, controller.ParamEffectiveID),
 				},
 			}},
 		},

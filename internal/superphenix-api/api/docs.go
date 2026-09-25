@@ -606,6 +606,290 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/organization/{orgaId}/audit-log": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "OrganizationAuditLogRead"
+                        ]
+                    }
+                ],
+                "description": "List the audit events of an organization, newest first. Events are read-only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "List audit events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Event types, e.g. instance.create; ` + "`" + `other` + "`" + ` matches the types no longer declared",
+                        "name": "eventType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource type",
+                        "name": "resourceType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resourceId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Initiator user ID",
+                        "name": "userId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Initiator email",
+                        "name": "userEmail",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "attempted",
+                            "success",
+                            "failed"
+                        ],
+                        "type": "string",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Started at or after, RFC 3339",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Started at or before, RFC 3339",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 25,
+                        "description": "Page size, 1 to 100",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Events to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.ListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/organization/{orgaId}/audit-log/event-types": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "OrganizationAuditLogRead"
+                        ]
+                    }
+                ],
+                "description": "List the event types that can appear in the audit log of an organization, with their resource label and action. Static per API version.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "List audit event types",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.EventTypesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    }
+                }
+            }
+        },
+        "/v1/organization/{orgaId}/audit-log/retention": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "OrganizationAuditLogRead"
+                        ]
+                    }
+                ],
+                "description": "Get how long the audit events of the organization are kept, with the allowed bounds.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "Get audit log retention",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.Retention"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "OrganizationAuditLogWrite"
+                        ]
+                    }
+                ],
+                "description": "Set how long the audit events of the organization are kept. Events older than the new retention are deleted by the next sweep.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "Set audit log retention",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Retention in days, null for the default",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.UpdateRetentionBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.Retention"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/v1/organization/{orgaId}/az-list": {
             "get": {
                 "security": [
@@ -1478,6 +1762,160 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/user/audit-log": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "List the caller's own audit events attached to no organization (API tokens, sessions).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "List my audit events outside organizations",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "multi",
+                        "description": "Event types, e.g. api-token.create; ` + "`" + `other` + "`" + ` matches the types no longer declared",
+                        "name": "eventType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource type",
+                        "name": "resourceType",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource ID",
+                        "name": "resourceId",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "attempted",
+                            "success",
+                            "failed"
+                        ],
+                        "type": "string",
+                        "description": "Status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Started at or after, RFC 3339",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Started at or before, RFC 3339",
+                        "name": "to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 25,
+                        "description": "Page size, 1 to 100",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Events to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.ListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/user/audit-log/event-types": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "List the event types that can appear in the caller's own audit log, with their resource label and action. Static per API version.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "List my audit event types",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.EventTypesResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/v1/user/audit-log/retention": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get how long the caller's audit events outside organizations are kept. Platform-wide, read-only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "audit-log"
+                ],
+                "summary": "Get my audit log retention",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auditlog.UserRetention"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 }
             }
@@ -8130,6 +8568,150 @@ const docTemplate = `{
                 }
             }
         },
+        "auditlog.Event": {
+            "type": "object",
+            "properties": {
+                "authType": {
+                    "type": "string"
+                },
+                "completedAt": {
+                    "type": "string"
+                },
+                "eventType": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "organizationId": {
+                    "type": "string"
+                },
+                "projectId": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "resourceId": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "sourceIp": {
+                    "description": "SourceIp is the client address taken from the proxy headers, falling back to the peer address.",
+                    "type": "string"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "attempted",
+                        "success",
+                        "failed"
+                    ]
+                },
+                "statusCode": {
+                    "type": "integer"
+                },
+                "userEmail": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "auditlog.EventType": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "e.g. ` + "`" + `stop-force` + "`" + `",
+                    "type": "string"
+                },
+                "eventType": {
+                    "description": "e.g. ` + "`" + `instance.stop-force` + "`" + `",
+                    "type": "string"
+                },
+                "resourceLabel": {
+                    "description": "e.g. ` + "`" + `Instance` + "`" + `",
+                    "type": "string"
+                },
+                "resourceType": {
+                    "description": "e.g. ` + "`" + `instance` + "`" + `",
+                    "type": "string"
+                }
+            }
+        },
+        "auditlog.EventTypesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auditlog.EventType"
+                    }
+                }
+            }
+        },
+        "auditlog.ListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/auditlog.Event"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "auditlog.Retention": {
+            "type": "object",
+            "properties": {
+                "defaultDays": {
+                    "type": "integer"
+                },
+                "isDefault": {
+                    "type": "boolean"
+                },
+                "maxDays": {
+                    "type": "integer"
+                },
+                "minDays": {
+                    "type": "integer"
+                },
+                "retentionDays": {
+                    "type": "integer"
+                }
+            }
+        },
+        "auditlog.UpdateRetentionBody": {
+            "type": "object",
+            "properties": {
+                "retentionDays": {
+                    "type": "integer"
+                }
+            }
+        },
+        "auditlog.UserRetention": {
+            "type": "object",
+            "properties": {
+                "retentionDays": {
+                    "type": "integer"
+                }
+            }
+        },
         "baas.BaaSFullResponse": {
             "type": "object",
             "properties": {
@@ -9648,6 +10230,10 @@ const docTemplate = `{
                 "administrativeContact": {
                     "type": "string"
                 },
+                "auditRetentionDays": {
+                    "description": "AuditRetentionDays overrides the configured audit log retention. Nil means the default.",
+                    "type": "integer"
+                },
                 "billingContact": {
                     "type": "string"
                 },
@@ -10678,6 +11264,8 @@ const docTemplate = `{
             "name": "Authorization",
             "in": "header",
             "scopes": {
+                "organizationauditlogread": "Grants read access to the organization audit log",
+                "organizationauditlogwrite": "Grants write access to the organization audit log retention",
                 "organizationbillingread": "Grants read access to organization billing",
                 "organizationbillingwrite": "Grants write access to organization billing",
                 "organizationiamread": "Grants read access to organization IAM",

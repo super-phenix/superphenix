@@ -6,6 +6,7 @@ import (
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/provider"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 
 	kratos "github.com/ory/kratos-client-go"
@@ -25,6 +26,9 @@ func init() {
 	cfg.Servers = kratos.ServerConfigurations{{URL: config.Global.Authentication.KratosEndpoint}}
 	kratosApiClient = kratos.NewAPIClient(cfg)
 }
+
+// authTypeName is the auth type stored with the audit events of cookie sessions.
+const authTypeName = "KratosSession"
 
 // Authenticator is a JWT middleware capable to authenticate HTTP requests
 func Authenticator(next http.Handler) http.Handler {
@@ -60,6 +64,10 @@ func Authenticator(next http.Handler) http.Handler {
 		r = provider.InitializeKratosUser(r, session)
 
 		r = r.WithContext(context.WithValue(r.Context(), consts.ContextSessionId, session.Identity.Id))
+
+		if userId, ok := r.Context().Value(consts.ContextUserId).(string); ok {
+			audit.Begin(r.Context(), userId, authTypeName)
+		}
 
 		next.ServeHTTP(w, r)
 	})

@@ -47,7 +47,7 @@ func Module(s API) router.Module {
 			router.Get("/session", s.RetrieveAccessToken, refreshAuth),
 			router.Get("/logout", s.Logout),
 			router.Get("/whoami", s.WhoAmI, jwtOrToken),
-			router.Get("/session/token", s.GenerateTokens, kratosAuth),
+			router.Get("/session/token", s.GenerateTokens, kratosAuth).Audited(router.Resource{Name: "session", Label: "Session"}, "login", ""),
 		},
 	}
 }

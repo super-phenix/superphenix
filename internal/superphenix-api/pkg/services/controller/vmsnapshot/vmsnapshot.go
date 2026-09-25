@@ -58,9 +58,9 @@ func (h *Service) ListVmSnapshots(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeVmSnapshot)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeVmSnapshot.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeVmSnapshot).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeVmSnapshot.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -119,11 +119,11 @@ func (h *Service) ListAZVmSnapshots(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeVmSnapshot, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeVmSnapshot.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeVmSnapshot).
+			Str("resourceType", model.ProductTypeVmSnapshot.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -244,7 +244,7 @@ func (h *Service) CreateVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	snapshot, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeVmSnapshot, azDb.Code, org.ID, projectEntity.ID)
+	snapshot, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeVmSnapshot.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -426,7 +426,7 @@ func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 			instance.ProductName = name
 			instance.CodeAZ = azDb.Code
 			instance.ProjectId = projectEntity.ID
-			instance.ProductTypeId = model.ProductTypeInstance
+			instance.ProductTypeId = model.ProductTypeInstance.Name
 			instance.EffectiveID = m.GetResourceEffectiveID()
 
 			_, err := product.Save(instance)
@@ -482,7 +482,7 @@ func (h *Service) CloneVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, _, err := controller.CreateIntoDb(r.Context(), body.Name, model.ProductTypeInstance, azDb.Code, org.ID, projectEntity.ID)
+	instance, _, err := controller.CreateIntoDb(r.Context(), body.Name, model.ProductTypeInstance.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -531,7 +531,7 @@ func (h *Service) CloneVmSnapshot(w http.ResponseWriter, r *http.Request) {
 				ProductName:   diskName,
 				CodeAZ:        azDb.Code,
 				ProjectId:     projectEntity.ID,
-				ProductTypeId: model.ProductTypeDisk,
+				ProductTypeId: model.ProductTypeDisk.Name,
 				EffectiveID:   disk.Eid,
 			})
 			if err != nil {

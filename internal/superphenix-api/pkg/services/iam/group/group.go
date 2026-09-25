@@ -10,6 +10,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/utils"
 	httpModel "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	"github.com/super-phenix/superphenix/pkg/utils/decoder"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
@@ -142,6 +143,7 @@ func (h *Service) CreateOrUpdateOrganizationGroup(w http.ResponseWriter, r *http
 
 	// If we have an ID, then do some check
 	if body.ID != uuid.Nil {
+		audit.SetResource(r.Context(), body.ID.String())
 		group, err := groupDb.FindByIdAndOrgaId(body.ID.String(), orgaId)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to find group")
@@ -196,6 +198,7 @@ func (h *Service) CreateOrUpdateOrganizationGroup(w http.ResponseWriter, r *http
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	audit.SetResource(r.Context(), group.ID.String())
 
 	var result httpModel.APIGroup
 	if err := utils.Cast(group, &result); err != nil {

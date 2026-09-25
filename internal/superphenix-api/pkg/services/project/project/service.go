@@ -15,6 +15,12 @@ import (
 
 const ModuleName = "project"
 
+// auditResource is the resource type of the audit events of this module.
+var auditResource = router.Resource{Name: "project", Label: "Project"}
+
+// auditActionSave covers the routes that create or update depending on the body.
+const auditActionSave = "save"
+
 // API is the overridable seam for the project endpoints; the methods are the HTTP handlers.
 type API interface {
 	CreateOrUpdateProject(http.ResponseWriter, *http.Request)
@@ -44,8 +50,10 @@ func Module(s API) router.Module {
 		Name:  ModuleName,
 		Mount: "/v1",
 		Routes: []router.Route{
-			router.Post("/organization/{orgaId}/project", s.CreateOrUpdateProject, jwtOrToken, orgaRead, projectMgmt),
-			router.Delete("/organization/{orgaId}/project", s.DeleteProject, jwtOrToken, orgaRead, projectMgmt),
+			router.Post("/organization/{orgaId}/project", s.CreateOrUpdateProject, jwtOrToken, orgaRead, projectMgmt).
+				Audited(auditResource, auditActionSave, ""),
+			router.Delete("/organization/{orgaId}/project", s.DeleteProject, jwtOrToken, orgaRead, projectMgmt).
+				AuditedByQuery(auditResource, router.ActionDelete, "projectId"),
 		},
 	}
 }

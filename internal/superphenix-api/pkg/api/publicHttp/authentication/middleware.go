@@ -3,6 +3,8 @@ package authentication
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 )
 
@@ -23,6 +25,9 @@ func Authenticate(authTypes ...AuthType) func(next http.Handler) http.Handler {
 						log.Error().Err(err).Msgf("Validation failed for %s", authType.Name)
 						http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 						return
+					}
+					if userId, ok := r.Context().Value(consts.ContextUserId).(string); ok {
+						audit.Begin(r.Context(), userId, authType.Name)
 					}
 					next.ServeHTTP(w, r)
 					return

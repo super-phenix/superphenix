@@ -12,6 +12,9 @@ entity organization {
 	relation BillingFullAccess @group#assignee
 	relation BillingReadOnly @group#assignee
 
+	relation AuditLogFullAccess @group#assignee
+	relation AuditLogReadOnly @group#assignee
+
 	relation IAMFullAccess @group#assignee
 	relation IAMReadOnly @group#assignee
 
@@ -31,6 +34,10 @@ entity organization {
 // - Billing
 	permission OrganizationBillingRead = spx_owner or BillingFullAccess or BillingReadOnly
 	permission OrganizationBillingWrite = spx_owner or BillingFullAccess
+
+// - Audit log
+	permission OrganizationAuditLogRead = spx_owner or AuditLogFullAccess or AuditLogReadOnly
+	permission OrganizationAuditLogWrite = spx_owner or AuditLogFullAccess
 
 // - Organization Project
 	permission OrganizationProjectManagement = spx_owner or ProjectManagement

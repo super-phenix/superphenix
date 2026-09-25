@@ -3,6 +3,7 @@ package subnet
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -53,9 +54,12 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{subnetWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/subnet", s.CreateSubnet, quota),
-				router.Post("/{az}/{projectId}/subnet/{effectiveId}", s.UpdateSubnet),
-				router.Delete("/{az}/{projectId}/subnet/{effectiveId}", s.DeleteSubnet),
+				router.Post("/{az}/{projectId}/subnet", s.CreateSubnet, quota).
+					Audited(model.ProductTypeSubnet, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/subnet/{effectiveId}", s.UpdateSubnet).
+					Audited(model.ProductTypeSubnet, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/subnet/{effectiveId}", s.DeleteSubnet).
+					Audited(model.ProductTypeSubnet, router.ActionDelete, controller.ParamEffectiveID),
 			},
 		}},
 	})

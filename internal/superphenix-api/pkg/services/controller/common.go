@@ -10,6 +10,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	crud "github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
@@ -64,6 +65,9 @@ func CreateIntoDb(ctx context.Context, productName, productType, azCode string, 
 		log.Err(err).Msg("Failed to save product into database")
 		return model.Product{}, spxId.Metadata{}, err
 	}
+
+	// The ID of a created product is not in the URL.
+	audit.SetResource(ctx, product.EffectiveID)
 
 	return product, m, nil
 }

@@ -3,6 +3,7 @@ package instance
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller"
@@ -68,19 +69,28 @@ func Module(cfg *config.Config, s API) router.Module {
 				router.Get("/{az}/{projectId}/instance/{effectiveId}/advanced-options", s.AdvancedOptions),
 				router.Get("/{az}/{projectId}/instance/{effectiveId}/serial", s.Serial, instanceTerminal),
 				router.Get("/{az}/{projectId}/instance/{effectiveId}/vnc", s.Vnc, instanceTerminal),
-				router.Get("/{az}/{projectId}/instance/{effectiveId}/start", s.Start, instanceControl),
-				router.Get("/{az}/{projectId}/instance/{effectiveId}/stop", s.Stop, instanceControl),
-				router.Get("/{az}/{projectId}/instance/{effectiveId}/stop-force", s.StopForce, instanceControl),
-				router.Get("/{az}/{projectId}/instance/{effectiveId}/restart", s.Restart, instanceControl),
+				router.Get("/{az}/{projectId}/instance/{effectiveId}/start", s.Start, instanceControl).
+					Audited(model.ProductTypeInstance, controller.ActionStart, controller.ParamEffectiveID),
+				router.Get("/{az}/{projectId}/instance/{effectiveId}/stop", s.Stop, instanceControl).
+					Audited(model.ProductTypeInstance, controller.ActionStop, controller.ParamEffectiveID),
+				router.Get("/{az}/{projectId}/instance/{effectiveId}/stop-force", s.StopForce, instanceControl).
+					Audited(model.ProductTypeInstance, controller.ActionStopForce, controller.ParamEffectiveID),
+				router.Get("/{az}/{projectId}/instance/{effectiveId}/restart", s.Restart, instanceControl).
+					Audited(model.ProductTypeInstance, controller.ActionRestart, controller.ParamEffectiveID),
 			},
 			Groups: []router.Group{{
 				Middlewares: []router.Middleware{instanceWrite},
 				Routes: []router.Route{
-					router.Post("/{az}/{projectId}/instance", s.CreateInstance, quota),
-					router.Post("/{az}/{projectId}/instance/{effectiveId}", s.UpdateInstance),
-					router.Delete("/{az}/{projectId}/instance/{effectiveId}", s.DeleteInstance),
-					router.Post("/{az}/{projectId}/instance/{effectiveId}/container-disk/mount", s.ContainerDiskMount, diskRead, diskWrite),
-					router.Post("/{az}/{projectId}/instance/{effectiveId}/container-disk/unmount", s.ContainerDiskUnmount, diskRead, diskWrite),
+					router.Post("/{az}/{projectId}/instance", s.CreateInstance, quota).
+						Audited(model.ProductTypeInstance, router.ActionCreate, ""),
+					router.Post("/{az}/{projectId}/instance/{effectiveId}", s.UpdateInstance).
+						Audited(model.ProductTypeInstance, router.ActionUpdate, controller.ParamEffectiveID),
+					router.Delete("/{az}/{projectId}/instance/{effectiveId}", s.DeleteInstance).
+						Audited(model.ProductTypeInstance, router.ActionDelete, controller.ParamEffectiveID),
+					router.Post("/{az}/{projectId}/instance/{effectiveId}/container-disk/mount", s.ContainerDiskMount, diskRead, diskWrite).
+						Audited(model.ProductTypeInstance, controller.ActionMountContainerDisk, controller.ParamEffectiveID),
+					router.Post("/{az}/{projectId}/instance/{effectiveId}/container-disk/unmount", s.ContainerDiskUnmount, diskRead, diskWrite).
+						Audited(model.ProductTypeInstance, controller.ActionUnmountContainerDisk, controller.ParamEffectiveID),
 				},
 			}},
 		},

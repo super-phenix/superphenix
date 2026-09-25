@@ -59,9 +59,9 @@ func (h *Service) ListInstances(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), responses)
 
-	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeInstance)
+	resourcesDb, err := product.FindAllByProjectIdAndResourceType(project.ID.String(), model.ProductTypeInstance.Name)
 	if err != nil {
-		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeInstance).Msg(consts.SpxFindAllResourcesError)
+		log.Err(err).Str("projectId", project.ID.String()).Str("resourceType", model.ProductTypeInstance.Name).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
 	}
@@ -120,11 +120,11 @@ func (h *Service) ListAZInstances(w http.ResponseWriter, r *http.Request) {
 	}
 	concatResults := ctrlutils.ConcatResponses(r.Context(), map[string]*http.Response{azDb.Code: resp})
 
-	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeInstance, azDb.Code)
+	resources, err := product.FindAllByProjectIdAndResourceTypeAndCodeAZ(projectDb.ID.String(), model.ProductTypeInstance.Name, azDb.Code)
 	if err != nil {
 		log.Err(err).
 			Str("projectId", projectDb.ID.String()).
-			Str("resourceType", model.ProductTypeInstance).
+			Str("resourceType", model.ProductTypeInstance.Name).
 			Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
 		return
@@ -254,7 +254,7 @@ func (h *Service) CreateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	instance, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeInstance, azDb.Code, org.ID, projectEntity.ID)
+	instance, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeInstance.Name, azDb.Code, org.ID, projectEntity.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
 		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
@@ -368,7 +368,7 @@ func (h *Service) UpdateInstance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	productEid := chi.URLParam(r, "effectiveId")
-	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeInstance, azDb.Code, projectEntity.ID); err != nil {
+	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeInstance.Name, azDb.Code, projectEntity.ID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
 			return
@@ -568,7 +568,7 @@ func initializeNewDisks(ctx context.Context, orgID, projectID uuid.UUID, azCode 
 				ProductName:   diskToCreate.Disk.General.ProductName,
 				CodeAZ:        azCode,
 				ProjectId:     projectID,
-				ProductTypeId: model.ProductTypeDisk,
+				ProductTypeId: model.ProductTypeDisk.Name,
 			})
 			if err != nil {
 				log.Error().Err(err).Any("disk", diskToCreate).Msg("Failed to save disk")

@@ -3,6 +3,7 @@ package kaas
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
@@ -69,12 +70,17 @@ func Module(cfg *config.Config, s API) router.Module {
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{kaasWrite},
 			Routes: []router.Route{
-				router.Post("/{az}/{projectId}/kaas", s.CreateKaaS, quota),
-				router.Post("/{az}/{projectId}/kaas/{effectiveId}", s.UpdateKaaS),
-				router.Delete("/{az}/{projectId}/kaas/{effectiveId}", s.DeleteKaaS),
+				router.Post("/{az}/{projectId}/kaas", s.CreateKaaS, quota).
+					Audited(model.ProductTypeKaaS, router.ActionCreate, ""),
+				router.Post("/{az}/{projectId}/kaas/{effectiveId}", s.UpdateKaaS).
+					Audited(model.ProductTypeKaaS, router.ActionUpdate, controller.ParamEffectiveID),
+				router.Delete("/{az}/{projectId}/kaas/{effectiveId}", s.DeleteKaaS).
+					Audited(model.ProductTypeKaaS, router.ActionDelete, controller.ParamEffectiveID),
 				router.Get("/{az}/{projectId}/kaas/{effectiveId}/app", s.GetForUpdateKaaS),
-				router.Get("/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials", s.ReinstallKaaSEssentials),
-				router.Post("/{az}/{projectId}/kaas/{effectiveId}/upgrade", s.UpgradeKaaS),
+				router.Get("/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials", s.ReinstallKaaSEssentials).
+					Audited(model.ProductTypeKaaS, controller.ActionReinstallEssentials, controller.ParamEffectiveID),
+				router.Post("/{az}/{projectId}/kaas/{effectiveId}/upgrade", s.UpgradeKaaS).
+					Audited(model.ProductTypeKaaS, controller.ActionUpgrade, controller.ParamEffectiveID),
 			},
 		}},
 	})

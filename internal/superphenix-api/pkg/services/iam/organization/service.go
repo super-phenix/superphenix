@@ -16,6 +16,9 @@ import (
 // ModuleName is the registry key for the organization routes, so they can be overridden or removed.
 const ModuleName = "organization"
 
+// auditResource is the resource type of the audit events of this module.
+var auditResource = router.Resource{Name: "organization", Label: "Organization"}
+
 // API is the overridable seam for the organization endpoints; the methods are the HTTP handlers.
 type API interface {
 	Create(http.ResponseWriter, *http.Request)
@@ -51,11 +54,15 @@ func Module(s API) router.Module {
 		Name:  ModuleName,
 		Mount: "/v1",
 		Routes: []router.Route{
-			router.Post("/organization", s.Create, jwtOrToken),
+			router.Post("/organization", s.Create, jwtOrToken).
+				Audited(auditResource, router.ActionCreate, "").ReportingOrganization(),
 			router.Get("/organization/{orgaId}", s.Get, jwtOrToken, orgaRead),
-			router.Post("/organization/{orgaId}", s.Update, jwtOrToken, orgaRead, orgaWrite),
-			router.Delete("/organization/{orgaId}", s.Delete, jwtOrToken, orgaRead, orgaWrite),
-			router.Post("/organization/{orgaId}/transfer", s.Transfer, jwtOrToken, orgaRead, orgaWrite),
+			router.Post("/organization/{orgaId}", s.Update, jwtOrToken, orgaRead, orgaWrite).
+				Audited(auditResource, router.ActionUpdate, "orgaId"),
+			router.Delete("/organization/{orgaId}", s.Delete, jwtOrToken, orgaRead, orgaWrite).
+				Audited(auditResource, router.ActionDelete, "orgaId"),
+			router.Post("/organization/{orgaId}/transfer", s.Transfer, jwtOrToken, orgaRead, orgaWrite).
+				Audited(auditResource, "transfer", "orgaId"),
 		},
 	}
 }

@@ -80,7 +80,7 @@ func SendBatchProxy(r *http.Request, targets []config.AZConfig, pattern string) 
 		}
 		// Re-add userId in header and Bearer
 		r2.Header.Set(consts.HeaderUserId, r.Header.Get(consts.HeaderUserId))
-		r2.Header.Set(middleware.RequestIDHeader, r.Header.Get(middleware.RequestIDHeader))
+		r2.Header.Set(middleware.RequestIDHeader, middleware.GetReqID(r.Context()))
 		r2.Header.Set(consts.AuthorizationHeader, fmt.Sprintf("Bearer %s", target.AuthSecret))
 
 		if err := RewriteRequest(r2, target.ControllerUrl, pattern); err != nil {
@@ -107,7 +107,7 @@ func SendProxy(r *http.Request, target config.AZConfig, pattern string, body io.
 	}
 	// Re-add userId in header and Bearer
 	r2.Header.Set(consts.HeaderUserId, r.Header.Get(consts.HeaderUserId))
-	r2.Header.Set(middleware.RequestIDHeader, r.Header.Get(middleware.RequestIDHeader))
+	r2.Header.Set(middleware.RequestIDHeader, middleware.GetReqID(r.Context()))
 	r2.Header.Set(consts.AuthorizationHeader, fmt.Sprintf("Bearer %s", target.AuthSecret))
 	// Rewrite Request to redirect to the right controller
 	if err := RewriteRequest(r2, target.ControllerUrl, pattern+"/"+target.Code); err != nil {
@@ -137,7 +137,7 @@ func SendRequest(ctx context.Context, dest, method string, body io.Reader, beare
 	if userId, ok := ctx.Value(consts.ContextUserId).(string); ok {
 		r2.Header.Set(consts.HeaderUserId, userId)
 	}
-	r2.Header.Set(middleware.RequestIDHeader, ctx.Value(middleware.RequestIDKey).(string))
+	r2.Header.Set(middleware.RequestIDHeader, middleware.GetReqID(ctx))
 	r2.Header.Set(consts.AuthorizationHeader, fmt.Sprintf("Bearer %s", bearer))
 	resp, err = client.Do(r2)
 	if err != nil {

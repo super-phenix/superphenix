@@ -8,6 +8,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/organization"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/user"
 	httpModel "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	"github.com/super-phenix/superphenix/pkg/utils/decoder"
 	httpError "github.com/super-phenix/superphenix/pkg/utils/error"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
@@ -63,6 +64,7 @@ func (h *Service) InviteIntoOrganization(w http.ResponseWriter, r *http.Request)
 		httpError.Http(w, r, http.StatusNotFound).Msg("Failed to invite user")
 		return
 	}
+	audit.SetResource(r.Context(), userToInvite.ID.String())
 
 	// If method failed or user is owner
 	isOwner, err := organization.IsOwner(orgaId, userToInvite.ID.String())
