@@ -4,12 +4,9 @@ import (
 	"context"
 	"strings"
 	"testing"
-
-	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 )
 
 func TestCreateKaaSAppValues_ClusterFriendlyName(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	ctx := context.Background()
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},

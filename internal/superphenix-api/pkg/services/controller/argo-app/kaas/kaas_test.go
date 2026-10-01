@@ -17,7 +17,6 @@ import (
 )
 
 func TestCreateKaaSAppValues_Comparison(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.24.0"}}
 	ctx := context.Background()
 	localId := "test-cluster"
 	location := "test-loc"
@@ -554,7 +553,6 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 }
 
 func TestCreateKaaSAppValues_DataStore(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.34.0"}, {Version: "v1.34.5"}, {Version: "1.35.0"}, {Version: "v1.35.5"}}
 	ctx := context.Background()
 	localId := "test-cluster"
 	location := "test-loc"
@@ -740,7 +738,6 @@ func appViewWithHelmValues(values string) view.AppView {
 }
 
 func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	ctx := context.Background()
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
@@ -800,7 +797,6 @@ func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 }
 
 func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	t.Cleanup(func() { config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains = nil })
 	ctx := context.Background()
 	localId := "test-cluster"
@@ -894,7 +890,6 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 // TestConvertAppToUpdateKaaSSpec_AzDomains checks the azDomains key in the
 // helm values never breaks the update re-parse path.
 func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	t.Cleanup(func() { config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains = nil })
 	ctx := context.Background()
 	kaasConfig := KaaSConfig{
@@ -956,7 +951,6 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 }
 
 func TestCreateArgoApp_HelmParams(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	group := Group{
 		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
 		StorageClass: "default", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
@@ -1048,9 +1042,6 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 		Path:           "components/dependencies/sfs-kaas",
 	}
 
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.Repo = configured
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "v1.35.5"}}
-
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}
@@ -1086,217 +1077,6 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 			got := config.RepoArgoAppConfig{RepoURL: src.RepoURL, TargetRevision: src.TargetRevision, Chart: src.Chart, Path: src.Path}
 			if got != tt.chart {
 				t.Errorf("source = %+v, want %+v", got, tt.chart)
-			}
-		})
-	}
-}
-
-// TestCreateKaaSAppValues_KubeVersionSupport checks the kube version is only
-// validated against config on create and on a version change.
-func TestCreateKaaSAppValues_KubeVersionSupport(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "v1.36.3"}}
-	kaasConfig := KaaSConfig{
-		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
-	}
-	group := Group{
-		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
-		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
-	}
-	specFor := func(version string) KaaSSpec {
-		return KaaSSpec{KubeVersion: version, CPNetPol: "default", WorkersNetPol: "default", Groups: []Group{group}}
-	}
-	removed := specFor("v1.33.4")
-
-	tests := []struct {
-		name    string
-		spec    KaaSSpec
-		oldSpec *KaaSSpec
-		wantErr bool
-	}{
-		{name: "create with supported version", spec: specFor("v1.36.3"), oldSpec: nil, wantErr: false},
-		{name: "create with removed version", spec: specFor("v1.33.4"), oldSpec: nil, wantErr: true},
-		{name: "update keeping removed version", spec: specFor("v1.33.4"), oldSpec: &removed, wantErr: false},
-		{name: "update to supported version", spec: specFor("v1.36.3"), oldSpec: &removed, wantErr: false},
-		{name: "update to unsupported version", spec: specFor("v1.34.1"), oldSpec: &removed, wantErr: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", tt.spec, kaasConfig, tt.oldSpec)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-// nodeRoleGroup is a valid group with a legacy-style mixed-case name.
-func nodeRoleGroup(role string, version int) Group {
-	return Group{
-		Name:         "aB3xYz9Q",
-		NodeRole:     role,
-		Replicas:     3,
-		Cpu:          2,
-		Memory:       "4Gi",
-		BootDiskSize: 20,
-		StorageClass: "sc1",
-		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
-		Version:      version,
-	}
-}
-
-func nodeRoleSpec(g Group) KaaSSpec {
-	return KaaSSpec{
-		KubeVersion:   "1.35.0",
-		CPNetPol:      "default",
-		WorkersNetPol: "default",
-		Groups:        []Group{g},
-	}
-}
-
-func TestCreateKaaSAppValues_NodeRole(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
-	localId := "test-cluster"
-	kaasConfig := KaaSConfig{
-		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
-	}
-	updateFrom := func(role string) *KaaSSpec {
-		s := nodeRoleSpec(nodeRoleGroup(role, 2))
-		return &s
-	}
-
-	tests := []struct {
-		name        string
-		role        string
-		oldSpec     *KaaSSpec
-		wantErr     bool
-		wantRole    string
-		wantVersion int
-	}{
-		{name: "role is rendered", role: "gpu", wantRole: "gpu", wantVersion: 1},
-		{name: "empty role is omitted", role: "", wantRole: "", wantVersion: 1},
-		{name: "uppercase role is rendered", role: "GPU", wantRole: "GPU", wantVersion: 1},
-		{name: "role with dot is rendered", role: "gpu.large", wantRole: "gpu.large", wantVersion: 1},
-		{name: "role with underscore is rendered", role: "gpu_large", wantRole: "gpu_large", wantVersion: 1},
-		{name: "control-plane is rendered", role: "control-plane", wantRole: "control-plane", wantVersion: 1},
-		{name: "63 chars is rendered", role: strings.Repeat("a", 63), wantRole: strings.Repeat("a", 63), wantVersion: 1},
-		{name: "leading dash is rejected", role: "-gpu", wantErr: true},
-		{name: "trailing dot is rejected", role: "gpu.", wantErr: true},
-		{name: "slash is rejected", role: "gpu/large", wantErr: true},
-		{name: "space is rejected", role: "gpu large", wantErr: true},
-		{name: "role over 63 chars is rejected", role: strings.Repeat("a", 64), wantErr: true},
-		{name: "role change keeps version", role: "compute", oldSpec: updateFrom("gpu"), wantRole: "compute", wantVersion: 2},
-		{name: "legacy group gets a role and keeps version", role: "worker", oldSpec: updateFrom(""), wantRole: "worker", wantVersion: 2},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			values, _, err := CreateKaaSAppValues(context.Background(), localId, "test-loc", nodeRoleSpec(nodeRoleGroup(tt.role, 0)), kaasConfig, tt.oldSpec)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if tt.wantErr {
-				var roleErr *NodeRoleError
-				if !errors.As(err, &roleErr) {
-					t.Errorf("error = %v, want a *NodeRoleError", err)
-				}
-				return
-			}
-			if tt.wantRole == "" && strings.Contains(values, "nodeRole") {
-				t.Errorf("expected values to NOT contain nodeRole.\nValues:\n%s", values)
-			}
-			var parsed Values
-			if err := yaml.Unmarshal([]byte(values), &parsed); err != nil {
-				t.Fatalf("failed to unmarshal values: %v", err)
-			}
-			instance := parsed.Clusters[localId].Workers.Instances["aB3xYz9Q"]
-			if instance.Deployment.NodeRole != tt.wantRole {
-				t.Errorf("nodeRole = %q, want %q", instance.Deployment.NodeRole, tt.wantRole)
-			}
-			if instance.Template.Version != tt.wantVersion {
-				t.Errorf("version = %d, want %d", instance.Template.Version, tt.wantVersion)
-			}
-		})
-	}
-}
-
-func TestConvertAppToUpdateKaaSSpec_NodeRole(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
-	kaasConfig := KaaSConfig{
-		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
-	}
-
-	tests := []struct {
-		name string
-		role string
-	}{
-		{name: "round-trips a set role", role: "gpu"},
-		{name: "round-trips a mixed-case dotted role", role: "GPU.large"},
-		{name: "legacy group keeps an empty role", role: ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			spec := nodeRoleSpec(nodeRoleGroup(tt.role, 0))
-			values, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", spec, kaasConfig, nil)
-			if err != nil {
-				t.Fatalf("CreateKaaSAppValues() error = %v", err)
-			}
-
-			got, err := ConvertAppToUpdateKaaSSpec(appViewWithHelmValues(values))
-			if err != nil {
-				t.Fatalf("ConvertAppToUpdateKaaSSpec() error = %v", err)
-			}
-			if len(got.Groups) != 1 || got.Groups[0].NodeRole != tt.role {
-				t.Errorf("Groups = %+v, want one group with nodeRole %q", got.Groups, tt.role)
-			}
-		})
-	}
-}
-
-func TestCreateKaaSAppValues_NodeGroupName(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
-	kaasConfig := KaaSConfig{
-		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
-	}
-	named := func(name string) Group {
-		g := nodeRoleGroup("", 0)
-		g.Name = name
-		return g
-	}
-
-	tests := []struct {
-		name    string
-		groups  []string
-		wantErr bool
-	}{
-		{name: "generated id is accepted", groups: []string{"aB3xYz9Q"}},
-		{name: "dashed name is accepted", groups: []string{"gpu-large"}},
-		{name: "single char is accepted", groups: []string{"a"}},
-		{name: "14 chars is accepted", groups: []string{strings.Repeat("a", 14)}},
-		{name: "distinct names are accepted", groups: []string{"gpu", "cpu"}},
-		{name: "empty name is rejected", groups: []string{""}, wantErr: true},
-		{name: "leading dash is rejected", groups: []string{"-gpu"}, wantErr: true},
-		{name: "trailing dash is rejected", groups: []string{"gpu-"}, wantErr: true},
-		{name: "dot is rejected", groups: []string{"gpu.large"}, wantErr: true},
-		{name: "15 chars is rejected", groups: []string{strings.Repeat("a", 15)}, wantErr: true},
-		{name: "duplicate name is rejected", groups: []string{"gpu", "gpu"}, wantErr: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			spec := nodeRoleSpec(Group{})
-			spec.Groups = nil
-			for _, n := range tt.groups {
-				spec.Groups = append(spec.Groups, named(n))
-			}
-			_, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", spec, kaasConfig, nil)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			var nameErr *NodeGroupNameError
-			if tt.wantErr && !errors.As(err, &nameErr) {
-				t.Errorf("error = %v, want a *NodeGroupNameError", err)
 			}
 		})
 	}

@@ -3,6 +3,7 @@ package kaas
 import (
 	"net/http"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/azversion"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/app"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
@@ -34,16 +35,18 @@ type API interface {
 
 // Service is the default implementation of API.
 type Service struct {
-	cfg  *config.Config
-	argo argoApp.Client
+	cfg      *config.Config
+	argo     argoApp.Client
+	versions azversion.Resolver
 }
 
 var _ API = (*Service)(nil)
 
-// New constructs the default service. It has no side effects; the Argo client is
-// injected so tests can fake it, and may be nil when no cluster is reachable.
-func New(cfg *config.Config, argoClient argoApp.Client) *Service {
-	return &Service{cfg: cfg, argo: argoClient}
+// New constructs the default service. It has no side effects; the Argo client
+// and the AZ version resolver are injected so tests can fake them. The Argo
+// client may be nil when no cluster is reachable.
+func New(cfg *config.Config, argoClient argoApp.Client, versions azversion.Resolver) *Service {
+	return &Service{cfg: cfg, argo: argoClient, versions: versions}
 }
 
 // Module builds the KaaS routes for any API, preserving the
@@ -61,7 +64,7 @@ func Module(cfg *config.Config, s API) router.Module {
 		Middlewares: []router.Middleware{kaasRead},
 		Routes: []router.Route{
 			router.Get("/{projectId}/kaas", s.ListKaaS),
-			router.Get("/{projectId}/kaas/kube-versions", s.GetKubeVersion),
+			router.Get("/{az}/{projectId}/kaas/kube-versions", s.GetKubeVersion),
 			router.Get("/{az}/{projectId}/kaas/{effectiveId}", s.GetKaaS),
 			router.Get("/{az}/{projectId}/kaas/{effectiveId}/instances", s.Instances, instanceRead),
 			router.Get("/{az}/{projectId}/kaas/{effectiveId}/netpols", s.Netpols, securityGroupRead),
@@ -88,6 +91,6 @@ func Module(cfg *config.Config, s API) router.Module {
 
 // ProvideService constructs the default service and registers its routes on reg.
 func ProvideService(cfg *config.Config, reg *router.Registry) {
-	h := New(cfg, app.ProvideArgo(cfg))
+	h := New(cfg, app.ProvideArgo(cfg), app.ProvideAZVersionResolver(cfg))
 	reg.Register(Module(cfg, h))
 }
