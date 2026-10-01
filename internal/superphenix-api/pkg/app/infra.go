@@ -8,6 +8,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/gc"
 	auditGc "github.com/super-phenix/superphenix/internal/superphenix-api/internal/audit/gc"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/azversion"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/quotasync"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
@@ -24,6 +25,9 @@ var (
 
 	argoOnce   sync.Once
 	argoClient *argo.Client
+
+	azVersionOnce     sync.Once
+	azVersionResolver *azversion.ClusterResolver
 )
 
 // ProvideInfra connects the Permify and database clients. It is idempotent: the
@@ -86,6 +90,20 @@ func ProvideArgo(cfg *config.Config) *argo.Client {
 		argoClient = client
 	})
 	return argoClient
+}
+
+// ProvideAZVersionResolver connects the client reading the SPX version of the
+// AZs from the operator Cluster CRs, once, and returns the shared resolver. A
+// cluster connection is required.
+func ProvideAZVersionResolver(cfg *config.Config) *azversion.ClusterResolver {
+	azVersionOnce.Do(func() {
+		resolver, err := azversion.NewFromKubeconfig(cfg.Operator.Kubeconfig, cfg.Operator.Namespace)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to connect the AZ version client")
+		}
+		azVersionResolver = resolver
+	})
+	return azVersionResolver
 }
 
 // StartGarbageCollection runs the Argo garbage collection sweep in the

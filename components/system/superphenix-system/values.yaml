@@ -1782,6 +1782,17 @@ apps:
         productsConfig:
           argoApp:
             kubernetes:
+              # -- KaaS profiles keyed by the minimum SPX version of the AZ they apply to.
+              # An AZ uses the profile with the highest key lower than or equal to its version.
+              versions:
+                "0.0.0":
+                  repo:
+                    repoURL: "ghcr.io/super-phenix/charts"
+                    chart: "sfs-kaas"
+                    targetRevision: "0.6.3"
+                  kubeVersions:
+                    - version: "v1.36.3"
+                    - version: "v1.35.5"
               # sfs-kaas >= 0.7.0: `<az code>: {internal, external}`.
               # sfs-kaas < 0.7.0: `<region>: <domain>`.
               azDomains:
