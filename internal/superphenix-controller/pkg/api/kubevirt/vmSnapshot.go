@@ -309,12 +309,19 @@ func restoreInstanceSnapshot(w http.ResponseWriter, r *http.Request) {
 	if effectiveId == "" {
 		log.Error().Msg("no Resource Effective Id provided")
 		httpError.Http(w, r, http.StatusBadRequest).Msg("no Resource Effective Id provided")
+		return
 	}
 
-	if err := vmSnapshot.RestoreVmSnapshot(r.Context(), orgId, projectId, effectiveId); err != nil {
+	localId := r.URL.Query().Get("localId")
+	if err := vmSnapshot.RestoreVmSnapshot(r.Context(), orgId, projectId, effectiveId, localId); err != nil {
 		if errors.IsNotFound(err) {
 			log.Err(err).Msg("Resource not found")
 			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
+			return
+		}
+		if errors.IsBadRequest(err) {
+			log.Warn().Err(err).Str("localId", localId).Msg("Invalid restore request")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
 			return
 		}
 		log.Err(err).Msg("Failed to restore vm snapshot")

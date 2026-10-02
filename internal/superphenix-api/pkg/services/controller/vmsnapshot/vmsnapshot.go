@@ -3,14 +3,12 @@ package vmsnapshot
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
-	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/proxy"
@@ -25,7 +23,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // ListVmSnapshots
@@ -352,7 +349,7 @@ func (h *Service) DeleteVmSnapshot(w http.ResponseWriter, r *http.Request) {
 //	@Param			projectId	path	string	true	"Project ID"
 //	@Param			effectiveId	path	string	true	"Snapshot EID"
 //	@Param			name		query	string	true	"New instance name"
-//	@Param			localId		query	string	true	"New instance local ID (UUID)"
+//	@Param			localId		query	string	true	"Local ID (UUID) of the snapshot source VM"
 //	@Success		200
 //	@Failure		400
 //	@Failure		404
@@ -393,14 +390,8 @@ func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO check if the localID provided is the good one (HOW ????)
-	//resourceEId := chi.URLParam(r, "effectiveId")
-	//if m.GetResourceEffectiveID() != resourceEId {
-	//	httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Err(err).Str("effectiveId", resourceEId).Str("computeEid", m.GetResourceEffectiveID()).Msg(consts.SpxResourceCreationFailure)
-	//	return
-	//
-	//}
-
+	// The controller checks that localId is the local ID of the snapshot
+	// source VM (the query string, including localId, is forwarded as is).
 	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
@@ -409,44 +400,18 @@ func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 || resp.StatusCode == 404 {
-		// Check if instance exist in db
-		var instance model.Product
-		result := db.Client.Unscoped().Where(model.Product{EffectiveID: m.GetResourceEffectiveID()}).First(&instance)
-
-		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Err(result.Error).Str("effectiveId", m.GetResourceEffectiveID()).Msg("Failed to find product in database")
-			httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-			return
-		}
-
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Debug().Msg("Instance not found, creation in db")
-			instance.ID = localIdUuid
-			instance.ProductName = name
-			instance.CodeAZ = azDb.Code
-			instance.ProjectId = projectEntity.ID
-			instance.ProductTypeId = model.ProductTypeInstance.Name
-			instance.EffectiveID = m.GetResourceEffectiveID()
-
-			_, err := product.Save(instance)
-			if err != nil {
-				log.Err(err).Msg("Failed to save product in database")
-				httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-				return
-			}
-		} else {
-			log.Debug().Msgf("Instance found, deletion status %t", instance.DeletedAt.Valid)
-			result = db.Client.Unscoped().Model(instance).Updates(map[string]interface{}{"deleted_at": nil, "product_name": name})
-			if result.Error != nil {
-				log.Debug().Err(result.Error).Msg("failed to restore instance in db")
-			}
-		}
-
-	} else {
+	// Only register the instance once the restore has actually been accepted.
+	if resp.StatusCode != http.StatusOK {
 		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
 		return
 	}
+
+	if err := registerRestoredInstance(localIdUuid, projectEntity.ID, m.GetResourceEffectiveID(), name, azDb.Code); err != nil {
+		log.Err(err).Str("effectiveId", m.GetResourceEffectiveID()).Str("localId", localId).Msg("Failed to register restored instance in database")
+		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 

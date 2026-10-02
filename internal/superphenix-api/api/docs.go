@@ -4062,7 +4062,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "New instance local ID (UUID)",
+                        "description": "Local ID (UUID) of the snapshot source VM",
                         "name": "localId",
                         "in": "query",
                         "required": true
