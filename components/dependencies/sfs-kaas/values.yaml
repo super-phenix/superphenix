@@ -408,3 +408,10 @@ kubevirtCsi:
     csiResizerVersion: v2.2.1
     csiSnapshotterVersion: v8.6.0
     csiDriverVersion: latest
+  v1.37:
+    csiProvisionerVersion: v6.3.0
+    csiAttacherVersion: v4.13.0
+    csiLivenessprobeVersion: v2.20.0
+    csiResizerVersion: v2.3.0
+    csiSnapshotterVersion: v8.6.0
+    csiDriverVersion: latest
