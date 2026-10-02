@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 	"testing"
-
-	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 )
 
 func validPostInstallChart() PostInstallChartSpec {
@@ -71,7 +69,6 @@ func TestValidatePostInstallChart(t *testing.T) {
 // TestCreateKaaSAppValues_PostInstallChart checks that an invalid post-install
 // chart is rejected by CreateKaaSAppValues, so no values reach the chart.
 func TestCreateKaaSAppValues_PostInstallChart(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "v1.36.3"}}
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}

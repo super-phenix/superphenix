@@ -110,14 +110,6 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		}
 	}
 
-	// Only a new or changed kube version must be in the config.
-	if oldSpec == nil || spec.KubeVersion != oldSpec.KubeVersion {
-		if _, supported := ChartFromConfig(spec.KubeVersion); !supported {
-			log.Error().Str("kubeVersion", spec.KubeVersion).Msg("KubeVersion not supported")
-			return "", nil, fmt.Errorf("KubeVersion not supported")
-		}
-	}
-
 	//// KaaS Essentials
 	storageClasses := make(map[string]StorageClass)
 	for i, class := range kaasConfig.StorageClasses {

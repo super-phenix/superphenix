@@ -4939,8 +4939,75 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     },
+                    "409": {
+                        "description": "Conflict"
+                    },
                     "500": {
                         "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/kube-versions": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectKaaSRead"
+                        ]
+                    }
+                ],
+                "description": "Get the KubeVersions supported by the KaaS configuration of the AZ SPX version",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Get supported KubeVersions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Kube Versions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
                     }
                 }
             }
@@ -5069,8 +5136,14 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     },
+                    "409": {
+                        "description": "Conflict"
+                    },
                     "500": {
                         "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
                     }
                 }
             },
@@ -5194,8 +5267,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/kaas.KaaSAppSpecResponse"
                         }
                     },
+                    "409": {
+                        "description": "Conflict"
+                    },
                     "500": {
                         "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
                     }
                 }
             }
@@ -5326,8 +5405,14 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     },
+                    "409": {
+                        "description": "Conflict"
+                    },
                     "500": {
                         "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
                     }
                 }
             }
@@ -5518,6 +5603,9 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error"
+                    },
+                    "503": {
+                        "description": "Service Unavailable"
                     }
                 }
             }
@@ -8120,56 +8208,6 @@ const docTemplate = `{
                             "type": "array",
                             "items": {
                                 "$ref": "#/definitions/kaas.KaaSResponse"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/{orgaId}/api/spx-ctrl/{projectId}/kaas/kube-versions": {
-            "get": {
-                "security": [
-                    {
-                        "Bearer": [
-                            "OrganizationRead"
-                        ]
-                    }
-                ],
-                "description": "Get supported KubeVersions",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "v1",
-                    "SPX Argo Ctrl"
-                ],
-                "summary": "Get supported KubeVersions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Organization ID",
-                        "name": "orgaId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Project ID",
-                        "name": "projectId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Kube Versions",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
                             }
                         }
                     },

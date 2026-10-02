@@ -10,6 +10,7 @@ import (
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
 	"github.com/argoproj/argo-cd/v3/pkg/client/clientset/versioned/typed/application/v1alpha1"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -39,6 +40,8 @@ type Options struct {
 type Client struct {
 	apps v1alpha1.ArgoprojV1alpha1Interface
 	k8s  kubernetes.Interface
+	// dyn reads the CRDs without typed clients (e.g. operator Clusters).
+	dyn  dynamic.Interface
 	opts Options
 }
 
@@ -71,11 +74,21 @@ func NewClientFromKubeconfig(opts Options) (*Client, error) {
 		return nil, fmt.Errorf("cannot obtain Argo client: %w", err)
 	}
 
-	return NewClient(argoClient, k8sClient, opts), nil
+	dynClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("cannot obtain K8S dynamic client: %w", err)
+	}
+
+	client := NewClient(argoClient, k8sClient, opts)
+	client.dyn = dynClient
+	return client, nil
 }
 
 // Apps exposes the Argo CD typed client to the garbage collector.
 func (c *Client) Apps() v1alpha1.ArgoprojV1alpha1Interface { return c.apps }
+
+// Dynamic exposes the dynamic client of the cluster connection.
+func (c *Client) Dynamic() dynamic.Interface { return c.dyn }
 
 // Options returns the client configuration.
 func (c *Client) Options() Options { return c.opts }

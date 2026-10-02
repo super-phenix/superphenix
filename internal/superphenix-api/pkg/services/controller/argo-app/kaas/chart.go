@@ -23,11 +23,10 @@ type ChartStatus struct {
 	Outdated bool       `json:"outdated"`
 }
 
-// ChartFromConfig returns the configured chart for kubeVersion and whether the
-// version is supported.
-func ChartFromConfig(kubeVersion string) (config.RepoArgoAppConfig, bool) {
-	k := config.Global.ProductsConfig.ArgoApp.Kubernetes
-	return config.ResolveKubeVersionRepo(k.KubeVersions, k.Repo, kubeVersion)
+// ChartFromConfig returns the chart profile configures for kubeVersion and
+// whether the version is supported.
+func ChartFromConfig(profile config.KaasVersionProfile, kubeVersion string) (config.RepoArgoAppConfig, bool) {
+	return config.ResolveKubeVersionRepo(profile.KubeVersions, profile.Repo, kubeVersion)
 }
 
 // ChartFromApp returns the chart the Application renders.
@@ -46,12 +45,12 @@ func ChartFromApp(app view.AppView) config.RepoArgoAppConfig {
 
 // ChartForUpdate returns the chart an updated cluster renders. It keeps
 // current unless the kube version changes, in which case it takes the chart
-// configured for newVersion. ok is false when newVersion is not configured.
-func ChartForUpdate(current config.RepoArgoAppConfig, oldVersion, newVersion string) (config.RepoArgoAppConfig, bool) {
+// profile configures for newVersion. ok is false when newVersion is not configured.
+func ChartForUpdate(profile config.KaasVersionProfile, current config.RepoArgoAppConfig, oldVersion, newVersion string) (config.RepoArgoAppConfig, bool) {
 	if oldVersion == newVersion {
 		return current, true
 	}
-	return ChartFromConfig(newVersion)
+	return ChartFromConfig(profile, newVersion)
 }
 
 // SameSource reports whether a and b point to the same chart revision.
@@ -60,10 +59,10 @@ func SameSource(a, b config.RepoArgoAppConfig) bool {
 }
 
 // NewChartStatus builds the status of a cluster rendering current with the
-// given kube version.
-func NewChartStatus(current config.RepoArgoAppConfig, kubeVersion string) ChartStatus {
+// given kube version, against the chart profile configures.
+func NewChartStatus(profile config.KaasVersionProfile, current config.RepoArgoAppConfig, kubeVersion string) ChartStatus {
 	status := ChartStatus{Current: chartInfo(current)}
-	target, ok := ChartFromConfig(kubeVersion)
+	target, ok := ChartFromConfig(profile, kubeVersion)
 	if !ok {
 		status.Outdated = true
 		return status
@@ -75,13 +74,13 @@ func NewChartStatus(current config.RepoArgoAppConfig, kubeVersion string) ChartS
 }
 
 // DeployedOutdated reports whether chartLabel, the helm.sh/chart label of a
-// deployed cluster, differs from the chart configured for kubeVersion. known is
-// false when an input is empty or the configured chart is path based.
-func DeployedOutdated(chartLabel, kubeVersion string) (outdated, known bool) {
+// deployed cluster, differs from the chart profile configures for kubeVersion.
+// known is false when an input is empty or the configured chart is path based.
+func DeployedOutdated(profile config.KaasVersionProfile, chartLabel, kubeVersion string) (outdated, known bool) {
 	if chartLabel == "" || kubeVersion == "" {
 		return false, false
 	}
-	target, ok := ChartFromConfig(kubeVersion)
+	target, ok := ChartFromConfig(profile, kubeVersion)
 	if !ok {
 		return true, true
 	}

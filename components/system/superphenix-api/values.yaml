@@ -93,8 +93,26 @@ serviceMonitor:
 #         timeout: 10m
 #         batchSize: 5000                    # events hard deleted per statement
 #
-# The KaaS/BaaS repos, kubeVersions and schedules live under
-# `config.productsConfig.argoApp.{kubernetes,backup}`.
+#     operator:
+#       kubeconfig: ""                       # connection reading the Cluster CRs, empty = in-cluster (independent of argoController)
+#       namespace: superphenix-system        # namespace of the operator Cluster CRs, defaults to the release namespace
+#     azs:
+#       <az code>:
+#         destination: <argo cluster name>
+#         clusterName: <Cluster CR name>     # optional, defaults to destination (lookup by availabilityZone for in-cluster)
+#     productsConfig:
+#       argoApp:
+#         kubernetes:
+#           versions:                        # required, keyed by the minimum AZ SPX version of each profile
+#             "0.0.0":
+#               repo: {repoURL: ghcr.io/super-phenix/charts, chart: sfs-kaas, targetRevision: "0.6.3"}
+#               kubeVersions:
+#                 - version: v1.36.3
+#                 - version: v1.34.8
+#                   fqdn: false              # optional, default true
+#                   repo: {...}              # optional per kube version chart
+#
+# The BaaS repo and schedules live under `config.productsConfig.argoApp.backup`.
 config: {}
 
 jwtSecret:
