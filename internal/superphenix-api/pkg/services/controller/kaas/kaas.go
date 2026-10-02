@@ -215,6 +215,7 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	body.Spec.KaasEssentials.ClusterFriendlyName = kaasDb.ProductName
 	newBody, _, err := argokaas.CreateArgoApp(r.Context(), kaasDb.ID.String(), azDb, body.Spec, m, kaasConfig, nil, chart)
 	if err != nil {
 		ctrlutils.CleanDb(r.Context(), kaasDb.ID)
@@ -373,6 +374,12 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		log.Error().Str("kubeVersion", body.Spec.KubeVersion).Msg("KubeVersion not supported")
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
 		return
+	}
+
+	// Without a DB row (gitops / desync) the name comes from the request.
+	body.Spec.KaasEssentials.ClusterFriendlyName = kaasDb.ProductName
+	if kaasDb.ProductName == "" {
+		body.Spec.KaasEssentials.ClusterFriendlyName = body.General.ProductName
 	}
 
 	newBody, gtr, err := argokaas.CreateArgoApp(r.Context(), kaasDb.ID.String(), azDb, body.Spec, m, kaasConfig, &app.Spec, chart)
@@ -558,6 +565,7 @@ func (h *Service) loadKaaS(w http.ResponseWriter, r *http.Request) (loadedKaaS, 
 // and writes the response. It reports whether the Application was updated.
 func (h *Service) applyKaaS(w http.ResponseWriter, r *http.Request, k loadedKaaS, spec argokaas.KaaSSpec, chart config.RepoArgoAppConfig) bool {
 	log := logger.GetLogger(r.Context())
+	spec.KaasEssentials.ClusterFriendlyName = k.product.ProductName
 	newBody, _, err := argokaas.CreateArgoApp(r.Context(), k.product.ID.String(), k.az, spec, k.metadata, k.kaasConfig, &k.app.Spec, chart)
 	if err != nil {
 		log.Err(err).Msg("Failed to create argo app")

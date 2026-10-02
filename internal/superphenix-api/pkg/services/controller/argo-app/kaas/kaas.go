@@ -178,11 +178,17 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		revision = oldSpec.KaasEssentials.Revision + 1
 	}
 
+	// A renamed cluster reruns the essentials job to refresh spx-cluster-info
+	if oldSpec != nil && spec.KaasEssentials.ClusterFriendlyName != oldSpec.KaasEssentials.ClusterFriendlyName {
+		revision = oldSpec.KaasEssentials.Revision + 1
+	}
+
 	kaasEsssentials := Essentials{
-		Revision:        revision,
-		StorageClasses:  storageClasses,
-		SnapshotClasses: storageClasses, // StorageClass always match with SnapshotClass
-		Values:          essentialsValues,
+		ClusterFriendlyName: spec.KaasEssentials.ClusterFriendlyName,
+		Revision:            revision,
+		StorageClasses:      storageClasses,
+		SnapshotClasses:     storageClasses, // StorageClass always match with SnapshotClass
+		Values:              essentialsValues,
 	}
 
 	// Post Install Chart Validation

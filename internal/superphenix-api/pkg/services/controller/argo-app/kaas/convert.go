@@ -76,6 +76,7 @@ func ConvertAppToUpdateKaaSSpec(app view.AppView) (KaaSSpec, error) {
 				CorednsValues:       corednsStr,
 				CiliumValues:        ciliumStr,
 				MetricsServerValues: metricsServerStr,
+				ClusterFriendlyName: cluster.KaaSEssentials.ClusterFriendlyName,
 			},
 			PostInstallChart: pic,
 		}
