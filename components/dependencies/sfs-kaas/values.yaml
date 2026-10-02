@@ -131,11 +131,6 @@ clusters: {}
   #     paused: false
     
   #     network:
-  #       # -- Controlplane networkpolicy to apply, one of [default, none]
-  #       # @section -- Controlplane network
-  #       # @default -- default
-  #       defaultPolicies: default
-    
   #       # -- FQDN to join the controlplane on
   #       # @section -- Controlplane network
   #       fqdn: ""
@@ -145,11 +140,14 @@ clusters: {}
   #   # @default -- {}
   #   workers:
   #     network:
-
-  #       # -- Worker networkpolicy to apply, one of [default, strict, none]
+  #       # -- Worker networkpolicy configuration
   #       # @section -- Worker network
-  #       # @default -- default
-  #       defaultPolicies: default
+  #       # https://docs.superphenix.net/paas/kaas/network-configuration/#network-policies
+  #       policies:
+  #         # -- Must be one of [default, strict, none]
+  #         ingress: default
+  #         # -- Must be one of [default, strict, none]
+  #         egress: default
 
   #     # -- Each key defines a new worker VM pool to be deployed.
   #     # Each key should be unique.
