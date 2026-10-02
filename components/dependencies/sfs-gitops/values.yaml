@@ -1,35 +1,52 @@
-# -- Organization information
-organization:
-  # -- Organization ID (does not include the "spx" prefix)
-  organizationID: ""
-  # -- Name of the organization
-  name: ""
+# -- Global configuration
+global:
+  # -- Organization information
+  organization:
+    # -- Organization ID (does not include the "spx" prefix)
+    organizationID: ""
+    # -- Name of the organization
+    name: ""
 
-# -- Project information
-project:
-  # -- Project ID (does not include the "spx" prefix)
-  projectID: ""
-  # -- Name af the project
-  name: ""
-  # -- Availability zones as defined in the Project status
-  availabilityZones: []
-    # - name: fr01-agc01    # minimized name (region-az)
-    #   cluster: cluster-1  # full cluster name
+  # -- Project information
+  project:
+    # -- Project ID (does not include the "spx" prefix)
+    projectID: ""
+    # -- Name af the project
+    name: ""
 
-  # -- GitOps configuration
-  gitops:
-    # -- Values location configuration
-    valuesLocation:
-      repoURL: ""
-      # path and targetRevision are not used by the secret template, but good to have for completeness
-      path: ""
-      targetRevision: ""
-      # -- Credentials for the values repository
-      credentials:
-        username: ""
-        password: ""
-        insecure: false
-        forceHttpBasicAuth: false
-        enableLfs: false
-        sshPrivateKey: ""
+    # -- Availability zones as defined in the Project status
+    availabilityZones: []
+      # - name: fr01-agc01    # minimized name (region-az)
+      #   cluster: cluster-1  # full cluster name
 
+    # -- GitOps configuration
+    gitops:
+      # -- Values location configuration
+      valuesLocation:
+        repoURL: ""
+        # path and targetRevision are not used by the secret template, but good to have for completeness
+        # path: ""
+        targetRevision: ""
+        # -- Credentials for the values repository
+        credentials:
+          username: ""
+          password: ""
+          insecure: false
+          forceHttpBasicAuth: false
+          enableLfs: false
+          sshPrivateKey: ""
+
+  # -- KAAS global configuration
+  kaas: {}
+
+  # -- BAAS global configuration
+  baas: {}
+
+  # -- Storage class mapping
+  storageClassMapping: {}
+
+# -- Kubernetes clusters configuration
+kubernetes: {}
+
+# -- Backups configuration
+backups: {}
