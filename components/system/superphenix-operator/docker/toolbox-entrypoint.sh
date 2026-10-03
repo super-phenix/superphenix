@@ -10,22 +10,20 @@ KUBE_DIR="${HOME}/.kube"
 
 mkdir -p "${KUBE_DIR}"
 
-link_kubeconfig() {
-    if [[ -f "${KUBECONFIG_FILE}" ]]; then
-        # Symlink the operator-managed kubeconfig into ~/.kube/config so that
-        # all tools (kubectl, helm, k9s) pick it up without extra configuration.
-        ln -sf "${KUBECONFIG_FILE}" "${KUBE_DIR}/config"
-        echo "[toolbox] Kubeconfig linked: ${KUBECONFIG_FILE} -> ${KUBE_DIR}/config"
-    else
-        echo "[toolbox] Kubeconfig not yet available at ${KUBECONFIG_FILE}, waiting..."
-    fi
-}
-
 echo "[toolbox] Superphenix toolbox starting."
 echo "[toolbox] Kubeconfig source: ${KUBECONFIG_FILE}"
 echo "[toolbox] The operator keeps the kubeconfig up to date as cluster credentials change."
 
-link_kubeconfig
+# Wait for the kubeconfig to be available (the Secret may not be populated yet on first start).
+until [[ -f "${KUBECONFIG_FILE}" ]]; do
+    echo "[toolbox] Kubeconfig not yet available at ${KUBECONFIG_FILE}, retrying in 5s..."
+    sleep 5
+done
+
+# Symlink the operator-managed kubeconfig into ~/.kube/config so that
+# all tools (kubectl, helm, k9s) pick it up without extra configuration.
+ln -sf "${KUBECONFIG_FILE}" "${KUBE_DIR}/config"
+echo "[toolbox] Kubeconfig linked: ${KUBECONFIG_FILE} -> ${KUBE_DIR}/config"
 
 # Keep the container alive. The kubelet updates the mounted Secret file in
 # place when credentials are rotated, so no polling loop is needed.
