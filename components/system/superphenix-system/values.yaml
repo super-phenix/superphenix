@@ -1382,15 +1382,14 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     namespace: "kamaji-system"
-    repoURL: harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm
-    targetRevision: 26.7.22
+    repoURL: harbor.agoracalyce.net/spx-helm
+    targetRevision: 26.9.30
     helm:
       chart: "kamaji"
       releaseName: "kamaji"
     values:
       image:
-        tag: "26.7.3-edge" # https://github.com/clastix/kamaji/releases
-      replicaCount: 3
+        tag: "26.9.5-edge" # https://github.com/clastix/kamaji/releases
       defaultDatastoreName: "default"
       extraArgs:
         # Rotate tenant-cluster certificates 14 days before expiry (336h == 14d).
@@ -1428,23 +1427,24 @@ apps:
       syncOptions: {}
     namespace: "capi-operator-system"
     repoURL: "https://kubernetes-sigs.github.io/cluster-api-operator"
-    targetRevision: "0.28.0" # https://github.com/kubernetes-sigs/cluster-api-operator/releases
+    targetRevision: "0.29.0" # https://github.com/kubernetes-sigs/cluster-api-operator/releases
     helm:
       chart: "cluster-api-operator"
       releaseName: "cluster-api-operator"
     values:
       core:
+        # K8s version support: https://cluster-api.sigs.k8s.io/reference/versions.html#supported-versions-matrix-by-provider-or-component
         cluster-api:
-          version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
+          version: v1.13.7 # https://github.com/kubernetes-sigs/cluster-api/releases
       bootstrap:
         kubeadm:
-          version: v1.12.10 # https://github.com/kubernetes-sigs/cluster-api/releases
+          version: v1.13.7 # https://github.com/kubernetes-sigs/cluster-api/releases
       infrastructure:
         kubevirt:
           version: v0.11.2 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
       controlPlane:
         kamaji:
-          version: v0.20.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
+          version: v0.21.0 # https://github.com/clastix/cluster-api-control-plane-provider-kamaji/releases
 
   # -- etcd-operator: manages the etcd datastores backing Kamaji control planes.
   etcd-operator:

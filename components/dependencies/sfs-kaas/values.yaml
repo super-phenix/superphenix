@@ -26,6 +26,12 @@ location: ""
 # @section -- Organization parameters
 gitops: false
 
+# -- Mapping between user-friendly names of storage classes and their real names.
+# The mapping is specified for the current AZ, meaning that each AZ can have a different mapping.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+storageClassMapping: {}
+
 # -- Per AZ mapping of URLs to use in cluster configuration
 # This parameter cannot be overriden by the user.
 azDomains: {}
@@ -406,5 +412,12 @@ kubevirtCsi:
     csiAttacherVersion: v4.12.0
     csiLivenessprobeVersion: v2.19.0
     csiResizerVersion: v2.2.1
+    csiSnapshotterVersion: v8.6.0
+    csiDriverVersion: latest
+  v1.37:
+    csiProvisionerVersion: v6.3.0
+    csiAttacherVersion: v4.13.0
+    csiLivenessprobeVersion: v2.20.0
+    csiResizerVersion: v2.3.0
     csiSnapshotterVersion: v8.6.0
     csiDriverVersion: latest
