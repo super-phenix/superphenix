@@ -1,0 +1,75 @@
+{{- $projectID := .Values.global.project.projectID -}}
+{{- range $az := .Values.global.project.availabilityZones }}
+{{- range $localID, $backup := $.Values.backups }}
+{{- if eq $backup.location $az.name }}
+
+{{- $backupID := include "sfs-gitops.spxEID" (dict "project" $projectID "localID" $localID) }}
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "baas-%s" $backupID | quote }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "sfs-gitops.labels" $ | nindent 4 }}
+    operator.superphenix.net/managed: "true"
+    superphenix.net/resourceEffectiveID: {{ $backupID | quote }}
+    superphenix.net/resourceLocalID: {{ $localID | quote }}
+    superphenix.net/resourceName: {{ $backup.name | quote }}
+spec:
+  project: {{ printf "spx-%s" $projectID | quote }}
+  sources:
+    - chart: sfs-baas
+      repoURL: {{ $backup.repoUrl | default "ghcr.io/super-phenix/charts" | quote }}
+      targetRevision: {{ $backup.chartVersion | default "0.2.1" | quote }}
+      plugin:
+        name: uuidv5
+        env:
+          # Release name
+          - name: RELEASE
+            value: baas-{{ $backupID }}
+          # Remote repository that we need to clone to get the values
+          - name: REPO
+            value: ""
+          # Highest precedence, replaces "parameters"
+          - name: HELM_PARAMS
+            value: >- 
+              --set location={{ $az.name }}
+          # Lowest precedence, replaces "valueFiles"
+          - name: HELM_VALUEFILES
+            value: "$values/baas/{{ $az.name }}/**/*.yaml"
+          # Middle precedence, replaces "values"
+          - name: HELM_VALUES
+            value: |
+              global:
+                organizationID: {{ $.Values.global.organization.organizationID }}
+                organizationName: {{ $.Values.global.organization.name }}
+                projectID: {{ $projectID }}
+                projectName: {{ $.Values.global.project.name }}
+                {{- with $.Values.global.storageClassMapping }}
+                storageClassMapping:
+                  {{- . | toYaml | nindent 18 }}
+                {{- end }}
+                {{- $.Values.global.baas | toYaml | nindent 16 }}
+              backups:
+                {{ $localID }}:
+                  {{- $backup | toYaml | nindent 18 }}
+    - repoURL: {{ $.Values.global.project.gitops.valuesLocation.repoURL | quote }}
+      targetRevision: {{ $.Values.global.project.gitops.valuesLocation.targetRevision | default "HEAD" | quote }}
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - ApplyOutOfSyncOnly=true
+    - RespectIgnoreDifferences=true
+    - CreateNamespace=false
+  destination:
+    name: {{ $az.cluster | quote }}
+    namespace: {{ printf "spx-%s" $projectID | quote }}
+
+{{- end }}
+{{- end }}
+{{- end }}

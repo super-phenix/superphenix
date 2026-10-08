@@ -1,0 +1,98 @@
+{{- $projectID := .Values.global.project.projectID -}}
+{{- range $az := .Values.global.project.availabilityZones }}
+{{- range $localID, $cluster := $.Values.kubernetes }}
+{{- if eq $cluster.location $az.name }}
+
+{{- $clusterID := include "sfs-gitops.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $kubeMinorOnly := substr 3 5 (default "1.35.0" $cluster.kubeVersion) }}
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "kaas-%s" $clusterID | quote }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "sfs-gitops.labels" $ | nindent 4 }}
+    operator.superphenix.net/managed: "true"
+    superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
+    superphenix.net/resourceLocalID: {{ $localID | quote }}
+    superphenix.net/resourceName: {{ $cluster.name | quote }}
+spec:
+  project: {{ printf "spx-%s" $projectID | quote }}
+  ignoreDifferences:
+    - group: batch
+      kind: Job
+      jsonPointers:
+        - /metadata/labels/app.kubernetes.io~1version
+        - /metadata/labels/helm.sh~1chart
+        - /metadata/labels/superphenix.net~1gitops
+        - /spec/template/metadata/labels/app.kubernetes.io~1version
+        - /spec/template/metadata/labels/helm.sh~1chart
+        - /spec/template/metadata/labels/superphenix.net~1gitops
+    - group: infrastructure.cluster.x-k8s.io
+      kind: KubevirtMachineTemplate
+      jsonPointers:
+        - /metadata/labels/app.kubernetes.io~1version
+        - /metadata/labels/helm.sh~1chart
+        - /metadata/labels/superphenix.net~1gitops
+        - /spec
+  sources:
+    - chart: sfs-kaas
+      {{- if lt (int $kubeMinorOnly) 35 }}
+      repoURL: {{ $cluster.repoUrl | default "harbor.agoracalyce.net/spx-kaas" | quote }}
+      targetRevision: {{ $cluster.chartVersion | default "1.0.15" | quote }} 
+      {{- else }}
+      repoURL: {{ $cluster.repoUrl | default "ghcr.io/super-phenix/charts" | quote }}
+      targetRevision: {{ $cluster.chartVersion | default "0.3.8" | quote }}
+      {{- end }}
+      plugin:
+        name: uuidv5
+        env:
+          # Release name
+          - name: RELEASE
+            value: kaas-{{ $clusterID }}
+          # Remote repository that we need to clone to get the values
+          - name: REPO
+            value: ""
+          # Highest precedence, replaces "parameters"
+          - name: HELM_PARAMS
+            value: >- 
+              --set location={{ $az.name }}
+          # Lowest precedence, replaces "valueFiles"
+          - name: HELM_VALUEFILES
+            value: "$values/kaas/{{ $az.name }}/**/*.yaml"
+          # Middle precedence, replaces "values"
+          - name: HELM_VALUES
+            value: |
+              global:
+                organizationID: {{ $.Values.global.organization.organizationID }}
+                organizationName: {{ $.Values.global.organization.name }}
+                projectID: {{ $projectID }}
+                projectName: {{ $.Values.global.project.name }}
+                {{- with $.Values.global.storageClassMapping }}
+                storageClassMapping:
+                  {{- . | toYaml | nindent 18 }}
+                {{- end }}
+                {{- $.Values.global.kaas | toYaml | nindent 16 }}
+              clusters:
+                {{ $localID }}:
+                  {{- $cluster | toYaml | nindent 18 }}
+    - repoURL: {{ $.Values.global.project.gitops.valuesLocation.repoURL | quote }}
+      targetRevision: {{ $.Values.global.project.gitops.valuesLocation.targetRevision | default "HEAD" | quote }}
+      ref: values
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - ApplyOutOfSyncOnly=true
+    - RespectIgnoreDifferences=true
+    - CreateNamespace=false
+  destination:
+    name: {{ $az.cluster | quote }}
+    namespace: {{ printf "spx-%s" $projectID | quote }}
+
+{{- end }}
+{{- end }}
+{{- end }}
