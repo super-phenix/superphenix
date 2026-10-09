@@ -1,0 +1,46 @@
+{{- range $localID, $db := .Values.databases }}
+{{- if eq $db.location $.Values.location }}
+
+{{- $projectID := $.Values.projectID -}}
+{{- $defaults := $.Values.databaseDefaults -}}
+{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $netpolLocalID := printf "internal.%s" $localID }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-internal-{{ $dbID }}
+  annotations:
+    ovn.kubernetes.io/network_policy_enforcement: lax
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+    superphenix.net/resourceLocalID: {{ $netpolLocalID | quote }}
+    superphenix.net/resourceName: {{ $netpolLocalID | quote }}
+    superphenix.net/generated: "true"
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: {{ $dbID | quote }}
+  policyTypes:
+  - Ingress
+  ingress:
+  # Operator to instance manager
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: {{ $defaults.operatorNamespace | quote }}
+    ports:
+    - port: {{ $defaults.statusPort }}
+  # Replication between instances
+  - from:
+    - podSelector:
+        matchLabels:
+          cnpg.io/cluster: {{ $dbID | quote }}
+    ports:
+    - port: {{ $defaults.port }}
+    - port: {{ $defaults.statusPort }}
+
+{{- end }}
+{{- end }}

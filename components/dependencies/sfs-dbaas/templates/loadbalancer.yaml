@@ -1,0 +1,45 @@
+{{- range $localID, $db := .Values.databases }}
+{{- if eq $db.location $.Values.location }}
+{{- if ($db.loadBalancer).enabled }}
+
+{{- $projectID := $.Values.projectID -}}
+{{- $port := $.Values.databaseDefaults.port -}}
+{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $lbLocalID := printf "lb.%s" $localID }}
+{{- $lbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $lbLocalID) }}
+{{- $vip := required "Must provide a VIP for the load balancer" $db.loadBalancer.vip }}
+
+---
+apiVersion: kubeovn.io/v1
+kind: SwitchLBRule
+metadata:
+  name: {{ $lbID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $lbID | quote }}
+    superphenix.net/resourceLocalID: {{ $lbLocalID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+spec:
+  # Only target endpoints in the project's namespace
+  namespace: {{ $.Release.Namespace | quote }}
+
+  # Virtual IP that will respond to requests, must be part of 198.18.0.0/16 (SPX RFC008)
+  {{- if not (mustRegexMatch "^198\\.18\\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$" $vip) }}
+  {{- fail (printf "Load balancer VIP %s must be part of 198.18.0.0/16" $vip) }}
+  {{- end }}
+  vip: {{ $vip | quote }}
+
+  ports:
+  - name: {{ printf "%d-%d-tcp" (int $port) (int $port) }}
+    port: {{ $port }}
+    targetPort: {{ $port }}
+    protocol: "TCP"
+
+  # Follows the primary instance across failovers
+  selector:
+  - {{ printf "cnpg.io/cluster:%s" $dbID | quote }}
+  - "cnpg.io/instanceRole:primary"
+
+{{- end }}
+{{- end }}
+{{- end }}

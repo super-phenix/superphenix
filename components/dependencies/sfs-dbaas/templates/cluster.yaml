@@ -1,0 +1,59 @@
+{{- range $localID, $db := .Values.databases }}
+{{- if eq $db.location $.Values.location }}
+
+{{- $projectID := $.Values.projectID -}}
+{{- $defaults := $.Values.databaseDefaults -}}
+{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $subnetID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
+
+{{- $class := (required "Must provide a storage class" $db.storageClassName) }}
+{{- $storageClass := get $.Values.storageClassMapping $class }}
+
+---
+# Cluster: https://cloudnative-pg.io/documentation/current/cloudnative-pg.v1/#postgresql-cnpg-io-v1-Cluster
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $dbID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+    superphenix.net/resourceLocalID: {{ $localID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+spec:
+  # One primary, the others are replicas
+  instances: {{ $db.instances | default 1 }}
+
+  imageName: {{ printf "%s:%s" $defaults.imageRepository (required "Must provide a PostgreSQL version" $db.version | toString) | quote }}
+
+  # Requests equal limits to get the Guaranteed QoS class
+  resources:
+    requests:
+      cpu: {{ required "Must provide a CPU amount" $db.cpu | quote }}
+      memory: {{ required "Must provide a memory amount" $db.memory | quote }}
+    limits:
+      cpu: {{ $db.cpu | quote }}
+      memory: {{ $db.memory | quote }}
+
+  storage:
+    size: {{ required "Must provide a storage size" $db.storage | quote }}
+    storageClass: {{ required "No storageclass found" $storageClass | quote }}
+
+  # Metadata propagated to the pods, PVCs, services and secrets of the cluster
+  inheritedMetadata:
+    labels:
+      # don't include selector labels as they would be shared by every database of the release
+      {{- include "sfs-dbaas.spxLabels" $ | nindent 6 }}
+      superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+      superphenix.net/resourceLocalID: {{ $localID | quote }}
+      superphenix.net/resourceName: {{ $db.name | quote }}
+      superphenix.net/workloadClass: dbaas-postgresql
+    annotations:
+      # Primary interface on the system network, reached by the operator
+      ovn.kubernetes.io/logical_router: ovn-cluster
+      ovn.kubernetes.io/logical_switch: ovn-default
+      # Secondary interface on the customer subnet
+      k8s.v1.cni.cncf.io/networks: {{ printf "%s/%s" $.Release.Namespace $subnetID | quote }}
+
+{{- end }}
+{{- end }}
