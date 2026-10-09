@@ -19,12 +19,6 @@ rules:
   - update
   - watch
 - apiGroups:
-  - '*'
-  resources:
-  - '*'
-  verbs:
-  - '*'
-- apiGroups:
   - argoproj.io
   resources:
   - applications

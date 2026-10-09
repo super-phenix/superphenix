@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	v1 "kubevirt.io/api/core/v1"
@@ -274,6 +276,52 @@ func TestUnstructuredVMIToView_LinkState(t *testing.T) {
 			result := UnstructuredVMIToView(tt.unstructured)
 			if !reflect.DeepEqual(tt.expectedInterfaces, result.Status.Interfaces) {
 				t.Errorf("expected interfaces %+v, got %+v", tt.expectedInterfaces, result.Status.Interfaces)
+			}
+		})
+	}
+}
+
+func TestVMGpus(t *testing.T) {
+	const (
+		rtxDevice = "nvidia.com/GB202GL_RTX_PRO_6000_BLACKWELL_SERVER_EDITION"
+		rtxClass  = "nvidia-rtx-pro-6000-bse"
+	)
+	prev := config.Global.ProductsConfig.Compute.DeviceMapping
+	config.Global.ProductsConfig.Compute.DeviceMapping = map[string]config.GpuClassEntry{
+		rtxClass: {ID: rtxClass, DisplayName: "NVIDIA RTX PRO 6000", DeviceName: rtxDevice},
+	}
+	t.Cleanup(func() { config.Global.ProductsConfig.Compute.DeviceMapping = prev })
+
+	withGpus := func(gpus []v1.GPU) VirtualMachineView {
+		vm := VirtualMachineView{}
+		vm.Spec.Template = &v1.VirtualMachineInstanceTemplateSpec{}
+		vm.Spec.Template.Spec.Domain.Devices.GPUs = gpus
+		return vm
+	}
+
+	tests := []struct {
+		name string
+		vm   VirtualMachineView
+		want []config.GpuClassEntry
+	}{
+		{name: "nil template has no gpu", vm: VirtualMachineView{}, want: nil},
+		{name: "no gpu", vm: withGpus(nil), want: nil},
+		{
+			name: "known device is mapped to its class",
+			vm:   withGpus([]v1.GPU{{Name: "gpu-0", DeviceName: rtxDevice}}),
+			want: []config.GpuClassEntry{{ID: rtxClass, DisplayName: "NVIDIA RTX PRO 6000", DeviceName: rtxDevice}},
+		},
+		{
+			name: "unknown device keeps its raw name as display name",
+			vm:   withGpus([]v1.GPU{{Name: "gpu-0", DeviceName: "nvidia.com/UNKNOWN"}}),
+			want: []config.GpuClassEntry{{ID: undefinedGpuClass, DisplayName: "nvidia.com/UNKNOWN"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := VMGpus(tt.vm); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("VMGpus() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

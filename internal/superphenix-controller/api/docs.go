@@ -1238,6 +1238,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgId}/{projectId}/gpu-class": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Returns this AZ's passthrough GPU classes declared in the controller config, sorted by ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Config"
+                ],
+                "summary": "Get the GPU classes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "GPU classes",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/config.GpuClassEntry"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgId}/{projectId}/instance": {
             "get": {
                 "description": "Retrieve all instances for a project",
@@ -4832,6 +4880,17 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "config.GpuClassEntry": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
                 }
             }
         },
@@ -13529,6 +13588,12 @@ const docTemplate = `{
                 "gitops": {
                     "type": "string"
                 },
+                "gpus": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/config.GpuClassEntry"
+                    }
+                },
                 "id": {
                     "description": "local ID",
                     "type": "string"
@@ -15216,6 +15281,13 @@ const docTemplate = `{
                         "cpu": {
                             "type": "integer"
                         },
+                        "gpu": {
+                            "description": "Gpu lists the passthrough GPUs by class. Nil or empty means no GPU.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vm.GPU"
+                            }
+                        },
                         "memory": {
                             "type": "integer"
                         }
@@ -15312,6 +15384,14 @@ const docTemplate = `{
                 }
             }
         },
+        "vm.GPU": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "type": "string"
+                }
+            }
+        },
         "vm.Network": {
             "type": "object",
             "properties": {
@@ -15369,6 +15449,13 @@ const docTemplate = `{
                     "properties": {
                         "cpu": {
                             "type": "integer"
+                        },
+                        "gpu": {
+                            "description": "Gpu is the desired passthrough GPU set by class. Nil preserves the\ncurrent GPUs; non-nil sets them explicitly (empty removes all).",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/vm.GPU"
+                            }
                         },
                         "memory": {
                             "type": "integer"

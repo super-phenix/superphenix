@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -27,6 +28,14 @@ type ContainerDiskCatalogEntry struct {
 	Bus         string   `yaml:"bus" json:"bus"` // "sata" | "virtio"
 	SupportedOS []string `yaml:"supportedOS" json:"supportedOS"`
 	Recommended bool     `yaml:"recommended" json:"recommended"`
+}
+
+// GpuClassEntry maps a user-facing GPU class (the map key) to the KubeVirt
+// device name exposed by the hosts. DeviceName is internal and never returned.
+type GpuClassEntry struct {
+	ID          string `yaml:"-" json:"id"`
+	DisplayName string `yaml:"displayName" json:"displayName"`
+	DeviceName  string `yaml:"deviceName" json:"-"`
 }
 
 // KeyValue is one entry of a KeyValueList.
@@ -119,6 +128,10 @@ type Config struct {
 			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
 		} `yaml:"blockStorage"`
 
+		Compute struct {
+			DeviceMapping map[string]GpuClassEntry `yaml:"deviceMapping"`
+		} `yaml:"compute"`
+
 		ObjectStorage struct {
 			StorageClassMapping map[string]string `yaml:"storageClassMapping"`
 			MaxBucketSize       string            `yaml:"maxBucketSize"`
@@ -200,6 +213,8 @@ productsConfig:
         value: "true"
   blockStorage:
     storageClassMapping: {}
+  compute:
+    deviceMapping: {}
   objectStorage:
     storageClassMapping: {}
     maxBucketSize: "1Ti"
@@ -281,10 +296,24 @@ func loadDefaults() error {
 	return nil
 }
 
-// populateCatalogIDs sets each ContainerDiskCatalogEntry.ID from its map key.
+// populateCatalogIDs sets each ContainerDiskCatalogEntry.ID and GpuClassEntry.ID
+// from its map key. GPU classes without a device name are dropped, and an empty
+// display name falls back to the ID.
 func populateCatalogIDs() {
 	for id, entry := range Global.ContainerDiskCatalog {
 		entry.ID = id
 		Global.ContainerDiskCatalog[id] = entry
+	}
+	for id, entry := range Global.ProductsConfig.Compute.DeviceMapping {
+		if entry.DeviceName == "" {
+			log.Warn().Str("gpuClass", id).Msg("Ignoring GPU class without deviceName")
+			delete(Global.ProductsConfig.Compute.DeviceMapping, id)
+			continue
+		}
+		entry.ID = id
+		if entry.DisplayName == "" {
+			entry.DisplayName = id
+		}
+		Global.ProductsConfig.Compute.DeviceMapping[id] = entry
 	}
 }

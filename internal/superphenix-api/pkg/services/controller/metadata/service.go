@@ -14,6 +14,7 @@ const moduleName = "spx-controller-metadata"
 // a SimpleRedirect passthrough to the matching AZ controller.
 type API interface {
 	StorageClass(http.ResponseWriter, *http.Request)
+	GpuClass(http.ResponseWriter, *http.Request)
 	VMType(http.ResponseWriter, *http.Request)
 	VMTypeByName(http.ResponseWriter, *http.Request)
 	VMTypeAdvancedOptions(http.ResponseWriter, *http.Request)
@@ -34,6 +35,7 @@ func New(cfg *config.Config) *Service { return &Service{cfg: cfg} }
 func Module(cfg *config.Config, s API) router.Module {
 	return controller.NewControllerModule(moduleName, []router.Route{
 		router.Get("/{az}/{projectId}/storage-class", s.StorageClass),
+		router.Get("/{az}/{projectId}/gpu-class", s.GpuClass),
 		router.Get("/{az}/{projectId}/vm-type", s.VMType),
 		router.Get("/{az}/{projectId}/vm-type/{name}", s.VMTypeByName),
 		router.Get("/{az}/{projectId}/vm-type/{name}/advanced-options", s.VMTypeAdvancedOptions),

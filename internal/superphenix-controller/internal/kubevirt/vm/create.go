@@ -67,6 +67,11 @@ func convertToVM(ctx context.Context, namespace string, vmInfo CreateVMInfo, met
 		return &v1.VirtualMachine{}, fmt.Errorf("unknown run strategy: %s", vmInfo.General.RunStrategy)
 	}
 
+	gpus, err := resolveGPUs(vmInfo.Compute.Gpu)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create correct values format
 	runStrategy := v1.VirtualMachineRunStrategy(vmInfo.General.RunStrategy)
 	memory, err := resource.ParseQuantity(fmt.Sprintf("%dGi", vmInfo.Compute.Memory))
@@ -189,6 +194,8 @@ func convertToVM(ctx context.Context, namespace string, vmInfo CreateVMInfo, met
 	}
 
 	withAdvancedOptions(vm, vmInfo.Advanced)
+
+	setGPUs(vm, gpus)
 
 	return vm, nil
 }

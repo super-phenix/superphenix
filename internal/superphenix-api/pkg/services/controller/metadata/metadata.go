@@ -23,6 +23,23 @@ func (h *Service) StorageClass(w http.ResponseWriter, r *http.Request) {
 	ctrlutils.SimpleRedirect()(w, r)
 }
 
+// GpuClass
+//
+//	@Summary		Retrieve GPU classes
+//	@Description	Retrieve the passthrough GPU classes ({id, displayName}) available in a specific AZ
+//	@Tags			v1, Superphenix Controller
+//	@Produce		json
+//	@Param			orgaId		path	string	true	"Organization ID"
+//	@Param			az			path	string	true	"AZ Code"
+//	@Param			projectId	path	string	true	"Project ID"
+//	@Success		200			{array}	object	"GPU classes"
+//	@Failure		500
+//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/gpu-class [get]
+//	@Security		Bearer[OrganizationRead]
+func (h *Service) GpuClass(w http.ResponseWriter, r *http.Request) {
+	ctrlutils.SimpleRedirect()(w, r)
+}
+
 // VMType
 //
 //	@Summary		Retrieve VM types

@@ -50,6 +50,7 @@ func TestToUpdateAzControllerBody_RoundTripsAllFields(t *testing.T) {
 	body.General.Labels = []string{"env=prod"}
 	body.Compute.Cpu = 4
 	body.Compute.Memory = 8192
+	body.Compute.Gpu = &[]InstanceGpuBody{{Device: "nvidia-rtx-pro-6000-bse"}}
 
 	disksForCtrl := []InstanceDiskSpxControllerBody{
 		{Order: 0, Cdrom: false, Bus: "virtio", Eid: "disk-eid"},

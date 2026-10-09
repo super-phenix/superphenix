@@ -90,6 +90,8 @@ type CreateVMInfo struct {
 	Compute struct {
 		Cpu    int `json:"cpu"`
 		Memory int `json:"memory"`
+		// Gpu lists the passthrough GPUs by class. Nil or empty means no GPU.
+		Gpu []GPU `json:"gpu,omitempty"`
 	} `json:"compute"`
 	Network   []Network `json:"network,omitempty"`
 	Disks     []Disk    `json:"disks,omitempty"`
@@ -112,6 +114,9 @@ type UpdateVMInfo struct {
 	Compute struct {
 		Cpu    int `json:"cpu"`
 		Memory int `json:"memory"`
+		// Gpu is the desired passthrough GPU set by class. Nil preserves the
+		// current GPUs; non-nil sets them explicitly (empty removes all).
+		Gpu *[]GPU `json:"gpu,omitempty"`
 	} `json:"compute"`
 	Network   []Network `json:"network,omitempty"`
 	Disks     []Disk    `json:"disks,omitempty"`

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
@@ -223,6 +224,32 @@ func VMIToView(vmi v1.VirtualMachineInstance) VirtualMachineInstanceView {
 	return view
 }
 
+// undefinedGpuClass is reported for GPU device names missing from the AZ's deviceMapping.
+const undefinedGpuClass = "undefined-gpu-class"
+
+// VMGpus returns the GPU classes requested in the VM template spec. The device
+// name is not serialized, like in the gpu-class catalog.
+func VMGpus(vm VirtualMachineView) []config.GpuClassEntry {
+	if vm.Spec.Template == nil {
+		return nil
+	}
+	var gpus []config.GpuClassEntry
+	for _, gpu := range vm.Spec.Template.Spec.Domain.Devices.GPUs {
+		view := config.GpuClassEntry{ID: undefinedGpuClass, DisplayName: gpu.DeviceName}
+		for _, entry := range config.Global.ProductsConfig.Compute.DeviceMapping {
+			if entry.DeviceName == gpu.DeviceName {
+				view = entry
+				break
+			}
+		}
+		if view.ID == undefinedGpuClass {
+			log.Warn().Str("deviceName", gpu.DeviceName).Msg("GPU device name not found in deviceMapping")
+		}
+		gpus = append(gpus, view)
+	}
+	return gpus
+}
+
 func VMsToResources(vmViews []VirtualMachineView, vmiViews []VirtualMachineInstanceView) []Instance {
 	var instances []Instance
 	for _, vm := range vmViews {
@@ -233,7 +260,8 @@ func VMsToResources(vmViews []VirtualMachineView, vmiViews []VirtualMachineInsta
 				ProductName: vm.Labels[spxId.SpxLabelResourceName],
 				Gitops:      vm.Labels[spxId.SpxLabelGitops],
 			},
-			Vm: vm,
+			Vm:   vm,
+			Gpus: VMGpus(vm),
 		}
 		for _, vmi := range vmiViews {
 			if vmi.Name == vm.Name && vmi.Namespace == vm.Namespace {

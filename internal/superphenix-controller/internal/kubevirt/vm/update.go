@@ -69,6 +69,16 @@ func UpdateVM(ctx context.Context, namespace, name string, vmInfo UpdateVMInfo) 
 		return fmt.Errorf("unknown run strategy: %s", vmInfo.General.RunStrategy)
 	}
 
+	// Nil preserves the current GPUs (Devices.GPUs is not reset below).
+	var gpus []v1.GPU
+	if vmInfo.Compute.Gpu != nil {
+		resolved, gpuErr := resolveGPUs(*vmInfo.Compute.Gpu)
+		if gpuErr != nil {
+			return gpuErr
+		}
+		gpus = resolved
+	}
+
 	vmPreference := "linux"
 	if vmInfo.General.VMType != "" {
 		vmPreference = vmInfo.General.VMType
@@ -148,6 +158,10 @@ func UpdateVM(ctx context.Context, namespace, name string, vmInfo UpdateVMInfo) 
 	}
 
 	withAdvancedOptions(vmToUpdate, vmInfo.Advanced)
+
+	if vmInfo.Compute.Gpu != nil {
+		setGPUs(vmToUpdate, gpus)
+	}
 
 	// Update the VM
 	_, err = config.VirtClient.VirtualMachine(vmToUpdate.Namespace).Update(ctx, vmToUpdate, k8smetav1.UpdateOptions{})

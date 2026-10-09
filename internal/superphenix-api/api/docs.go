@@ -3545,6 +3545,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/gpu-class": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead"
+                        ]
+                    }
+                ],
+                "description": "Retrieve the passthrough GPU classes ({id, displayName}) available in a specific AZ",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Superphenix Controller"
+                ],
+                "summary": "Retrieve GPU classes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "GPU classes",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgaId}/api/spx-ctrl/{az}/{projectId}/instance": {
             "get": {
                 "security": [
@@ -9349,6 +9406,13 @@ const docTemplate = `{
                         "cpu": {
                             "type": "integer"
                         },
+                        "gpu": {
+                            "description": "Gpu lists the passthrough GPUs by class (at most 1). Nil or empty means no GPU.",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/instance.InstanceGpuBody"
+                            }
+                        },
                         "memory": {
                             "type": "integer"
                         }
@@ -9481,6 +9545,7 @@ const docTemplate = `{
                 "gitops": {
                     "type": "string"
                 },
+                "gpus": {},
                 "id": {
                     "description": "local ID",
                     "type": "string"
@@ -9494,6 +9559,14 @@ const docTemplate = `{
                 },
                 "vm": {},
                 "vmi": {}
+            }
+        },
+        "instance.InstanceGpuBody": {
+            "type": "object",
+            "properties": {
+                "device": {
+                    "type": "string"
+                }
             }
         },
         "instance.InstanceNetworkBody": {
@@ -9555,6 +9628,13 @@ const docTemplate = `{
                     "properties": {
                         "cpu": {
                             "type": "integer"
+                        },
+                        "gpu": {
+                            "description": "Gpu is the desired GPU set by class. Nil preserves the current GPUs;\na non-nil slice sets them (empty removes all).",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/instance.InstanceGpuBody"
+                            }
                         },
                         "memory": {
                             "type": "integer"
