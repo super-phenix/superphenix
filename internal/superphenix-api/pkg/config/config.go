@@ -184,6 +184,14 @@ type Config struct {
 
 	AuditLog AuditLogConfig `yaml:"auditLog"`
 
+	Quotas struct {
+		DefaultAZQuotas struct {
+			Pods                   string `yaml:"pods" mapstructure:"pods"`
+			PersistentVolumeClaims string `yaml:"persistentvolumeclaims" mapstructure:"persistentvolumeclaims"`
+			VirtualMachines        string `yaml:"virtualmachines" mapstructure:"virtualmachines"`
+		} `yaml:"defaultAZQuotas" mapstructure:"defaultAZQuotas"`
+	} `yaml:"quotas"`
+
 	Database struct {
 		Host     string
 		Port     string
@@ -317,6 +325,11 @@ auditLog:
     interval: 1h
     timeout: 10m
     batchSize: 5000
+quotas:
+  defaultAZQuotas:
+    pods: "50"
+    persistentvolumeclaims: "50"
+    virtualmachines: "20"
 database:
   host: ""
   port: ""

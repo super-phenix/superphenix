@@ -1,6 +1,7 @@
 package summary
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"maps"
@@ -30,10 +31,11 @@ const recentProductLimit = 5
 // ProjectSummaryResponse is the resource overview of a project.
 // Product types the caller may not read are absent from Counts, CountsByAZ and Recent.
 type ProjectSummaryResponse struct {
-	Counts     map[string]int64 `json:"counts"`
-	CountsByAZ map[string]int64 `json:"countsByAz"`
-	Quota      ProjectQuota     `json:"quota"`
-	Recent     []RecentProduct  `json:"recent"`
+	Counts     map[string]int64      `json:"counts"`
+	CountsByAZ map[string]int64      `json:"countsByAz"`
+	Quota      ProjectQuota          `json:"quota"`
+	Resources  *model.QuotaResources `json:"resources,omitempty"`
+	Recent     []RecentProduct       `json:"recent"`
 }
 
 // ProjectQuota is the product creation quota of a project. Used counts every product type,
@@ -166,10 +168,16 @@ func buildSummary(projectId uuid.UUID, readableTypes []string) (ProjectSummaryRe
 		return ProjectSummaryResponse{}, err
 	}
 
+	var quotaResources *model.QuotaResources
+	if pq, err := quota.GetProjectQuota(context.Background(), projectId); err == nil && pq != nil {
+		quotaResources = &pq.Resources
+	}
+
 	return ProjectSummaryResponse{
 		Counts:     counts,
 		CountsByAZ: countsByAZ,
 		Quota:      projectQuota,
+		Resources:  quotaResources,
 		Recent:     recent,
 	}, nil
 }

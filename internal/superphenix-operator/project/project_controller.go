@@ -444,8 +444,9 @@ func (r *Reconciler) resolveManifestLocation(proj *operatorv1alpha1.Project) (st
 
 func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operatorv1alpha1.Organization, organizationName, projectName string) (string, error) {
 	type azValue struct {
-		Name    string `yaml:"name"`
-		Cluster string `yaml:"cluster"`
+		Name    string            `yaml:"name"`
+		Cluster string            `yaml:"cluster"`
+		Quota   map[string]string `yaml:"quota,omitempty"`
 	}
 
 	type credentialsValues struct {
@@ -485,13 +486,39 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 		Project      projectValues      `yaml:"project"`
 	}
 
+	var azQuotasMap map[string]db.QuotaResources
+	if db.Client != nil {
+		if qMap, err := db.GetProjectAZQuotas(proj.Spec.ProjectID); err == nil {
+			azQuotasMap = qMap
+		}
+	}
+
 	// Collect AZ details
 	var azs []azValue
 	for _, az := range proj.Status.AvailableZones {
-		azs = append(azs, azValue{
+		azVal := azValue{
 			Name:    az.Name,
 			Cluster: az.ClusterName,
-		})
+			Quota: map[string]string{
+				"pods":                              "50",
+				"persistentvolumeclaims":            "50",
+				"count/virtualmachines.kubevirt.io": "20",
+			},
+		}
+		if azQuotasMap != nil {
+			if q, ok := azQuotasMap[az.Name]; ok {
+				if q.CPU != "" {
+					azVal.Quota["cpu"] = q.CPU
+				}
+				if q.Memory != "" {
+					azVal.Quota["memory"] = q.Memory
+				}
+				if q.Disk != "" {
+					azVal.Quota["disk"] = q.Disk
+				}
+			}
+		}
+		azs = append(azs, azVal)
 	}
 
 	// GitOps parameters

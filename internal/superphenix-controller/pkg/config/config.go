@@ -88,6 +88,14 @@ type Config struct {
 
 	SpxPrefix string `yaml:"spxPrefix"`
 
+	Quotas struct {
+		DefaultAZQuotas struct {
+			Pods                   string `yaml:"pods" mapstructure:"pods"`
+			PersistentVolumeClaims string `yaml:"persistentvolumeclaims" mapstructure:"persistentvolumeclaims"`
+			VirtualMachines        string `yaml:"virtualmachines" mapstructure:"virtualmachines"`
+		} `yaml:"defaultAZQuotas" mapstructure:"defaultAZQuotas"`
+	} `yaml:"quotas"`
+
 	ProductsConfig struct {
 		NatGatewayDefault struct {
 			ExternalSubnets []string `yaml:"externalSubnets"`
@@ -172,6 +180,11 @@ metrics:
 swagger:
   baseURL: "localhost:8080"
 spxPrefix: "spx"
+quotas:
+  defaultAZQuotas:
+    pods: "50"
+    persistentvolumeclaims: "50"
+    virtualmachines: "20"
 containerDiskCatalog: {}
 productsConfig:
   natGatewayDefault:

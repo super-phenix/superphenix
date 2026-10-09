@@ -44,6 +44,18 @@ deviceMapping: {}
 # @section -- Organization parameters
 bgpSpeaker: ""
 
+# -- Quota configuration for this project in this AZ.
+# @section -- Quotas
+quota:
+  requests.cpu: ""
+  limits.cpu: ""
+  requests.memory: ""
+  limits.memory: ""
+  requests.storage: ""
+  pods: "50"
+  persistentvolumeclaims: "50"
+  count/virtualmachines.kubevirt.io: "20"
+
 # @section -- Global overrides
 global:
   # -- Labels added to every single object templated by this chart.

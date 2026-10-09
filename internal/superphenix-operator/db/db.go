@@ -22,6 +22,21 @@ type Project struct {
 	ID uuid.UUID `gorm:"primaryKey;type:uuid"`
 }
 
+type QuotaResources struct {
+	CPU    string `json:"cpu,omitempty"`
+	Memory string `json:"memory,omitempty"`
+	Disk   string `json:"disk,omitempty"`
+}
+
+type ProjectAZQuota struct {
+	ID        uuid.UUID      `gorm:"primaryKey;type:uuid"`
+	ProjectId uuid.UUID      `gorm:"type:uuid"`
+	CodeAZ    string         `gorm:"type:text"`
+	Resources QuotaResources `gorm:"serializer:json"`
+}
+
+func (ProjectAZQuota) TableName() string { return "project_az_quotas" }
+
 // InitDatabase initializes the connection to the Superphenix Database.
 func InitDatabase(host, user, password, dbname, port string) error {
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s", host, user, password, dbname, port)
@@ -71,5 +86,25 @@ func ProjectExists(id string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// GetProjectAZQuotas returns all AZ quotas for a project from the database.
+func GetProjectAZQuotas(id string) (map[string]QuotaResources, error) {
+	if Client == nil {
+		return nil, fmt.Errorf("database client not initialized")
+	}
+	projUuid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, err
+	}
+	var azQuotas []ProjectAZQuota
+	if err := Client.Where("project_id = ?", projUuid).Find(&azQuotas).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[string]QuotaResources, len(azQuotas))
+	for _, azq := range azQuotas {
+		result[azq.CodeAZ] = azq.Resources
+	}
+	return result, nil
 }
 

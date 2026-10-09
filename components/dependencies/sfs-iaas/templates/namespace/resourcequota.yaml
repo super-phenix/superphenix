@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ printf "quota-%s" .Values.projectID | quote }}
+  namespace: "spx-{{ .Values.projectID }}"
+  labels:
+    {{- include "sfs-iaas.labels" . | nindent 4 }}
+spec:
+  hard:
+    {{- range $key, $value := .Values.quota }}
+    {{- if not (empty $value) }}
+    {{- if eq $key "cpu" }}
+    requests.cpu: {{ $value | quote }}
+    limits.cpu: {{ $value | quote }}
+    {{- else if eq $key "memory" }}
+    requests.memory: {{ $value | quote }}
+    limits.memory: {{ $value | quote }}
+    {{- else if eq $key "disk" }}
+    requests.storage: {{ $value | quote }}
+    {{- else }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
