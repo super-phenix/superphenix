@@ -14,7 +14,7 @@ type ClassMapping struct {
 }
 
 type KaaSSpec struct {
-	KubeVersion      string               `json:"kubeVersion"`
+	KubeVersion      string               `json:"kubeVersion" validate:"required"`
 	CPNetPol         string               `json:"cpNetPol"`
 	WorkersNetPol    string               `json:"workersNetPol"`
 	Groups           []Group              `json:"groups"`

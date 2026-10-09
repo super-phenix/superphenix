@@ -12,20 +12,17 @@ var (
 	testLegacyChart  = config.RepoArgoAppConfig{RepoURL: "ghcr.io/super-phenix/charts", Chart: "sfs-kaas", TargetRevision: "0.3.8"}
 )
 
-func setTestKubeConfig(t *testing.T) {
-	t.Helper()
-	k := &config.Global.ProductsConfig.ArgoApp.Kubernetes
-	prevRepo, prevVersions := k.Repo, k.KubeVersions
-	t.Cleanup(func() { k.Repo, k.KubeVersions = prevRepo, prevVersions })
-	k.Repo = testDefaultChart
-	k.KubeVersions = []config.KubeVersionConfig{
-		{Version: "v1.36.3"},
-		{Version: "v1.34.8", Repo: &testLegacyChart},
+func testProfile() config.KaasVersionProfile {
+	return config.KaasVersionProfile{
+		Repo: testDefaultChart,
+		KubeVersions: []config.KubeVersionConfig{
+			{Version: "v1.36.3"},
+			{Version: "v1.34.8", Repo: &testLegacyChart},
+		},
 	}
 }
 
 func TestChartFromConfig(t *testing.T) {
-	setTestKubeConfig(t)
 
 	tests := []struct {
 		name        string
@@ -40,7 +37,7 @@ func TestChartFromConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok := ChartFromConfig(tt.kubeVersion)
+			got, ok := ChartFromConfig(testProfile(), tt.kubeVersion)
 			if ok != tt.wantOk || got != tt.want {
 				t.Errorf("ChartFromConfig(%q) = %+v, %v, want %+v, %v", tt.kubeVersion, got, ok, tt.want, tt.wantOk)
 			}
@@ -79,7 +76,6 @@ func TestChartFromApp(t *testing.T) {
 }
 
 func TestChartForUpdate(t *testing.T) {
-	setTestKubeConfig(t)
 	pinned := config.RepoArgoAppConfig{RepoURL: "ghcr.io/super-phenix/charts", Chart: "sfs-kaas", TargetRevision: "0.3.8"}
 
 	tests := []struct {
@@ -98,7 +94,7 @@ func TestChartForUpdate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, ok := ChartForUpdate(pinned, tt.oldVersion, tt.newVersion)
+			got, ok := ChartForUpdate(testProfile(), pinned, tt.oldVersion, tt.newVersion)
 			if ok != tt.wantOk || got != tt.want {
 				t.Errorf("ChartForUpdate() = %+v, %v, want %+v, %v", got, ok, tt.want, tt.wantOk)
 			}
@@ -129,7 +125,6 @@ func TestSameSource(t *testing.T) {
 }
 
 func TestNewChartStatus(t *testing.T) {
-	setTestKubeConfig(t)
 	defaultInfo := chartInfo(testDefaultChart)
 	legacyInfo := chartInfo(testLegacyChart)
 
@@ -159,7 +154,7 @@ func TestNewChartStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewChartStatus(tt.current, tt.kubeVersion)
+			got := NewChartStatus(testProfile(), tt.current, tt.kubeVersion)
 			if got.Current != tt.want.Current || got.Outdated != tt.want.Outdated {
 				t.Errorf("NewChartStatus() = %+v, want %+v", got, tt.want)
 			}
@@ -171,11 +166,10 @@ func TestNewChartStatus(t *testing.T) {
 }
 
 func TestDeployedOutdated(t *testing.T) {
-	setTestKubeConfig(t)
-	k := &config.Global.ProductsConfig.ArgoApp.Kubernetes
+	profile := testProfile()
 	build := config.RepoArgoAppConfig{RepoURL: "ghcr.io/super-phenix/charts", Chart: "sfs-kaas", TargetRevision: "0.8.0+build.1"}
 	gitPath := config.RepoArgoAppConfig{RepoURL: "https://github.com/super-phenix/superphenix", Path: "components/dependencies/sfs-kaas", TargetRevision: "main"}
-	k.KubeVersions = append(k.KubeVersions,
+	profile.KubeVersions = append(profile.KubeVersions,
 		config.KubeVersionConfig{Version: "v1.37.0", Repo: &build},
 		config.KubeVersionConfig{Version: "v1.35.0", Repo: &gitPath},
 	)
@@ -200,7 +194,7 @@ func TestDeployedOutdated(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			outdated, known := DeployedOutdated(tt.chartLabel, tt.kubeVersion)
+			outdated, known := DeployedOutdated(profile, tt.chartLabel, tt.kubeVersion)
 			if outdated != tt.wantOutdated || known != tt.wantKnown {
 				t.Errorf("DeployedOutdated() = (%v, %v), want (%v, %v)", outdated, known, tt.wantOutdated, tt.wantKnown)
 			}

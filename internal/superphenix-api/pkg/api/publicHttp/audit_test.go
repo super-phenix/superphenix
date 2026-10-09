@@ -68,7 +68,7 @@ func declaredRegistry() *router.Registry {
 		loadbalancerctrl.Module(cfg, loadbalancerctrl.New(cfg)),
 		securitygroupctrl.Module(cfg, securitygroupctrl.New(cfg)),
 		sshctrl.Module(cfg, sshctrl.New(cfg)),
-		kaasctrl.Module(cfg, kaasctrl.New(cfg, nil)),
+		kaasctrl.Module(cfg, kaasctrl.New(cfg, nil, nil)),
 		metadatactrl.Module(cfg, metadatactrl.New(cfg)),
 		summaryctrl.Module(cfg, summaryctrl.New(cfg)),
 		argoApp.Module(cfg, argoApp.New(cfg)),

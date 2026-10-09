@@ -111,11 +111,15 @@ services:
       - SUPERPHENIX-API_ARGOCONTROLLER_KUBECONFIG=/etc/superphenix-api/kubeconfig
       - SUPERPHENIX-API_ARGOCONTROLLER_GARBAGECOLLECTION_ENABLED=${ARGO_GC_ENABLED:-false}
       - SUPERPHENIX-API_ARGOCDURL=${ARGOCD_URL:-https://argocd.example.com}
+      - SUPERPHENIX-API_OPERATOR_KUBECONFIG=/etc/superphenix-api/operator-kubeconfig
+      - SUPERPHENIX-API_OPERATOR_NAMESPACE=${SPX_OPERATOR_NAMESPACE:-superphenix-system}
     volumes:
-      # Structured config (incl. argoController.app KaaS/BaaS repos + kubeVersions).
+      # Structured config (incl. productsConfig.argoApp KaaS versions/BaaS repo).
       # Env vars above still override matching keys.
       - ./local/superphenix-api.config.yaml:/etc/superphenix-api/config.yaml:ro
       - ${KUBECONFIG_PATH:?KUBECONFIG_PATH is required, see .env.example}:/etc/superphenix-api/kubeconfig:ro
+      # Connection reading the operator Cluster CRs (AZ SPX versions), defaults to KUBECONFIG_PATH.
+      - ${OPERATOR_KUBECONFIG_PATH:-${KUBECONFIG_PATH}}:/etc/superphenix-api/operator-kubeconfig:ro
     networks:
       - intranet
   spx-panel:

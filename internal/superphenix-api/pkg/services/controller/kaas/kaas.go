@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -86,7 +87,12 @@ func (h *Service) ListKaaS(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	combineResults := combineListResult(concatResults, resourcesDb, mapResourceCheck)
+	profiles := make(map[string]*config.KaasVersionProfile, len(urls))
+	for _, azConfig := range urls {
+		profiles[azConfig.Code] = h.optionalKaasProfile(r.Context(), azConfig)
+	}
+
+	combineResults := combineListResult(concatResults, resourcesDb, mapResourceCheck, profiles)
 
 	w.Header().Set("Content-Type", "application/json")
 	marshal, err := json.Marshal(combineResults)
@@ -149,7 +155,7 @@ func (h *Service) GetKaaS(w http.ResponseWriter, r *http.Request) {
 	result := KaaSResponse{KaaSFullResponse: KaaSFullResponse{ProductResponse: productResponse}}
 	if azResult != nil {
 		result.Cluster = azResult["cluster"]
-		result.Outdated = deployedOutdated(azResult)
+		result.Outdated = deployedOutdated(h.optionalKaasProfile(r.Context(), azDb), azResult)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -177,6 +183,8 @@ func (h *Service) GetKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400
 //	@Failure		404
 //	@Failure		500
+//	@Failure		409
+//	@Failure		503
 //	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas [post]
 //	@Security		Bearer[OrganizationRead, ProjectKaaSWrite]
 func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +209,12 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chart, supported := argokaas.ChartFromConfig(body.Spec.KubeVersion)
+	profile, ok := h.kaasProfile(w, r, azDb)
+	if !ok {
+		return
+	}
+
+	chart, supported := argokaas.ChartFromConfig(profile, body.Spec.KubeVersion)
 	if !supported {
 		log.Error().Str("kubeVersion", body.Spec.KubeVersion).Msg("KubeVersion not supported")
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
@@ -246,6 +259,8 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Param			effectiveId	path		string				true	"KaaS EID"
 //	@Success		200			{object}	KaaSAppSpecResponse	"KaaS"
 //	@Failure		500
+//	@Failure		409
+//	@Failure		503
 //	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/app [get]
 //	@Security		Bearer[OrganizationRead, ProjectKaaSRead]
 func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
@@ -277,6 +292,11 @@ func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	profile, ok := h.kaasProfile(w, r, azDb)
+	if !ok {
+		return
+	}
+
 	result := KaaSAppSpecResponse{
 		AppSpecFullResponse: AppSpecFullResponse{
 			ProductResponse: ProductResponse{
@@ -289,7 +309,7 @@ func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
 			},
 			Spec: app.Spec,
 		},
-		Chart: argokaas.NewChartStatus(app.Chart, app.Spec.KubeVersion),
+		Chart: argokaas.NewChartStatus(profile, app.Chart, app.Spec.KubeVersion),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -317,6 +337,8 @@ func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400
 //	@Failure		404
 //	@Failure		500
+//	@Failure		409
+//	@Failure		503
 //	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId} [post]
 //	@Security		Bearer[OrganizationRead, ProjectKaaSWrite]
 func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
@@ -338,6 +360,11 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 
 	var body UpdateKaaSBody
 	if err := decoder.HandleHTTPJSON(w, r, &body, h.cfg.PublicHTTP.MaxBodySize); err != nil {
+		return
+	}
+
+	profile, ok := h.kaasProfile(w, r, azDb)
+	if !ok {
 		return
 	}
 
@@ -369,7 +396,7 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chart, supported := argokaas.ChartForUpdate(app.Chart, app.Spec.KubeVersion, body.Spec.KubeVersion)
+	chart, supported := argokaas.ChartForUpdate(profile, app.Chart, app.Spec.KubeVersion, body.Spec.KubeVersion)
 	if !supported {
 		log.Error().Str("kubeVersion", body.Spec.KubeVersion).Msg("KubeVersion not supported")
 		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
@@ -462,6 +489,7 @@ func (h *Service) ReinstallKaaSEssentials(w http.ResponseWriter, r *http.Request
 //	@Failure		404
 //	@Failure		409
 //	@Failure		500
+//	@Failure		503
 //	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/upgrade [post]
 //	@Security		Bearer[OrganizationRead, ProjectKaaSWrite]
 func (h *Service) UpgradeKaaS(w http.ResponseWriter, r *http.Request) {
@@ -471,7 +499,12 @@ func (h *Service) UpgradeKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	target, supported := argokaas.ChartFromConfig(k.app.Spec.KubeVersion)
+	profile, ok := h.kaasProfile(w, r, k.az)
+	if !ok {
+		return
+	}
+
+	target, supported := argokaas.ChartFromConfig(profile, k.app.Spec.KubeVersion)
 	if !supported {
 		log.Error().Str("eid", k.eid).Str("kubeVersion", k.app.Spec.KubeVersion).Msg("No chart configured for this kube version")
 		httpError.Http(w, r, http.StatusConflict).Str("eid", k.eid).Msg("kube version is no longer supported, change it before upgrading")
@@ -637,19 +670,31 @@ func (h *Service) DeleteKaaS(w http.ResponseWriter, r *http.Request) {
 // GetKubeVersion
 //
 //	@Summary		Get supported KubeVersions
-//	@Description	Get supported KubeVersions
+//	@Description	Get the KubeVersions supported by the KaaS configuration of the AZ SPX version
 //	@Tags			v1, SPX Argo Ctrl
 //	@Produce		json
 //	@Param			orgaId		path	string	true	"Organization ID"
+//	@Param			az			path	string	true	"AZ Code"
 //	@Param			projectId	path	string	true	"Project ID"
 //	@Success		200			{array}	string	"Kube Versions"
-//	@Failure		500
-//	@Router			/{orgaId}/api/spx-ctrl/{projectId}/kaas/kube-versions [get]
-//	@Security		Bearer[OrganizationRead]
+//	@Failure		409
+//	@Failure		503
+//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/kube-versions [get]
+//	@Security		Bearer[OrganizationRead, ProjectKaaSRead]
 func (h *Service) GetKubeVersion(w http.ResponseWriter, r *http.Request) {
-	kubeVersions := h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeVersions
-	versions := make([]string, 0, len(kubeVersions))
-	for _, v := range kubeVersions {
+	azDb, _, _, code, errMsg := ctrlutils.CheckPathParams(r)
+	if code != 0 {
+		httpError.Http(w, r, code).Msg(errMsg)
+		return
+	}
+
+	profile, ok := h.kaasProfile(w, r, azDb)
+	if !ok {
+		return
+	}
+
+	versions := make([]string, 0, len(profile.KubeVersions))
+	for _, v := range profile.KubeVersions {
 		versions = append(versions, v.Version)
 	}
 	b, _ := json.Marshal(versions)
@@ -669,6 +714,8 @@ func (h *Service) GetKubeVersion(w http.ResponseWriter, r *http.Request) {
 //	@Success		200			{file}	binary	"KubeConfig file"
 //	@Failure		404
 //	@Failure		500
+//	@Failure		409
+//	@Failure		503
 //	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/kubeconfig [get]
 //	@Security		Bearer[OrganizationRead, ProjectKaaSRead, ProjectKaaSKubeConfig]
 func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
@@ -719,7 +766,12 @@ func (h *Service) GetKaaSKubeConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if argokaas.ShouldRewriteFQDN(h.cfg.ProductsConfig.ArgoApp.Kubernetes.KubeVersions, app.Spec.KubeVersion) {
+	profile, ok := h.kaasProfile(w, r, azDb)
+	if !ok {
+		return
+	}
+
+	if argokaas.ShouldRewriteFQDN(profile.KubeVersions, app.Spec.KubeVersion) {
 		azDomain, _ := h.cfg.KaasAzDomain(azDb.Code)
 		body, err = argokaas.RewriteFQDN(body, effectiveId, azDomain.External)
 		if err != nil {
@@ -809,7 +861,8 @@ func (h *Service) fetchKaaSApp(ctx context.Context, projectId, resourceEId strin
 }
 
 // combineListResult regroup results from db and controller
-func combineListResult(concatResults map[string][]interface{}, resources []model.Product, mapResourceCheck map[uuid.UUID]bool) []KaaSResponse {
+// profiles holds the KaaS profile of each AZ code, nil when unknown.
+func combineListResult(concatResults map[string][]any, resources []model.Product, mapResourceCheck map[uuid.UUID]bool, profiles map[string]*config.KaasVersionProfile) []KaaSResponse {
 	combineResults := make([]KaaSResponse, 0)
 	for azCode, results := range concatResults {
 		for _, result := range results {
@@ -829,7 +882,7 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 							},
 							Cluster: mapResult["cluster"],
 						},
-						Outdated: deployedOutdated(mapResult),
+						Outdated: deployedOutdated(profiles[azCode], mapResult),
 					})
 					mapResourceCheck[p.ID] = true
 					found = true
@@ -850,7 +903,7 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 						},
 						Cluster: mapResult["cluster"],
 					},
-					Outdated: deployedOutdated(mapResult),
+					Outdated: deployedOutdated(profiles[azCode], mapResult),
 				})
 			}
 		}
@@ -883,11 +936,14 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 }
 
 // deployedOutdated reads the chart and kube version reported by the AZ
-// controller. It returns nil when either is missing.
-func deployedOutdated(azResult map[string]interface{}) *bool {
+// controller. It returns nil when either is missing or profile is unknown.
+func deployedOutdated(profile *config.KaasVersionProfile, azResult map[string]any) *bool {
+	if profile == nil {
+		return nil
+	}
 	chart, _ := azResult["chart"].(string)
 	kubeVersion, _ := azResult["kubeVersion"].(string)
-	outdated, known := argokaas.DeployedOutdated(chart, kubeVersion)
+	outdated, known := argokaas.DeployedOutdated(*profile, chart, kubeVersion)
 	if !known {
 		return nil
 	}
@@ -963,4 +1019,46 @@ func (h *Service) Instances(w http.ResponseWriter, r *http.Request) {
 //	@Security		Bearer[OrganizationRead, ProjectKaaSRead, ProjectSecurityGroupRead]
 func (h *Service) Netpols(w http.ResponseWriter, r *http.Request) {
 	ctrlutils.SimpleRedirect()(w, r)
+}
+
+// resolveKaasProfile returns the KaaS profile matching the SPX version of azConfig,
+// and that version when it was read.
+func (h *Service) resolveKaasProfile(ctx context.Context, azConfig config.AZConfig) (config.KaasVersionProfile, string, error) {
+	version, err := h.versions.Version(ctx, azConfig)
+	if err != nil {
+		return config.KaasVersionProfile{}, "", err
+	}
+	profile, err := h.cfg.ProductsConfig.ArgoApp.Kubernetes.ProfileFor(version)
+	return profile, version, err
+}
+
+// kaasProfile returns the KaaS profile of azConfig. It writes a 409 when no profile
+// applies to the AZ SPX version, a 503 when that version can't be determined,
+// and returns false.
+func (h *Service) kaasProfile(w http.ResponseWriter, r *http.Request, azConfig config.AZConfig) (config.KaasVersionProfile, bool) {
+	log := logger.GetLogger(r.Context())
+	profile, version, err := h.resolveKaasProfile(r.Context(), azConfig)
+	switch {
+	case err == nil:
+		return profile, true
+	case errors.Is(err, config.ErrNoKaasProfile):
+		log.Error().Err(err).Str("az", azConfig.Code).Str("spxVersion", version).Msg("No KaaS configuration for this AZ version")
+		httpError.Http(w, r, http.StatusConflict).Str("az", azConfig.Code).Str("spxVersion", version).Msg("No KaaS configuration for this AZ version")
+	default:
+		log.Error().Err(err).Str("az", azConfig.Code).Msg("Cannot determine SPX version of AZ")
+		httpError.Http(w, r, http.StatusServiceUnavailable).Str("az", azConfig.Code).Str("reason", err.Error()).Msg("Cannot determine SPX version of AZ")
+	}
+	return config.KaasVersionProfile{}, false
+}
+
+// optionalKaasProfile returns the KaaS profile of azConfig, or nil when it can't be
+// resolved, for read-only responses that degrade instead of failing.
+func (h *Service) optionalKaasProfile(ctx context.Context, azConfig config.AZConfig) *config.KaasVersionProfile {
+	profile, version, err := h.resolveKaasProfile(ctx, azConfig)
+	if err != nil {
+		log := logger.GetLogger(ctx)
+		log.Warn().Err(err).Str("az", azConfig.Code).Str("spxVersion", version).Msg("Cannot resolve KaaS configuration of AZ, outdated status omitted")
+		return nil
+	}
+	return &profile
 }
