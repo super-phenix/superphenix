@@ -1,0 +1,105 @@
+# -- Superphenix organization to which this project belongs, must be a generated UUIDv4.
+# This ID must come from the SPX API, this parameter cannot be overriden by the user.
+# @section -- Organization parameters
+organizationID: "00000000-0000-0000-0000-000000000000"
+# -- Superphenix organization's friendly name.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+organizationName: "null"
+
+# -- Superphenix project to which this project belongs, must be a project within the organization, must be a generated UUIDv4.
+# This ID must come from the SPX API, this parameter cannot be overriden by the user.
+# @section -- Organization parameters
+projectID: "00000000-0000-0000-0000-000000000000"
+# -- Superphenix project's friendly name.
+# This ID must come from the SPX API, this parameter cannot be overriden by the user.
+# @section -- Organization parameters
+projectName: "null"
+
+# -- AZ in which we're deploying this chart.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+location: ""
+
+# -- Whether this chart is deployed through GitOps or not.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+gitops: false
+
+# -- Mapping between user-friendly names of storage classes and their real names.
+# The mapping is specified for the current AZ, meaning that each AZ can have a different mapping.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+storageClassMapping: {}
+
+# -- Defines default values for databases
+# Cannot be overriden by the user.
+# @section -- Database default parameters
+# @ignored
+databaseDefaults:
+  # -- Repository of the PostgreSQL image, the database's version is used as tag
+  imageRepository: "ghcr.io/cloudnative-pg/postgresql"
+  # -- Namespace in which the CloudNative-PG operator runs
+  operatorNamespace: "cnpg-system"
+  # -- Port on which PostgreSQL listens
+  port: 5432
+  # -- Port of the CloudNative-PG instance manager
+  statusPort: 8000
+
+# -- Defines PostgreSQL databases.
+# Each key defines a new database and should be unique
+# See values.yaml for the complete syntax.
+# @default -- {}
+databases: {}
+  # my-db:
+  #   # -- User-friendly name of the database
+  #   # @section -- Database
+  #   name: "my-db"
+
+  #   # -- AZ in which to deploy the resource
+  #   # @section -- Database
+  #   location: ""
+
+  #   # -- PostgreSQL version
+  #   # @section -- Database
+  #   version: "17.5"
+
+  #   # -- Amount of PostgreSQL instances (one primary, the others are replicas)
+  #   # @section -- Database
+  #   # @default -- 1
+  #   instances: 1
+
+  #   # -- Amount of vCPUs for each instance
+  #   # @section -- Database
+  #   cpu: "1"
+
+  #   # -- Amount of memory for each instance
+  #   # @section -- Database
+  #   memory: 2Gi
+
+  #   # -- Size of the data volume of each instance, can only be increased
+  #   # @section -- Database
+  #   storage: 20Gi
+
+  #   # -- Storage class friendly name of the data volumes
+  #   # @section -- Database
+  #   storageClassName: default
+
+  #   # -- Subnet on which the instances are reachable
+  #   # References subnets defined in /subnets/values.yaml
+  #   # @section -- Database
+  #   subnet: ""
+
+  #   # -- Load balancer targeting the primary instance
+  #   # @section -- Database
+  #   # @default -- {}
+  #   loadBalancer:
+  #     # -- Whether to create the load balancer
+  #     # @section -- Database load balancer
+  #     # @default -- false
+  #     enabled: false
+
+  #     # -- Virtual IP of the load balancer
+  #     # Must be in range 198.18.0.0/16 and not conflict with another LB
+  #     # @section -- Database load balancer
+  #     vip: "198.18.1.10"
