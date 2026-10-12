@@ -374,7 +374,7 @@ vms:
 #        threads: 1
 #      memory:
 #        guest: 2Gi
-#      gpu:
+#      gpus:
 #      - device: ""
 #    # -- Mouse & keyboard control
 #    controls:
