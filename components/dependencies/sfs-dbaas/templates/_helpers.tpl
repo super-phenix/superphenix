@@ -57,3 +57,48 @@ Generate UUIDv5 through external templating
 {{- define "sfs-dbaas.getUUIDv5" -}}
 {{- printf "<spx-uuidv5 %s %s>" .NS .NAME }}
 {{- end }}
+
+{{/*
+CloudNative-PG services exposed for a database, comma-separated: rw always, r with the load
+balancer, ro with the load balancer and replicas to target
+*/}}
+{{- define "sfs-dbaas.roles" -}}
+{{- $roles := list "rw" }}
+{{- $lb := .loadBalancer | default dict }}
+{{- if $lb.enabled }}
+{{- if gt (int (.instances | default 1)) 1 }}
+{{- $roles = append $roles "ro" }}
+{{- end }}
+{{- $roles = append $roles "r" }}
+{{- end }}
+{{- join "," $roles }}
+{{- end }}
+
+{{/*
+HAProxy configuration forwarding each proxy port to its CloudNative-PG service
+*/}}
+{{- define "sfs-dbaas.proxyConfig" -}}
+{{- $ := .root }}
+{{- $dbID := .dbID }}
+{{- $defaults := $.Values.databaseDefaults -}}
+global
+  log stdout format raw local0
+  # Unset, HAProxy derives it from the fd limit and preallocates for it
+  maxconn {{ mul (int .maxConnections) (len .roles) }}
+defaults
+  mode tcp
+  log global
+  timeout connect 5s
+  timeout client 1h
+  timeout server 1h
+resolvers k8s
+  parse-resolv-conf
+  hold valid 10s
+{{- range $role := .roles }}
+frontend fe_{{ $role }}
+  bind :{{ get $defaults.proxy.ports $role }}
+  default_backend be_{{ $role }}
+backend be_{{ $role }}
+  server {{ $role }} {{ printf "%s-%s.%s.svc.%s" $dbID $role $.Release.Namespace $defaults.clusterDomain }}:{{ $defaults.port }} resolvers k8s resolve-prefer ipv6 init-addr none check
+{{- end }}
+{{- end }}
