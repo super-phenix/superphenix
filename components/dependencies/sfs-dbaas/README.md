@@ -10,7 +10,7 @@ Each entry of `.databases` creates a [CloudNative-PG](https://cloudnative-pg.io/
 
 Resources have a unique ID (the key under `.databases`) and a name.
 
-Names do not have to be unique across resources and can be identical. They are simply used as a tag to be filtered and found more easily.
+Names don't have to be unique. Use them as tags to filter and find resources.
 
 To set a name on a resource, use the `.name` value.
 
@@ -19,15 +19,13 @@ To set a name on a resource, use the `.name` value.
 
 ### Setting a resource location
 
-Resources are located within a specific AZ (or *availability zone*). AZs are represented by a unique code.
-
-To deploy your resource in a specific AZ, simply use the code in the `.location` value of the resource.
+Each resource lives in one AZ (*availability zone*), identified by a unique code. Set that code in the `.location` value of the resource.
 
 ### Network access
 
-Instances get an interface on the subnet set in `.subnet`. Only the operator and the instances of the same database can reach them by default: add a network policy to the project to allow clients on port 5432.
+Instances run on the system network. Clients on the subnet set in `.subnet` reach them through HAProxy pods attached to that subnet, which forward port 5432 to the read-write service of the database.
 
-Set `.loadBalancer.enabled` to get a fixed virtual IP that always targets the primary instance, including after a failover. The VIP must be part of `198.18.0.0/16`.
+Set `.loadBalancer.enabled` to put a fixed virtual IP `.vip` from `198.18.0.0/16` in front of the proxies. Port 5432 reaches the primary instance, including after a failover, 5433 the replicas (with more than one instance) and 5434 any instance. The chart disables the CloudNative-PG services it doesn't expose.
 
 To expose the database outside of the VPC, point a DNAT of an Elastic IP at the VIP on port 5432.
 
@@ -40,6 +38,7 @@ The following values can be changed on an existing database:
 | `.instances` | Adds or removes replicas |
 | `.storage` | Grows the data volume of each instance, it cannot be shrunk |
 | `.cpu`, `.memory` | Rolling restart of the instances, the primary last |
+| `.maxConnections` | Rolling restart of the instances and the proxies |
 | `.version` | Rolling update to another minor version of the same major version |
 
 ---
@@ -107,7 +106,7 @@ false
 "null"
 </pre>
 </td>
-			<td>Superphenix project's friendly name. This ID must come from the SPX API, this parameter cannot be overriden by the user.</td>
+			<td>Superphenix project's friendly name. This parameter cannot be overriden by the user.</td>
 		</tr>
 		<tr>
 			<td>storageClassMapping</td>
@@ -137,7 +136,7 @@ false
 {}
 </pre>
 </td>
-		<td>Defines PostgreSQL databases. Each key defines a new database and should be unique See values.yaml for the complete syntax.</td>
+		<td>Defines PostgreSQL databases. One database per key, see values.yaml for the syntax.</td>
 	</tr>
 	</tbody>
 </table>
