@@ -115,30 +115,24 @@ databases: {}
   #   # @section -- Database
   #   storageClassName: default
 
-  #   # -- Maximum client connections to PostgreSQL, the proxies accept the same per exposed service
+  #   # -- Maximum client connections to PostgreSQL, enforced by PostgreSQL
   #   # @section -- Database
   #   # @default -- 100
   #   maxConnections: 100
 
-  #   # -- Subnet on which the instances are reachable
+  #   # -- Subnet the proxies attach to
   #   # References subnets defined in /subnets/values.yaml
   #   # @section -- Database
   #   subnet: ""
 
   #   # -- CIDR block of the subnet, comma-separated when dual stack
-  #   # Required with the load balancer, the proxies reply to its health checks in this range
+  #   # The proxies reply to the load balancer health checks in this range
   #   # @section -- Database
   #   subnetCIDR: "10.10.0.0/16"
 
   #   # -- Load balancer in front of the proxies
   #   # @section -- Database
-  #   # @default -- {}
   #   loadBalancer:
-  #     # -- Whether to create the load balancer
-  #     # @section -- Database load balancer
-  #     # @default -- false
-  #     enabled: false
-
   #     # -- Virtual IP of the load balancer: port 5432 targets the primary instance (read-write),
   #     # 5433 the replicas (read-only, with more than one instance) and 5434 any instance (read)
   #     # Must be in range 198.18.0.0/16 and not conflict with another LB

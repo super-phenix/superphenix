@@ -95,7 +95,6 @@ spec:
       protocol: UDP
     - port: 53
       protocol: TCP
-  {{- if ($db.loadBalancer).enabled }}
   # Replies to the OVN health checks, sent from an address in the subnet
   # TODO: allo w a single health-check IP reserved per subnet instead of the whole CIDR
   - to:
@@ -103,7 +102,6 @@ spec:
     - ipBlock:
         cidr: {{ trim $cidr | quote }}
     {{- end }}
-  {{- end }}
 
 {{- end }}
 {{- end }}

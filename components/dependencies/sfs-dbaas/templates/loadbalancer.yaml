@@ -1,6 +1,5 @@
 {{- range $localID, $db := .Values.databases }}
 {{- if eq $db.location $.Values.location }}
-{{- if ($db.loadBalancer).enabled }}
 
 {{- $projectID := $.Values.projectID -}}
 {{- $defaults := $.Values.databaseDefaults -}}
@@ -8,7 +7,7 @@
 {{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
 {{- $lbLocalID := printf "lb.%s" $localID }}
 {{- $lbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $lbLocalID) }}
-{{- $vip := required "Must provide a VIP for the load balancer" $db.loadBalancer.vip }}
+{{- $vip := required "Must provide a VIP for the load balancer" ($db.loadBalancer).vip }}
 
 ---
 apiVersion: kubeovn.io/v1
@@ -46,6 +45,5 @@ spec:
   - {{ printf "superphenix.net/resourceEffectiveID:%s" $dbID | quote }}
   - "superphenix.net/workloadClass:dbaas-proxy"
 
-{{- end }}
 {{- end }}
 {{- end }}

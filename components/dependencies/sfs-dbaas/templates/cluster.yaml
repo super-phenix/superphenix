@@ -18,6 +18,10 @@
 {{- if lt $maxConnections 1 }}
 {{- fail (printf "Database %s maxConnections must be at least 1" $localID) }}
 {{- end }}
+{{- $version := required "Must provide a PostgreSQL version" $db.version }}
+{{- if not (kindIs "string" $version) }}
+{{- fail (printf "Database %s version must be quoted, %v is parsed as a number" $localID $version) }}
+{{- end }}
 
 ---
 apiVersion: postgresql.cnpg.io/v1
@@ -33,7 +37,7 @@ spec:
   # One primary, the others are replicas
   instances: {{ $db.instances | default 1 }}
 
-  imageName: {{ printf "%s:%s" $defaults.imageRepository (required "Must provide a PostgreSQL version" $db.version | toString) | quote }}
+  imageName: {{ printf "%s:%s" $defaults.imageRepository $version | quote }}
 
   # Requests equal limits to get the Guaranteed QoS class
   resources:
