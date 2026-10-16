@@ -1,0 +1,45 @@
+# SFS-DBAAS
+
+{{ template "chart.versionBadge" . }}
+
+{{ template "chart.description" . }}
+
+Each entry of `.databases` creates a [CloudNative-PG](https://cloudnative-pg.io/) cluster in the project's namespace.
+
+### Resource names
+
+Resources have a unique ID (the key under `.databases`) and a name.
+
+Names don't have to be unique. Use them as tags to filter and find resources.
+
+To set a name on a resource, use the `.name` value.
+
+> [!note]
+> Names **must** begin with a letter or number, and may contain letters, numbers, hyphens, dots, and underscores, up to 63 characters each.
+
+### Setting a resource location
+
+Each resource lives in one AZ (*availability zone*), identified by a unique code. Set that code in the `.location` value of the resource.
+
+### Network access
+
+Instances run on the system network. Clients on the subnet set in `.subnet` reach them through HAProxy pods attached to that subnet, behind the virtual IP `.loadBalancer.vip` from `198.18.0.0/16`.
+
+Port 5432 reaches the primary instance, including after a failover, 5433 the replicas (with more than one instance) and 5434 any instance. The chart disables the CloudNative-PG services it doesn't expose.
+
+To expose the database outside of the VPC, point a DNAT of an Elastic IP at the VIP on port 5432.
+
+### Updating a database
+
+The following values can be changed on an existing database:
+
+| Value | Effect |
+|-------|--------|
+| `.instances` | Adds or removes replicas |
+| `.storage` | Grows the data volume of each instance, it cannot be shrunk |
+| `.cpu`, `.memory` | Rolling restart of the instances, the primary last |
+| `.maxConnections` | Rolling restart of the instances and the proxies |
+| `.version` | Rolling update to another minor version of the same major version |
+
+---
+{{ template "chart.valuesSectionHtml" . }}

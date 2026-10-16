@@ -1,0 +1,84 @@
+{{- range $localID, $db := .Values.databases }}
+{{- if eq $db.location $.Values.location }}
+
+{{- $projectID := $.Values.projectID -}}
+{{- $defaults := $.Values.databaseDefaults -}}
+{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
+{{- $disabledServices := list }}
+{{- range $role := list "ro" "r" }}
+{{- if not (has $role $roles) }}
+{{- $disabledServices = append $disabledServices $role }}
+{{- end }}
+{{- end }}
+
+{{- $class := (required "Must provide a storage class" $db.storageClassName) }}
+{{- $storageClass := get $.Values.storageClassMapping $class }}
+{{- $maxConnections := int ($db.maxConnections | default 100) }}
+{{- if lt $maxConnections 1 }}
+{{- fail (printf "Database %s maxConnections must be at least 1" $localID) }}
+{{- end }}
+{{- $version := required "Must provide a PostgreSQL version" $db.version }}
+{{- if not (kindIs "string" $version) }}
+{{- fail (printf "Database %s version must be quoted, %v is parsed as a number" $localID $version) }}
+{{- end }}
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ $dbID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+    superphenix.net/resourceLocalID: {{ $localID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+spec:
+  # One primary, the others are replicas
+  instances: {{ $db.instances | default 1 }}
+
+  imageName: {{ printf "%s:%s" $defaults.imageRepository $version | quote }}
+
+  # Requests equal limits to get the Guaranteed QoS class
+  resources:
+    requests:
+      cpu: {{ required "Must provide a CPU amount" $db.cpu | quote }}
+      memory: {{ required "Must provide a memory amount" $db.memory | quote }}
+    limits:
+      cpu: {{ $db.cpu | quote }}
+      memory: {{ $db.memory | quote }}
+
+  storage:
+    size: {{ required "Must provide a storage size" $db.storage | quote }}
+    storageClass: {{ required "No storageclass found" $storageClass | quote }}
+
+  postgresql:
+    parameters:
+      max_connections: {{ $maxConnections | toString | quote }}
+
+  {{- if $disabledServices }}
+  # Services not exposed through the proxies, rw can't be disabled
+  managed:
+    services:
+      disabledDefaultServices: {{ toJson $disabledServices }}
+  {{- end }}
+
+  # Metadata propagated to the pods, PVCs, services and secrets of the cluster
+  inheritedMetadata:
+    labels:
+      # No selector labels, every database of the release shares them
+      {{- include "sfs-dbaas.spxLabels" $ | nindent 6 }}
+      superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+      superphenix.net/resourceLocalID: {{ $localID | quote }}
+      superphenix.net/resourceName: {{ $db.name | quote }}
+      superphenix.net/workloadClass: dbaas-postgresql
+      superphenix.net/generated: "true"
+      # Excluded from security groups, network access is managed by the chart
+      superphenix.net/ignoreNetworkPolicies: "true"
+    annotations:
+      # Primary interface on the system network, reached by the operator
+      ovn.kubernetes.io/logical_router: ovn-cluster
+      ovn.kubernetes.io/logical_switch: ovn-default
+
+{{- end }}
+{{- end }}
