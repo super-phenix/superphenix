@@ -128,6 +128,7 @@ var (
 		permissionSet.ProjectBaaSFullAccess,
 		permissionSet.ProjectBucketFullAccess,
 		permissionSet.ProjectAZQuotaFullAccess,
+		permissionSet.ProjectDBaaSFullAccess,
 		permissionSet.ProjectArgoCdAccess,
 	}
 
@@ -156,6 +157,7 @@ var (
 		permissionSet.ProjectBaaSFullAccess,
 		permissionSet.ProjectBucketFullAccess,
 		permissionSet.ProjectAZQuotaReadOnly,
+		permissionSet.ProjectDBaaSFullAccess,
 		permissionSet.ProjectArgoCdAccess,
 	}
 )
