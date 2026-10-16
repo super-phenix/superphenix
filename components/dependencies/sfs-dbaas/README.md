@@ -23,9 +23,9 @@ Each resource lives in one AZ (*availability zone*), identified by a unique code
 
 ### Network access
 
-Instances run on the system network. Clients on the subnet set in `.subnet` reach them through HAProxy pods attached to that subnet, which forward port 5432 to the read-write service of the database.
+Instances run on the system network. Clients on the subnet set in `.subnet` reach them through HAProxy pods attached to that subnet, behind the virtual IP `.loadBalancer.vip` from `198.18.0.0/16`.
 
-Set `.loadBalancer.enabled` to put a fixed virtual IP `.vip` from `198.18.0.0/16` in front of the proxies. Port 5432 reaches the primary instance, including after a failover, 5433 the replicas (with more than one instance) and 5434 any instance. The chart disables the CloudNative-PG services it doesn't expose.
+Port 5432 reaches the primary instance, including after a failover, 5433 the replicas (with more than one instance) and 5434 any instance. The chart disables the CloudNative-PG services it doesn't expose.
 
 To expose the database outside of the VPC, point a DNAT of an Elastic IP at the VIP on port 5432.
 

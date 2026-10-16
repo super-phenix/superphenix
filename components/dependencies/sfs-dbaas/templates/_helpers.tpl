@@ -59,18 +59,15 @@ Generate UUIDv5 through external templating
 {{- end }}
 
 {{/*
-CloudNative-PG services exposed for a database, comma-separated: rw always, r with the load
-balancer, ro with the load balancer and replicas to target
+CloudNative-PG services exposed for a database, comma-separated: rw, ro with more than one
+instance, and r
 */}}
 {{- define "sfs-dbaas.roles" -}}
 {{- $roles := list "rw" }}
-{{- $lb := .loadBalancer | default dict }}
-{{- if $lb.enabled }}
 {{- if gt (int (.instances | default 1)) 1 }}
 {{- $roles = append $roles "ro" }}
 {{- end }}
 {{- $roles = append $roles "r" }}
-{{- end }}
 {{- join "," $roles }}
 {{- end }}
 
