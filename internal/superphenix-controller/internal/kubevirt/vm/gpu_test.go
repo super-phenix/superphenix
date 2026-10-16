@@ -104,11 +104,13 @@ func TestSetGPUs(t *testing.T) {
 		want      []v1.GPU
 		wantModel string
 	}{
-		{name: "empty list removes gpus and the host-passthrough model", cpu: &v1.CPU{Cores: 2, Model: v1.CPUModeHostPassthrough}, gpus: []v1.GPU{}, want: nil, wantModel: ""},
-		{name: "nil list removes gpus and the host-passthrough model", cpu: &v1.CPU{Cores: 2, Model: v1.CPUModeHostPassthrough}, gpus: nil, want: nil, wantModel: ""},
+		{name: "empty list removes gpus and the host-model model", cpu: &v1.CPU{Cores: 2, Model: v1.CPUModeHostModel}, gpus: []v1.GPU{}, want: nil, wantModel: ""},
+		{name: "nil list removes gpus and the host-model model", cpu: &v1.CPU{Cores: 2, Model: v1.CPUModeHostModel}, gpus: nil, want: nil, wantModel: ""},
+		{name: "removing gpus also clears host-passthrough set by older versions", cpu: &v1.CPU{Cores: 2, Model: v1.CPUModeHostPassthrough}, gpus: nil, want: nil, wantModel: ""},
 		{name: "removing gpus keeps another cpu model", cpu: &v1.CPU{Cores: 2, Model: "Skylake-Server"}, gpus: nil, want: nil, wantModel: "Skylake-Server"},
-		{name: "list replaces gpus and sets host-passthrough", cpu: &v1.CPU{Cores: 2}, gpus: rtx, want: rtx, wantModel: v1.CPUModeHostPassthrough},
-		{name: "adding gpus without cpu block creates it", cpu: nil, gpus: rtx, want: rtx, wantModel: v1.CPUModeHostPassthrough},
+		{name: "list replaces gpus and sets host-model", cpu: &v1.CPU{Cores: 2}, gpus: rtx, want: rtx, wantModel: v1.CPUModeHostModel},
+		{name: "adding gpus replaces host-passthrough with host-model", cpu: &v1.CPU{Cores: 2, Model: v1.CPUModeHostPassthrough}, gpus: rtx, want: rtx, wantModel: v1.CPUModeHostModel},
+		{name: "adding gpus without cpu block creates it", cpu: nil, gpus: rtx, want: rtx, wantModel: v1.CPUModeHostModel},
 	}
 
 	for _, tt := range tests {
@@ -232,7 +234,7 @@ func TestUpdateVM_Gpus(t *testing.T) {
 			gpu:         &[]GPU{{Device: testRtxClass}},
 			want:        []v1.GPU{{Name: testGpuName, DeviceName: testRtxDevice}},
 			wantUpdated: true,
-			wantModel:   v1.CPUModeHostPassthrough,
+			wantModel:   v1.CPUModeHostModel,
 		},
 		{name: "unknown class is rejected without updating", gpu: &[]GPU{{Device: testH100Class}}, wantErr: true},
 	}

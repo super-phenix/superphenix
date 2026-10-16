@@ -107,11 +107,17 @@ spec:
           {{- end }}
         {{- end }}
 
-        {{- with $compute.cpu }}
+        {{- if or $compute.cpu $compute.gpus }}
         cpu:
+          {{- with $compute.cpu }}
           sockets: {{ .sockets | default 1 }}
           cores: {{ .cores | default 1 }}
           threads: {{ .threads | default 1 }}
+          {{- end }}
+          {{- if $compute.gpus }}
+          # Large GPUs need a CPU model close to the host's, or the guest can't use them
+          model: host-model
+          {{- end }}
         {{- end }}
 
         {{- with $compute.memory }}

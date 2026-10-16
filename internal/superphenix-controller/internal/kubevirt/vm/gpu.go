@@ -58,20 +58,21 @@ func resolveGPUs(gpus []GPU) ([]v1.GPU, error) {
 	return out, nil
 }
 
-// setGPUs sets the VM's passthrough GPUs from a list returned by resolveGPUs.
-// The list is authoritative: an empty list removes every GPU.
-//
-// GPU VMs use the host-passthrough CPU model: it exposes the host's physical
-// address width, so OVMF sizes its 64-bit MMIO window for large GPU BARs (the
-// RTX PRO 6000 needs 128 GB). With the cluster CPU model the window stays at
-// ~32 GB and UEFI guests hang at boot or cannot use the GPU. GPU VMs cannot
-// live-migrate anyway, so host-passthrough costs nothing here.
+// gpuCPUModel is the CPU model we give to VMs with a GPU.
+// Generic CPU models can miss features the firmware needs to map GPUs with a
+// lot of memory, and the guest then can't use the GPU. Staying close to the
+// host's CPU avoids that.
+const gpuCPUModel = v1.CPUModeHostModel
+
+// setGPUs replaces the VM's GPUs with the given list (an empty list removes
+// them all), and switches the CPU model while a GPU is attached.
 func setGPUs(vm *v1.VirtualMachine, gpus []v1.GPU) {
 	domain := &vm.Spec.Template.Spec.Domain
 	if len(gpus) == 0 {
 		domain.Devices.GPUs = nil
-		// Only undo what we set: another CPU model is left untouched.
-		if domain.CPU != nil && domain.CPU.Model == v1.CPUModeHostPassthrough {
+		// Only revert a model we set ourselves (older versions used
+		// host-passthrough), and leave any other model alone.
+		if domain.CPU != nil && (domain.CPU.Model == gpuCPUModel || domain.CPU.Model == v1.CPUModeHostPassthrough) {
 			domain.CPU.Model = ""
 		}
 		return
@@ -80,5 +81,5 @@ func setGPUs(vm *v1.VirtualMachine, gpus []v1.GPU) {
 	if domain.CPU == nil {
 		domain.CPU = &v1.CPU{}
 	}
-	domain.CPU.Model = v1.CPUModeHostPassthrough
+	domain.CPU.Model = gpuCPUModel
 }
