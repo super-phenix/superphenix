@@ -60,3 +60,11 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Namespace of the operator Cluster CRs read for the AZ SPX versions.
+Defaults to the release namespace.
+*/}}
+{{- define "superphenix-api.operatorNamespace" -}}
+{{- dig "operator" "namespace" "" .Values.config | default .Release.Namespace }}
+{{- end }}

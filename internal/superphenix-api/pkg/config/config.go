@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/viper"
 )
 
@@ -16,8 +18,18 @@ const (
 	ApiPrefix = "/api/spx-ctrl"
 )
 
+// keyDelimiter separates viper key paths. "." (the viper default) would split
+// the keys of VersionedProfiles (e.g. "0.8.0") into nested maps.
+const keyDelimiter = "|"
+
 var (
 	FileNotFound = errors.New("couldn't find configuration file")
+
+	// errInvalidSPXVersion is returned when an AZ SPX version is not a semver.
+	errInvalidSPXVersion = errors.New("invalid SPX version")
+	// ErrNoVersionProfile is returned when no profile of a VersionedProfiles
+	// applies to an AZ SPX version.
+	ErrNoVersionProfile = errors.New("no configuration for this SPX version")
 )
 
 type RepoArgoAppConfig struct {
@@ -58,15 +70,112 @@ func (c *Config) KaasAzDomain(az string) (AzDomainConfig, bool) {
 	return AzDomainConfig{Internal: internal, External: external}, true
 }
 
-// ResolveKubeVersionRepo returns the effective repo for version and whether the
-// version is supported. A version's own Repo fully replaces def.
-func ResolveKubeVersionRepo(versions []KubeVersionConfig, def RepoArgoAppConfig, version string) (RepoArgoAppConfig, bool) {
-	for _, v := range versions {
-		if v.Version == version {
+// VersionedProfiles maps a minimum SPX version to the product profile of the
+// AZs running that version or a newer one, up to the next key.
+type VersionedProfiles[T any] map[string]T
+
+// For returns the profile with the highest minimum version lower than or equal
+// to spxVersion. Pre-release tags are ignored.
+func (p VersionedProfiles[T]) For(spxVersion string) (T, error) {
+	var (
+		best    *semver.Version
+		profile T
+	)
+	version, err := parseSPXVersion(spxVersion)
+	if err != nil {
+		return profile, fmt.Errorf("%w %q: %s", errInvalidSPXVersion, spxVersion, err.Error())
+	}
+
+	for key, candidate := range p {
+		minVersion, err := parseSPXVersion(key)
+		if err != nil || minVersion.GreaterThan(version) {
+			continue
+		}
+		if best == nil || minVersion.GreaterThan(best) {
+			best, profile = minVersion, candidate
+		}
+	}
+	if best == nil {
+		return profile, fmt.Errorf("%w %q", ErrNoVersionProfile, spxVersion)
+	}
+	return profile, nil
+}
+
+// validate returns the configuration errors of the profiles found at path:
+// the keys must be distinct semantic versions, and validateProfile checks each
+// profile, returning messages relative to it (e.g. ".repo must be set").
+func (p VersionedProfiles[T]) validate(path string, validateProfile func(T) []string) []string {
+	if len(p) == 0 {
+		return []string{path + " must not be empty"}
+	}
+
+	var errs []string
+	seen := make(map[string]string, len(p))
+	for key, profile := range p {
+		prefix := fmt.Sprintf("%s[%q]", path, key)
+		v, err := parseSPXVersion(key)
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("%s: key must be a semantic version: %s", prefix, err.Error()))
+		} else if other, ok := seen[v.String()]; ok {
+			errs = append(errs, fmt.Sprintf("%s: same version as %q", prefix, other))
+		} else {
+			seen[v.String()] = key
+		}
+		for _, msg := range validateProfile(profile) {
+			errs = append(errs, prefix+msg)
+		}
+	}
+	sort.Strings(errs)
+	return errs
+}
+
+// parseSPXVersion parses a semver, accepting a leading "v" and dropping the
+// pre-release and metadata parts.
+func parseSPXVersion(raw string) (*semver.Version, error) {
+	v, err := semver.NewVersion(strings.TrimSpace(raw))
+	if err != nil {
+		return nil, err
+	}
+	return semver.New(v.Major(), v.Minor(), v.Patch(), "", ""), nil
+}
+
+// KaasVersionProfile is the KaaS configuration of the AZs selected by its key
+// in KubernetesArgoAppConfig.Versions.
+type KaasVersionProfile struct {
+	Repo         RepoArgoAppConfig   `yaml:"repo"`
+	KubeVersions []KubeVersionConfig `yaml:"kubeVersions"`
+}
+
+func (p KaasVersionProfile) validate() []string {
+	var errs []string
+	if p.Repo.RepoURL == "" || p.Repo.TargetRevision == "" {
+		errs = append(errs, ".repo must set repoURL and targetRevision")
+	}
+	if len(p.KubeVersions) == 0 {
+		errs = append(errs, ".kubeVersions must not be empty")
+	}
+	return errs
+}
+
+// KubernetesArgoAppConfig is the KaaS product configuration.
+type KubernetesArgoAppConfig struct {
+	// Versions holds the KaaS profiles, keyed by minimum AZ SPX version.
+	Versions VersionedProfiles[KaasVersionProfile] `yaml:"versions"`
+	// sfs-kaas `azDomains` value. Entry shapes:
+	//   <az code>: {internal, external}  sfs-kaas >= 0.7.0
+	//   <region>: <domain>               sfs-kaas < 0.7.0
+	AzDomains map[string]any `yaml:"azDomains"`
+}
+
+// Chart returns the chart p configures for kubeVersion and whether the version
+// is supported. A version's own Repo fully replaces p.Repo.
+func (p KaasVersionProfile) Chart(kubeVersion string) (RepoArgoAppConfig, bool) {
+	for _, v := range p.KubeVersions {
+		if v.Version == kubeVersion {
 			if v.Repo != nil {
 				return *v.Repo, true
 			}
-			return def, true
+			return p.Repo, true
 		}
 	}
 	return RepoArgoAppConfig{}, false
@@ -194,19 +303,22 @@ type Config struct {
 
 	AZs map[string]AZConfig `yaml:"azs"`
 
+	// Operator locates the operator Cluster CRs, read to get the SPX version
+	// of each AZ, which selects the product configuration profiles. Its
+	// cluster connection is independent of ArgoController's.
+	Operator struct {
+		// Kubeconfig is an explicit path to a kubeconfig; empty means the
+		// default loading rules then in-cluster config.
+		Kubeconfig string `yaml:"kubeconfig"`
+		Namespace  string `yaml:"namespace"`
+	} `yaml:"operator"`
+
 	SpxPrefix string `yaml:"spxPrefix"`
 	ArgoCdUrl string `yaml:"argoCdUrl"`
 
 	ProductsConfig struct {
 		ArgoApp struct {
-			Kubernetes struct {
-				Repo         RepoArgoAppConfig   `yaml:"repo"`
-				KubeVersions []KubeVersionConfig `yaml:"kubeVersions,omitempty"`
-				// sfs-kaas `azDomains` value. Entry shapes:
-				//   <az code>: {internal, external}  sfs-kaas >= 0.7.0
-				//   <region>: <domain>               sfs-kaas < 0.7.0
-				AzDomains map[string]any `yaml:"azDomains"`
-			} `yaml:"kubernetes"`
+			Kubernetes KubernetesArgoAppConfig `yaml:"kubernetes"`
 
 			Backup struct {
 				Repo     RepoArgoAppConfig `yaml:"repo"`
@@ -324,18 +436,14 @@ database:
   password: ""
   database: ""
 azs: {}
+operator:
+  kubeconfig: ""
+  namespace: ""
 spxPrefix: "spx"
 argoCdUrl: "https://<argocd-host>"
 productsConfig:
   argoApp:
     kubernetes:
-      repo:
-        repoURL: "ghcr.io/super-phenix/charts"
-        chart: "sfs-kaas"
-        targetRevision: "0.6.3"
-      kubeVersions:
-        - version: "v1.36.3"
-        - version: "v1.35.5"
       azDomains: {}
     backup:
       repo:
@@ -379,26 +487,22 @@ func init() {
 // The retrieved configuration is merged with the defaults values defined in this package,
 // with user defined values taking priority over the hardcoded default values.
 func LoadConfig() error {
+	v := newViper()
+
 	// Fetch configs from config.yaml
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	v.SetConfigName("config")
 
 	// Places where the config file can be stored
-	viper.AddConfigPath("/etc/" + AppName + "/")
-	viper.AddConfigPath(".")
-
-	// Enable overriding values using env variables
-	viper.SetEnvPrefix(strings.ToUpper(AppName))
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.AutomaticEnv()
+	v.AddConfigPath("/etc/" + AppName + "/")
+	v.AddConfigPath(".")
 
 	// Set the default configuration
-	if err := loadDefaults(); err != nil {
+	if err := loadDefaults(v); err != nil {
 		return fmt.Errorf("failed to load default configuration: %s", err.Error())
 	}
 
 	// Find and read the config file supplied by the user
-	err := viper.ReadInConfig()
+	err := v.ReadInConfig()
 	if err != nil && errors.Is(err, err.(viper.ConfigFileNotFoundError)) {
 		return FileNotFound
 	}
@@ -407,7 +511,7 @@ func LoadConfig() error {
 		return fmt.Errorf("failed to read configuration file: %s", err.Error())
 	}
 
-	if err := viper.Unmarshal(&Global); err != nil {
+	if err := v.Unmarshal(&Global); err != nil {
 		return err
 	}
 	populateAZCodes()
@@ -510,20 +614,36 @@ func (c *Config) Validate() error {
 
 	errs = append(errs, c.AuditLog.validate()...)
 
+	if c.Operator.Namespace == "" {
+		errs = append(errs, "operator.namespace must not be empty")
+	}
+	errs = append(errs, c.ProductsConfig.ArgoApp.Kubernetes.Versions.validate("productsConfig.argoApp.kubernetes.versions", KaasVersionProfile.validate)...)
+
 	if len(errs) > 0 {
 		return fmt.Errorf("invalid configuration:\n  - %s", strings.Join(errs, "\n  - "))
 	}
 	return nil
 }
 
+// newViper returns a YAML viper instance using keyDelimiter, with values
+// overridable by SUPERPHENIX-API_<PATH> env variables ("_" separated).
+func newViper() *viper.Viper {
+	v := viper.NewWithOptions(viper.KeyDelimiter(keyDelimiter))
+	v.SetConfigType("yaml")
+	v.SetEnvPrefix(strings.ToUpper(AppName))
+	v.SetEnvKeyReplacer(strings.NewReplacer(keyDelimiter, "_"))
+	v.AutomaticEnv()
+	return v
+}
+
 // loadDefaults loads the default application configuration
-func loadDefaults() error {
-	err := viper.ReadConfig(bytes.NewBuffer(defaultConfig))
+func loadDefaults(v *viper.Viper) error {
+	err := v.ReadConfig(bytes.NewBuffer(defaultConfig))
 	if err != nil {
 		return err
 	}
 
-	if err := viper.Unmarshal(&Global); err != nil {
+	if err := v.Unmarshal(&Global); err != nil {
 		return err
 	}
 	populateAZCodes()
