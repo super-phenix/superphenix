@@ -1472,6 +1472,24 @@ apps:
         vpa:
           enabled: false
 
+  # -- CloudNative-PG: operator and CRDs backing the managed PostgreSQL product.
+  cnpg:
+    enabled: true
+    wave: "5"
+    modes: [Hyperconverged, DecoupledWorkload]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions: {}
+    namespace: "cnpg-system"
+    repoURL: "https://cloudnative-pg.github.io/charts"
+    targetRevision: "0.29.1" # https://github.com/cloudnative-pg/charts/releases
+    helm:
+      chart: "cloudnative-pg"
+      releaseName: "cnpg"
+
   # -- TuneD: node-level performance-tuning daemon (Superphenix-specific profiles). Disabled by default.
   tuned:
     enabled: false
