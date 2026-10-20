@@ -33,12 +33,12 @@ ARG RUNC_VERSION
 ARG RELEASE_VERSION
 ARG CRICTL_VERSION
 
-# Base cloud image (Debian).
+# Base cloud image (Ubuntu).
 ARG OS_REL_NAME
 ARG OS_REL
 ARG OS_VER
 
-RUN wget -O image.qcow2 https://cloud.debian.org/images/cloud/${OS_REL_NAME}/${OS_VER}/debian-${OS_REL}-genericcloud-amd64-${OS_VER}.qcow2 --show-progress --output-file /dev/stdout --progress=dot:giga 2>/dev/null
+RUN wget -O image.qcow2 https://cloud-images.ubuntu.com/minimal/releases/${OS_REL_NAME}/release-${OS_VER}/ubuntu-${OS_REL}-minimal-cloudimg-amd64.img --show-progress --output-file /dev/stdout --progress=dot:giga 2>/dev/null
 
 RUN qemu-img resize image.qcow2 5G \
  && eval "$(guestfish --listen --network)" \

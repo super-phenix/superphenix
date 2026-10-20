@@ -194,6 +194,10 @@ spec:
               architecture: amd64
               domain:
                 cpu:
+                  {{- if $template.gpus }}
+                  # Large GPUs need a CPU model close to the host's, or the guest can't use them
+                  model: host-model
+                  {{- end }}
                   sockets: 1
                   cores: {{ $template.cores | default 1 }}
                   threads: 1
