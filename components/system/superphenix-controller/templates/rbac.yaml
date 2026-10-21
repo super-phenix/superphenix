@@ -70,6 +70,12 @@ rules:
       - list
       - watch
   - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+  - apiGroups:
       - kubeovn.io
     resources:
       - iptables-dnat-rules

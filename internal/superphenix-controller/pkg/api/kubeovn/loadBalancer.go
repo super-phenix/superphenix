@@ -29,6 +29,7 @@ func LoadBalancerEndpoint(router chi.Router) {
 	router.Route(baseBalancerEndpoint, func(r chi.Router) {
 		r.Get("/", listLoadBalancers)
 		r.Post("/", createLoadBalancer)
+		r.Get("/vip-available", vipAvailable)
 
 		r.With(spxIdMiddleware.AddEffectiveIdToContext()).Get("/localId/{localId}", getLoadBalancerByLocalId)
 		r.Route("/{effectiveId}", func(r chi.Router) {
@@ -170,6 +171,11 @@ func createLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = body.CreateLoadBalancer(r.Context())
+	if errors.IsBadRequest(err) {
+		log.Warn().Err(err).Msg("Invalid load balancer")
+		httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+		return
+	}
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create load balancer")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to create load balancer")
@@ -187,9 +193,11 @@ func createLoadBalancer(w http.ResponseWriter, r *http.Request) {
 //	@Produce		plain
 //	@Param			orgId		path	string						true	"Organization ID"
 //	@Param			projectId	path	string						true	"Project ID"
-//	@Param			Body		body	lb.CreateLoadBalancerInfo	true	"LoadBalancer info"
+//	@Param			effectiveId	path	string						true	"LoadBalancer Effective ID"
+//	@Param			Body		body	lb.UpdateLoadBalancerInfo	true	"LoadBalancer info"
 //	@Success		200
 //	@Failure		400
+//	@Failure		404
 //	@Failure		500
 //	@Router			/{orgId}/{projectId}/load-balancer/{effectiveId} [post]
 func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
@@ -216,6 +224,11 @@ func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
 			return
 		}
+		if errors.IsBadRequest(err) {
+			log.Warn().Err(err).Msg("Invalid load balancer")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+			return
+		}
 		log.Error().Err(err).Msg("Failed to update load balancer")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to update load balancer")
 	} else {
@@ -236,7 +249,7 @@ func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400
 //	@Failure		404
 //	@Failure		500
-//	@Router			/{orgId}/{projectId}/load-balancer [delete]
+//	@Router			/{orgId}/{projectId}/load-balancer/{effectiveId} [delete]
 func deleteLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
 	effectiveId := chi.URLParam(r, "effectiveId")
@@ -257,4 +270,43 @@ func deleteLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+type vipAvailability struct {
+	Available bool `json:"available"`
+}
+
+// vipAvailable
+//
+//	@Summary		Check a LoadBalancer VIP
+//	@Description	Check that a VIP is not used by another LoadBalancer in the VPC of a subnet
+//	@Tags			v1, LoadBalancer
+//	@Produce		json
+//	@Param			orgId		path		string			true	"Organization ID"
+//	@Param			projectId	path		string			true	"Project ID"
+//	@Param			vip			query		string			true	"VIP"
+//	@Param			subnetEId	query		string			true	"Subnet Effective ID"
+//	@Success		200			{object}	vipAvailability	"VIP availability"
+//	@Failure		400
+//	@Failure		500
+//	@Router			/{orgId}/{projectId}/load-balancer/vip-available [get]
+func vipAvailable(w http.ResponseWriter, r *http.Request) {
+	log := logger.GetLogger(r.Context())
+	vip := r.URL.Query().Get("vip")
+	subnetEId := r.URL.Query().Get("subnetEId")
+
+	available, err := lb.VIPAvailable(r.Context(), vip, subnetEId, utils.GetRequestNamespace(r))
+	if errors.IsBadRequest(err) {
+		log.Warn().Err(err).Msg("Invalid VIP availability request")
+		httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+		return
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to check VIP availability")
+		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to check VIP availability")
+		return
+	}
+
+	b, _ := json.Marshal(vipAvailability{Available: available})
+	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
 }

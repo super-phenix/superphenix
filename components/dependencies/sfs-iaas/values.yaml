@@ -506,9 +506,17 @@ loadbalancers:
 #    # @section -- Load balancers
 #    location: ""
 #    # -- Virtual IP of the load balancer
-#    # Must be in range 198.18.0.0/16 and not conflict with another LB
+#    # Must be in range 198.18.0.0/16 and not conflict with another LB of the VPC
 #    # @section -- Load balancers
 #    vip: "198.18.1.1"
+#    # -- Subnet the load balancer attaches to, must be equal to the name of a key in the `subnets` dictionary
+#    # or of a subnet of the project. Required. Backends (endpoints and selected VMs) must be in that subnet,
+#    # the VIP is reachable from every subnet of its VPC
+#    # @section -- Load balancers
+#    subnet: "default-subnet"
+#    # -- VPC of the subnet, only required when the subnet is not declared in `subnets`
+#    # @section -- Load balancers
+#    vpc: ""
 #    # -- Label selector to target a set of VMs, mutually exclusive with `.endpoints`
 #    # @section -- Load balancers
 #    selector:

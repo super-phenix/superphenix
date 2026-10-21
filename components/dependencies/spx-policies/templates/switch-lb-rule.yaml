@@ -1,0 +1,76 @@
+{{- range $name, $val := .Values.policies }}
+{{- if eq $name "switch-lb-rule" }}
+
+---
+# -----------------------------------------------------------
+# Check that all SwitchLBRules are pinned to a subnet and VPC
+# -----------------------------------------------------------
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: vap-{{ $name }}
+  labels:
+    {{- include "policies.labels" $ | nindent 4 }}
+spec:
+  variables:
+    - name: routerKey
+      expression: '"ovn.kubernetes.io/logical_router"'
+    - name: switchKey
+      expression: '"ovn.kubernetes.io/logical_switch"'
+    - name: pinned
+      expression: |
+        has(object.metadata.annotations) &&
+        variables.routerKey in object.metadata.annotations &&
+        variables.switchKey in object.metadata.annotations &&
+        object.metadata.annotations[variables.routerKey] != "ovn-cluster"
+    - name: oldPinned
+      expression: |
+        request.operation == "UPDATE" &&
+        has(oldObject.metadata.annotations) &&
+        variables.routerKey in oldObject.metadata.annotations &&
+        variables.switchKey in oldObject.metadata.annotations
+  failurePolicy: Fail
+  {{- include "policies.matchConditions" $val | nindent 2 }}
+  matchConstraints:
+    matchPolicy: Equivalent
+    namespaceSelector: {}
+    objectSelector: {}
+    resourceRules:
+      - apiGroups: ["kubeovn.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["switch-lb-rules"]
+        scope: '*'
+  validations:
+    # Check that the rule is pinned, unpinned rules may only change their metadata
+    - expression: |
+        variables.pinned ||
+        (request.operation == "UPDATE" && !variables.oldPinned && object.spec == oldObject.spec)
+      messageExpression: |
+        "##### " + object.kind + " must set the " + variables.routerKey + " and " + variables.switchKey +
+        " annotations, outside of ovn-cluster. #####"
+      message: "##### SwitchLBRule must be pinned to a subnet and its VPC #####"
+    # Check that the subnet and VPC of a pinned rule don't change
+    - expression: |
+        !variables.oldPinned ||
+        (
+          variables.pinned &&
+          object.metadata.annotations[variables.routerKey] == oldObject.metadata.annotations[variables.routerKey] &&
+          object.metadata.annotations[variables.switchKey] == oldObject.metadata.annotations[variables.switchKey]
+        )
+      messageExpression: |
+        "##### " + object.kind + " can't change its " + variables.routerKey + " and " + variables.switchKey +
+        " annotations. #####"
+      message: "##### SwitchLBRule subnet and VPC are immutable #####"
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: vap-{{ $name }}-binding
+spec:
+  policyName: vap-{{ $name }}
+  validationActions: {{ $val.validationActions }}
+  {{- include "policies.debug" $val | indent 2 }}
+{{- end }}
+{{- end }}

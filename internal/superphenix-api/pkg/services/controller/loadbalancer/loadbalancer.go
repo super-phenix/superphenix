@@ -26,6 +26,22 @@ import (
 	"gorm.io/gorm"
 )
 
+// handleControllerError forwards a 400 of the controller, which rejects invalid load balancer input,
+// and maps any other failure to failureCode.
+func handleControllerError(w http.ResponseWriter, r *http.Request, resp *http.Response, failureCode int, failureMessage string) {
+	if resp.StatusCode != http.StatusBadRequest {
+		ctrlutils.HandleControllerError(w, r, resp, failureCode, failureMessage)
+		return
+	}
+	log := logger.GetLogger(r.Context())
+	reason := http.StatusText(http.StatusBadRequest)
+	if errorBody := httpError.RetrieveHttpError(resp); errorBody != nil {
+		reason = errorBody.Message
+	}
+	log.Warn().Str("reason", reason).Msg(failureMessage)
+	httpError.Http(w, r, http.StatusBadRequest).Str("reason", reason).Msg(failureMessage)
+}
+
 // ListLoadBalancers
 //
 //	@Summary		Retrieve all loadBalancers
@@ -252,6 +268,7 @@ func (h *Service) CreateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	newBody := CreateLoadBalancerSpxControllerBody{
 		Metadata:  m,
 		VIP:       body.Spec.VIP,
+		SubnetEId: body.Spec.SubnetEId,
 		Selectors: body.Spec.Selectors,
 		Endpoints: body.Spec.Endpoints,
 		Ports:     body.Spec.Ports,
@@ -276,7 +293,7 @@ func (h *Service) CreateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 		controller.WriteCreateResponse(w, loadBalancer.EffectiveID)
 	} else {
 		ctrlutils.CleanDb(r.Context(), loadBalancer.ID)
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
+		handleControllerError(w, r, resp, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
 		return
 	}
 }
@@ -327,6 +344,7 @@ func (h *Service) UpdateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	// Send request to superphenix-controller
 	newBody := UpdateLoadBalancerSpxControllerBody{
 		VIP:       body.Spec.VIP,
+		SubnetEId: body.Spec.SubnetEId,
 		Selectors: body.Spec.Selectors,
 		Endpoints: body.Spec.Endpoints,
 		Ports:     body.Spec.Ports,
@@ -353,7 +371,7 @@ func (h *Service) UpdateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEid).Msg(consts.SpxResourceNotFound)
 		return
 	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
+		handleControllerError(w, r, resp, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
 		return
 	}
 }
@@ -489,6 +507,8 @@ type CreateLoadBalancerBody struct {
 	} `json:"general"`
 	Spec struct {
 		VIP string `json:"vip"`
+		// Subnet the load balancer attaches to, backends must be in it
+		SubnetEId string `json:"subnetEId" validate:"required"`
 		// Selectors and Endpoints are mutually exclusives
 		Selectors []string   `json:"selectors"`
 		Endpoints []string   `json:"endpoints" validate:"omitempty,dive,ipv4"` // ipv4 list
@@ -502,6 +522,8 @@ type UpdateLoadBalancerBody struct {
 	} `json:"general"`
 	Spec struct {
 		VIP string `json:"vip"`
+		// Subnet the load balancer attaches to, backends must be in it
+		SubnetEId string `json:"subnetEId" validate:"required"`
 		// Selectors and Endpoints are mutually exclusives
 		Selectors []string   `json:"selectors"`
 		Endpoints []string   `json:"endpoints" validate:"omitempty,dive,ipv4"` // ipv4 list
@@ -518,7 +540,8 @@ type RulePort struct {
 // CreateLoadBalancerSpxControllerBody is the body send to superphenix-controller to create a Load Balancer
 type CreateLoadBalancerSpxControllerBody struct {
 	spxId.Metadata
-	VIP string `json:"vip"`
+	VIP       string `json:"vip"`
+	SubnetEId string `json:"subnetEId"`
 	// Selectors and Endpoints are mutually exclusives
 	Selectors []string   `json:"selectors"`
 	Endpoints []string   `json:"endpoints"` // ip list
@@ -527,7 +550,8 @@ type CreateLoadBalancerSpxControllerBody struct {
 
 // UpdateLoadBalancerSpxControllerBody is the body send to superphenix-controller to update a Load Balancer
 type UpdateLoadBalancerSpxControllerBody struct {
-	VIP string `json:"vip"`
+	VIP       string `json:"vip"`
+	SubnetEId string `json:"subnetEId"`
 	// Selectors and Endpoints are mutually exclusives
 	Selectors []string   `json:"selectors"`
 	Endpoints []string   `json:"endpoints"` // ip list

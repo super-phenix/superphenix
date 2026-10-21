@@ -9964,6 +9964,9 @@ const docTemplate = `{
                 },
                 "spec": {
                     "type": "object",
+                    "required": [
+                        "subnetEId"
+                    ],
                     "properties": {
                         "endpoints": {
                             "description": "ipv4 list",
@@ -9984,6 +9987,10 @@ const docTemplate = `{
                             "items": {
                                 "type": "string"
                             }
+                        },
+                        "subnetEId": {
+                            "description": "Subnet the load balancer attaches to, backends must be in it",
+                            "type": "string"
                         },
                         "vip": {
                             "type": "string"
@@ -10047,6 +10054,9 @@ const docTemplate = `{
                 },
                 "spec": {
                     "type": "object",
+                    "required": [
+                        "subnetEId"
+                    ],
                     "properties": {
                         "endpoints": {
                             "description": "ipv4 list",
@@ -10067,6 +10077,10 @@ const docTemplate = `{
                             "items": {
                                 "type": "string"
                             }
+                        },
+                        "subnetEId": {
+                            "description": "Subnet the load balancer attaches to, backends must be in it",
+                            "type": "string"
                         },
                         "vip": {
                             "type": "string"

@@ -626,6 +626,53 @@ false
 		</tr>
 	</tbody>
 </table>
+<h3>SwitchLBRule</h3>
+<table>
+	<thead>
+		<th>Key</th>
+		<th>Type</th>
+		<th>Default</th>
+		<th>Description</th>
+	</thead>
+	<tbody>
+		<tr>
+			<td>policies.switch-lb-rule</td>
+			<td>object</td>
+			<td><pre lang="">
+"{}"
+</pre>
+</td>
+			<td>Check that all SwitchLBRules are pinned to a subnet and its VPC</td>
+		</tr>
+		<tr>
+			<td>policies.switch-lb-rule.debug</td>
+			<td>bool</td>
+			<td><pre lang="json">
+false
+</pre>
+</td>
+			<td>If debug is True, the VAP only matches resources having the "test-janna" label.</td>
+		</tr>
+		<tr>
+			<td>policies.switch-lb-rule.matchConditions</td>
+			<td>string</td>
+			<td><pre lang="json">
+"[spxid]"
+</pre>
+</td>
+			<td>Match conditions to target only specific resources. Possible values are: "spxid" (either orgID, projectID, resEffID, namespace, or name is an SPXID), "notGenerated" (doesn't have a "generated" label), "notSourcedVolSnap" (volume snapshot without labels starting with "snapshot.kubevirt.io/source-vm"), "notCsiDriver" (volume snapshot without a "csi-driver/cluster" label), "notTmpSnapshot" (volume snapshot without a name starting with "tmp-snapshot-*"), "virtLauncher" (pod whose name starts with "virt-launcher"), "systemWorkloads" (pod with certain "superphenix.net/workloadClass" label values), ”notNabok” (has label “plan-name” that starts with “migration”). If multiple conditions are provided, ALL must be true for a policy to be evaluated. If ANY is false, there is no match.</td>
+		</tr>
+		<tr>
+			<td>policies.switch-lb-rule.validationActions</td>
+			<td>string</td>
+			<td><pre lang="json">
+"[Deny, Audit]"
+</pre>
+</td>
+			<td>Actions to take if the validation fails. Possible values are: Deny, Warn, Audit.</td>
+		</tr>
+	</tbody>
+</table>
 <h3>System workloads</h3>
 <table>
 	<thead>

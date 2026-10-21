@@ -2,6 +2,11 @@
 {{- if eq $lb.location $.Values.location }}
 
 {{- $effectiveID := include "sfs-iaas.spxEID" (dict "projectID" $.Values.projectID "localID" $localID) }}
+{{- $subnet := required (printf "Load balancer %s must set subnet" $localID) $lb.subnet }}
+{{- $vpc := (get $.Values.subnets $subnet | default dict).vpc | default $lb.vpc }}
+{{- if not $vpc }}
+{{- fail (printf "Load balancer %s must set vpc, subnet %s is not declared in subnets" $localID $subnet) }}
+{{- end }}
 ---
 apiVersion: kubeovn.io/v1
 kind: SwitchLBRule
@@ -12,12 +17,16 @@ metadata:
     superphenix.net/resourceEffectiveID: {{ $effectiveID | quote }}
     superphenix.net/resourceLocalID: {{ $localID | quote }}
     superphenix.net/resourceName: {{ $lb.name | quote }}
+  annotations:
+    # Pins the rule to the subnet and its VPC, backends must be in the subnet
+    ovn.kubernetes.io/logical_router: {{ include "sfs-iaas.spxEID" (dict "projectID" $.Values.projectID "localID" $vpc) | quote }}
+    ovn.kubernetes.io/logical_switch: {{ include "sfs-iaas.spxEID" (dict "projectID" $.Values.projectID "localID" $subnet) | quote }}
 spec:
   # Only target endpoints in the project's namespace
   namespace: {{ $.Release.Namespace | quote }}
 
   # Virtual IP that will respond to requests, must be part of 198.18.0.0/16 (SPX RFC008)
-  {{- if not (mustRegexMatch "198\\.18\\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})" $lb.vip) }}
+  {{- if not (mustRegexMatch "^198\\.18\\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\\.(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})$" $lb.vip) }}
   {{- fail (printf "Load balancer VIP %s must be part of 198.18.0.0/16" $lb.vip) }}
   {{- end }}
   vip: {{ $lb.vip | quote }}
