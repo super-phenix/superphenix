@@ -150,6 +150,14 @@ relationships:
   #   User 8 - Combo group 5 and 7
   - "group:5#assignee@user:8"
   - "group:7#assignee@user:8"
+  #   User 9 - Organization quota read only
+  - "organization:1#spx_member@group:8#assignee"
+  - "organization:1#ProjectQuotaReadOnly@group:8#assignee"
+  - "group:8#assignee@user:9"
+  #   User 10 - AZ quota read only on project 1
+  - "organization:1#spx_member@group:9#assignee"
+  - "project:1#ProjectAZQuotaReadOnly@group:9#assignee"
+  - "group:9#assignee@user:10"
 
 attributes: []
 
@@ -811,4 +819,45 @@ scenarios:
           ProjectBucketRead: true
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
-          ProjectArgoCdRead: true
+          ProjectArgoCdRead: true  - name: User 9 - Organization quota read only
+    description: "ProjectQuotaReadOnly reads every quota of the organization, writes none"
+    checks:
+      - entity: organization:1
+        subject: user:9
+        depth: 200
+        assertions:
+          OrganizationProjectQuotaRead: true
+          OrganizationProjectQuotaWrite: false
+      - entity: project:1
+        subject: user:9
+        depth: 200
+        assertions:
+          ProjectAZQuotaRead: true
+          ProjectAZQuotaWrite: false
+      - entity: project:2
+        subject: user:9
+        depth: 200
+        assertions:
+          ProjectAZQuotaRead: true
+          ProjectAZQuotaWrite: false
+  - name: User 10 - AZ quota read only on project 1
+    description: "ProjectAZQuotaReadOnly reads the quotas of its project only"
+    checks:
+      - entity: organization:1
+        subject: user:10
+        depth: 200
+        assertions:
+          OrganizationProjectQuotaRead: false
+          OrganizationProjectQuotaWrite: false
+      - entity: project:1
+        subject: user:10
+        depth: 200
+        assertions:
+          ProjectAZQuotaRead: true
+          ProjectAZQuotaWrite: false
+      - entity: project:2
+        subject: user:10
+        depth: 200
+        assertions:
+          ProjectAZQuotaRead: false
+          ProjectAZQuotaWrite: false

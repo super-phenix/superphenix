@@ -92,7 +92,7 @@ func (h *Service) Readyz(w http.ResponseWriter, _ *http.Request) {
 	if allReady {
 		w.WriteHeader(http.StatusOK)
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusServiceUnavailable)
 	}
 	marshal, err := json.Marshal(status)
 	if err != nil {

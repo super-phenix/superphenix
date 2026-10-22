@@ -9,6 +9,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/group"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/project"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/quotasync"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/gc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
@@ -209,7 +210,11 @@ func RemoveProject(ctx context.Context, orgaId, projectId string) error {
 }
 
 // InitializeProject create a new project into the database, and init the associated permissions
+//
+// It is not canceled with ctx: a client disconnecting halfway must not leave a project created
+// in the database without its permissions or its quota.
 func InitializeProject(ctx context.Context, userId, orgaId uuid.UUID, name string) (model.APIProject, error) {
+	ctx = context.WithoutCancel(ctx)
 	log := logger.GetLogger(ctx)
 	projectEntity, err := project.CreateProject(ctx, orgaId, name)
 	if err != nil {
@@ -234,9 +239,24 @@ func InitializeProject(ctx context.Context, userId, orgaId uuid.UUID, name strin
 		return model.APIProject{}, err
 	}
 
-	if config.Global.UserSettings.EnableProjectDefaultResources {
+	// A project created in an organization with a quota gets 0 for every limited
+	// resource, until a project quota is given to it. When the quota cannot be applied,
+	// the creation soft-fails: the project is kept but deactivated.
+	quotaErr := quotasync.Initialize(ctx, orgaId, projectEntity.ID)
+	if quotaErr != nil {
+		log.Err(quotaErr).Str("userId", userId.String()).Any("project", projectEntity).Msg("Failed to apply project quota")
+	}
+
+	if quotaErr == nil && config.Global.UserSettings.EnableProjectDefaultResources {
 		if err := controller.InitializeProjectDefaultResources(ctx, orgaId, projectEntity.ID); err != nil {
 			log.Err(err).Str("userId", userId.String()).Any("project", projectEntity).Msg("Failed to initialize default resources in project")
+		}
+	}
+
+	// Report the deactivation, if any, to the caller.
+	if quotaErr != nil {
+		if projectEntity.Deactivations, err = project.ListDeactivations(ctx, orgaId, projectEntity.ID); err != nil {
+			log.Err(err).Str("userId", userId.String()).Any("project", projectEntity).Msg("Failed to read project deactivations")
 		}
 	}
 

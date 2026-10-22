@@ -3164,6 +3164,99 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgId}/{projectId}/quota": {
+            "get": {
+                "description": "Get the limits and the usage of the ResourceQuota of the project in this AZ. Both are empty when there is none.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Quota"
+                ],
+                "summary": "Get the project quota",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/k8s.QuotaStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "put": {
+                "description": "Create or replace the ResourceQuota of the project in this AZ. An empty quota removes it. A limit cannot be lowered below what is currently used (409).",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Quota"
+                ],
+                "summary": "Set the project quota",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Kubernetes quota",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/k8s.QuotaBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgId}/{projectId}/s3-config": {
             "get": {
                 "security": [
@@ -5263,6 +5356,37 @@ const docTemplate = `{
                 "Int",
                 "String"
             ]
+        },
+        "k8s.QuotaBody": {
+            "type": "object",
+            "properties": {
+                "hard": {
+                    "description": "Hard holds the ResourceQuota ` + "`" + `spec.hard` + "`" + ` entries (e.g. \"requests.cpu\": \"4\", \"count/virtualmachines.kubevirt.io\": \"10\").",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "k8s.QuotaStatus": {
+            "type": "object",
+            "properties": {
+                "hard": {
+                    "description": "Hard holds the ResourceQuota ` + "`" + `spec.hard` + "`" + ` entries.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "used": {
+                    "description": "Used holds the ResourceQuota ` + "`" + `status.used` + "`" + ` entries, only tracked for the limited resources.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "k8s_io_api_core_v1.ConditionStatus": {
             "type": "string",

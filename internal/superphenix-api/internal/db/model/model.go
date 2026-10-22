@@ -105,6 +105,27 @@ type Project struct {
 	Model
 	Name   string
 	OrgaId uuid.UUID `gorm:"type:uuid;"`
+
+	// Deactivations lists why the project is deactivated. A project is active when empty.
+	Deactivations []ProjectDeactivation `gorm:"foreignKey:ProjectId"`
+}
+
+// Deactivation reasons. Each feature that needs to block a project uses its own reason, so
+// that lifting one does not reactivate a project another feature still blocks.
+const (
+	// DeactivationQuotaFailedToApply: the quota of the project could not be applied on every AZ.
+	DeactivationQuotaFailedToApply = "quotaFailedToApply"
+)
+
+// ProjectDeactivation blocks every operation on the resources of a project, while the
+// project itself is kept (it can still be listed, read, deleted, and fixed). Rows are hard
+// deleted when the cause is lifted.
+type ProjectDeactivation struct {
+	ProjectId uuid.UUID `gorm:"primaryKey;type:uuid"`
+	Reason    string    `gorm:"primaryKey"`
+	Message   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Group struct {
@@ -211,8 +232,12 @@ func AutoMigrate(db *gorm.DB) error {
 		&Organization{},
 		&UserOrganization{},
 		&Project{},
+		&ProjectDeactivation{},
 		&Quota{},
 		&QuotaOverride{},
+		&OrganizationQuota{},
+		&ProjectQuota{},
+		&ProjectAZQuota{},
 		&Group{},
 		&ProductType{},
 		&Product{},

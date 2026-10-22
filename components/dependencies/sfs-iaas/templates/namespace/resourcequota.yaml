@@ -1,0 +1,16 @@
+{{- if .Values.quota }}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ printf "quota-%s" .Values.projectID | quote }}
+  namespace: "spx-{{ .Values.projectID }}"
+  labels:
+    {{- include "sfs-iaas.labels" . | nindent 4 }}
+spec:
+  hard:
+    {{- range $key, $value := .Values.quota }}
+    {{- if not (or (kindIs "invalid" $value) (eq (toString $value) "")) }}
+    {{ $key | quote }}: {{ $value | quote }}
+    {{- end }}
+    {{- end }}
+{{- end }}

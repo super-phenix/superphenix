@@ -1745,7 +1745,7 @@ apps:
           password: "{{ $.Values.apps.postgres.values.auth.password }}"
 
         swagger:
-          baseURL: '{{ (index $.Values.apps "superphenix-console").values.domain }}/api'
+          baseURL: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
         argoCdUrl: "https://argocd.example.org"
         argoController:

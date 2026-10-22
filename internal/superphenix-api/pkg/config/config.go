@@ -184,6 +184,10 @@ type Config struct {
 
 	AuditLog AuditLogConfig `yaml:"auditLog"`
 
+	Quota struct {
+		Resync QuotaResyncConfig `yaml:"resync"`
+	} `yaml:"quota"`
+
 	Database struct {
 		Host     string
 		Port     string
@@ -317,6 +321,11 @@ auditLog:
     interval: 1h
     timeout: 10m
     batchSize: 5000
+quota:
+  resync:
+    enabled: true
+    interval: 10m
+    timeout: 9m
 database:
   host: ""
   port: ""
@@ -468,6 +477,20 @@ func (a *AuditLogConfig) validate() []string {
 	return errs
 }
 
+// QuotaResyncConfig drives the periodic push of every project quota to every AZ.
+type QuotaResyncConfig struct {
+	Enabled  bool          `yaml:"enabled"`
+	Interval time.Duration `yaml:"interval"`
+	Timeout  time.Duration `yaml:"timeout"`
+}
+
+func (q *QuotaResyncConfig) validate() []string {
+	if q.Enabled && (q.Interval <= 0 || q.Timeout <= 0) {
+		return []string{"quota.resync.interval and timeout must be positive"}
+	}
+	return nil
+}
+
 // Validate enforces security-sensitive invariants on a loaded configuration.
 // Called at the end of LoadConfig; a non-nil error must abort startup.
 func (c *Config) Validate() error {
@@ -509,6 +532,7 @@ func (c *Config) Validate() error {
 	}
 
 	errs = append(errs, c.AuditLog.validate()...)
+	errs = append(errs, c.Quota.Resync.validate()...)
 
 	if len(errs) > 0 {
 		return fmt.Errorf("invalid configuration:\n  - %s", strings.Join(errs, "\n  - "))
