@@ -12,29 +12,44 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// listEndpoints returns the addresses of the SwitchLBRule the sfs-dbaas chart renders for a database.
+// listEndpoints returns the addresses of the SwitchLBRule the sfs-dbaas chart renders for a database,
+// followed by the ones on its EIP when external access is enabled.
 func listEndpoints(ctx context.Context, namespace, localId string) []view.DBaaSEndpoint {
-	log := logger.GetLogger(ctx)
-
-	watcher, ok := informers.WatcherSet[informers.SwitchLBRules]
-	if !ok {
-		log.Warn().Msg("switch-lb-rules informer not initialized")
+	lb := findRendered(ctx, informers.SwitchLBRules, namespace, LBLocalIDPrefix+localId)
+	if lb == nil {
 		return []view.DBaaSEndpoint{}
 	}
 
-	// SwitchLBRules are cluster-scoped
+	endpoints := unstructuredToEndpoints(lb)
+	if eip := findRendered(ctx, informers.EIP, namespace, EIPLocalIDPrefix+localId); eip != nil {
+		endpoints = append(endpoints, externalEndpoints(eip, endpoints)...)
+	}
+
+	return endpoints
+}
+
+// findRendered returns the object of a cluster-scoped informer the chart rendered for the project and localID.
+func findRendered(ctx context.Context, resource, namespace, localId string) *unstructured.Unstructured {
+	log := logger.GetLogger(ctx)
+
+	watcher, ok := informers.WatcherSet[resource]
+	if !ok {
+		log.Warn().Str("resource", resource).Msg("informer not initialized")
+		return nil
+	}
+
 	for _, item := range watcher.List() {
-		lb, ok := item.(*unstructured.Unstructured)
+		obj, ok := item.(*unstructured.Unstructured)
 		if !ok {
 			continue
 		}
-		labels := lb.GetLabels()
-		if labels[spxId.SpxLabelProjectID] == namespace && labels[spxId.SpxLabelResourceLocalID] == LBLocalIDPrefix+localId {
-			return unstructuredToEndpoints(lb)
+		labels := obj.GetLabels()
+		if labels[spxId.SpxLabelProjectID] == namespace && labels[spxId.SpxLabelResourceLocalID] == localId {
+			return obj
 		}
 	}
 
-	return []view.DBaaSEndpoint{}
+	return nil
 }
 
 func clusterToResource(ctx context.Context, item *unstructured.Unstructured) view.DBaaS {

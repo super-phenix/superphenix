@@ -85,6 +85,8 @@ type DBaaSEndpoint struct {
 	Role string `json:"role,omitempty"`
 	Host string `json:"host"`
 	Port int64  `json:"port"`
+	// External is true when Host is the EIP of the database instead of the load balancer VIP.
+	External bool `json:"external"`
 }
 
 func DBaaSToResource(cluster PostgresClusterView, endpoints []DBaaSEndpoint) DBaaS {

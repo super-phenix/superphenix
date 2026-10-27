@@ -169,3 +169,22 @@ func newLBRule(namespace, localId string, ports ...int64) *unstructured.Unstruct
 		},
 	}
 }
+
+// newEIP builds the cluster-scoped IptablesEIP the chart renders for a database with external access.
+func newEIP(namespace, localId, ip string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]any{
+			"apiVersion": "kubeovn.io/v1",
+			"kind":       "IptablesEIP",
+			"metadata": map[string]any{
+				"name": "eip",
+				"labels": map[string]any{
+					spxId.SpxLabelProjectID:       namespace,
+					spxId.SpxLabelResourceLocalID: EIPLocalIDPrefix + localId,
+				},
+			},
+			"spec":   map[string]any{},
+			"status": map[string]any{"ip": ip},
+		},
+	}
+}

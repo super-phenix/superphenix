@@ -9,6 +9,9 @@ const (
 
 	// LBLocalIDPrefix prefixes the database localID in the localID of its SwitchLBRule.
 	LBLocalIDPrefix = "lb."
+
+	// EIPLocalIDPrefix prefixes the database localID in the localID of its EIP.
+	EIPLocalIDPrefix = "eip."
 )
 
 // proxyPortRoles maps the sfs-dbaas proxy ports to the CloudNative-PG service they serve.
