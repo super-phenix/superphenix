@@ -68,3 +68,23 @@ func unstructuredToEndpoints(lb *unstructured.Unstructured) []view.DBaaSEndpoint
 
 	return endpoints
 }
+
+// externalEndpoints exposes the endpoints on the address of the EIP.
+func externalEndpoints(eip *unstructured.Unstructured, internal []view.DBaaSEndpoint) []view.DBaaSEndpoint {
+	host, _, err := unstructured.NestedString(eip.Object, "status", "ip")
+	if err != nil {
+		log.Debug().Err(err).Str("name", eip.GetName()).Msg("unexpected type for status.ip")
+	}
+	if host == "" {
+		return nil
+	}
+
+	endpoints := make([]view.DBaaSEndpoint, 0, len(internal))
+	for _, endpoint := range internal {
+		endpoint.Host = host
+		endpoint.External = true
+		endpoints = append(endpoints, endpoint)
+	}
+
+	return endpoints
+}

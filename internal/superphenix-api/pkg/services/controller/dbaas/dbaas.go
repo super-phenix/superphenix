@@ -299,19 +299,7 @@ func (h *Service) CreateDBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vipFree, err := ctrlutils.VIPAvailable(r.Context(), azDb, orgDb.ID.String(), projectDb.ID.String(), body.Spec.VIP, body.Spec.SubnetEId)
-	var statusErr *ctrlutils.AZStatusError
-	if errors.As(err, &statusErr) && statusErr.StatusCode == http.StatusBadRequest {
-		httpError.Http(w, r, http.StatusBadRequest).Msg(statusErr.Message)
-		return
-	}
-	if err != nil {
-		log.Err(err).Msg("Failed to check the VIP availability")
-		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-		return
-	}
-	if !vipFree {
-		httpError.Http(w, r, http.StatusBadRequest).Msgf("vip %q is already used by another load balancer", body.Spec.VIP)
+	if !checkVIP(w, r, azDb, orgDb.ID.String(), projectDb.ID.String(), body.Spec) {
 		return
 	}
 
@@ -327,6 +315,12 @@ func (h *Service) CreateDBaaS(w http.ResponseWriter, r *http.Request) {
 		ctrlutils.CleanDb(r.Context(), dbaasDb.ID)
 		log.Err(err).Msg("Failed to create argo app")
 		httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+		return
+	}
+
+	// Narrows the window between the first check and the SwitchLBRule rendered by Argo.
+	if !checkVIP(w, r, azDb, orgDb.ID.String(), projectDb.ID.String(), body.Spec) {
+		ctrlutils.CleanDb(r.Context(), dbaasDb.ID)
 		return
 	}
 
@@ -372,7 +366,8 @@ func (h *Service) UpdateDBaaS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	dbaasDb, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeDBaaS.Name, azDb.Code, projectDb.ID)
+	// An empty name only validates the row, the rename happens once Argo holds the new spec.
+	dbaasDb, err := controller.UpdateIntoDb(r.Context(), productEid, "", model.ProductTypeDBaaS.Name, azDb.Code, projectDb.ID)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save product in database")
 		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
@@ -427,6 +422,12 @@ func (h *Service) UpdateDBaaS(w http.ResponseWriter, r *http.Request) {
 	// We only apply the spec part
 	if err := h.argo.UpdateApp(r.Context(), newBody.General.AppName, h.argo.Namespace(projectDb.ID.String()), newBody.Spec); err != nil {
 		ctrlutils.HandleArgoError(w, r, err, consts.SpxResourceUpdateFailureCode, consts.SpxResourceUpdateFailure)
+		return
+	}
+
+	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeDBaaS.Name, azDb.Code, projectDb.ID); err != nil {
+		log.Error().Err(err).Msg("Failed to save product in database")
+		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
 		return
 	}
 
@@ -520,7 +521,8 @@ func (h *Service) GetDBaaSCredentials(w http.ResponseWriter, r *http.Request) {
 	h.redirectOwned(w, r)
 }
 
-// redirectOwned proxies the request to the AZ controller once the database is known to belong to the project.
+// redirectOwned proxies the request to the AZ controller after the project check.
+// A database without a DB row is owned by a customer repository, the AZ controller then checks the project label of the Cluster.
 func (h *Service) redirectOwned(w http.ResponseWriter, r *http.Request) {
 	azDb, _, projectDb, code, errMsg := ctrlutils.CheckPathParams(r)
 	if code != 0 {
@@ -587,6 +589,27 @@ func getDBaaSConfig(ctx context.Context, azDb config.AZConfig, orgId, projectId 
 	url := fmt.Sprintf("%s/%s/%s/dbaas-config", azDb.ControllerUrl, orgId, projectId)
 	err := ctrlutils.GetFromAZ(ctx, azDb, url, &res)
 	return res, err
+}
+
+// checkVIP answers the request and returns false when the VIP of the spec cannot be used.
+func checkVIP(w http.ResponseWriter, r *http.Request, azDb config.AZConfig, orgId, projectId string, spec argodbaas.DBaaSSpec) bool {
+	vipFree, err := ctrlutils.VIPAvailable(r.Context(), azDb, orgId, projectId, spec.VIP, spec.SubnetEId)
+	var statusErr *ctrlutils.AZStatusError
+	if errors.As(err, &statusErr) && statusErr.StatusCode == http.StatusBadRequest {
+		httpError.Http(w, r, http.StatusBadRequest).Msg(statusErr.Message)
+		return false
+	}
+	if err != nil {
+		log := logger.GetLogger(r.Context())
+		log.Err(err).Msg("Failed to check the VIP availability")
+		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
+		return false
+	}
+	if !vipFree {
+		httpError.Http(w, r, http.StatusBadRequest).Msgf("vip %q is already used by another load balancer", spec.VIP)
+		return false
+	}
+	return true
 }
 
 // resolveSubnet reads the local ID and the CIDR of a subnet from the AZ controller.
