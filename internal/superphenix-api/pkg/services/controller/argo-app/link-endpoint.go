@@ -19,13 +19,13 @@ type ArgoCdLinkResponse struct {
 // GetArgoCdLink returns the Argo CD application link for a given resource
 //
 //	@Summary		Get Argo CD Application Link
-//	@Description	Returns the Argo CD UI link for a KaaS, BaaS or IaaS resource
+//	@Description	Returns the Argo CD UI link for a KaaS, BaaS, DBaaS or IaaS resource
 //	@Tags			v1, Argo CD
 //	@Produce		json
 //	@Param			orgaId		path		string				true	"Organization ID"
 //	@Param			az			path		string				true	"AZ Code"
 //	@Param			projectId	path		string				true	"Project ID"
-//	@Param			kind		path		string				true	"Resource kind (kaas, baas, iaas)"
+//	@Param			kind		path		string				true	"Resource kind (kaas, baas, dbaas, iaas)"
 //	@Param			effectiveId	path		string				true	"Effective ID of the resource"
 //	@Success		200			{object}	ArgoCdLinkResponse	"Argo CD Link"
 //	@Failure		400
@@ -53,6 +53,8 @@ func (h *Service) GetArgoCdLink(w http.ResponseWriter, r *http.Request) {
 		appName = fmt.Sprintf("%s-%s", KindKaaS, effectiveId)
 	case KindBaaS:
 		appName = fmt.Sprintf("%s-%s", KindBaaS, effectiveId)
+	case KindDBaaS:
+		appName = fmt.Sprintf("%s-%s", KindDBaaS, effectiveId)
 	default:
 		appName = fmt.Sprintf("iaas-%s", azDb.Destination)
 	}

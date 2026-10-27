@@ -98,8 +98,8 @@ serviceMonitor:
 #         interval: 10m                      # pushes every project quota to every AZ
 #         timeout: 9m
 #
-# The KaaS/BaaS repos, kubeVersions and schedules live under
-# `config.productsConfig.argoApp.{kubernetes,backup}`.
+# The KaaS/BaaS/DBaaS repos, kubeVersions, postgresVersions and schedules live under
+# `config.productsConfig.argoApp.{kubernetes,backup,dbaas}`.
 config: {}
 
 jwtSecret:
