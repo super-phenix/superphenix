@@ -73,6 +73,11 @@ const (
 	CephObjectStore   = "cephobjectstores"
 )
 
+// DBaaS
+const (
+	PostgresCluster = "clusters"
+)
+
 type Watcher struct {
 	cache.Indexer
 }
@@ -108,6 +113,8 @@ var (
 		{Group: bktv1alpha1.SchemeGroupVersion.Group, Version: bktv1alpha1.SchemeGroupVersion.Version, Resource: ObjectBucketClaim},
 		{Group: bktv1alpha1.SchemeGroupVersion.Group, Version: bktv1alpha1.SchemeGroupVersion.Version, Resource: ObjectBucket},
 		{Group: "ceph.rook.io", Version: "v1", Resource: CephObjectStore},
+		// DBaaS
+		{Group: "postgresql.cnpg.io", Version: "v1", Resource: PostgresCluster},
 	}
 
 	WatcherSet = map[string]Watcher{}

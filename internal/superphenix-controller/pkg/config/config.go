@@ -225,6 +225,8 @@ productsConfig:
 disableEditionForResourcesByLabels:
   - key: "app.kubernetes.io/name"
     value: "sfs-kaas"
+  - key: "app.kubernetes.io/name"
+    value: "sfs-dbaas"
 garbageCollection:
   interval: 15m
   timeout: 10m
