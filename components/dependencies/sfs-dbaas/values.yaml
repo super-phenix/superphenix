@@ -32,6 +32,12 @@ gitops: false
 # @section -- Organization parameters
 storageClassMapping: {}
 
+# -- Subnet the Elastic IPs of the databases with external access are picked from.
+# The subnet is specified for the current AZ.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+externalSubnet: ""
+
 # -- Platform settings shared by every database
 # Cannot be overriden by the user.
 # @section -- Database default parameters
@@ -138,3 +144,9 @@ databases: {}
   #     # Must be in range 198.18.0.0/16 and not conflict with another LB
   #     # @section -- Database load balancer
   #     vip: "198.18.1.10"
+
+  #   # -- Expose the database outside of the VPC through an Elastic IP, on the ports of the load balancer
+  #   # The subnet must have a NAT gateway
+  #   # @section -- Database
+  #   # @default -- false
+  #   externalAccess: false

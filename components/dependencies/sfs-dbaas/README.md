@@ -27,7 +27,7 @@ Instances run on the system network. Clients on the subnet set in `.subnet` reac
 
 Port 5432 reaches the primary instance, including after a failover, 5433 the replicas (with more than one instance) and 5434 any instance. The chart disables the CloudNative-PG services it doesn't expose.
 
-To expose the database outside of the VPC, point a DNAT of an Elastic IP at the VIP on port 5432.
+To expose the database outside of the VPC, set `.externalAccess` to `true`. The chart creates an Elastic IP on the NAT gateway of `.subnet` and one DNAT to the VIP per port of the load balancer. Security groups targeting the proxies still decide which clients get through.
 
 ### Updating a database
 
@@ -40,6 +40,10 @@ The following values can be changed on an existing database:
 | `.cpu`, `.memory` | Rolling restart of the instances, the primary last |
 | `.maxConnections` | Rolling restart of the instances and the proxies |
 | `.version` | Rolling update to another minor version of the same major version |
+| `.externalAccess` | Creates or deletes the Elastic IP and its DNAT |
+
+> [!note]
+> The chart doesn't compare `.storage` with the current volume size. If you lower it, the CloudNative-PG webhook rejects the cluster update and the ArgoCD sync fails.
 
 ---
 
@@ -54,6 +58,15 @@ The following values can be changed on an existing database:
 		<th>Description</th>
 	</thead>
 	<tbody>
+		<tr>
+			<td>externalSubnet</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>Subnet the Elastic IPs of the databases with external access are picked from. The subnet is specified for the current AZ. This parameter cannot be overriden by the user.</td>
+		</tr>
 		<tr>
 			<td>gitops</td>
 			<td>bool</td>

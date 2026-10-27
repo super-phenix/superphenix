@@ -18,6 +18,7 @@
 {{- if lt $maxConnections 1 }}
 {{- fail (printf "Database %s maxConnections must be at least 1" $localID) }}
 {{- end }}
+{{- $memoryMi := include "sfs-dbaas.memoryMi" (required "Must provide a memory amount" $db.memory) | int }}
 {{- $version := required "Must provide a PostgreSQL version" $db.version }}
 {{- if not (kindIs "string" $version) }}
 {{- fail (printf "Database %s version must be quoted, %v is parsed as a number" $localID $version) }}
@@ -55,6 +56,9 @@ spec:
   postgresql:
     parameters:
       max_connections: {{ $maxConnections | toString | quote }}
+      # A quarter of the memory for PostgreSQL buffers, the rest left to the OS cache
+      shared_buffers: {{ printf "%dMB" (div $memoryMi 4) | quote }}
+      effective_cache_size: {{ printf "%dMB" (div (mul $memoryMi 3) 4) | quote }}
 
   {{- if $disabledServices }}
   # Services not exposed through the proxies, rw can't be disabled

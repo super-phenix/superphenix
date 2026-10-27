@@ -72,6 +72,20 @@ instance, and r
 {{- end }}
 
 {{/*
+Memory of an instance in MiB, from a Gi or Mi quantity
+*/}}
+{{- define "sfs-dbaas.memoryMi" -}}
+{{- $memory := toString . }}
+{{- if hasSuffix "Gi" $memory }}
+{{- mul (trimSuffix "Gi" $memory | int) 1024 }}
+{{- else if hasSuffix "Mi" $memory }}
+{{- trimSuffix "Mi" $memory | int }}
+{{- else }}
+{{- fail (printf "Database memory %s must be in Gi or Mi" $memory) }}
+{{- end }}
+{{- end }}
+
+{{/*
 HAProxy configuration forwarding each proxy port to its CloudNative-PG service
 */}}
 {{- define "sfs-dbaas.proxyConfig" -}}
