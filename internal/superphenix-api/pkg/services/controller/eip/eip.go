@@ -444,8 +444,8 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 				}
 			}
 
-			// If only gitops
-			if !found {
+			// If only gitops, resources rendered for another product are left out
+			if !found && !ctrlutils.IsGenerated(mapResult, "eip") {
 				combineResults = append(combineResults, EipFullResponse{
 					ProductResponse: ProductResponse{
 						ID:          mapResult["id"].(string),
