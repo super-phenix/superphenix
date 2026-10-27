@@ -59,3 +59,16 @@ func checkVIPAvailable(ctx context.Context, vip, vpc, selfName string) error {
 	}
 	return nil
 }
+
+// VIPAvailable reports whether vip is free in the VPC of the subnet.
+func VIPAvailable(ctx context.Context, vip, subnetName, projectID string) (bool, error) {
+	if err := checkVIP(vip); err != nil {
+		return false, err
+	}
+	subnet, err := getRuleSubnet(ctx, subnetName, projectID)
+	if err != nil {
+		return false, err
+	}
+	inUse, err := vipInUse(ctx, vip, subnet.Spec.Vpc, "")
+	return !inUse, err
+}
