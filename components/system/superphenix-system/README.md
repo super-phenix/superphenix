@@ -238,6 +238,28 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "wave": "15"
   },
+  "cnpg": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": true,
+    "helm": {
+      "chart": "cloudnative-pg",
+      "releaseName": "cnpg"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledWorkload"
+    ],
+    "namespace": "cnpg-system",
+    "repoURL": "https://cloudnative-pg.github.io/charts",
+    "targetRevision": "0.29.1",
+    "wave": "5"
+  },
   "coredns": {
     "automation": {
       "cleanupOnDeletion": false,
@@ -2550,6 +2572,36 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 </pre>
 </td>
 			<td>Cluster API operator: installs the providers used by the KaaS stack (core, bootstrap, infra, control-plane).</td>
+		</tr>
+		<tr>
+			<td>apps.cnpg</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": true,
+  "helm": {
+    "chart": "cloudnative-pg",
+    "releaseName": "cnpg"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledWorkload"
+  ],
+  "namespace": "cnpg-system",
+  "repoURL": "https://cloudnative-pg.github.io/charts",
+  "targetRevision": "0.29.1",
+  "wave": "5"
+}
+</pre>
+</td>
+			<td>CloudNative-PG: operator and CRDs backing the managed PostgreSQL product.</td>
 		</tr>
 		<tr>
 			<td>apps.coredns</td>
