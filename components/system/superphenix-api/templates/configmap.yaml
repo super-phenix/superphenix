@@ -4,6 +4,10 @@ metadata:
   name: {{ include "superphenix-api.fullname" . }}
   labels:
     {{- include "superphenix-api.labels" . | nindent 4 }}
+{{- $config := deepCopy .Values.config }}
+{{- $operator := dig "operator" dict $config }}
+{{- $_ := set $operator "namespace" (include "superphenix-api.operatorNamespace" .) }}
+{{- $_ = set $config "operator" $operator }}
 data:
   config.yaml: |-
-    {{- toYaml .Values.config | nindent 4 }}
+    {{- toYaml $config | nindent 4 }}
