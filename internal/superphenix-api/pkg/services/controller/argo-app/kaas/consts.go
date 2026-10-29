@@ -15,6 +15,8 @@ const (
 	quantityFormat = "%dGi"
 	maxnodeGroup   = 5
 
+	nodeRoleLabelPrefix = "node-role.kubernetes.io/"
+
 	minReplicas = 1
 	maxReplicas = 10
 

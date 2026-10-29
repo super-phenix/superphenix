@@ -9792,6 +9792,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 63
                 },
+                "nodeRole": {
+                    "type": "string"
+                },
                 "replicas": {
                     "type": "integer"
                 },

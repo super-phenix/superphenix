@@ -1,6 +1,8 @@
 package kaas
 
 import (
+	"strings"
+
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/models/view"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 
@@ -40,6 +42,8 @@ func unstructuredToMachineDeployment(item unstructured.Unstructured) v1beta2.Mac
 
 	labels := utils.FilterLabels(item.GetLabels())
 
+	templateLabels, _, _ := unstructured.NestedStringMap(item.Object, "spec", "template", "metadata", "labels")
+
 	md := v1beta2.MachineDeployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      item.GetName(),
@@ -50,6 +54,9 @@ func unstructuredToMachineDeployment(item unstructured.Unstructured) v1beta2.Mac
 			ClusterName: specClusterName,
 			Replicas:    &specReplicas,
 			Template: v1beta2.MachineTemplateSpec{
+				ObjectMeta: v1beta2.ObjectMeta{
+					Labels: nodeRoleLabels(templateLabels),
+				},
 				Spec: v1beta2.MachineSpec{
 					InfrastructureRef: v1beta2.ContractVersionedObjectReference{
 						Name: specInfrastructureRef,
@@ -67,6 +74,20 @@ func unstructuredToMachineDeployment(item unstructured.Unstructured) v1beta2.Mac
 	}
 
 	return md
+}
+
+// nodeRoleLabels keeps only the node-role labels, nil when there are none.
+func nodeRoleLabels(labels map[string]string) map[string]string {
+	var roles map[string]string
+	for k, v := range labels {
+		if strings.HasPrefix(k, NodeRoleLabelPrefix) {
+			if roles == nil {
+				roles = make(map[string]string)
+			}
+			roles[k] = v
+		}
+	}
+	return roles
 }
 
 func unstructuredToKubevirtMachineTemplate(item unstructured.Unstructured) view.KubevirtMachineTemplateSimplified {

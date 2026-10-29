@@ -20,6 +20,7 @@ import (
 
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/validation"
 )
 
 var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9-]*$")
@@ -331,7 +332,7 @@ func CreateArgoApp(
 	values, gtr, err := CreateKaaSAppValues(ctx, localId, az.Code, spec, kaasConfig, oldSpec)
 	if err != nil {
 		log.Err(err).Msg("Failed to create app values")
-		return argo.CreateAppInfo{}, nil, fmt.Errorf("failed to create app values")
+		return argo.CreateAppInfo{}, nil, fmt.Errorf("failed to create app values: %w", err)
 	}
 
 	var helmParams strings.Builder
@@ -382,6 +383,9 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	if !slices.Contains(CpuValueList, group.Cpu) {
 		return fmt.Errorf("no such cpu value: %d", group.Cpu)
 	}
+	if err := validateNodeRole(group.NodeRole); err != nil {
+		return err
+	}
 
 	minStorageSize := resource.MustParse(fmt.Sprintf(quantityFormat, 1))
 	storage := resource.MustParse(fmt.Sprintf(quantityFormat, group.BootDiskSize))
@@ -394,6 +398,7 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	instances[group.Name] = Instance{
 		Deployment: Deployment{
 			Replicas: group.Replicas,
+			NodeRole: group.NodeRole,
 		},
 		Template: Template{
 			Version:    group.Version,
@@ -409,7 +414,30 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	return nil
 }
 
-// isSameGroup compares two Groups ignoring Replicas and Version.
+// validateNodeRole checks a node role is valid as both the node-role label name and value. Empty is valid.
+func validateNodeRole(role string) error {
+	if role == "" {
+		return nil
+	}
+	errs := validation.IsQualifiedName(nodeRoleLabelPrefix + role)
+	errs = append(errs, validation.IsValidLabelValue(role)...)
+	if len(errs) > 0 {
+		return &NodeRoleError{Role: role, Reasons: errs}
+	}
+	return nil
+}
+
+// NodeRoleError is a node role rejected by validateNodeRole.
+type NodeRoleError struct {
+	Role    string
+	Reasons []string
+}
+
+func (e *NodeRoleError) Error() string {
+	return fmt.Sprintf("invalid node role %q: %s", e.Role, strings.Join(e.Reasons, ", "))
+}
+
+// isSameGroup compares two Groups ignoring Replicas, Version and NodeRole.
 func isSameGroup(g1, g2 Group) bool {
 	if g1.Cpu != g2.Cpu ||
 		g1.Memory != g2.Memory ||

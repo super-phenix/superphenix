@@ -85,6 +85,15 @@ func CreateIntoDb(ctx context.Context, productName, productType, azCode string, 
 // pre-flight CheckProductBelongsToProject; this function defends in depth by
 // re-checking project / AZ on the found row.
 func UpdateIntoDb(ctx context.Context, productEid, productName, productType, azCode string, projectUuid uuid.UUID) (model.Product, error) {
+	product, err := FindForUpdate(ctx, productEid, productType, azCode, projectUuid)
+	if err != nil || product.ID == uuid.Nil {
+		return product, err
+	}
+	return RenameProduct(ctx, product, productName)
+}
+
+// FindForUpdate returns the product to update, or an empty product when it has no DB row.
+func FindForUpdate(ctx context.Context, productEid, productType, azCode string, projectUuid uuid.UUID) (model.Product, error) {
 	log := logger.GetLogger(ctx)
 
 	product, err := crud.FindByEId(productEid)
@@ -107,11 +116,17 @@ func UpdateIntoDb(ctx context.Context, productEid, productName, productType, azC
 		return model.Product{}, err
 	}
 
-	// An empty name keeps the stored one.
+	return product, nil
+}
+
+// RenameProduct saves productName on product. An empty name keeps the stored one.
+func RenameProduct(ctx context.Context, product model.Product, productName string) (model.Product, error) {
+	log := logger.GetLogger(ctx)
+
 	if productName != "" {
 		product.ProductName = productName
 	}
-	product, err = crud.Save(product)
+	product, err := crud.Save(product)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save product in database")
 		return model.Product{}, err

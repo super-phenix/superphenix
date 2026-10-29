@@ -130,6 +130,7 @@ func ConvertAppToUpdateKaaSSpec(app view.AppView) (KaaSSpec, error) {
 
 			result.Groups = append(result.Groups, Group{
 				Name:         key,
+				NodeRole:     instance.Deployment.NodeRole,
 				Replicas:     instance.Deployment.Replicas,
 				Cpu:          instance.Template.Cores,
 				Memory:       mem,
