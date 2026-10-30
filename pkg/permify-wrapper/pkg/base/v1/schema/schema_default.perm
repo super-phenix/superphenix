@@ -19,6 +19,8 @@ entity organization {
 	relation IAMReadOnly @group#assignee
 
 	relation ProjectManagement @group#assignee
+	relation ProjectQuotaFullAccess @group#assignee
+	relation ProjectQuotaReadOnly @group#assignee
 
 	relation SettingsEdition @group#assignee
 
@@ -41,6 +43,10 @@ entity organization {
 
 // - Organization Project
 	permission OrganizationProjectManagement = spx_owner or ProjectManagement
+
+// - Organization Project Quota
+	permission OrganizationProjectQuotaRead = spx_owner or ProjectQuotaReadOnly or ProjectQuotaFullAccess
+	permission OrganizationProjectQuotaWrite = spx_owner or ProjectQuotaFullAccess
 
 }
 
@@ -88,6 +94,9 @@ entity project {
 	relation ProjectBucketCredentialsAccess @group#assignee
 	relation ProjectBucketReadOnly @group#assignee
 
+	relation ProjectAZQuotaFullAccess @group#assignee
+	relation ProjectAZQuotaReadOnly @group#assignee
+
 	relation ProjectArgoCdAccess @group#assignee
 
 
@@ -132,6 +141,10 @@ entity project {
     permission ProjectBucketRead = parent.spx_owner or ProjectBucketReadOnly or ProjectBucketFullAccess or ProjectBucketCredentialsAccess
     permission ProjectBucketCredentials = parent.spx_owner or ProjectBucketCredentialsAccess or ProjectBucketFullAccess
 	permission ProjectBucketWrite = parent.spx_owner or ProjectBucketFullAccess
+
+// Whoever can read the project quotas of the organization can also read the quotas of each project.
+    permission ProjectAZQuotaRead = parent.spx_owner or parent.ProjectQuotaReadOnly or parent.ProjectQuotaFullAccess or ProjectAZQuotaReadOnly or ProjectAZQuotaFullAccess
+	permission ProjectAZQuotaWrite = parent.spx_owner or ProjectAZQuotaFullAccess
 
     permission ProjectArgoCdRead = parent.spx_owner or ProjectArgoCdAccess
 

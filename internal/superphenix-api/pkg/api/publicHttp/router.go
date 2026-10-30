@@ -29,6 +29,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/user"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/manager"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/project"
+	quotaService "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/quota"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/region/az"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/api"
@@ -106,6 +107,7 @@ func wirePublicRoutes() chi.Router {
 	kaasctrl.ProvideService(&config.Global, reg)
 	metadatactrl.ProvideService(&config.Global, reg)
 	summaryctrl.ProvideService(&config.Global, reg)
+	quotaService.ProvideService(&config.Global, reg)
 	argoApp.ProvideService(&config.Global, reg)
 
 	return BuildPublicRouter(reg)

@@ -9,6 +9,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/gc"
 	auditGc "github.com/super-phenix/superphenix/internal/superphenix-api/internal/audit/gc"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/quotasync"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/group"
 
@@ -119,4 +120,19 @@ func StartAuditLogGC(ctx context.Context, cfg *config.Config) {
 	}
 
 	go auditGc.New(cfg.AuditLog).Run(ctx)
+}
+
+// StartQuotaResync pushes the quota of every project to every AZ in the background, on a timer,
+// until ctx is cancelled. One replica re-syncs per tick.
+func StartQuotaResync(ctx context.Context, cfg *config.Config) {
+	if !cfg.Quota.Resync.Enabled {
+		return
+	}
+
+	if err := ProvideInfra(cfg); err != nil {
+		log.Error().Err(err).Msg("Failed to initialize infrastructure, quota re-sync not started")
+		return
+	}
+
+	go quotasync.NewResyncer(cfg.Quota.Resync).Run(ctx)
 }

@@ -113,10 +113,24 @@ func TestDeleteById(t *testing.T) {
 			mock := setupMockDB(t)
 
 			mock.ExpectBegin()
+			mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "organizations" WHERE id = $1`)+`.*FOR UPDATE`).
+				WithArgs(orgaID, 1).
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgaID))
+			mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_az_quotas" WHERE project_id = $1`)).
+				WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 2))
+			mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_quotas" WHERE project_id = $1`)).
+				WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 1))
 			mock.ExpectExec(regexp.QuoteMeta(query)).
 				WithArgs(sqlmock.AnyArg(), projectID, orgaID).
 				WillReturnResult(sqlmock.NewResult(0, tt.rowsAffected))
-			mock.ExpectCommit()
+			if tt.wantErr != nil {
+				// Nothing is kept: the quota rows of a project of another organization are restored.
+				mock.ExpectRollback()
+			} else {
+				mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_deactivations" WHERE project_id = $1`)).
+					WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 1))
+				mock.ExpectCommit()
+			}
 
 			err := DeleteById(projectID, orgaID)
 			if tt.wantErr != nil {

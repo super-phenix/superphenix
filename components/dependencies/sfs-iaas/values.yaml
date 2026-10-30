@@ -44,6 +44,14 @@ deviceMapping: {}
 # @section -- Organization parameters
 bgpSpeaker: ""
 
+# -- Optional ResourceQuota of the project namespace: every entry is rendered as is in `spec.hard`.
+# @section -- Quotas
+quota: {}
+  # requests.cpu: "16"
+  # limits.memory: "64Gi"
+  # pods: "50"
+  # count/virtualmachines.kubevirt.io: "20"
+
 # @section -- Global overrides
 global:
   # -- Labels added to every single object templated by this chart.
