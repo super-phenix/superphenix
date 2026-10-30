@@ -1,0 +1,152 @@
+# -- Superphenix organization to which this project belongs, must be a generated UUIDv4.
+# This ID must come from the SPX API, this parameter cannot be overriden by the user.
+# @section -- Organization parameters
+organizationID: "00000000-0000-0000-0000-000000000000"
+# -- Superphenix organization's friendly name.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+organizationName: "null"
+
+# -- Superphenix project to which this project belongs, must be a project within the organization, must be a generated UUIDv4.
+# This ID must come from the SPX API, this parameter cannot be overriden by the user.
+# @section -- Organization parameters
+projectID: "00000000-0000-0000-0000-000000000000"
+# -- Superphenix project's friendly name.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+projectName: "null"
+
+# -- AZ in which we're deploying this chart.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+location: ""
+
+# -- Whether this chart is deployed through GitOps or not.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+gitops: false
+
+# -- Mapping between user-friendly names of storage classes and their real names.
+# The mapping is specified for the current AZ, meaning that each AZ can have a different mapping.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+storageClassMapping: {}
+
+# -- Subnet the Elastic IPs of the databases with external access are picked from.
+# The subnet is specified for the current AZ.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+externalSubnet: ""
+
+# -- Platform settings shared by every database
+# Cannot be overriden by the user.
+# @section -- Database default parameters
+# @ignored
+databaseDefaults:
+  # -- Repository of the PostgreSQL image, the database's version is used as tag
+  imageRepository: "ghcr.io/cloudnative-pg/postgresql"
+  # -- Namespace in which the CloudNative-PG operator runs
+  operatorNamespace: "cnpg-system"
+  # -- Port on which PostgreSQL listens
+  port: 5432
+  # -- Port of the CloudNative-PG instance manager
+  statusPort: 8000
+  # -- Cluster domain used to resolve the CloudNative-PG services
+  clusterDomain: "cluster.local"
+  # -- TCP proxies exposing the database on the customer subnet
+  proxy:
+    image: "docker.io/library/haproxy:3.2-alpine"
+    replicas: 2
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    # -- Ports of the proxies and the load balancer per CloudNative-PG service:
+    # rw (primary), ro (replicas), r (any instance)
+    ports:
+      rw: 5432
+      ro: 5433
+      r: 5434
+    # -- Namespace of the cluster DNS reached by the proxies
+    dnsNamespace: "coredns-system"
+    # -- NAD giving the proxies access to the cluster services
+    apiNetwork:
+      name: "ovn-kubernetes-api"
+      namespace: "kube-system"
+      # -- Routes to the service CIDRs through the API subnet gateways
+      routes:
+      - dst: "10.16.0.0/12"
+        gw: "100.100.0.1"
+      - dst: "fd00:100:ffff::/112"
+        gw: "fd00:100:100::1"
+
+# -- Defines PostgreSQL databases.
+# One database per key, see values.yaml for the syntax.
+# @default -- {}
+databases: {}
+  # my-db:
+  #   # -- User-friendly name of the database
+  #   # @section -- Database
+  #   name: "my-db"
+
+  #   # -- AZ in which to deploy the resource
+  #   # @section -- Database
+  #   location: ""
+
+  #   # -- PostgreSQL version
+  #   # @section -- Database
+  #   version: "17.5"
+
+  #   # -- Number of PostgreSQL instances, one primary and the others replicas
+  #   # @section -- Database
+  #   # @default -- 1
+  #   instances: 1
+
+  #   # -- Number of vCPUs for each instance
+  #   # @section -- Database
+  #   cpu: "1"
+
+  #   # -- Memory for each instance
+  #   # @section -- Database
+  #   memory: 2Gi
+
+  #   # -- Size of the data volume of each instance, can only be increased
+  #   # @section -- Database
+  #   storage: 20Gi
+
+  #   # -- Storage class friendly name of the data volumes
+  #   # @section -- Database
+  #   storageClassName: default
+
+  #   # -- Maximum client connections to PostgreSQL, enforced by PostgreSQL
+  #   # @section -- Database
+  #   # @default -- 100
+  #   maxConnections: 100
+
+  #   # -- Subnet the proxies attach to
+  #   # References subnets defined in /subnets/values.yaml
+  #   # @section -- Database
+  #   subnet: ""
+
+  #   # -- CIDR block of the subnet, comma-separated when dual stack
+  #   # The proxies reply to the load balancer health checks in this range
+  #   # @section -- Database
+  #   subnetCIDR: "10.10.0.0/16"
+
+  #   # -- Load balancer in front of the proxies
+  #   # @section -- Database
+  #   loadBalancer:
+  #     # -- Virtual IP of the load balancer: port 5432 targets the primary instance (read-write),
+  #     # 5433 the replicas (read-only, with more than one instance) and 5434 any instance (read)
+  #     # Must be in range 198.18.0.0/16 and not conflict with another LB
+  #     # @section -- Database load balancer
+  #     vip: "198.18.1.10"
+
+  #   # -- Expose the database outside of the VPC through an Elastic IP, on the ports of the load balancer
+  #   # The subnet must have a NAT gateway
+  #   # @section -- Database
+  #   # @default -- false
+  #   externalAccess: false
