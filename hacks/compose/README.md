@@ -22,8 +22,9 @@ cp .env.example .env
 $EDITOR .env   # set SPX_PANEL_PATH to absolute paths
 
 # 2. Create a local Kratos config (the example is committed, the real file is gitignored)
+mkdir -p local/kratos
 cp kratos/kratos.example.yml local/kratos/kratos.yml
-$EDITOR local/kratos/kratos.yml   # set secrets.default (e.g. `openssl rand -base64 32`) and SMTP creds
+$EDITOR local/kratos/kratos.yml   # set secrets.default (e.g. `openssl rand -base64 32`)
 
 # 3. Bring the stack up (from this directory)
 docker compose up -d

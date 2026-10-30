@@ -1,4 +1,3 @@
-version: "3.7"
 services:
   kratos-migrate:
     image: oryd/kratos:v26.2.0
@@ -8,6 +7,10 @@ services:
       - type: bind
         source: ./local/kratos
         target: /etc/config/kratos
+      - type: bind
+        source: ./kratos/identity.default.schema.json
+        target: /etc/config/kratos/identity.default.schema.json
+        read_only: true
     command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
     restart: on-failure
     profiles:
@@ -34,6 +37,10 @@ services:
       - type: bind
         source: ./local/kratos
         target: /etc/config/kratos
+      - type: bind
+        source: ./kratos/identity.default.schema.json
+        target: /etc/config/kratos/identity.default.schema.json
+        read_only: true
     networks:
       - intranet
   postgresd:
@@ -104,6 +111,7 @@ services:
       - SUPERPHENIX-API_LOGGING_PRETTY=true
       - SUPERPHENIX-API_SESSION_COOKIES_SECURE=false
       - SUPERPHENIX-API_SESSION_COOKIES_SAMESITE=Lax
+      - SUPERPHENIX-API_USERSETTINGS_USERISACTIVEONCREATE=${USER_ACTIVE_ON_CREATE:-true}
       - SUPERPHENIX-API_SESSION_CORS_ALLOWEDORIGINS=http://localhost:${SPX_PANEL_PORT:-4200}
       - SUPERPHENIX-API_PERMIFY_URL=permify:3478
       - SUPERPHENIX-API_ADMINHTTP_AUTHSECRET=${SUPERPHENIX_API_ADMIN_SECRET:-local}

@@ -37,18 +37,18 @@ selfservice:
   flows:
     recovery:
       enabled: true
-      ui_url: http://localhost:3000/ui/recovery
+      ui_url: http://localhost:4200/auth/recovery
       after:
         hooks:
           - hook: revoke_active_sessions
     verification:
       enabled: true
-      ui_url: http://localhost:3000/ui/verification
+      ui_url: http://localhost:4200/auth/verification
       lifespan: "1h"
       use: code
       notify_unknown_recipients: false
     registration:
-      ui_url: http://localhost:3000/ui/registration
+      ui_url: http://localhost:4200/auth/registration
       after:
         password:
           hooks:
@@ -60,14 +60,14 @@ selfservice:
           hooks:
             - hook: show_verification_ui
     login:
-      ui_url: http://localhost:3000/ui/login
+      ui_url: http://localhost:4200/auth/login
       after:
         hooks:
           - hook: require_verified_address
     error:
-      ui_url: http://localhost:3000/ui/error
+      ui_url: http://localhost:4200/auth/error
     settings:
-      ui_url: http://localhost:3000/ui/settings
+      ui_url: http://localhost:4200/auth/settings
       # Sessions older than 15 minute requires the user to sign in again before
       # the password is changed.
       privileged_session_max_age: 15m
