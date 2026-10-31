@@ -649,6 +649,300 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgId}/{projectId}/dbaas": {
+            "get": {
+                "description": "Retrieve all CloudNative-PG clusters for a project",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "DBaaS"
+                ],
+                "summary": "Retrieve all dbaas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS List",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/view.DBaaS"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/dbaas-config": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Get the storage classes and the EIP external subnet used by the databases of this availability zone",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Config"
+                ],
+                "summary": "Get DBaaS Config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS Config",
+                        "schema": {
+                            "$ref": "#/definitions/config.DBaaSConfig"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/dbaas/localId/{localId}": {
+            "get": {
+                "description": "Get a CloudNative-PG cluster by local ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "DBaaS"
+                ],
+                "summary": "Get dbaas by local ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS Local ID",
+                        "name": "localId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS",
+                        "schema": {
+                            "$ref": "#/definitions/view.DBaaS"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/dbaas/{effectiveId}": {
+            "get": {
+                "description": "Get a CloudNative-PG cluster by effective ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "DBaaS"
+                ],
+                "summary": "Get dbaas by effective ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS",
+                        "schema": {
+                            "$ref": "#/definitions/view.DBaaS"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/dbaas/{effectiveId}/credentials": {
+            "get": {
+                "description": "Get the application user credentials and the load balancer endpoints of a CloudNative-PG cluster",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "DBaaS"
+                ],
+                "summary": "Get dbaas credentials",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Credentials",
+                        "schema": {
+                            "$ref": "#/definitions/dbaas.Credentials"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/dbaas/{effectiveId}/restart": {
+            "post": {
+                "description": "Rolling restart of the instances of a CloudNative-PG cluster",
+                "tags": [
+                    "v1",
+                    "DBaaS"
+                ],
+                "summary": "Restart a dbaas",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgId}/{projectId}/disk": {
             "get": {
                 "description": "Retrieve all Disks for a project",
@@ -2966,6 +3260,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgId}/{projectId}/load-balancer/vip-available": {
+            "get": {
+                "description": "Check that a VIP is not used by another LoadBalancer in the VPC of a subnet",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "LoadBalancer"
+                ],
+                "summary": "Check a LoadBalancer VIP",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "VIP",
+                        "name": "vip",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Subnet Effective ID",
+                        "name": "subnetEId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "VIP availability",
+                        "schema": {
+                            "$ref": "#/definitions/kubeovn.vipAvailability"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgId}/{projectId}/load-balancer/{effectiveId}": {
             "get": {
                 "description": "Get LoadBalancer by effective ID",
@@ -4893,6 +5244,21 @@ const docTemplate = `{
                 }
             }
         },
+        "config.DBaaSConfig": {
+            "type": "object",
+            "properties": {
+                "externalSubnet": {
+                    "description": "ExternalSubnet is the subnet the EIPs of the databases are picked from.",
+                    "type": "string"
+                },
+                "storageClasses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/config.StorageClass"
+                    }
+                }
+            }
+        },
         "config.GpuClassEntry": {
             "type": "object",
             "properties": {
@@ -4994,6 +5360,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dbaas.Credentials": {
+            "type": "object",
+            "properties": {
+                "dbname": {
+                    "type": "string"
+                },
+                "endpoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/view.DBaaSEndpoint"
+                    }
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -5354,6 +5740,47 @@ const docTemplate = `{
                 }
             }
         },
+        "k8s_io_api_core_v1.ResourceClaim": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Name must match the name of one entry in pod.spec.resourceClaims of\nthe Pod where this field is used. It makes that resource available\ninside a container.",
+                    "type": "string"
+                },
+                "request": {
+                    "description": "Request is the name chosen for a request in the referenced claim.\nIf empty, everything from the claim is made available, otherwise\nonly the result of this request.\n\n+optional",
+                    "type": "string"
+                }
+            }
+        },
+        "k8s_io_api_core_v1.ResourceRequirements": {
+            "type": "object",
+            "properties": {
+                "claims": {
+                    "description": "Claims lists the names of resources, defined in spec.resourceClaims,\nthat are used by this container.\n\nThis field depends on the\nDynamicResourceAllocation feature gate.\n\nThis field is immutable. It can only be set for containers.\n\n+listType=map\n+listMapKey=name\n+featureGate=DynamicResourceAllocation\n+optional",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/k8s_io_api_core_v1.ResourceClaim"
+                    }
+                },
+                "limits": {
+                    "description": "Limits describes the maximum amount of compute resources allowed.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.ResourceList"
+                        }
+                    ]
+                },
+                "requests": {
+                    "description": "Requests describes the minimum amount of compute resources required.\nIf Requests is omitted for a container, it defaults to Limits if that is explicitly specified,\notherwise to an implementation-defined value. Requests cannot exceed Limits.\nMore info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/\n+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.ResourceList"
+                        }
+                    ]
+                }
+            }
+        },
         "k8s_io_api_core_v1.TopologySpreadConstraint": {
             "type": "object",
             "properties": {
@@ -5493,6 +5920,14 @@ const docTemplate = `{
                         "Minute",
                         "Hour"
                     ]
+                }
+            }
+        },
+        "kubeovn.vipAvailability": {
+            "type": "object",
+            "properties": {
+                "available": {
+                    "type": "boolean"
                 }
             }
         },
@@ -13341,6 +13776,60 @@ const docTemplate = `{
                 }
             }
         },
+        "view.DBaaS": {
+            "type": "object",
+            "properties": {
+                "cluster": {
+                    "$ref": "#/definitions/view.PostgresClusterView"
+                },
+                "codeAZ": {
+                    "type": "string"
+                },
+                "eid": {
+                    "description": "effective ID",
+                    "type": "string"
+                },
+                "endpoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/view.DBaaSEndpoint"
+                    }
+                },
+                "gitops": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "local ID",
+                    "type": "string"
+                },
+                "productName": {
+                    "description": "human-readable name",
+                    "type": "string"
+                },
+                "resourceTypeId": {
+                    "type": "string"
+                }
+            }
+        },
+        "view.DBaaSEndpoint": {
+            "type": "object",
+            "properties": {
+                "external": {
+                    "description": "External is true when Host is the EIP of the database instead of the load balancer VIP.",
+                    "type": "boolean"
+                },
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "role": {
+                    "description": "Role is the CloudNative-PG service: rw, ro or r.",
+                    "type": "string"
+                }
+            }
+        },
         "view.DNATView": {
             "type": "object",
             "properties": {
@@ -14079,6 +14568,128 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/view.PVCStatus"
+                }
+            }
+        },
+        "view.PostgresClusterSpec": {
+            "type": "object",
+            "properties": {
+                "imageName": {
+                    "description": "ImageName is the PostgreSQL container image, its tag is the version.\n+optional",
+                    "type": "string"
+                },
+                "instances": {
+                    "description": "Instances is the number of instances, one primary and the others replicas.",
+                    "type": "integer"
+                },
+                "postgresql": {
+                    "description": "+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/view.PostgresConfiguration"
+                        }
+                    ]
+                },
+                "resources": {
+                    "description": "+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/k8s_io_api_core_v1.ResourceRequirements"
+                        }
+                    ]
+                },
+                "storage": {
+                    "description": "+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/view.PostgresStorage"
+                        }
+                    ]
+                }
+            }
+        },
+        "view.PostgresClusterStatus": {
+            "type": "object",
+            "properties": {
+                "conditions": {
+                    "description": "+optional",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/k8s_io_apimachinery_pkg_apis_meta_v1.Condition"
+                    }
+                },
+                "currentPrimary": {
+                    "description": "CurrentPrimary is the name of the primary instance.\n+optional",
+                    "type": "string"
+                },
+                "image": {
+                    "description": "Image is the PostgreSQL image the instances run.\n+optional",
+                    "type": "string"
+                },
+                "instances": {
+                    "description": "Instances is the number of instances created.\n+optional",
+                    "type": "integer"
+                },
+                "phase": {
+                    "description": "Phase is the current phase of the cluster, e.g. \"Cluster in healthy state\".\n+optional",
+                    "type": "string"
+                },
+                "phaseReason": {
+                    "description": "PhaseReason is the reason of the current phase.\n+optional",
+                    "type": "string"
+                },
+                "readyInstances": {
+                    "description": "ReadyInstances is the number of ready instances.\n+optional",
+                    "type": "integer"
+                }
+            }
+        },
+        "view.PostgresClusterView": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "$ref": "#/definitions/view.ObjectMeta"
+                },
+                "spec": {
+                    "description": "+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/view.PostgresClusterSpec"
+                        }
+                    ]
+                },
+                "status": {
+                    "description": "+optional",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/view.PostgresClusterStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "view.PostgresConfiguration": {
+            "type": "object",
+            "properties": {
+                "parameters": {
+                    "description": "Parameters are the PostgreSQL configuration parameters.\n+optional",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "view.PostgresStorage": {
+            "type": "object",
+            "properties": {
+                "size": {
+                    "description": "+optional",
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "+optional",
+                    "type": "string"
                 }
             }
         },

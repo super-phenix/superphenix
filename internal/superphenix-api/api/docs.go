@@ -1959,7 +1959,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Returns the Argo CD UI link for a KaaS, BaaS or IaaS resource",
+                "description": "Returns the Argo CD UI link for a KaaS, BaaS, DBaaS or IaaS resource",
                 "produces": [
                     "application/json"
                 ],
@@ -1992,7 +1992,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Resource kind (kaas, baas, iaas)",
+                        "description": "Resource kind (kaas, baas, dbaas, iaas)",
                         "name": "kind",
                         "in": "path",
                         "required": true
@@ -2808,6 +2808,471 @@ const docTemplate = `{
                                 "$ref": "#/definitions/controller.ContainerDiskSpecResponse"
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/dbaas": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSWrite"
+                        ]
+                    }
+                ],
+                "description": "Create a PostgreSQL database, and its EIP when external access is enabled",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Create DBaaS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "DBaaS info",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dbaas.CreateDBaaSBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controller.CreateResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/dbaas/{effectiveId}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSRead"
+                        ]
+                    }
+                ],
+                "description": "Get a PostgreSQL database by effective ID, with its status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Get DBaaS instance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS",
+                        "schema": {
+                            "$ref": "#/definitions/dbaas.DBaaSFullResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSWrite"
+                        ]
+                    }
+                ],
+                "description": "Update the instances, storage, CPU, memory, minor version or external access of a PostgreSQL database.\nThe call returns once ArgoCD holds the new values, follow the rollout from the status of the database.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Update DBaaS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "DBaaS info",
+                        "name": "Body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dbaas.UpdateDBaaSBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSWrite"
+                        ]
+                    }
+                ],
+                "description": "Delete a PostgreSQL database, with its EIP, by effective ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Delete DBaaS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/dbaas/{effectiveId}/app": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSRead"
+                        ]
+                    }
+                ],
+                "description": "Get the DBaaS spec for the update form",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Get DBaaS App",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS",
+                        "schema": {
+                            "$ref": "#/definitions/dbaas.DBaaSAppSpecResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/dbaas/{effectiveId}/credentials": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSWrite"
+                        ]
+                    }
+                ],
+                "description": "Get the application user credentials and the load balancer endpoints of a PostgreSQL database",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Superphenix Controller"
+                ],
+                "summary": "Get DBaaS credentials",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Credentials",
+                        "schema": {
+                            "$ref": "#/definitions/dbaas.DBaaSCredentials"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/dbaas/{effectiveId}/restart": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSWrite"
+                        ]
+                    }
+                ],
+                "description": "Rolling restart of the instances of a PostgreSQL database, the primary last",
+                "tags": [
+                    "v1",
+                    "Superphenix Controller"
+                ],
+                "summary": "Restart DBaaS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "DBaaS EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     },
                     "404": {
                         "description": "Not Found"
@@ -7913,6 +8378,108 @@ const docTemplate = `{
                 }
             }
         },
+        "/{orgaId}/api/spx-ctrl/{projectId}/dbaas": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSRead"
+                        ]
+                    }
+                ],
+                "description": "Retrieve all PostgreSQL databases of a project, with their status",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Retrieve all DBaaS",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "DBaaS",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dbaas.DBaaSFullResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{projectId}/dbaas/postgres-versions": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectDBaaSRead"
+                        ]
+                    }
+                ],
+                "description": "Get supported PostgreSQL versions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SPX Argo Ctrl"
+                ],
+                "summary": "Get supported PostgreSQL versions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PostgreSQL Versions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/{orgaId}/api/spx-ctrl/{projectId}/disk": {
             "get": {
                 "security": [
@@ -9021,6 +9588,174 @@ const docTemplate = `{
             "properties": {
                 "eid": {
                     "type": "string"
+                }
+            }
+        },
+        "controller.DBaaSExternalAccess": {
+            "type": "object",
+            "properties": {
+                "eipEId": {
+                    "type": "string"
+                }
+            }
+        },
+        "dbaas.CreateDBaaSBody": {
+            "type": "object",
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "productName": {
+                            "type": "string",
+                            "maxLength": 63
+                        }
+                    }
+                },
+                "spec": {
+                    "$ref": "#/definitions/dbaas.DBaaSSpec"
+                }
+            }
+        },
+        "dbaas.DBaaSAppSpecResponse": {
+            "type": "object",
+            "properties": {
+                "codeAZ": {
+                    "type": "string"
+                },
+                "eid": {
+                    "description": "effective ID",
+                    "type": "string"
+                },
+                "gitops": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "local ID",
+                    "type": "string"
+                },
+                "productName": {
+                    "description": "human-readable name",
+                    "type": "string"
+                },
+                "productTypeId": {
+                    "type": "string"
+                },
+                "spec": {
+                    "$ref": "#/definitions/dbaas.DBaaSSpec"
+                }
+            }
+        },
+        "dbaas.DBaaSCredentials": {
+            "type": "object",
+            "properties": {
+                "dbname": {
+                    "type": "string"
+                },
+                "endpoints": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dbaas.DBaaSEndpoint"
+                    }
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dbaas.DBaaSEndpoint": {
+            "type": "object",
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "role": {
+                    "type": "string"
+                }
+            }
+        },
+        "dbaas.DBaaSFullResponse": {
+            "type": "object",
+            "properties": {
+                "cluster": {},
+                "codeAZ": {
+                    "type": "string"
+                },
+                "eid": {
+                    "description": "effective ID",
+                    "type": "string"
+                },
+                "endpoints": {},
+                "externalAccess": {
+                    "$ref": "#/definitions/controller.DBaaSExternalAccess"
+                },
+                "gitops": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "local ID",
+                    "type": "string"
+                },
+                "productName": {
+                    "description": "human-readable name",
+                    "type": "string"
+                },
+                "productTypeId": {
+                    "type": "string"
+                }
+            }
+        },
+        "dbaas.DBaaSSpec": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "type": "integer"
+                },
+                "externalAccess": {
+                    "type": "boolean"
+                },
+                "instances": {
+                    "type": "integer"
+                },
+                "memory": {
+                    "type": "integer"
+                },
+                "storage": {
+                    "type": "integer"
+                },
+                "storageClass": {
+                    "type": "string"
+                },
+                "subnetEId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "vip": {
+                    "type": "string"
+                }
+            }
+        },
+        "dbaas.UpdateDBaaSBody": {
+            "type": "object",
+            "properties": {
+                "general": {
+                    "type": "object",
+                    "properties": {
+                        "productName": {
+                            "type": "string",
+                            "maxLength": 63
+                        }
+                    }
+                },
+                "spec": {
+                    "$ref": "#/definitions/dbaas.DBaaSSpec"
                 }
             }
         },

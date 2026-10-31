@@ -1,0 +1,5 @@
+apiVersion: v2
+name: sfs-dbaas
+description: This Helm Chart is used by the self-service ArgoCDs of Superphénix to create PostgreSQL databases.
+type: application
+version: 0.0.0

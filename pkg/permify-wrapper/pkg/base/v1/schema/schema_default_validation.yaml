@@ -35,6 +35,7 @@ relationships:
   - "project:1#ProjectSSHFullAccess@group:2#assignee"
   - "project:1#ProjectKaaSFullAccess@group:2#assignee"
   - "project:1#ProjectBaaSFullAccess@group:2#assignee"
+  - "project:1#ProjectDBaaSFullAccess@group:2#assignee"
   - "project:1#ProjectBucketFullAccess@group:2#assignee"
   - "project:1#ProjectLoadBalancerFullAccess@group:2#assignee"
   - "project:1#ProjectSecurityGroupFullAccess@group:2#assignee"
@@ -48,6 +49,7 @@ relationships:
   - "project:1#ProjectSSHFullAccess@group:4#assignee"
   - "project:1#ProjectKaaSFullAccess@group:4#assignee"
   - "project:1#ProjectBaaSFullAccess@group:4#assignee"
+  - "project:1#ProjectDBaaSFullAccess@group:4#assignee"
   - "project:1#ProjectBucketFullAccess@group:4#assignee"
   - "project:1#ProjectLoadBalancerFullAccess@group:4#assignee"
   - "project:1#ProjectSecurityGroupFullAccess@group:4#assignee"
@@ -61,6 +63,7 @@ relationships:
   - "project:1#ProjectSSHFullAccess@group:5#assignee"
   - "project:1#ProjectKaaSFullAccess@group:5#assignee"
   - "project:1#ProjectBaaSFullAccess@group:5#assignee"
+  - "project:1#ProjectDBaaSFullAccess@group:5#assignee"
   - "project:1#ProjectBucketFullAccess@group:5#assignee"
   - "project:1#ProjectLoadBalancerFullAccess@group:5#assignee"
   - "project:1#ProjectSecurityGroupFullAccess@group:5#assignee"
@@ -76,6 +79,7 @@ relationships:
   - "project:1#ProjectSSHReadOnly@group:7#assignee"
   - "project:1#ProjectKaaSReadOnly@group:7#assignee"
   - "project:1#ProjectBaaSReadOnly@group:7#assignee"
+  - "project:1#ProjectDBaaSReadOnly@group:7#assignee"
   - "project:1#ProjectBucketReadOnly@group:7#assignee"
   - "project:1#ProjectArgoCdAccess@group:7#assignee"
   # Define project 2
@@ -89,6 +93,7 @@ relationships:
   - "project:2#ProjectSSHFullAccess@group:2#assignee"
   - "project:2#ProjectKaaSFullAccess@group:2#assignee"
   - "project:2#ProjectBaaSFullAccess@group:2#assignee"
+  - "project:2#ProjectDBaaSFullAccess@group:2#assignee"
   - "project:2#ProjectBucketFullAccess@group:2#assignee"
   - "project:2#ProjectLoadBalancerFullAccess@group:2#assignee"
   - "project:2#ProjectSecurityGroupFullAccess@group:2#assignee"
@@ -102,6 +107,7 @@ relationships:
   - "project:2#ProjectSSHFullAccess@group:4#assignee"
   - "project:2#ProjectKaaSFullAccess@group:4#assignee"
   - "project:2#ProjectBaaSFullAccess@group:4#assignee"
+  - "project:2#ProjectDBaaSFullAccess@group:4#assignee"
   - "project:2#ProjectBucketFullAccess@group:4#assignee"
   - "project:2#ProjectLoadBalancerFullAccess@group:4#assignee"
   - "project:2#ProjectSecurityGroupFullAccess@group:4#assignee"
@@ -115,6 +121,7 @@ relationships:
   - "project:2#ProjectSSHFullAccess@group:6#assignee"
   - "project:2#ProjectKaaSFullAccess@group:6#assignee"
   - "project:2#ProjectBaaSFullAccess@group:6#assignee"
+  - "project:2#ProjectDBaaSFullAccess@group:6#assignee"
   - "project:2#ProjectBucketFullAccess@group:6#assignee"
   - "project:2#ProjectLoadBalancerFullAccess@group:6#assignee"
   - "project:2#ProjectSecurityGroupFullAccess@group:6#assignee"
@@ -130,6 +137,7 @@ relationships:
   - "project:2#ProjectSSHReadOnly@group:7#assignee"
   - "project:2#ProjectKaaSReadOnly@group:7#assignee"
   - "project:2#ProjectBaaSReadOnly@group:7#assignee"
+  - "project:2#ProjectDBaaSReadOnly@group:7#assignee"
   - "project:2#ProjectBucketReadOnly@group:7#assignee"
   - "project:2#ProjectArgoCdAccess@group:7#assignee"
   # Define Users
@@ -200,6 +208,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -234,6 +244,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -284,6 +296,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -318,6 +332,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -366,6 +382,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: false
+          ProjectDBaaSWrite: false
           ProjectBucketRead: false
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
@@ -398,6 +416,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: false
+          ProjectDBaaSWrite: false
           ProjectBucketRead: false
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
@@ -448,6 +468,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -482,6 +504,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -532,6 +556,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -564,6 +590,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: false
+          ProjectDBaaSWrite: false
           ProjectBucketRead: false
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
@@ -612,6 +640,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: false
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: false
+          ProjectDBaaSWrite: false
           ProjectBucketRead: false
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
@@ -646,6 +676,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -694,6 +726,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: true
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: false
           ProjectBucketRead: true
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
@@ -726,6 +760,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: true
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: false
           ProjectBucketRead: true
           ProjectBucketCredentials: false
           ProjectBucketWrite: false
@@ -776,6 +812,8 @@ scenarios:
           ProjectKaaSWrite: true
           ProjectBaaSRead: true
           ProjectBaaSWrite: true
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: true
           ProjectBucketRead: true
           ProjectBucketCredentials: true
           ProjectBucketWrite: true
@@ -808,6 +846,8 @@ scenarios:
           ProjectKaaSWrite: false
           ProjectBaaSRead: true
           ProjectBaaSWrite: false
+          ProjectDBaaSRead: true
+          ProjectDBaaSWrite: false
           ProjectBucketRead: true
           ProjectBucketCredentials: false
           ProjectBucketWrite: false

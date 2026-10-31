@@ -27,6 +27,7 @@ var (
 	ProductTypeSecurityGroup = router.Resource{Name: "securityGroup", Label: "Security Group"}
 	ProductTypeKaaS          = router.Resource{Name: "kaas", Label: "Kubernetes"}
 	ProductTypeSSH           = router.Resource{Name: "ssh", Label: "SSH Keys"}
+	ProductTypeDBaaS         = router.Resource{Name: "dbaas", Label: "Database"}
 )
 
 // ProductTypeReadPermission maps each product type to the permission that gates reading it.
@@ -44,6 +45,7 @@ var ProductTypeReadPermission = map[string]string{
 	ProductTypeKaaS.Name:          pwPermission.ProjectKaaSRead,
 	ProductTypeBaaS.Name:          pwPermission.ProjectBaaSRead,
 	ProductTypeBucket.Name:        pwPermission.ProjectBucketRead,
+	ProductTypeDBaaS.Name:         pwPermission.ProjectDBaaSRead,
 }
 
 type Model struct {

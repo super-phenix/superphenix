@@ -76,6 +76,7 @@ func LaunchEndpoint(address string) {
 		r.Get("/vm-type/{name}/advanced-options", configApi.GetVMClusterPreferenceAdvancedOptions)
 		r.Get("/kaas-config", configApi.GetKaaSConfig)
 		r.Get("/s3-config", configApi.GetS3Config)
+		r.Get("/dbaas-config", configApi.GetDBaaSConfig)
 		r.Get("/container-disks", configApi.GetContainerDiskCatalog)
 		r.Get("/gpu-class", configApi.GetGpuClass)
 
@@ -100,6 +101,7 @@ func LaunchEndpoint(address string) {
 
 		//// PaaS ////
 		paas.KaaSEndpoint(r)
+		paas.DBaaSEndpoint(r)
 
 		//// OTHERS ////
 		k8s.SSHEndpoint(r)

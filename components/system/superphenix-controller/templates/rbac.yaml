@@ -228,6 +228,15 @@ rules:
       - list
       - watch
   - apiGroups:
+      - postgresql.cnpg.io
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
       - storage.k8s.io
     resources:
       - storageclasses

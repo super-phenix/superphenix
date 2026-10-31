@@ -93,8 +93,8 @@ serviceMonitor:
 #         timeout: 10m
 #         batchSize: 5000                    # events hard deleted per statement
 #
-# The KaaS/BaaS repos, kubeVersions and schedules live under
-# `config.productsConfig.argoApp.{kubernetes,backup}`.
+# The KaaS/BaaS/DBaaS repos, kubeVersions, postgresVersions and schedules live under
+# `config.productsConfig.argoApp.{kubernetes,backup,dbaas}`.
 config: {}
 
 jwtSecret:

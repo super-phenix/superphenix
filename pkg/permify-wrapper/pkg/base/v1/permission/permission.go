@@ -55,6 +55,9 @@ const (
 	ProjectBucketCredentials = "ProjectBucketCredentials"
 	ProjectBucketWrite       = "ProjectBucketWrite"
 
+	ProjectDBaaSRead  = "ProjectDBaaSRead"
+	ProjectDBaaSWrite = "ProjectDBaaSWrite"
+
 	ProjectArgoCdRead = "ProjectArgoCdRead"
 )
 
@@ -106,6 +109,9 @@ var PermissionsEntityMap = map[string]string{
 	ProjectBucketRead:        entity.Project,
 	ProjectBucketCredentials: entity.Project,
 	ProjectBucketWrite:       entity.Project,
+
+	ProjectDBaaSRead:  entity.Project,
+	ProjectDBaaSWrite: entity.Project,
 
 	ProjectArgoCdRead: entity.Project,
 }

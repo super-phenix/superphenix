@@ -25,6 +25,12 @@ type StorageClass struct {
 	Fullname  string `json:"fullname"`
 }
 
+type DBaaSConfig struct {
+	StorageClasses []StorageClass `json:"storageClasses"`
+	// ExternalSubnet is the subnet the EIPs of the databases are picked from.
+	ExternalSubnet string `json:"externalSubnet"`
+}
+
 type S3Config struct {
 	StorageClasses   []string `json:"storageClasses"`
 	MaxBucketSize    string   `json:"maxBucketSize"`
@@ -185,20 +191,46 @@ func GetVMClusterPreferenceAdvancedOptions(w http.ResponseWriter, r *http.Reques
 //	@Router			/{orgId}/{projectId}/kaas-config [get]
 //	@Security		Bearer
 func GetKaaSConfig(w http.ResponseWriter, r *http.Request) {
-	storageClasses := make([]StorageClass, 0)
-	for k, fullname := range config.Global.ProductsConfig.BlockStorage.StorageClassMapping {
-		storageClasses = append(storageClasses, StorageClass{
-			Shortname: k,
-			Fullname:  fullname,
-		})
-	}
-
 	kaasConfig := KaaSConfig{
-		StorageClasses: storageClasses,
+		StorageClasses: storageClasses(),
 	}
 
 	b, _ := json.Marshal(kaasConfig)
 	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
+}
+
+// GetDBaaSConfig
+//
+//	@Summary		Get DBaaS Config
+//	@Description	Get the storage classes and the EIP external subnet used by the databases of this availability zone
+//	@Tags			v1, Config
+//	@Produce		json
+//	@Param			orgId		path		string		true	"Organization ID"
+//	@Param			projectId	path		string		true	"Project ID"
+//	@Success		200			{object}	DBaaSConfig	"DBaaS Config"
+//	@Failure		500
+//	@Router			/{orgId}/{projectId}/dbaas-config [get]
+//	@Security		Bearer
+func GetDBaaSConfig(w http.ResponseWriter, r *http.Request) {
+	dbaasConfig := DBaaSConfig{
+		StorageClasses: storageClasses(),
+		ExternalSubnet: config.Global.ProductsConfig.EipDefault.ExternalSubnet,
+	}
+
+	b, _ := json.Marshal(dbaasConfig)
+	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
+}
+
+// storageClasses lists the block storage class mapping of the AZ.
+func storageClasses() []StorageClass {
+	classes := make([]StorageClass, 0, len(config.Global.ProductsConfig.BlockStorage.StorageClassMapping))
+	for k, fullname := range config.Global.ProductsConfig.BlockStorage.StorageClassMapping {
+		classes = append(classes, StorageClass{
+			Shortname: k,
+			Fullname:  fullname,
+		})
+	}
+	return classes
 }
 
 // GetS3Config

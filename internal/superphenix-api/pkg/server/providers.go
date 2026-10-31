@@ -10,6 +10,7 @@ import (
 	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
 	baasctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/baas"
 	bucketctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/bucket"
+	dbaasctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/dbaas"
 	diskctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/disk"
 	eipctrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/eip"
 	instancectrl "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/instance"
@@ -70,6 +71,7 @@ type Providers struct {
 	SecurityGroup RegisterFunc
 	SSH           RegisterFunc
 	KaaS          RegisterFunc
+	DBaaS         RegisterFunc
 	Metadata      RegisterFunc
 	Summary       RegisterFunc
 	Argo          RegisterFunc
@@ -109,6 +111,7 @@ func DefaultProviders() Providers {
 		SecurityGroup: securitygroupctrl.ProvideService,
 		SSH:           sshctrl.ProvideService,
 		KaaS:          kaasctrl.ProvideService,
+		DBaaS:         dbaasctrl.ProvideService,
 		Metadata:      metadatactrl.ProvideService,
 		Summary:       summaryctrl.ProvideService,
 		Argo:          argoApp.ProvideService,
@@ -127,7 +130,7 @@ func (p Providers) registerPublic(cfg *config.Config, reg *router.Registry) {
 		p.Organization, p.Session, p.APIToken, p.AZ, p.User, p.Group, p.IAM,
 		p.Permission, p.Project, p.ProjectMgr, p.AuditLog,
 		p.Instance, p.VmSnapshot, p.Disk, p.Bucket, p.Snapshot, p.BaaS, p.VPC, p.Subnet,
-		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.Metadata, p.Summary, p.Argo,
+		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.DBaaS, p.Metadata, p.Summary, p.Argo,
 	} {
 		if register == nil {
 			log.Debug().Msg("server: skipping nil public provider")

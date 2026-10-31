@@ -91,6 +91,11 @@ Every live organization picks the change up on the next API start.
 | ProjectKaaSWrite         | Create, modify, and delete a KaaS cluster                                    |
 | ProjectBaaSRead          | View the list and details of the project's BaaS backups                      |
 | ProjectBaaSWrite         | Create, modify, and delete a BaaS backup                                     |
+| ProjectBucketRead        | View the list and details of the project's object storage buckets            |
+| ProjectBucketCredentials | Retrieve the access credentials of a bucket                                  |
+| ProjectBucketWrite       | Create, modify, and delete a bucket                                          |
+| ProjectDBaaSRead         | View the list and details of the project's managed databases                 |
+| ProjectDBaaSWrite        | Create, modify, and delete a managed database                                |
 | ProjectArgoCdRead        | View the list and details of the project's Argo CD applications              |
 
 ## PermissionSets by Right
@@ -134,6 +139,11 @@ Every live organization picks the change up on the next API start.
 | ProjectKaaSReadOnly           | `ProjectKaaSRead`                                                                                  |
 | ProjectBaaSFullAccess         | `ProjectBaaSRead`, `ProjectBaaSWrite`                                                              |
 | ProjectBaaSReadOnly           | `ProjectBaaSRead`                                                                                  |
+| ProjectBucketFullAccess       | `ProjectBucketRead`, `ProjectBucketCredentials`, `ProjectBucketWrite`                              |
+| ProjectBucketCredentialsAccess | `ProjectBucketRead`, `ProjectBucketCredentials`                                                   |
+| ProjectBucketReadOnly         | `ProjectBucketRead`                                                                                |
+| ProjectDBaaSFullAccess        | `ProjectDBaaSRead`, `ProjectDBaaSWrite`                                                            |
+| ProjectDBaaSReadOnly          | `ProjectDBaaSRead`                                                                                 |
 | ProjectArgoCdAccess           | `ProjectArgoCdRead`                                                                                |
 
 ### Internal PermissionSets

@@ -1,0 +1,55 @@
+{{- range $localID, $db := .Values.databases }}
+{{- if and (eq $db.location $.Values.location) $db.externalAccess }}
+
+{{- $projectID := $.Values.projectID -}}
+{{- $defaults := $.Values.databaseDefaults -}}
+{{- $eipLocalID := printf "eip.%s" $localID }}
+{{- $eipID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $eipLocalID) }}
+{{- $natGwID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
+{{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
+
+---
+apiVersion: kubeovn.io/v1
+kind: IptablesEIP
+metadata:
+  name: {{ $eipID | quote }}
+  annotations:
+    ovn.kubernetes.io/bgp: "true"
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $eipID | quote }}
+    superphenix.net/resourceLocalID: {{ $eipLocalID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+    superphenix.net/generated: "true"
+spec:
+  # NAT gateway of the subnet the proxies attach to
+  natGwDp: {{ $natGwID | quote }}
+  externalSubnet: {{ required "Must provide the external subnet of the EIPs" $.Values.externalSubnet | quote }}
+
+{{- range $role := $roles }}
+{{- $port := get $defaults.proxy.ports $role }}
+{{- $dnatLocalID := printf "dnat.%s.%s" $role $localID }}
+{{- $dnatID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $dnatLocalID) }}
+
+---
+apiVersion: kubeovn.io/v1
+kind: IptablesDnatRule
+metadata:
+  name: {{ $dnatID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $dnatID | quote }}
+    superphenix.net/resourceLocalID: {{ $dnatLocalID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+    superphenix.net/generated: "true"
+spec:
+  # Same ports as the load balancer
+  eip: {{ $eipID | quote }}
+  externalPort: {{ $port | quote }}
+  internalPort: {{ $port | quote }}
+  internalIp: {{ required "Must provide a VIP for the load balancer" ($db.loadBalancer).vip | quote }}
+  protocol: "tcp"
+{{- end }}
+
+{{- end }}
+{{- end }}

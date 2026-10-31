@@ -37,6 +37,13 @@ type KubeVersionConfig struct {
 	Fqdn    *bool              `yaml:"fqdn"`
 }
 
+// PostgresVersionConfig is a supported PostgreSQL version with an optional
+// chart repo override. When Repo is set it fully replaces the default DBaaS repo.
+type PostgresVersionConfig struct {
+	Version string             `yaml:"version"`
+	Repo    *RepoArgoAppConfig `yaml:"repo,omitempty"`
+}
+
 // AzDomainConfig holds the URLs used in KaaS cluster configuration for one AZ.
 // Internal is the host the in-cluster kube-API proxy resolves to reach control
 // planes, including across AZs during disaster recovery. External is a URL
@@ -61,6 +68,20 @@ func (c *Config) KaasAzDomain(az string) (AzDomainConfig, bool) {
 // ResolveKubeVersionRepo returns the effective repo for version and whether the
 // version is supported. A version's own Repo fully replaces def.
 func ResolveKubeVersionRepo(versions []KubeVersionConfig, def RepoArgoAppConfig, version string) (RepoArgoAppConfig, bool) {
+	for _, v := range versions {
+		if v.Version == version {
+			if v.Repo != nil {
+				return *v.Repo, true
+			}
+			return def, true
+		}
+	}
+	return RepoArgoAppConfig{}, false
+}
+
+// ResolvePostgresVersionRepo returns the effective repo for version and whether
+// the version is supported. A version's own Repo fully replaces def.
+func ResolvePostgresVersionRepo(versions []PostgresVersionConfig, def RepoArgoAppConfig, version string) (RepoArgoAppConfig, bool) {
 	for _, v := range versions {
 		if v.Version == version {
 			if v.Repo != nil {
@@ -215,6 +236,11 @@ type Config struct {
 					MaxHour int `yaml:"maxHour"`
 				} `yaml:"schedule"`
 			} `yaml:"backup"`
+
+			DBaaS struct {
+				Repo             RepoArgoAppConfig       `yaml:"repo"`
+				PostgresVersions []PostgresVersionConfig `yaml:"postgresVersions,omitempty"`
+			} `yaml:"dbaas"`
 		} `yaml:"argoApp"`
 
 		DefaultVPC struct {
@@ -345,6 +371,15 @@ productsConfig:
       schedule:
         minHour: 20
         maxHour: 23
+    dbaas:
+      repo:
+        repoURL: "ghcr.io/super-phenix/charts"
+        chart: "sfs-dbaas"
+        targetRevision: "0.1.0"
+      postgresVersions:
+        - version: "18.4"
+        - version: "17.11"
+        - version: "16.15"
   defaultVpc:
     productName: "default"
   defaultSubnet:

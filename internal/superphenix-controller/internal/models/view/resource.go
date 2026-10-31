@@ -84,3 +84,9 @@ type BaaS struct {
 	Resource `json:",inline"`
 	Backup   BaasObject `json:"backup"`
 }
+
+type DBaaS struct {
+	Resource  `json:",inline"`
+	Cluster   PostgresClusterView `json:"cluster"`
+	Endpoints []DBaaSEndpoint     `json:"endpoints"`
+}

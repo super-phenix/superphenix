@@ -88,10 +88,13 @@ entity project {
 	relation ProjectBucketCredentialsAccess @group#assignee
 	relation ProjectBucketReadOnly @group#assignee
 
+	relation ProjectDBaaSFullAccess @group#assignee
+	relation ProjectDBaaSReadOnly @group#assignee
+
 	relation ProjectArgoCdAccess @group#assignee
 
 
-    permission ProjectRead = ProjectInstanceRead or ProjectDiskRead or ProjectSnapshotRead or ProjectVPCRead or ProjectSubnetRead or ProjectEipRead or ProjectLoadBalancerRead or ProjectSecurityGroupRead or ProjectSSHRead or ProjectKaaSRead or ProjectBaaSRead or ProjectBucketRead or ProjectArgoCdRead
+    permission ProjectRead = ProjectInstanceRead or ProjectDiskRead or ProjectSnapshotRead or ProjectVPCRead or ProjectSubnetRead or ProjectEipRead or ProjectLoadBalancerRead or ProjectSecurityGroupRead or ProjectSSHRead or ProjectKaaSRead or ProjectBaaSRead or ProjectBucketRead or ProjectDBaaSRead or ProjectArgoCdRead
 
     permission ProjectInstanceRead = parent.spx_owner or ProjectInstanceReadOnly or ProjectInstanceFullAccess or ProjectInstanceTerminalAccess
     permission ProjectInstanceTerminal = parent.spx_owner or ProjectInstanceFullAccess or ProjectInstanceTerminalAccess
@@ -132,6 +135,9 @@ entity project {
     permission ProjectBucketRead = parent.spx_owner or ProjectBucketReadOnly or ProjectBucketFullAccess or ProjectBucketCredentialsAccess
     permission ProjectBucketCredentials = parent.spx_owner or ProjectBucketCredentialsAccess or ProjectBucketFullAccess
 	permission ProjectBucketWrite = parent.spx_owner or ProjectBucketFullAccess
+
+    permission ProjectDBaaSRead = parent.spx_owner or ProjectDBaaSReadOnly or ProjectDBaaSFullAccess
+	permission ProjectDBaaSWrite = parent.spx_owner or ProjectDBaaSFullAccess
 
     permission ProjectArgoCdRead = parent.spx_owner or ProjectArgoCdAccess
 
