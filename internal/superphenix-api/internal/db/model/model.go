@@ -170,8 +170,8 @@ type Quota struct {
 type QuotaOverride struct {
 	ID string `gorm:"primaryKey;not null;"`
 	TracingModel
-	EntityId   uuid.UUID `gorm:"type:uuid;not null"`
-	EntityType string    `gorm:"not null"`
+	EntityId   uuid.UUID `gorm:"primaryKey;type:uuid;not null"`
+	EntityType string    `gorm:"primaryKey;not null"`
 	Value      string    `gorm:"not null"`
 }
 
