@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/authorization"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/quota"
@@ -30,7 +31,8 @@ import (
 const recentProductLimit = 5
 
 // ProjectSummaryResponse is the resource overview of a project.
-// Product types the caller may not read are absent from Counts, CountsByAZ and Recent, and
+// Product types the caller may not read, and AZs the organization may not use, are absent from
+// Counts, CountsByAZ and Recent, and
 // ResourceLimit (the limits of the project quota) is absent without ProjectAZQuotaRead.
 type ProjectSummaryResponse struct {
 	Counts        map[string]int64     `json:"counts"`
@@ -75,7 +77,7 @@ type RecentProduct struct {
 //	@Security		Bearer[OrganizationRead, ProjectRead]
 func (h *Service) GetProjectSummary(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
-	_, project, code, errMsg := ctrlutils.CheckListPathParams(r)
+	orga, project, code, errMsg := ctrlutils.CheckListPathParams(r)
 	if code != 0 {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
@@ -88,7 +90,12 @@ func (h *Service) GetProjectSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summary, err := buildSummary(project.ID, readableTypes, readQuota)
+	var azCodes []string
+	for _, azCfg := range az.FindAll(orga.ID.String()) {
+		azCodes = append(azCodes, azCfg.Code)
+	}
+
+	summary, err := buildSummary(project.ID, readableTypes, azCodes, readQuota)
 	if err != nil {
 		log.Err(err).Str("projectId", project.ID.String()).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
@@ -149,13 +156,13 @@ func filterReadable(granted map[string]bool) []string {
 	return types
 }
 
-func buildSummary(projectId uuid.UUID, readableTypes []string, readQuota bool) (ProjectSummaryResponse, error) {
-	counts, err := product.CountByTypeForProject(projectId, readableTypes)
+func buildSummary(projectId uuid.UUID, readableTypes, azCodes []string, readQuota bool) (ProjectSummaryResponse, error) {
+	counts, err := product.CountByTypeForProject(projectId, readableTypes, azCodes)
 	if err != nil {
 		return ProjectSummaryResponse{}, err
 	}
 
-	countsByAZ, err := product.CountByAZForProject(projectId, readableTypes)
+	countsByAZ, err := product.CountByAZForProject(projectId, readableTypes, azCodes)
 	if err != nil {
 		return ProjectSummaryResponse{}, err
 	}
@@ -165,7 +172,7 @@ func buildSummary(projectId uuid.UUID, readableTypes []string, readQuota bool) (
 		return ProjectSummaryResponse{}, err
 	}
 
-	recent, err := buildRecent(projectId, readableTypes)
+	recent, err := buildRecent(projectId, readableTypes, azCodes)
 	if err != nil {
 		return ProjectSummaryResponse{}, err
 	}
@@ -209,8 +216,8 @@ func buildQuota(projectId uuid.UUID) (ProjectQuota, error) {
 	return ProjectQuota{Used: used, Limit: limit}, nil
 }
 
-func buildRecent(projectId uuid.UUID, readableTypes []string) ([]RecentProduct, error) {
-	products, err := product.FindLastCreatedByProject(projectId, readableTypes, recentProductLimit)
+func buildRecent(projectId uuid.UUID, readableTypes, azCodes []string) ([]RecentProduct, error) {
+	products, err := product.FindLastCreatedByProject(projectId, readableTypes, azCodes, recentProductLimit)
 	if err != nil {
 		return nil, err
 	}
