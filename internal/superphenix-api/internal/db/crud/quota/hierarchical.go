@@ -498,8 +498,35 @@ func SetProjectAZQuota(ctx context.Context, organizationId, projectId uuid.UUID,
 
 // DeleteOrganizationQuota removes an organization quota (platform administrators only).
 // The project quotas are kept and keep being enforced.
+//
+// The row is hard-deleted, so its revision leaves the effective revision of every project of
+// the organization (see Hierarchy.Revision), which would then be older than what the AZ
+// controllers already enforce: they would take the push following the deletion for a stale one
+// and keep the quota of the deleted organization quota. The quotas left behind are therefore
+// given a new revision, under the organization lock like any other quota write.
 func DeleteOrganizationQuota(ctx context.Context, organizationId uuid.UUID) error {
-	return db.Client.WithContext(ctx).Unscoped().Where("organization_id = ?", organizationId).Delete(&model.OrganizationQuota{}).Error
+	return inOrganizationTransaction(ctx, organizationId, func(transaction *gorm.DB) error {
+		err := transaction.Unscoped().Where("organization_id = ?", organizationId).Delete(&model.OrganizationQuota{}).Error
+		if err != nil {
+			return err
+		}
+		return bumpOrganizationRevisions(transaction, organizationId)
+	})
+}
+
+// bumpOrganizationRevisions gives a new revision to the project and AZ quotas of the
+// organization, so that what is pushed next is newer than what the AZ controllers store.
+func bumpOrganizationRevisions(transaction *gorm.DB, organizationId uuid.UUID) error {
+	newRevision := gorm.Expr("nextval('quota_revisions_seq')")
+	err := transaction.Model(&model.ProjectAZQuota{}).
+		Where("project_id IN (?)", liveProjectIds(transaction, organizationId)).
+		Update("revision", newRevision).Error
+	if err != nil {
+		return err
+	}
+	return transaction.Model(&model.ProjectQuota{}).
+		Where("organization_id = ?", organizationId).
+		Update("revision", newRevision).Error
 }
 
 // DeleteProjectQuota removes the quota of a project of the organization and its AZ quotas.

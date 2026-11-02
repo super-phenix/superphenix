@@ -32,6 +32,8 @@ var (
 	sqlUpsertOQ     = regexp.QuoteMeta(`INSERT INTO "organization_quotas"`) + `.*ON CONFLICT \("organization_id"\) DO UPDATE SET "resources"="excluded"."resources"`
 	sqlUpsertPQ     = regexp.QuoteMeta(`INSERT INTO "project_quotas"`) + `.*ON CONFLICT \("project_id"\) DO UPDATE SET "organization_id"="excluded"."organization_id","resources"="excluded"."resources"`
 	sqlUpsertAZQ    = regexp.QuoteMeta(`INSERT INTO "project_az_quotas"`) + `.*ON CONFLICT \("project_id","code_az"\) DO UPDATE SET "resources"="excluded"."resources"`
+	sqlBumpAZQs     = regexp.QuoteMeta(`UPDATE "project_az_quotas" SET "revision"=nextval('quota_revisions_seq')`)
+	sqlBumpPQs      = regexp.QuoteMeta(`UPDATE "project_quotas" SET "revision"=nextval('quota_revisions_seq')`)
 )
 
 // ---------------------------------------------------------------------------------------------
@@ -185,20 +187,24 @@ func expectProjectIds(mock sqlmock.Sqlmock, organizationID uuid.UUID, projectIDs
 	mock.ExpectQuery(sqlProjectIds).WithArgs(organizationID).WillReturnRows(result)
 }
 
+// The upserts never send the revision: the column is left to its default, the next value of
+// quota_revisions_seq, which the database returns (see model.OrganizationQuota).
+
 func expectUpsertOrganizationQuota(mock sqlmock.Sqlmock) {
-	mock.ExpectExec(sqlUpsertOQ).WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectQuery(sqlUpsertOQ).
+		WillReturnRows(sqlmock.NewRows([]string{"revision"}).AddRow(int64(40)))
 }
 
 func expectUpsertPQ(mock sqlmock.Sqlmock, organizationID, projectID uuid.UUID, resources string) {
-	mock.ExpectExec(sqlUpsertPQ).
-		WithArgs(projectID, organizationID, sqlmock.AnyArg(), sqlmock.AnyArg(), nil, sqlmock.AnyArg(), resources).
-		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectQuery(sqlUpsertPQ).
+		WithArgs(projectID, organizationID, sqlmock.AnyArg(), sqlmock.AnyArg(), nil, resources).
+		WillReturnRows(sqlmock.NewRows([]string{"revision"}).AddRow(int64(41)))
 }
 
 func expectUpsertAZQ(mock sqlmock.Sqlmock, projectID uuid.UUID, codeAZ, resources string) {
 	mock.ExpectQuery(sqlUpsertAZQ).
-		WithArgs(projectID, codeAZ, sqlmock.AnyArg(), sqlmock.AnyArg(), nil, sqlmock.AnyArg(), resources).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(uuid.New()))
+		WithArgs(projectID, codeAZ, sqlmock.AnyArg(), sqlmock.AnyArg(), nil, resources).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "revision"}).AddRow(uuid.New(), int64(42)))
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -869,6 +875,83 @@ func TestSetProjectAZQuota(t *testing.T) {
 			_, err := SetProjectAZQuota(context.Background(), organizationID, projectID, code, model.QuotaResources{"cpu": "1"})
 			require.ErrorIs(t, err, ErrAZNotFound)
 		}
+	})
+}
+
+// ---------------------------------------------------------------------------------------------
+// Revisions
+// ---------------------------------------------------------------------------------------------
+
+func TestHierarchyRevision(t *testing.T) {
+	organizationID, projectID := uuid.New(), uuid.New()
+	mock := setupMockDB(t)
+
+	mock.ExpectQuery(sqlOrgQuota).WithArgs(organizationID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"organization_id", "revision", "resources"}).
+			AddRow(organizationID, int64(40), `{"cpu":"16"}`))
+	mock.ExpectQuery(sqlProjectQuota).WithArgs(projectID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"project_id", "organization_id", "revision", "resources"}).
+			AddRow(projectID, organizationID, int64(35), `{"cpu":"8"}`))
+	mock.ExpectQuery(sqlProjectAZs).WithArgs(projectID).
+		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az", "revision", "resources"}).
+			AddRow(projectID, "az-1", int64(38), `{"cpu":"4"}`).
+			AddRow(projectID, "az-2", int64(12), `{"cpu":"4"}`))
+
+	hierarchy, err := GetHierarchy(context.Background(), organizationID, projectID)
+	require.NoError(t, err)
+	// The revision pushed to an AZ is the newest of the three levels applying to it.
+	assert.Equal(t, int64(40), hierarchy.Revision("az-1"))
+	assert.Equal(t, int64(40), hierarchy.Revision("az-2"))
+	assert.Equal(t, int64(40), hierarchy.Revision("az-unknown"))
+}
+
+func TestUpsertLeavesTheRevisionToTheSequence(t *testing.T) {
+	organizationID, projectID := uuid.New(), uuid.New()
+	mock := setupMockDB(t)
+
+	// No revision among the inserted values: the column keeps its default, nextval, and the
+	// value the database picked comes back (RETURNING "revision").
+	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "project_quotas" ("project_id","organization_id","created_at","updated_at","deleted_at","resources")`)).
+		WithArgs(projectID, organizationID, sqlmock.AnyArg(), sqlmock.AnyArg(), nil, `{"cpu":"8"}`).
+		WillReturnRows(sqlmock.NewRows([]string{"revision"}).AddRow(int64(44)))
+	mock.ExpectCommit()
+
+	saved, err := upsertProjectQuota(db.Client, organizationID, projectID, model.QuotaResources{"cpu": "8"})
+	require.NoError(t, err)
+	assert.Equal(t, int64(44), saved.Revision)
+}
+
+// ---------------------------------------------------------------------------------------------
+// DeleteOrganizationQuota
+// ---------------------------------------------------------------------------------------------
+
+func TestDeleteOrganizationQuota(t *testing.T) {
+	organizationID := uuid.New()
+
+	t.Run("bumps the revision of the quotas left behind", func(t *testing.T) {
+		mock := setupMockDB(t)
+
+		expectOrganizationTransaction(mock, organizationID)
+		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "organization_quotas" WHERE organization_id = $1`)).
+			WithArgs(organizationID).WillReturnResult(sqlmock.NewResult(0, 1))
+		// Without this, the quotas pushed after the deletion would carry a revision older than
+		// the one the AZ controllers store, and would be refused as stale.
+		mock.ExpectExec(sqlBumpAZQs).WillReturnResult(sqlmock.NewResult(0, 2))
+		mock.ExpectExec(sqlBumpPQs).WillReturnResult(sqlmock.NewResult(0, 1))
+		mock.ExpectCommit()
+
+		require.NoError(t, DeleteOrganizationQuota(context.Background(), organizationID))
+	})
+
+	t.Run("unknown organization", func(t *testing.T) {
+		mock := setupMockDB(t)
+
+		mock.ExpectBegin()
+		mock.ExpectQuery(sqlLockOrg).WithArgs(organizationID, 1).WillReturnError(gorm.ErrRecordNotFound)
+		mock.ExpectRollback()
+
+		require.ErrorIs(t, DeleteOrganizationQuota(context.Background(), organizationID), ErrOrganizationNotFound)
 	})
 }
 

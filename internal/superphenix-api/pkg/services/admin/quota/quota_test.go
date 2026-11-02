@@ -117,8 +117,16 @@ func fakeController(t *testing.T, status int) map[string]map[string]string {
 
 func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID) {
 	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "organizations"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "organization_quotas" WHERE organization_id = $1`)).
 		WithArgs(orgID).WillReturnResult(sqlmock.NewResult(0, 1))
+	// The quotas left behind get a new revision, so that what is pushed next is not taken for
+	// a stale push by the AZ controllers (see crudQuota.DeleteOrganizationQuota).
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quotas" SET "revision"=nextval('quota_revisions_seq')`)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_quotas" SET "revision"=nextval('quota_revisions_seq')`)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE orga_id = $1`)).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(projectID))

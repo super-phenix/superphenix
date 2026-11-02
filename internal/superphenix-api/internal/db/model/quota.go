@@ -11,11 +11,16 @@ type QuotaResources = quota.Resources
 
 // The quota models are returned as is by the API: Resources, the limits set at the level, is
 // exposed as `limit`, and the tracing timestamps are not exposed.
+//
+// Revision is the monotonic revision of the quota, read from the quota_revisions_seq sequence
+// on every write (see the default below, which GORM leaves the database apply as long as the
+// field is zero). It is sent to the AZ controllers, which refuse a push older than what they
+// already enforce; it is never set by hand.
 
 type OrganizationQuota struct {
 	OrganizationId uuid.UUID      `gorm:"primaryKey;type:uuid;not null" json:"organizationId"`
 	TracingModel   `json:"-"`
-	Revision       int64          `gorm:"not null" json:"-"`
+	Revision       int64          `gorm:"not null;default:nextval('quota_revisions_seq')" json:"-"`
 	Resources      QuotaResources `gorm:"serializer:json;not null" json:"limit"`
 }
 
@@ -25,7 +30,7 @@ type ProjectQuota struct {
 	ProjectId      uuid.UUID      `gorm:"primaryKey;type:uuid;not null" json:"projectId"`
 	OrganizationId uuid.UUID      `gorm:"type:uuid;not null;index" json:"organizationId"`
 	TracingModel   `json:"-"`
-	Revision       int64          `gorm:"not null" json:"-"`
+	Revision       int64          `gorm:"not null;default:nextval('quota_revisions_seq')" json:"-"`
 	Resources      QuotaResources `gorm:"serializer:json;not null" json:"limit"`
 }
 
@@ -36,7 +41,7 @@ type ProjectAZQuota struct {
 	ProjectId    uuid.UUID      `gorm:"type:uuid;not null;index:idx_proj_az,unique" json:"projectId"`
 	CodeAZ       string         `gorm:"not null;index:idx_proj_az,unique" json:"codeAZ"`
 	TracingModel `json:"-"`
-	Revision     int64          `gorm:"not null" json:"-"`
+	Revision     int64          `gorm:"not null;default:nextval('quota_revisions_seq')" json:"-"`
 	Resources    QuotaResources `gorm:"serializer:json;not null" json:"limit"`
 }
 
