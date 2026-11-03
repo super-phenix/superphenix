@@ -86,7 +86,7 @@ func toStrings(list v1.ResourceList) map[string]string {
 // setQuota
 //
 //	@Summary		Set the project quota
-//	@Description	Create or replace the ResourceQuota of the project in this AZ. An empty quota removes it. A limit cannot be lowered below what is currently used (409).
+//	@Description	Create or replace the ResourceQuota of the project in this AZ. An empty quota removes its limits. A limit cannot be lowered below what is currently used (409). A push older than the revision of the ResourceQuota is refused (412).
 //	@Tags			v1, Quota
 //	@Accept			json
 //	@Param			orgId		path	string		true	"Organization ID"
@@ -95,6 +95,7 @@ func toStrings(list v1.ResourceList) map[string]string {
 //	@Success		204
 //	@Failure		400
 //	@Failure		409
+//	@Failure		412	"A newer quota revision is enforced, nothing changed"
 //	@Failure		500
 //	@Router			/{orgId}/{projectId}/quota [put]
 func setQuota(w http.ResponseWriter, r *http.Request) {
@@ -115,12 +116,17 @@ func setQuota(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(hard) == 0 {
-		err = quota.Delete(r.Context(), projectId, body.Revision)
+		err = quota.Delete(r.Context(), orgId, projectId, body.Revision)
 	} else {
 		err = quota.Apply(r.Context(), orgId, projectId, hard, body.Revision)
 	}
 	if errors.Is(err, quota.ErrBelowUsage) {
 		httpError.Http(w, r, http.StatusConflict).Msg(err.Error())
+		return
+	}
+	if errors.Is(err, quota.ErrStale) {
+		log.Info().Err(err).Str("projectId", projectId).Msg("stale project quota push refused")
+		httpError.Http(w, r, http.StatusPreconditionFailed).Msg(err.Error())
 		return
 	}
 	if err != nil {

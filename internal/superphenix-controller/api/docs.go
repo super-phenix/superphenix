@@ -3217,7 +3217,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Create or replace the ResourceQuota of the project in this AZ. An empty quota removes it. A limit cannot be lowered below what is currently used (409).",
+                "description": "Create or replace the ResourceQuota of the project in this AZ. An empty quota removes its limits. A limit cannot be lowered below what is currently used (409). A push older than the revision of the ResourceQuota is refused (412).",
                 "consumes": [
                     "application/json"
                 ],
@@ -3260,6 +3260,9 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict"
+                    },
+                    "412": {
+                        "description": "A newer quota revision is enforced, nothing changed"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -5376,6 +5379,10 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "revision": {
+                    "description": "Revision is the monotonic revision of the quota in the Superphenix database.",
+                    "type": "integer"
                 }
             }
         },
