@@ -5,7 +5,6 @@ import (
 	"database/sql/driver"
 	"errors"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -19,26 +18,29 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 )
 
-// numbered returns the query as sent by GORM to Postgres: every `?` becomes $1, $2...
-func numbered(query string) string {
-	var builder strings.Builder
-	position := 0
-	for _, character := range query {
-		if character == '?' {
-			position++
-			builder.WriteString("$" + strconv.Itoa(position))
-			continue
-		}
-		builder.WriteRune(character)
-	}
-	return builder.String()
-}
-
 var (
-	sqlLockState   = regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id = $1 AND code_az = $2 AND lease_token = $3 LIMIT $4 FOR UPDATE`)
-	sqlDeleteOrgSt = regexp.QuoteMeta(`DELETE FROM "project_az_quota_states" WHERE organization_id = $1`)
-	sqlAllProjects = regexp.QuoteMeta(`SELECT "id","orga_id" FROM "projects" WHERE "projects"."deleted_at" IS NULL ORDER BY orga_id,id`)
+	sqlLockState    = regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id = $1 AND code_az = $2 AND lease_token = $3 LIMIT $4 FOR UPDATE`)
+	sqlDeleteOrgSt  = regexp.QuoteMeta(`DELETE FROM "project_az_quota_states" WHERE organization_id = $1`)
+	sqlAllProjects  = regexp.QuoteMeta(`SELECT "id","orga_id" FROM "projects" WHERE "projects"."deleted_at" IS NULL ORDER BY orga_id,id`)
+	sqlPrepareState = regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "held"=$1,"prepared_revision"=$2 ` +
+		`WHERE project_id = $3 AND code_az = $4`)
+	sqlPostponeState = regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "due_at"=now() + make_interval(secs => $1),` +
+		`"last_error"=$2,"lease_token"=$3 WHERE project_id = $4 AND code_az = $5`)
+	sqlRecordApplied = regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "applied_revision"=$1,"attempts"=$2,` +
+		`"due_at"=CASE WHEN wanted_revision > $3 THEN now() ELSE now() + make_interval(secs => $4) END,` +
+		`"held"=$5,"last_error"=$6,"lease_token"=$7 WHERE project_id = $8 AND code_az = $9 AND prepared_revision = $10`)
+	sqlRecordFailed = regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "attempts"=attempts + 1,` +
+		`"due_at"=CASE WHEN wanted_revision > $1 THEN now() ` +
+		`ELSE now() + make_interval(secs => LEAST($2 * power(2, LEAST(attempts, 20)), $3)) END,` +
+		`"last_error"=$4,"lease_token"=$5 WHERE project_id = $6 AND code_az = $7 AND prepared_revision = $8`)
 )
+
+// leaseQuery matches the lease of the states selected by due, the end of the claim query from
+// its WHERE clause (see leaseStates).
+func leaseQuery(due string) string {
+	return regexp.QuoteMeta(`WITH due AS (SELECT "project_id","code_az" FROM "project_az_quota_states" WHERE ` + due +
+		`) UPDATE project_az_quota_states AS s SET lease_token = `)
+}
 
 // keyRows returns the rows of the state keys returned by a claim.
 func keyRows(keys ...StateKey) *sqlmock.Rows {
@@ -54,8 +56,7 @@ func TestClaim(t *testing.T) {
 
 	t.Run("claims the states due in the given AZs", func(t *testing.T) {
 		mock := setupMockDB(t)
-		query := strings.Replace(sqlClaim, "code_az IN ?", "code_az IN (?,?)", 1)
-		mock.ExpectQuery(regexp.QuoteMeta(numbered(query))).
+		mock.ExpectQuery(leaseQuery(`due_at <= now() AND code_az IN ($1,$2) ORDER BY due_at LIMIT $3 FOR UPDATE SKIP LOCKED`)).
 			WithArgs("az-1", "az-2", 10, token, time.Minute.Seconds()).WillReturnRows(keyRows(key))
 
 		keys, err := Claim(context.Background(), token, []string{"az-1", "az-2"}, 10, time.Minute)
@@ -78,15 +79,18 @@ func TestClaimDirty(t *testing.T) {
 		azs       []string
 		projectID *uuid.UUID
 		codeAZ    string
-		// condition and args are those of the claim, none when no state can be claimed.
-		condition string
-		args      []driver.Value
+		// where and args are those of the claim, none when no state can be claimed.
+		where string
+		args  []driver.Value
 	}{
-		{"organization, in its AZs only", []string{"az-2", "az-1"}, nil, "", "organization_id = ? AND code_az IN (?,?)",
+		{"organization, in its AZs only", []string{"az-2", "az-1"}, nil, "",
+			"organization_id = $1 AND code_az IN ($2,$3) AND wanted_revision > applied_revision",
 			[]driver.Value{organizationID, "az-1", "az-2"}},
-		{"project", []string{"az-1"}, &projectID, "", "organization_id = ? AND code_az IN (?) AND project_id = ?",
+		{"project", []string{"az-1"}, &projectID, "",
+			"(organization_id = $1 AND code_az IN ($2) AND wanted_revision > applied_revision) AND project_id = $3",
 			[]driver.Value{organizationID, "az-1", projectID}},
-		{"project in one AZ", []string{"az-1", "az-2"}, &projectID, "az-2", "organization_id = ? AND code_az IN (?) AND project_id = ?",
+		{"project in one AZ", []string{"az-1", "az-2"}, &projectID, "az-2",
+			"(organization_id = $1 AND code_az IN ($2) AND wanted_revision > applied_revision) AND project_id = $3",
 			[]driver.Value{organizationID, "az-2", projectID}},
 		{"AZ the organization no longer has", []string{"az-1"}, &projectID, "az-old", "", nil},
 		{"organization without AZ", nil, nil, "", "", nil},
@@ -97,10 +101,10 @@ func TestClaimDirty(t *testing.T) {
 			mock := setupMockDB(t)
 			key := StateKey{OrganizationId: organizationID, ProjectId: projectID, CodeAZ: "az-1"}
 			var expected []StateKey
-			if tt.condition != "" {
-				query := strings.Replace(sqlClaimDirty, "%s", tt.condition, 1)
+			if tt.where != "" {
+				query := leaseQuery(tt.where + ` ORDER BY project_id, code_az COLLATE "C" FOR UPDATE`)
 				args := append(append([]driver.Value{}, tt.args...), token, time.Minute.Seconds())
-				mock.ExpectQuery(regexp.QuoteMeta(numbered(query))).WithArgs(args...).WillReturnRows(keyRows(key))
+				mock.ExpectQuery(query).WithArgs(args...).WillReturnRows(keyRows(key))
 				expected = []StateKey{key}
 			}
 
@@ -154,7 +158,7 @@ func TestPrepare(t *testing.T) {
 		expectOrganizationHierarchies(mock, organizationID, `{"cpu":"64"}`, []uuid.UUID{projectID},
 			[][2]any{{projectID, `{"cpu":"32"}`}}, [][3]any{{projectID, "az-1", `{"cpu":"8"}`}}, state)
 		expectLockState(mock, token, key, &state)
-		mock.ExpectExec(regexp.QuoteMeta(numbered(sqlPrepare))).
+		mock.ExpectExec(sqlPrepareState).
 			WithArgs(`{"cpu":"16","memory":"1Gi"}`, revision, projectID, "az-1").WillReturnResult(sqlmock.NewResult(0, 1))
 		mock.ExpectCommit()
 
@@ -175,7 +179,7 @@ func TestPrepare(t *testing.T) {
 		expectPrepareStart(mock)
 		expectOrganizationHierarchies(mock, organizationID, `{"cpu":"64"}`, []uuid.UUID{projectID}, nil, nil, state)
 		expectLockState(mock, token, key, &state)
-		mock.ExpectExec(regexp.QuoteMeta(numbered(sqlPrepare))).WithArgs(`{}`, revision, projectID, "az-1").
+		mock.ExpectExec(sqlPrepareState).WithArgs(`{}`, revision, projectID, "az-1").
 			WillReturnResult(sqlmock.NewResult(0, 1))
 		mock.ExpectCommit()
 
@@ -221,8 +225,8 @@ func TestPrepare(t *testing.T) {
 		expectPrepareStart(mock)
 		expectOrganizationHierarchies(mock, organizationID, "", []uuid.UUID{projectID}, nil, nil, state)
 		expectLockState(mock, token, key, &state)
-		mock.ExpectExec(regexp.QuoteMeta(numbered(sqlPostpone))).
-			WithArgs("availability zone not available to the organization", retryAfter.Seconds(), projectID, "az-1").
+		mock.ExpectExec(sqlPostponeState).
+			WithArgs(retryAfter.Seconds(), "availability zone not available to the organization", nil, projectID, "az-1").
 			WillReturnResult(sqlmock.NewResult(0, 1))
 		mock.ExpectCommit()
 
@@ -285,18 +289,18 @@ func TestRecord(t *testing.T) {
 		args    []driver.Value
 	}{
 		{"applied: the AZ quota becomes the held quota", push, nil, sqlRecordApplied,
-			[]driver.Value{`{"cpu":"8"}`, revision, revision, resync.Seconds(), projectID, "az-1", revision}},
+			[]driver.Value{revision, 0, revision, resync.Seconds(), `{"cpu":"8"}`, nil, nil, projectID, "az-1", revision}},
 		{"applied without AZ quota: nothing held", Push{StateKey: push.StateKey, Revision: revision}, nil, sqlRecordApplied,
-			[]driver.Value{`{}`, revision, revision, resync.Seconds(), projectID, "az-1", revision}},
+			[]driver.Value{revision, 0, revision, resync.Seconds(), `{}`, nil, nil, projectID, "az-1", revision}},
 		{"failed: the error is recorded", push, errors.New("controller answered 500"), sqlRecordFailed,
-			[]driver.Value{"controller answered 500", revision, backoff.Seconds(), maxBackoff.Seconds(), projectID, "az-1", revision}},
+			[]driver.Value{revision, backoff.Seconds(), maxBackoff.Seconds(), "controller answered 500", nil, projectID, "az-1", revision}},
 		{"failed with a long error: truncated", push, errors.New(strings.Repeat("x", 2*maxErrorLength)), sqlRecordFailed,
-			[]driver.Value{strings.Repeat("x", maxErrorLength), revision, backoff.Seconds(), maxBackoff.Seconds(), projectID, "az-1", revision}},
+			[]driver.Value{revision, backoff.Seconds(), maxBackoff.Seconds(), strings.Repeat("x", maxErrorLength), nil, projectID, "az-1", revision}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := setupMockDB(t)
-			mock.ExpectExec(regexp.QuoteMeta(numbered(tt.query))).WithArgs(tt.args...).WillReturnResult(sqlmock.NewResult(0, 1))
+			mock.ExpectExec(tt.query).WithArgs(tt.args...).WillReturnResult(sqlmock.NewResult(0, 1))
 
 			require.NoError(t, Record(context.Background(), tt.push, tt.pushErr, resync, backoff, maxBackoff))
 		})

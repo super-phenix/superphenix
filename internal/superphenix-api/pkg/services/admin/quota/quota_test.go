@@ -138,7 +138,7 @@ func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, appli
 		WillReturnRows(sqlmock.NewRows([]string{"due_at"}).AddRow(time.Now()))
 	mock.ExpectCommit()
 
-	mock.ExpectQuery(regexp.QuoteMeta(`WITH due AS (SELECT project_id, code_az FROM project_az_quota_states WHERE organization_id = $1 AND`)).
+	mock.ExpectQuery(regexp.QuoteMeta(`WITH due AS (SELECT "project_id","code_az" FROM "project_az_quota_states" WHERE organization_id = $1 AND`)).
 		WithArgs(orgID, "az1", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnRows(sqlmock.NewRows([]string{"organization_id", "project_id", "code_az"}).AddRow(orgID, projectID, "az1"))
 
@@ -161,17 +161,17 @@ func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, appli
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id = $1 AND code_az = $2 AND lease_token = $3`)).
 		WillReturnRows(stateRows())
 	// The AZ quota pushed is held until the AZ applies it.
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE project_az_quota_states SET held = $1, prepared_revision = $2`)).
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "held"=$1,"prepared_revision"=$2`)).
 		WithArgs(`{"cpu":"2"}`, int64(42), projectID, "az1").WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
 	if !applied {
-		mock.ExpectExec(regexp.QuoteMeta(`UPDATE project_az_quota_states SET attempts = attempts + 1`)).
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "attempts"=attempts + 1`)).
 			WillReturnResult(sqlmock.NewResult(0, 1))
 		return
 	}
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE project_az_quota_states SET held = $1, applied_revision = $2`)).
-		WithArgs(`{"cpu":"2"}`, int64(42), int64(42), sqlmock.AnyArg(), projectID, "az1", int64(42)).
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "applied_revision"=$1`)).
+		WithArgs(int64(42), 0, int64(42), sqlmock.AnyArg(), `{"cpu":"2"}`, nil, nil, projectID, "az1", int64(42)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	// Applied: a project deactivated because its quota was not applied would be reactivated.
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_deactivations"`)).

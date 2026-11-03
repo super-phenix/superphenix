@@ -27,7 +27,7 @@ var (
 	sqlLockOrg       = regexp.QuoteMeta(`SELECT "id" FROM "organizations" WHERE id = $1 AND "organizations"."deleted_at" IS NULL LIMIT $2 FOR UPDATE`)
 	sqlCheckProject  = regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE (id = $1 AND orga_id = $2)`)
 	sqlMarkDirty     = regexp.QuoteMeta(`INSERT INTO "project_az_quota_states"`)
-	sqlClaimDirty    = regexp.QuoteMeta(`WITH due AS (SELECT project_id, code_az FROM project_az_quota_states WHERE organization_id = $1`)
+	sqlClaimDirty    = regexp.QuoteMeta(`WITH due AS (SELECT "project_id","code_az" FROM "project_az_quota_states" WHERE (organization_id = $1`)
 	sqlDeactivate    = regexp.QuoteMeta(`INSERT INTO "project_deactivations"`) + `.*ON CONFLICT \("project_id","reason"\) DO UPDATE`
 	sqlDeactivations = regexp.QuoteMeta(`SELECT * FROM "project_deactivations"`)
 	sqlReactivate    = regexp.QuoteMeta(`DELETE FROM "project_deactivations" WHERE project_id = $1 AND reason = $2`)
