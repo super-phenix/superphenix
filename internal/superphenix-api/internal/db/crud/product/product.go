@@ -100,15 +100,15 @@ func IsQuotaCreationReached(ctx context.Context, projectId uuid.UUID) (bool, err
 	return count >= limit, nil
 }
 
-// CountByTypeForProject counts the project's products per product type. Requested types with no
-// product are returned with a zero count.
-func CountByTypeForProject(projectId uuid.UUID, productTypes []string) (map[string]int64, error) {
+// CountByTypeForProject counts the project's products of the given AZs per product type. Requested
+// types with no product are returned with a zero count.
+func CountByTypeForProject(projectId uuid.UUID, productTypes, azCodes []string) (map[string]int64, error) {
 	counts := make(map[string]int64, len(productTypes))
 	for _, productType := range productTypes {
 		counts[productType] = 0
 	}
 
-	if len(productTypes) == 0 {
+	if len(productTypes) == 0 || len(azCodes) == 0 {
 		return counts, nil
 	}
 
@@ -118,7 +118,7 @@ func CountByTypeForProject(projectId uuid.UUID, productTypes []string) (map[stri
 	}
 	res := db.Client.Model(&model.Product{}).
 		Select("product_type_id, count(*) as count").
-		Where("project_id = ? AND product_type_id IN ?", projectId, productTypes).
+		Where("project_id = ? AND product_type_id IN ? AND code_az IN ?", projectId, productTypes, azCodes).
 		Group("product_type_id").
 		Scan(&rows)
 	if res.Error != nil {
@@ -132,11 +132,11 @@ func CountByTypeForProject(projectId uuid.UUID, productTypes []string) (map[stri
 	return counts, nil
 }
 
-// CountByAZForProject counts the project's products of the given types per AZ. AZs without any
-// product are absent.
-func CountByAZForProject(projectId uuid.UUID, productTypes []string) (map[string]int64, error) {
+// CountByAZForProject counts the project's products of the given types per AZ, among the given AZs.
+// AZs without any product are absent.
+func CountByAZForProject(projectId uuid.UUID, productTypes, azCodes []string) (map[string]int64, error) {
 	counts := make(map[string]int64)
-	if len(productTypes) == 0 {
+	if len(productTypes) == 0 || len(azCodes) == 0 {
 		return counts, nil
 	}
 
@@ -146,7 +146,7 @@ func CountByAZForProject(projectId uuid.UUID, productTypes []string) (map[string
 	}
 	res := db.Client.Model(&model.Product{}).
 		Select("code_az, count(*) as count").
-		Where("project_id = ? AND product_type_id IN ?", projectId, productTypes).
+		Where("project_id = ? AND product_type_id IN ? AND code_az IN ?", projectId, productTypes, azCodes).
 		Group("code_az").
 		Scan(&rows)
 	if res.Error != nil {
@@ -167,15 +167,16 @@ func CountForProject(projectId uuid.UUID) (int64, error) {
 	return count, res.Error
 }
 
-// FindLastCreatedByProject returns the project's most recent products of the given types, newest first.
-func FindLastCreatedByProject(projectId uuid.UUID, productTypes []string, limit int) ([]model.Product, error) {
+// FindLastCreatedByProject returns the project's most recent products of the given types and AZs,
+// newest first.
+func FindLastCreatedByProject(projectId uuid.UUID, productTypes, azCodes []string, limit int) ([]model.Product, error) {
 	products := make([]model.Product, 0, limit)
-	if len(productTypes) == 0 || limit <= 0 {
+	if len(productTypes) == 0 || len(azCodes) == 0 || limit <= 0 {
 		return products, nil
 	}
 
 	res := db.Client.Model(&model.Product{}).
-		Where("project_id = ? AND product_type_id IN ?", projectId, productTypes).
+		Where("project_id = ? AND product_type_id IN ? AND code_az IN ?", projectId, productTypes, azCodes).
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&products)
