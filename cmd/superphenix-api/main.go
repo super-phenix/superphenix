@@ -31,6 +31,7 @@ func main() {
 	spxId.SetFrameworkPrefix(config.Global.SpxPrefix)
 	app.StartGarbageCollection(ctx, &config.Global)
 	app.StartAuditLogGC(ctx, &config.Global)
+	app.StartQuotaResync(ctx, &config.Global)
 
 	api.StartAPI()
 }

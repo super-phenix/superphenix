@@ -22,6 +22,7 @@ const (
 
 const (
 	SpxAnnotationAllowedProjects = "superphenix.net/allowedProjects"
+	SpxAnnotationQuotaRevision   = "superphenix.net/quotaRevision"
 )
 
 var (

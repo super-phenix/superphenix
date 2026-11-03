@@ -37,7 +37,7 @@ func TestPredefinedGroupsCatalog(t *testing.T) {
 			name:         "developer",
 			key:          PredefinedGroupDeveloper,
 			wantName:     DefaultGroupDeveloperName,
-			wantContains: []string{permissionSet.ProjectManagement, permissionSet.ProjectInstanceFullAccess},
+			wantContains: []string{permissionSet.ProjectManagement, permissionSet.ProjectInstanceFullAccess, permissionSet.ProjectQuotaReadOnly, permissionSet.ProjectAZQuotaReadOnly},
 		},
 	}
 
