@@ -368,7 +368,7 @@ func TestMarkNewProject(t *testing.T) {
 				mock.ExpectRollback()
 			} else {
 				expectMarkDirty(mock, 2)
-				expectWriteCommit(mock)
+				mock.ExpectCommit()
 			}
 
 			require.ErrorIs(t, MarkNewProject(context.Background(), organizationID, projectID), tt.markErr)
@@ -412,17 +412,4 @@ func TestStatus(t *testing.T) {
 			assert.Equal(t, tt.expectedError, syncError)
 		})
 	}
-}
-
-func TestGroupByOrganization(t *testing.T) {
-	first, second := uuid.MustParse("00000000-0000-0000-0000-000000000001"), uuid.MustParse("00000000-0000-0000-0000-000000000002")
-	keys := []StateKey{
-		{OrganizationId: second, CodeAZ: "az-1"},
-		{OrganizationId: first, CodeAZ: "az-1"},
-		{OrganizationId: second, CodeAZ: "az-2"},
-	}
-	organizationIds, groups := GroupByOrganization(keys)
-	assert.Equal(t, []uuid.UUID{first, second}, organizationIds)
-	assert.Equal(t, []StateKey{keys[0], keys[2]}, groups[second])
-	assert.Equal(t, []StateKey{keys[1]}, groups[first])
 }

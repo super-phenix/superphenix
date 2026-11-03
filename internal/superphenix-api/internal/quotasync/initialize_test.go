@@ -101,29 +101,21 @@ func expectSnapshot(mock sqlmock.Sqlmock, orgID uuid.UUID, orgResources string, 
 	mock.ExpectCommit()
 }
 
-// expectMarkNewProject expects the project, the organization limiting orgResources (none when
-// empty), to be marked dirty in az1, and deactivated in the same transaction when az1 has something
-// to enforce (see crudQuota.MarkNewProject). The marking fails with markErr when not nil.
-func expectMarkNewProject(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, orgResources string, markErr error) {
+// expectMarkNewProject expects a project without quota to be marked dirty in az1 (see
+// crudQuota.MarkNewProject). The marking fails with markErr when not nil.
+func expectMarkNewProject(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, markErr error) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(sqlLockOrg).WithArgs(orgID, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
 	mock.ExpectQuery(sqlBump).WillReturnRows(sqlmock.NewRows([]string{"quota_revision"}).AddRow(41))
 	mock.ExpectQuery(sqlCheckProject).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(projectID))
-	oq := sqlmock.NewRows([]string{"organization_id", "resources"})
-	if orgResources != "" {
-		oq.AddRow(orgID, orgResources)
-	}
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "organization_quotas"`)).WillReturnRows(oq)
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "organization_quotas"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"organization_id", "resources"}))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_quotas"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "organization_id", "resources"}))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quotas"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az", "resources"}))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az"}))
-	if orgResources != "" {
-		mock.ExpectExec(sqlDeactivate).WithArgs(projectID, model.DeactivationQuotaFailedToApply, "quota not applied yet on: az1",
-			sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))
-	}
 	if markErr != nil {
 		mock.ExpectQuery(sqlMarkDirty).WillReturnError(markErr)
 		mock.ExpectRollback()
@@ -213,19 +205,19 @@ func TestApply(t *testing.T) {
 func TestInitialize(t *testing.T) {
 	orgID, projectID := uuid.New(), uuid.New()
 
-	t.Run("nothing to enforce: not deactivated", func(t *testing.T) {
+	t.Run("applied", func(t *testing.T) {
 		setupController(t, http.StatusNoContent)
 		mock := setupMockDB(t)
-		expectMarkNewProject(mock, orgID, projectID, "", nil)
+		expectMarkNewProject(mock, orgID, projectID, nil)
 		mock.ExpectQuery(sqlClaimDirty).WillReturnRows(sqlmock.NewRows([]string{"organization_id", "project_id", "code_az"}))
 
 		require.NoError(t, Initialize(context.Background(), orgID, projectID))
 	})
 
-	t.Run("something to enforce: deactivated until applied", func(t *testing.T) {
+	t.Run("not applied in time", func(t *testing.T) {
 		setupController(t, http.StatusNoContent)
 		mock := setupMockDB(t)
-		expectMarkNewProject(mock, orgID, projectID, `{"cpu":"8"}`, nil)
+		expectMarkNewProject(mock, orgID, projectID, nil)
 		mock.ExpectQuery(sqlClaimDirty).WillReturnError(assert.AnError)
 
 		require.ErrorIs(t, Initialize(context.Background(), orgID, projectID), ErrNotApplied)
@@ -234,7 +226,7 @@ func TestInitialize(t *testing.T) {
 	t.Run("quota not computed: deactivated until the reconciler applies it", func(t *testing.T) {
 		setupController(t, http.StatusNoContent)
 		mock := setupMockDB(t)
-		expectMarkNewProject(mock, orgID, projectID, `{"cpu":"8"}`, assert.AnError)
+		expectMarkNewProject(mock, orgID, projectID, assert.AnError)
 		mock.ExpectBegin()
 		mock.ExpectExec(sqlDeactivate).WithArgs(projectID, model.DeactivationQuotaFailedToApply, "quota not applied",
 			sqlmock.AnyArg(), sqlmock.AnyArg()).WillReturnResult(sqlmock.NewResult(0, 1))

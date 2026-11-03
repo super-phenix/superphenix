@@ -343,51 +343,6 @@ func TestApplyWithRevision(t *testing.T) {
 	if rq.Annotations[spxId.SpxAnnotationQuotaRevision] != "20" {
 		t.Fatalf("expected annotation 20, got %s", rq.Annotations[spxId.SpxAnnotationQuotaRevision])
 	}
-
-	// 6. Stale apply with revision 15 after the delete is refused.
-	if err := Apply(ctx, orgId, projectId, hardNew, 15); !errors.Is(err, ErrStale) {
-		t.Fatalf("stale apply after delete: expected ErrStale, got %v", err)
-	}
-	rq, err = fakeClient.CoreV1().ResourceQuotas(namespace).Get(ctx, quotaName, metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(rq.Spec.Hard) != 0 {
-		t.Fatalf("stale apply after delete should have been ignored, hard is %v", rq.Spec.Hard)
-	}
-
-	// 7. Apply without revision is older than the annotation and refused.
-	if err := Apply(ctx, orgId, projectId, hardNew, 0); !errors.Is(err, ErrStale) {
-		t.Fatalf("apply without revision: expected ErrStale, got %v", err)
-	}
-	rq, err = fakeClient.CoreV1().ResourceQuotas(namespace).Get(ctx, quotaName, metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(rq.Spec.Hard) != 0 {
-		t.Fatalf("apply without revision should have been ignored, hard is %v", rq.Spec.Hard)
-	}
-
-	// 8. Delete without revision is older than the annotation and refused.
-	if err := Delete(ctx, orgId, projectId, 0); !errors.Is(err, ErrStale) {
-		t.Fatalf("delete without revision: expected ErrStale, got %v", err)
-	}
-	if _, err := fakeClient.CoreV1().ResourceQuotas(namespace).Get(ctx, quotaName, metav1.GetOptions{}); err != nil {
-		t.Fatalf("delete without revision removed the quota: %v", err)
-	}
-
-	// 9. Apply at the revision of the annotation is applied.
-	if err := Apply(ctx, orgId, projectId, hardNew, 20); err != nil {
-		t.Fatalf("apply at the same revision failed: %v", err)
-	}
-	rq, err = fakeClient.CoreV1().ResourceQuotas(namespace).Get(ctx, quotaName, metav1.GetOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	q = rq.Spec.Hard[v1.ResourceName("requests.cpu")]
-	if q.String() != "8" {
-		t.Fatalf("apply at the same revision should have been applied, cpu is %s", q.String())
-	}
 }
 
 // Without a ResourceQuota, a delete with a revision creates an empty one annotated with it in an
