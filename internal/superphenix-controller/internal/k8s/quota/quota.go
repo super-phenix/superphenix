@@ -28,10 +28,10 @@ import (
 )
 
 var (
-	// ErrBelowUsage is returned when a limit would be lowered below what the project currently uses.
+	// ErrBelowUsage means a push lowers a limit below what the project uses.
 	ErrBelowUsage = errors.New("quota below what is currently used")
-	// ErrStale is returned when a push is older than the revision of the ResourceQuota. It is
-	// returned as a *StaleError, which holds the stored revision.
+	// ErrStale means a push is older than the revision of the ResourceQuota. Apply and Delete wrap
+	// it in a *StaleError.
 	ErrStale = errors.New("a newer quota revision is enforced")
 )
 
@@ -53,9 +53,8 @@ func (e *StaleError) Is(target error) bool {
 	return target == ErrStale
 }
 
-// conflictBackoff bounds the retries of a push whose ResourceQuota was updated concurrently, by
-// another push or by the quota admission updating `status.used`. Its worst case (about 2.5s) stays
-// well below the push timeout of the API.
+// conflictBackoff bounds the retries of a push when another push or the quota admission updates
+// the ResourceQuota at the same time, for about 2.5s at most.
 var conflictBackoff = wait.Backoff{Steps: 8, Duration: 10 * time.Millisecond, Factor: 2, Jitter: 0.2, Cap: time.Second}
 
 // GetName returns the name of the ResourceQuota of a project. It must stay identical to the
@@ -99,8 +98,8 @@ func IsGitops(rq *v1.ResourceQuota) bool {
 // Apply creates or replaces the ResourceQuota of the project with hard, creating the
 // project namespace if needed. Resources absent from hard are no longer limited.
 // A GitOps-managed ResourceQuota is skipped: it is left as is and no error is returned.
-// A push older than the revision annotation of the existing ResourceQuota is refused with
-// ErrStale (see checkRevision); the annotation is set when revision is not 0.
+// It refuses a push older than the revision annotation of the existing ResourceQuota with
+// ErrStale, and sets the annotation when revision is not 0.
 //
 // A limit that is lowered cannot go below its `status.used` (ErrBelowUsage), so that capacity
 // still in use is never freed in the API for another AZ or project. The check and the update
@@ -185,8 +184,8 @@ func setRevision(rq *v1.ResourceQuota, revision int64) {
 	rq.Annotations[spxId.SpxAnnotationQuotaRevision] = strconv.FormatInt(revision, 10)
 }
 
-// retryOnConflict runs fn again when the ResourceQuota was updated (Conflict) or created
-// (AlreadyExists) concurrently.
+// retryOnConflict runs fn again when another writer updated (Conflict) or created (AlreadyExists)
+// the ResourceQuota at the same time.
 func retryOnConflict(fn func() error) error {
 	return retry.OnError(conflictBackoff, func(err error) bool {
 		return apierrors.IsConflict(err) || apierrors.IsAlreadyExists(err)
@@ -239,8 +238,7 @@ func CheckNotBelowUsage(current *v1.ResourceQuota, hard v1.ResourceList) error {
 
 // Delete empties the `spec.hard` of the ResourceQuota of the project and keeps the object,
 // annotated with revision when it is not 0. When the project has no ResourceQuota, Delete creates
-// an empty one, so that checkRevision can refuse an older push later (see createEmpty). Delete
-// refuses a push older than the revision annotation with ErrStale (see checkRevision) and skips a
+// an empty one. Delete refuses a push older than the revision annotation with ErrStale and skips a
 // GitOps-managed ResourceQuota.
 func Delete(ctx context.Context, orgId, projectId string, revision int64) error {
 	return retryOnConflict(func() error {
@@ -276,9 +274,8 @@ func clearLimits(ctx context.Context, orgId, projectId string, revision int64) e
 	return err
 }
 
-// createEmpty creates an empty ResourceQuota annotated with revision, so that an older push is
-// refused later. Nothing is created when revision is 0, or when the project namespace is missing or
-// terminating: nothing runs there.
+// createEmpty creates an empty ResourceQuota annotated with revision. It creates nothing when
+// revision is 0 or when the project namespace is missing or terminating.
 func createEmpty(ctx context.Context, orgId, projectId string, revision int64) error {
 	if revision == 0 {
 		return nil

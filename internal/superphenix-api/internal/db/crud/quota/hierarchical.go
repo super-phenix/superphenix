@@ -2,9 +2,8 @@ package quota
 
 // Hierarchical quotas: an organization quota, split into project quotas, split into AZ quotas
 // (one per project and availability zone). Only the AZ quotas are enforced by Kubernetes: the
-// quotasync reconciler sends each AZ controller the effective quota of the project in that AZ (see
-// Hierarchy.AZ and state.go). The organization and project quotas only bound what their children
-// can be given.
+// quotasync reconciler sends each AZ controller the effective quota of the project in that AZ. The
+// organization and project quotas bound what their children can take.
 //
 // Vocabulary used in this file:
 //   - a level is the organization, a project or a project in one AZ;
@@ -12,16 +11,16 @@ package quota
 //     limits but its own quota does not (see spxQuota.Effective). A resource absent from an
 //     effective limit is not limited at all;
 //   - the allocation of a child is what it takes from its parent (see projectAllocations);
-//   - an AZ is allocated the highest of its AZ quota and of the quota it may still enforce (see
-//     azAllocation), so a lowered AZ quota only frees capacity once the AZ applies it;
+//   - an AZ takes the higher of its AZ quota and of the quota it may still enforce: a lowered AZ
+//     quota frees capacity once the AZ applies it;
 //   - every write runs under a row lock on the organization (see inOrganizationTransaction), so
 //     that two concurrent requests cannot both pass the same capacity check.
 //
 // The rules every write enforces:
 //   - a parent can never be set below what its children are allocated (checkNotBelow);
 //   - a child can never grow past what its parent has left (checkCapacity);
-//   - an AZ quota can never be lowered below what the project uses in the AZ (checkUsage, then the
-//     AZ controller when the quota is pushed).
+//   - an AZ quota can never go below what the project uses in the AZ (checkUsage, then the AZ
+//     controller on the push).
 
 import (
 	"context"
@@ -108,16 +107,16 @@ type ProjectQuotaOverview struct {
 type AZQuotaOverview struct {
 	CodeAZ string               `json:"codeAZ"`
 	Limit  model.QuotaResources `json:"limit,omitempty"`
-	// Status tells whether the AZ applied Limit: applied, pending, or error (see Error).
+	// Status tells whether the AZ applied Limit: applied, pending, or error.
 	Status string `json:"status" enums:"applied,pending,error"`
-	// Error is why the last push to the AZ failed, when Status is error.
+	// Error is the error of the last push to the AZ when Status is error.
 	Error string `json:"error,omitempty"`
 	// Available is false when the usage could not be read from the AZ: Used is then empty.
 	Available bool                 `json:"available"`
 	Used      model.QuotaResources `json:"used"`
 }
 
-// Sync statuses of the quota of a project in one AZ (see AZQuotaOverview).
+// Sync statuses of the quota of a project in one AZ.
 const (
 	StatusApplied = "applied"
 	StatusPending = "pending"
@@ -214,8 +213,8 @@ func GetProjectQuotaOverview(ctx context.Context, organizationId, projectId uuid
 }
 
 // azQuotaOverviews lists the effective quota of the project in every AZ of the organization,
-// plus the AZs the organization no longer has but that still hold a quota, sorted by code. Used is
-// left empty for the quotasync package to fill.
+// plus the AZs the organization no longer has but that still hold a quota, sorted by code. Used
+// stays empty for the quotasync package to fill.
 func azQuotaOverviews(organizationId uuid.UUID, hierarchy Hierarchy) []AZQuotaOverview {
 	codes := hierarchy.allocatedCodes()
 	for _, code := range azCodes(organizationId) {
@@ -266,11 +265,10 @@ func effectiveProjectQuotas(database *gorm.DB, organizationId uuid.UUID, organiz
 }
 
 // ---------------------------------------------------------------------------------------------
-// Hierarchy of a project (Prepare builds the pushes from it)
+// Hierarchy of a project
 // ---------------------------------------------------------------------------------------------
 
 // Hierarchy holds the quotas of a project and its sync states. A nil level has no quota.
-// Prepare turns it into the pushes that the AZ controllers enforce.
 type Hierarchy struct {
 	Organization model.QuotaResources
 	Project      model.QuotaResources
@@ -292,7 +290,7 @@ func (hierarchy Hierarchy) AZ(codeAZ string) model.QuotaResources {
 	return spxQuota.EffectiveAZQuota(hierarchy.Organization, hierarchy.Project, hierarchy.AZs[codeAZ])
 }
 
-// allocatedAZ returns what the project is allocated in the given AZ (see azAllocation).
+// allocatedAZ returns what the project is allocated in the given AZ.
 func (hierarchy Hierarchy) allocatedAZ(codeAZ string) (spxQuota.Quantities, error) {
 	return azAllocation(hierarchy.AZs[codeAZ], hierarchy.States[codeAZ].Held)
 }
@@ -310,9 +308,8 @@ func (hierarchy Hierarchy) allocatedCodes() []string {
 	return codes
 }
 
-// azAllocation returns what an AZ is allocated: per resource, the highest of its AZ quota and of
-// held, the quota the AZ may still enforce (see model.ProjectAZQuotaState). The capacity of a
-// lowered AZ quota is therefore only given to others once the AZ applies it.
+// azAllocation returns what an AZ takes: per resource, the higher of its AZ quota and of held, the
+// quota the AZ may still enforce.
 func azAllocation(desired, held model.QuotaResources) (spxQuota.Quantities, error) {
 	allocated, err := desired.Parse()
 	if err != nil || len(held) == 0 {
@@ -493,9 +490,9 @@ func SetProjectQuota(ctx context.Context, organizationId, projectId uuid.UUID, r
 // quota. The sum of the AZ quotas must fit in the effective project limit (see
 // checkAZFitsInProject).
 //
-// A limit lowered in the AZ cannot go below what the project currently uses there (see
-// checkUsage): ErrBelowUsage, or ErrUsageUnavailable when it cannot be read. The capacity a lowered
-// AZ quota frees is only given to others once the AZ applies it (see azAllocation).
+// A limit lowered in the AZ cannot go below what the project uses there: ErrBelowUsage, or
+// ErrUsageUnavailable when the AZ cannot report it. Other AZs and projects get the capacity of a
+// lowered AZ quota once the AZ applies it.
 func SetProjectAZQuota(ctx context.Context, organizationId, projectId uuid.UUID, codeAZ string, resources model.QuotaResources) (*model.ProjectAZQuota, error) {
 	requested, err := resources.Parse()
 	if err != nil {
@@ -504,7 +501,7 @@ func SetProjectAZQuota(ctx context.Context, organizationId, projectId uuid.UUID,
 	if _, err := az.GetByCode(codeAZ, organizationId.String()); err != nil {
 		return nil, ErrAZNotFound
 	}
-	// The AZ is only asked for the usage of a project of the organization.
+	// Check the project before asking its AZ for the usage.
 	if err := checkProject(db.Client.WithContext(ctx), organizationId, projectId); err != nil {
 		return nil, err
 	}
@@ -554,8 +551,8 @@ func DeleteOrganizationQuota(ctx context.Context, organizationId uuid.UUID) erro
 }
 
 // DeleteProjectQuota removes the quota of a project of the organization and its AZ quotas.
-// It is refused while the organization has a quota, since the project would escape it. The sync
-// states are kept: the AZs still hold the removed quotas until they apply the change.
+// It returns ErrProjectQuotaEnforced while the organization has a quota. It keeps the sync states
+// until the AZs apply the change.
 func DeleteProjectQuota(ctx context.Context, organizationId, projectId uuid.UUID) error {
 	return inProjectTransaction(ctx, organizationId, projectId, func(transaction *gorm.DB, revision int64) error {
 		organizationQuota, err := findOrganizationQuota(transaction, organizationId)
@@ -573,8 +570,7 @@ func DeleteProjectQuota(ctx context.Context, organizationId, projectId uuid.UUID
 }
 
 // DeleteForProject removes, within transaction, the quota rows and sync states of a project being
-// deleted, under the organization lock so that no quota write of the project runs concurrently.
-// The ResourceQuotas in the AZs are left to the garbage collector.
+// deleted, under the organization lock. The garbage collector deletes the AZ ResourceQuotas.
 func DeleteForProject(transaction *gorm.DB, organizationId, projectId uuid.UUID) error {
 	if err := lockOrganization(transaction, organizationId); err != nil {
 		return err
@@ -587,8 +583,8 @@ func DeleteForProject(transaction *gorm.DB, organizationId, projectId uuid.UUID)
 
 // DeleteForOrganization removes, within transaction, the quota rows of an organization being
 // deleted: its organization quota and the project and AZ quotas of all its projects (deleted ones
-// included), and their sync states, under the organization lock. The ResourceQuotas in the AZs are
-// left to the garbage collector.
+// included), and their sync states, under the organization lock. The garbage collector deletes
+// the AZ ResourceQuotas.
 func DeleteForOrganization(transaction *gorm.DB, organizationId uuid.UUID) error {
 	if err := lockOrganization(transaction, organizationId); err != nil {
 		return err
@@ -640,8 +636,7 @@ func distributeAmongProjects(transaction *gorm.DB, organizationId uuid.UUID, org
 	equalShare := organizationLimit.Sub(sumAllocations(allocations)).SplitEqually(len(projectIds))
 
 	for _, projectId := range projectIds {
-		// No project quota exists yet, so a project is only allocated what its AZs hold (see
-		// projectAllocations).
+		// Without a project quota, a project takes what its AZs hold.
 		projectQuota := equalShare.Add(allocations[projectId].Only(organizationLimit))
 		if _, err := saveProjectQuota(transaction, organizationId, projectId, projectQuota.Resources(), withAZQuotas[projectId]); err != nil {
 			return err
@@ -717,8 +712,8 @@ func splitAmongAZs(transaction *gorm.DB, organizationId, projectId uuid.UUID, pr
 
 // projectAllocations returns the project quotas of the live projects of the organization and
 // what each of these projects takes from the organization quota: per resource, the highest of
-// its project quota and the sum of its AZ quotas (what is actually enforced, see azAllocation). A
-// project without project quota but with AZ quotas is allocated the sum of its AZ quotas.
+// its project quota and the sum of its AZ quotas (what the AZs enforce). A project without project
+// quota but with AZ quotas is allocated the sum of its AZ quotas.
 //
 // AZ quotas set while the organization had no quota therefore keep counting once it gets one,
 // and lowering a project quota below its AZ quotas frees nothing for the other projects until
@@ -754,7 +749,7 @@ type azKey struct {
 }
 
 // azAllocations returns, for every live project of the organization with an AZ quota or a held
-// quota, the sum of what its AZs are allocated (see azAllocation).
+// quota, the sum of what its AZs are allocated.
 func azAllocations(database *gorm.DB, organizationId uuid.UUID) (map[uuid.UUID]spxQuota.Quantities, error) {
 	azQuotas, err := listOrganizationAZQuotas(database, organizationId)
 	if err != nil {
@@ -803,8 +798,8 @@ func sumAllocations(allocations map[uuid.UUID]spxQuota.Quantities) spxQuota.Quan
 	return total
 }
 
-// sumAZQuotas returns the total of what the AZs of a project take from it (see
-// Hierarchy.allocatedAZ), leaving out excludedAZ (no AZ is left out when it is empty).
+// sumAZQuotas returns the total the AZs of a project take from it, leaving out excludedAZ when
+// not empty.
 func sumAZQuotas(hierarchy Hierarchy, excludedAZ string) (spxQuota.Quantities, error) {
 	total := spxQuota.Quantities{}
 	for _, codeAZ := range hierarchy.allocatedCodes() {
@@ -944,11 +939,9 @@ func loweredLimits(before, after model.QuotaResources) (spxQuota.Quantities, err
 	return lowered, nil
 }
 
-// checkUsage checks that the lowered resources of a project in an AZ stay above what the project
-// uses there, read from the AZ, so that capacity still in use is not given to another AZ or
-// project: ErrBelowUsage, or ErrUsageUnavailable when the usage cannot be read. A resource the AZ
-// does not track yet has no usage to keep. It runs before the write, without any transaction open;
-// the AZ refuses a push below its usage anyway (see the quotasync package).
+// checkUsage checks, with no transaction open, that the lowered resources of a project in an AZ
+// stay at or above what the AZ reports the project uses: ErrBelowUsage, or ErrUsageUnavailable
+// when the AZ cannot report it. A resource the AZ does not track yet has no usage to keep.
 func checkUsage(ctx context.Context, organizationId, projectId uuid.UUID, codeAZ string, lowered spxQuota.Quantities) error {
 	if len(lowered) == 0 {
 		return nil
@@ -996,8 +989,7 @@ func inSnapshot(ctx context.Context, fn func(transaction *gorm.DB) error) error 
 	return db.Client.WithContext(ctx).Transaction(fn, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 }
 
-// inQuotaWrite runs fn like inOrganizationTransaction, with the new quota revision it gives the
-// organization (see bumpRevision).
+// inQuotaWrite runs fn in inOrganizationTransaction with a new quota revision of the organization.
 func inQuotaWrite(ctx context.Context, organizationId uuid.UUID, fn func(transaction *gorm.DB, revision int64) error) error {
 	return inOrganizationTransaction(ctx, organizationId, func(transaction *gorm.DB) error {
 		revision, err := bumpRevision(transaction, organizationId)
@@ -1008,7 +1000,7 @@ func inQuotaWrite(ctx context.Context, organizationId uuid.UUID, fn func(transac
 	})
 }
 
-// inProjectTransaction runs fn like inQuotaWrite, once the project is known to belong to the
+// inProjectTransaction runs fn in inQuotaWrite after checking that the project belongs to the
 // organization (ErrProjectNotFound otherwise).
 func inProjectTransaction(ctx context.Context, organizationId, projectId uuid.UUID, fn func(transaction *gorm.DB, revision int64) error) error {
 	return inQuotaWrite(ctx, organizationId, func(transaction *gorm.DB, revision int64) error {
@@ -1030,17 +1022,15 @@ func lockOrganization(transaction *gorm.DB, organizationId uuid.UUID) error {
 	return err
 }
 
-// bumpRevision gives the organization a new quota revision and returns it. The revision is sent
-// with every push to the AZ controllers, which refuse a push older than the one they enforce. It
-// only grows, and follows the clock of the database (in microseconds) so that it stays above what
-// the AZs enforce even after the database is restored from a backup.
+// bumpRevision gives the organization a new quota revision and returns it: the database clock in
+// microseconds, or the previous revision plus one when the clock lags behind it.
 func bumpRevision(transaction *gorm.DB, organizationId uuid.UUID) (int64, error) {
 	var revision int64
 	err := transaction.Raw(sqlBumpRevision, organizationId).Scan(&revision).Error
 	return revision, err
 }
 
-// sqlBumpRevision gives an organization a new quota revision (see bumpRevision).
+// sqlBumpRevision gives an organization a new quota revision.
 const sqlBumpRevision = "UPDATE organizations SET quota_revision = GREATEST(quota_revision + 1, " +
 	"(extract(epoch FROM clock_timestamp()) * 1000000)::bigint) WHERE id = ? RETURNING quota_revision"
 
@@ -1147,8 +1137,8 @@ func upsertAZQuota(transaction *gorm.DB, projectId uuid.UUID, codeAZ string, res
 	return azQuota, err
 }
 
-// markDirty records that the quota of the projects changed in the given AZs at revision, for the
-// quota reconciler to push it (see Claim). It also clears the failure of the previous push.
+// markDirty marks the quota of the projects due in the given AZs at revision and resets the
+// attempts and error of the previous push.
 func markDirty(transaction *gorm.DB, organizationId uuid.UUID, revision int64, projectIds []uuid.UUID, codes []string) error {
 	if len(projectIds) == 0 || len(codes) == 0 {
 		return nil
@@ -1172,8 +1162,7 @@ func markDirty(transaction *gorm.DB, organizationId uuid.UUID, revision int64, p
 	}).Create(&states).Error
 }
 
-// markOrganizationDirty marks every live project of the organization dirty in all its AZs (see
-// markDirty).
+// markOrganizationDirty marks every live project of the organization dirty in all its AZs.
 func markOrganizationDirty(transaction *gorm.DB, organizationId uuid.UUID, revision int64) error {
 	codes := azCodes(organizationId)
 	if len(codes) == 0 {

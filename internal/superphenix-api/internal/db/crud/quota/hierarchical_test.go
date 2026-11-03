@@ -95,7 +95,7 @@ func setupUsage(t *testing.T, usage spxQuota.Quantities, err error) *[]string {
 // ---------------------------------------------------------------------------------------------
 
 // expectOrganizationTransaction expects a transaction to start, lock the organization and give it
-// the quota revision writeRevision (see inQuotaWrite).
+// the quota revision writeRevision.
 func expectOrganizationTransaction(mock sqlmock.Sqlmock, organizationID uuid.UUID) {
 	mock.ExpectBegin()
 	expectLockOrg(mock, organizationID)
@@ -110,7 +110,7 @@ func expectProjectTransaction(mock sqlmock.Sqlmock, organizationID, projectID uu
 	expectProject(mock, organizationID, projectID)
 }
 
-// writeRevision is the quota revision a quota write gives the organization (see inQuotaWrite).
+// writeRevision is the quota revision a quota write gives the organization.
 const writeRevision int64 = 41
 
 func expectLockOrg(mock sqlmock.Sqlmock, organizationID uuid.UUID) {
@@ -182,7 +182,7 @@ type stateRow struct {
 	lastError       *string
 }
 
-// stateRows returns the sync state rows rows.
+// stateRows returns the sqlmock rows of the sync states.
 func stateRows(rows ...stateRow) *sqlmock.Rows {
 	result := sqlmock.NewRows([]string{"project_id", "code_az", "held", "wanted_revision", "applied_revision", "last_error"})
 	for _, row := range rows {
@@ -195,18 +195,17 @@ func stateRows(rows ...stateRow) *sqlmock.Rows {
 	return result
 }
 
-// expectProjectStates expects the sync states of a project (see listStates).
+// expectProjectStates expects the sync states of a project.
 func expectProjectStates(mock sqlmock.Sqlmock, projectID uuid.UUID, rows ...stateRow) {
 	mock.ExpectQuery(sqlProjectState).WithArgs(projectID).WillReturnRows(stateRows(rows...))
 }
 
-// expectOrgStates expects the sync states of the live projects of the organization (see
-// listOrganizationStates).
+// expectOrgStates expects the sync states of the live projects of the organization.
 func expectOrgStates(mock sqlmock.Sqlmock, organizationID uuid.UUID, rows ...stateRow) {
 	mock.ExpectQuery(sqlOrgStates).WithArgs(organizationID).WillReturnRows(stateRows(rows...))
 }
 
-// expectMarkDirty expects count sync states to be marked dirty at writeRevision (see markDirty).
+// expectMarkDirty expects count sync states to be marked dirty at writeRevision.
 func expectMarkDirty(mock sqlmock.Sqlmock, count int) {
 	result := sqlmock.NewRows([]string{"due_at"})
 	for range count {
@@ -227,7 +226,7 @@ func expectListPQs(mock sqlmock.Sqlmock, organizationID uuid.UUID, rows ...[2]an
 
 // expectOrgAZQs expects the reads of the AZ allocations of the organization: the AZ quotas of its
 // live projects, rows being (project_id, code_az, resources), then their sync states, without any
-// held quota (see azAllocations).
+// held quota.
 func expectOrgAZQs(mock sqlmock.Sqlmock, organizationID uuid.UUID, rows ...[3]any) {
 	expectOrgAZQsOnly(mock, organizationID, rows...)
 	expectOrgStates(mock, organizationID)
@@ -354,7 +353,7 @@ func TestSetOrganizationQuota(t *testing.T) {
 			expectUpsertAZQ(mock, projectID, "az-2", `{"cpu":"16","disk":"0"}`)
 		}
 		expectUpsertOrganizationQuota(mock)
-		// Every project is marked dirty in every AZ.
+		// SetOrganizationQuota marks every project dirty in every AZ.
 		expectProjectIds(mock, organizationID, firstProjectID, secondProjectID)
 		expectMarkDirty(mock, 4)
 		mock.ExpectCommit()
@@ -838,7 +837,7 @@ func TestSetProjectAZQuota(t *testing.T) {
 	})
 }
 
-// A project with no AZ quota but a held quota is allocated it, and still gets its project quota
+// A project with a held quota but no AZ quota keeps the held quota and gets its project quota
 // split among the AZs.
 func TestSetOrganizationQuotaWithHeldQuota(t *testing.T) {
 	organizationID, projectID := uuid.New(), uuid.New()
@@ -942,7 +941,7 @@ func TestDeleteProjectQuota(t *testing.T) {
 		expectOrgQuota(mock, organizationID, "")
 		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_az_quotas" WHERE project_id = $1`)).WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 2))
 		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_quotas" WHERE project_id = $1`)).WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 1))
-		// The project is marked dirty in every AZ, keeping its sync states.
+		// DeleteProjectQuota marks the project dirty in every AZ and keeps its sync states.
 		expectMarkDirty(mock, 2)
 		mock.ExpectCommit()
 

@@ -41,21 +41,20 @@ type ProjectAZQuota struct {
 
 func (ProjectAZQuota) TableName() string { return "project_az_quotas" }
 
-// ProjectAZQuotaState is the sync state of the quota of a project in one AZ, written by the quota
-// writes (WantedRevision) and the quota reconciler (the other fields). Revisions are quota
-// revisions of the organization.
+// ProjectAZQuotaState is the sync state of the quota of a project in one AZ. Quota writes set
+// WantedRevision and the quota reconciler sets the other fields. Revisions are quota revisions of
+// the organization.
 type ProjectAZQuotaState struct {
 	ProjectId      uuid.UUID `gorm:"primaryKey;type:uuid"`
 	CodeAZ         string    `gorm:"primaryKey"`
 	OrganizationId uuid.UUID `gorm:"type:uuid;not null;index"`
 	// WantedRevision is the revision of the last write that changed the quota of the AZ.
 	WantedRevision int64 `gorm:"not null;default:0"`
-	// PreparedRevision is the revision of the last push prepared: only its outcome is recorded.
+	// PreparedRevision is the revision of the last prepared push. Record stores only its outcome.
 	PreparedRevision int64 `gorm:"not null;default:0"`
 	// AppliedRevision is the revision of the last push the AZ applied.
 	AppliedRevision int64 `gorm:"not null;default:0"`
-	// Held is the AZ quota the AZ may enforce: the one it applied, raised by every push prepared
-	// since. The AZ is allocated the highest of Held and its AZ quota.
+	// Held is the AZ quota the AZ may enforce: the one it applied, raised by each later prepared push.
 	Held QuotaResources `gorm:"serializer:json"`
 	// DueAt is when the reconciler takes the state next.
 	DueAt time.Time `gorm:"not null;default:now();index"`

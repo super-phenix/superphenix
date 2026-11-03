@@ -488,7 +488,7 @@ func (a *AuditLogConfig) validate() []string {
 	return errs
 }
 
-// QuotaResyncConfig paces the quota reconciler (see quotasync.NewReconciler).
+// QuotaResyncConfig paces the quota reconciler.
 type QuotaResyncConfig struct {
 	// Interval is how long the reconciler waits before it pushes an applied quota again or retries
 	// an AZ the organization no longer has. The reconciler also creates the missing sync states at

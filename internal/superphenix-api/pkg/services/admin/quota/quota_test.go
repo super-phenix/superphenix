@@ -122,8 +122,8 @@ func fakeController(t *testing.T, status int) map[string]map[string]string {
 }
 
 // expectDeleteAndSync expects the organization quota to be deleted, its project marked dirty in
-// az1, then the change to be pushed (see quotasync.Apply): claimed, prepared, and, after the push,
-// recorded as applied or failed.
+// az1, then the change to be pushed: claimed, prepared, and, after the push, recorded as applied
+// or failed.
 func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, applied bool) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "organizations"`)).
@@ -160,7 +160,7 @@ func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, appli
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id IN`)).WillReturnRows(stateRows())
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id = $1 AND code_az = $2 AND lease_token = $3`)).
 		WillReturnRows(stateRows())
-	// The AZ quota pushed is held until the AZ applies it.
+	// Prepare holds the pushed AZ quota until the AZ applies it.
 	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "held"=$1,"prepared_revision"=$2`)).
 		WithArgs(`{"cpu":"2"}`, int64(42), projectID, "az1").WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
@@ -173,7 +173,7 @@ func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, appli
 	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quota_states" SET "applied_revision"=$1`)).
 		WithArgs(int64(42), 0, int64(42), sqlmock.AnyArg(), `{"cpu":"2"}`, nil, nil, projectID, "az1", int64(42)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-	// Applied: a project deactivated because its quota was not applied would be reactivated.
+	// The applied push checks the deactivations of the project.
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_deactivations"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "reason"}))
 }

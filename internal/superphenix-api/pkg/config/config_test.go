@@ -82,8 +82,8 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-// The defaults bound the database pool, the wait of a quota write for the AZs, and how often the
-// quotas are pushed again.
+// TestQuotaAndDatabaseDefaults checks the defaults of the database pool, quota.applyWait and
+// quota.resync.interval.
 func TestQuotaAndDatabaseDefaults(t *testing.T) {
 	tests := []struct {
 		name     string

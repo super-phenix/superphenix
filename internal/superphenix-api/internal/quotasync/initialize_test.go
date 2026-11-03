@@ -101,8 +101,8 @@ func expectSnapshot(mock sqlmock.Sqlmock, orgID uuid.UUID, orgResources string, 
 	mock.ExpectCommit()
 }
 
-// expectMarkNewProject expects a project without quota to be marked dirty in az1 (see
-// crudQuota.MarkNewProject). The marking fails with markErr when not nil.
+// expectMarkNewProject expects a project without quota to be marked dirty in az1. The marking
+// fails with markErr when not nil.
 func expectMarkNewProject(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, markErr error) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(sqlLockOrg).WithArgs(orgID, 1).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
@@ -196,7 +196,7 @@ func TestApply(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expected, Apply(context.Background(), scope))
-			// Let a claim still running end before the mock is checked.
+			// Wait for a running claim to end before the mock checks its expectations.
 			time.Sleep(tt.delay)
 		})
 	}

@@ -126,8 +126,7 @@ func StartAuditLogGC(ctx context.Context, cfg *config.Config) {
 	go auditGc.New(cfg.AuditLog).Run(ctx)
 }
 
-// StartQuotaReconciler pushes the quotas to the AZs in the background until ctx is cancelled:
-// the pushes that failed, and every quota again periodically. Every replica runs one.
+// StartQuotaReconciler runs the quota reconciler of this replica until ctx is canceled.
 func StartQuotaReconciler(ctx context.Context, cfg *config.Config) {
 	if err := ProvideInfra(cfg); err != nil {
 		log.Error().Err(err).Msg("Failed to initialize infrastructure, quota reconciler not started")

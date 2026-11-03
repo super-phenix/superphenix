@@ -176,8 +176,8 @@ func TestReconcilerRun(t *testing.T) {
 		close(done)
 	}()
 
-	// The missing states are created at start, even failing, then the quotas due are pushed at
-	// once, and the missing states are created again on their own timer.
+	// Run calls Ensure at start, even when it fails, then claims the quotas due, then calls Ensure
+	// again on its own timer.
 	<-ensured
 	<-claimed
 	<-ensured

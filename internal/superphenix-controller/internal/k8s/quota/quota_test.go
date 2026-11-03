@@ -346,8 +346,8 @@ func TestApplyWithRevision(t *testing.T) {
 }
 
 // Without a ResourceQuota, a delete with a revision creates an empty one annotated with it in an
-// active project namespace, so that an older push is refused later. Nothing is created without
-// revision, nor without an active namespace: the namespace is never created.
+// active project namespace. It creates nothing without a revision or an active namespace, and
+// never creates the namespace.
 func TestDeleteWithoutQuota(t *testing.T) {
 	hard, err := Validate(map[string]string{"requests.cpu": "4"})
 	if err != nil {
@@ -426,8 +426,8 @@ func TestDeleteWithoutQuota(t *testing.T) {
 	}
 }
 
-// A push whose Get misses a ResourceQuota created concurrently gets AlreadyExists on Create: it is
-// retried and updates that ResourceQuota.
+// A push whose Get misses a ResourceQuota created at the same time gets AlreadyExists on Create,
+// then retries and updates that ResourceQuota.
 func TestCreateRace(t *testing.T) {
 	hard, err := Validate(map[string]string{"requests.cpu": "4"})
 	if err != nil {

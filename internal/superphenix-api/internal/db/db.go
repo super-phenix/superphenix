@@ -38,8 +38,7 @@ func InitDatabase(host, user, password, dbname, port string) error {
 	return nil
 }
 
-// ConfigurePool bounds the connection pool of Client, so that a burst of requests waits for a
-// connection instead of exhausting the connections of the database server.
+// ConfigurePool bounds the connection pool of Client.
 func ConfigurePool(maxOpenConns, maxIdleConns int, connMaxLifetime time.Duration) error {
 	sqlDB, err := Client.DB()
 	if err != nil {

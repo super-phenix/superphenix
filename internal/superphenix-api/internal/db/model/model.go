@@ -100,8 +100,8 @@ type Organization struct {
 	// AuditRetentionDays overrides the configured audit log retention. Nil means the default.
 	AuditRetentionDays *int
 
-	// QuotaRevision is the revision of the quotas of the organization, set by the quota writes and the
-	// quota reconciler only.
+	// QuotaRevision is the quota revision of the organization. Only the quota writes and the quota
+	// reconciler set it.
 	QuotaRevision int64 `gorm:"->;not null;default:0" json:"-"`
 }
 

@@ -19,12 +19,12 @@ const (
 	pollInterval = 2 * time.Second
 	// claimBatch bounds the quotas the reconciler claims at once.
 	claimBatch = 50
-	// lease is how long a claimed quota is reserved to the reconciler that claimed it, above the
-	// time a push takes: past it, another reconciler may take it over.
+	// lease is how long a claimed quota stays reserved to its reconciler. Past it, another
+	// reconciler can take it over.
 	lease = time.Minute
 	// pushConcurrency bounds the number of AZ controller push calls running at once.
 	pushConcurrency = 8
-	// retryBackoff and maxRetryBackoff bound the delay before a failed push is retried.
+	// retryBackoff and maxRetryBackoff bound the delay before the reconciler retries a failed push.
 	retryBackoff    = 5 * time.Second
 	maxRetryBackoff = 5 * time.Minute
 )
@@ -33,12 +33,11 @@ const (
 // database connection while it waits for the lock of its organization.
 var prepareSlots = make(chan struct{}, 2)
 
-// Reconciler pushes the quotas due (see crudQuota.Claim) to the AZ controllers. Every API replica
-// runs one: a quota is claimed by one reconciler at a time, and the outcome of a push is only
-// recorded while no newer push of the quota was prepared (see crudQuota.Record).
+// Reconciler pushes the quotas due to the AZ controllers. Each API replica runs one, and one
+// reconciler at a time holds a claimed quota.
 type Reconciler struct {
 	Interval time.Duration
-	// EnsureInterval is how often the missing sync states are created (see Ensure).
+	// EnsureInterval is how often Run calls Ensure.
 	EnsureInterval time.Duration
 	// Ensure creates the missing sync states, at start and every EnsureInterval.
 	Ensure func(ctx context.Context) error
@@ -50,7 +49,7 @@ type Reconciler struct {
 	Push func(ctx context.Context, push crudQuota.Push) error
 	// Record records the outcome of a push.
 	Record func(ctx context.Context, push crudQuota.Push, pushErr error) error
-	// Applied is called for every project with an applied push (see reactivate).
+	// Applied runs for each project with an applied push.
 	Applied func(ctx context.Context, orgId, projectId uuid.UUID) error
 }
 
@@ -83,9 +82,8 @@ func configuredAZCodes() []string {
 	return codes
 }
 
-// Run pushes the quotas due until ctx is done, every Interval. The missing sync states are
-// created at start and every EnsureInterval, e.g. those of a project whose creation could not
-// mark them (see Initialize).
+// Run pushes the quotas due every Interval until ctx is done. It calls Ensure at start and every
+// EnsureInterval.
 func (r *Reconciler) Run(ctx context.Context) {
 	ctx = context.WithValue(ctx, logger.ProcessIdKey, fmt.Sprintf("quota-reconciler-%s", uuid.NewString()))
 	processLog := logger.GetProcessLogger(ctx)
@@ -134,7 +132,7 @@ func (r *Reconciler) ReconcileDue(ctx context.Context) {
 }
 
 // process prepares, pushes and records the quotas of keys claimed with token, one organization
-// after another. It returns true when every one of them was applied.
+// after another. It returns true when the AZs applied all of them.
 func (r *Reconciler) process(ctx context.Context, token uuid.UUID, keys []crudQuota.StateKey) bool {
 	log := logger.GetLogger(ctx)
 	organizationIds, groups := crudQuota.GroupByOrganization(keys)

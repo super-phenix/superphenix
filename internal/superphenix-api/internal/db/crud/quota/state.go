@@ -1,18 +1,16 @@
 package quota
 
-// Sync states: the quota of a project in one AZ is pushed to the AZ controller by the quotasync
-// reconciler, which may run on several API replicas at once. Each push goes through:
-//   - Claim or ClaimDirty: the state is leased to one reconciler (a lease that elapses lets
-//     another one take it over);
-//   - Prepare: under the organization lock, the push gets a new quota revision, which becomes the
-//     prepared revision of the state, and its AZ quota is added to the held quota (see
-//     azAllocation), all before anything is sent;
-//   - the push itself, without any transaction open;
-//   - Record: the outcome is recorded only if no other push of the state was prepared since.
+// Sync states: the quotasync reconciler of each API replica pushes the quota of a project in one
+// AZ to the AZ controller in four steps:
+//   - Claim or ClaimDirty leases the state to one reconciler. Another one takes it over when the
+//     lease expires.
+//   - Prepare, under the organization lock, gives the push a new quota revision, stores it as the
+//     prepared revision and adds the AZ quota to the held quota.
+//   - The reconciler sends the push with no transaction open.
+//   - Record stores the outcome when no other push of the state was prepared since.
 //
-// The AZ controller refuses a push older than the revision it holds, so an older push never
-// overwrites a newer one in the cluster, and Record never lets an older push overwrite a newer
-// outcome in the database.
+// The AZ controller refuses a push older than the revision it holds, and Record drops the outcome
+// of a push older than the prepared revision.
 
 import (
 	"context"
@@ -38,22 +36,21 @@ type StateKey struct {
 	CodeAZ         string
 }
 
-// Push is the push of the quota of a project to one AZ, prepared by Prepare.
+// Push is a prepared push of the quota of a project to one AZ.
 type Push struct {
 	StateKey
 	Revision int64
 	// Hard is the Kubernetes quota to push (the ResourceQuota `spec.hard`).
 	Hard map[string]string
-	// AZQuota is the AZ quota the push enforces: the held quota once the AZ applies it.
+	// AZQuota is the AZ quota the push enforces. Record stores it as the held quota.
 	AZQuota model.QuotaResources
 }
 
 // maxErrorLength bounds the error recorded for a failed push.
 const maxErrorLength = 1024
 
-// Claim leases, to the reconciler identified by token and for lease, up to limit states of the
-// given AZs that are due for a push. The states other reconcilers are claiming at the same time
-// are skipped.
+// Claim leases up to limit states of the given AZs that are due for a push to the reconciler
+// identified by token, for lease. It skips the states other reconcilers are claiming.
 func Claim(ctx context.Context, token uuid.UUID, codes []string, limit int, lease time.Duration) ([]StateKey, error) {
 	if len(codes) == 0 || limit <= 0 {
 		return nil, nil
@@ -66,11 +63,10 @@ func Claim(ctx context.Context, token uuid.UUID, codes []string, limit int, leas
 	return leaseStates(ctx, due, token, lease)
 }
 
-// ClaimDirty leases, to the reconciler identified by token and for lease, the states of the
-// organization in its AZs (only those of projectId when not nil, and of codeAZ when not empty)
-// whose last change is not applied yet, even those another reconciler holds: the push it prepares
-// next then supersedes theirs (see Record). The states of an AZ the organization no longer has are
-// left to the reconciler.
+// ClaimDirty leases to the reconciler identified by token, for lease, the states of the
+// organization whose last change is not applied yet, filtered by projectId when not nil and by
+// codeAZ when not empty. It takes states other reconcilers hold, and Record then drops their
+// outcome. It skips the AZs the organization no longer has.
 func ClaimDirty(ctx context.Context, token, organizationId uuid.UUID, projectId *uuid.UUID, codeAZ string, lease time.Duration) ([]StateKey, error) {
 	codes := azCodes(organizationId)
 	if codeAZ != "" {
@@ -101,12 +97,12 @@ func leaseStates(ctx context.Context, due *gorm.DB, token uuid.UUID, lease time.
 	return keys, err
 }
 
-// Prepare prepares the push of states of the organization claimed by the reconciler identified by
-// token, in one transaction holding the organization lock so that no quota write runs in between:
-// the organization gets a new quota revision, which becomes the prepared revision of every state,
-// and the AZ quota to push is added to the held quota of the state. A state claimed since by
-// another reconciler is skipped. The states of a deleted organization or project are deleted, and
-// a state of an AZ the organization no longer has is postponed by retryAfter with an error.
+// Prepare builds the pushes of the organization states that the reconciler identified by token
+// claimed, in one transaction holding the organization lock. It gives the organization a new quota
+// revision, stores it as the prepared revision of each state and adds the AZ quota to push to its
+// held quota. It skips the states another reconciler claimed since, deletes the states of a deleted
+// organization or project, and postpones by retryAfter, with an error, the states of an AZ the
+// organization no longer has.
 func Prepare(ctx context.Context, token, organizationId uuid.UUID, keys []StateKey, retryAfter time.Duration) ([]Push, error) {
 	var pushes []Push
 	err := db.Client.WithContext(ctx).Transaction(func(transaction *gorm.DB) error {
@@ -141,8 +137,7 @@ func Prepare(ctx context.Context, token, organizationId uuid.UUID, keys []StateK
 }
 
 // sortedKeys returns keys sorted by project then AZ, byte-wise like `ORDER BY project_id, code_az
-// COLLATE "C"`: the order every transaction locks sync states in, so that none waits for another
-// that waits for it.
+// COLLATE "C"`. Every transaction locks sync states in this order.
 func sortedKeys(keys []StateKey) []StateKey {
 	sorted := slices.Clone(keys)
 	slices.SortFunc(sorted, func(first, second StateKey) int {
@@ -154,8 +149,8 @@ func sortedKeys(keys []StateKey) []StateKey {
 	return sorted
 }
 
-// prepareState prepares the push of one state at revision (see Prepare). It returns nil when it
-// has nothing to push.
+// prepareState builds the push of one state at revision. It returns nil when it has nothing
+// to push.
 func prepareState(transaction *gorm.DB, token uuid.UUID, key StateKey, hierarchies map[uuid.UUID]Hierarchy,
 	revision int64, retryAfter time.Duration) (*Push, error) {
 	hierarchy, live := hierarchies[key.ProjectId]
@@ -201,11 +196,10 @@ func prepareState(transaction *gorm.DB, token uuid.UUID, key StateKey, hierarchi
 	}, nil
 }
 
-// Record records the outcome of a push (pushErr nil when the AZ applied it), unless another push
-// of the state was prepared since. An applied push makes its AZ quota the held quota, and the
-// state is due again after resync. A failed push keeps the held quota, since the AZ may have
-// applied it, and the state is due again after an exponential backoff starting at backoff and
-// capped at maxBackoff.
+// Record stores the outcome of a push, pushErr being nil when the AZ applied it, unless Prepare
+// built another push of the state since. An applied push stores its AZ quota as the held quota and
+// makes the state due again after resync. A failed push keeps the held quota and makes the state
+// due again after an exponential backoff from backoff to maxBackoff.
 func Record(ctx context.Context, push Push, pushErr error, resync, backoff, maxBackoff time.Duration) error {
 	var updates map[string]any
 	if pushErr != nil {
@@ -243,15 +237,15 @@ func Record(ctx context.Context, push Push, pushErr error, resync, backoff, maxB
 		Updates(updates).Error
 }
 
-// dueAt is when a state recorded at revision is due next: at once when a write changed it since,
+// dueAt returns when a state recorded at revision is due next: now when a write changed it since,
 // otherwise after delay seconds.
 func dueAt(revision int64, delay any) clause.Expr {
 	return gorm.Expr("CASE WHEN wanted_revision > ? THEN now() ELSE now() + make_interval(secs => ?) END", revision, delay)
 }
 
-// EnsureStates creates the missing sync states of the live projects in the AZs of their
-// organization, due at once, so that their quota gets pushed (e.g. an AZ added to the
-// configuration). A state created for a project deleted meanwhile is deleted by Prepare.
+// EnsureStates creates, due now, the missing sync states of the live projects in the AZs of their
+// organization, such as those of an AZ added to the configuration. Prepare deletes a state created
+// for a project deleted meanwhile.
 func EnsureStates(ctx context.Context) error {
 	projects, err := ListAllProjects(ctx)
 	if err != nil {
@@ -268,15 +262,14 @@ func EnsureStates(ctx context.Context) error {
 	if len(states) == 0 {
 		return nil
 	}
-	// Each batch commits on its own, so that no inserted state stays locked until the last one.
+	// Each batch commits on its own.
 	return db.Client.WithContext(ctx).Session(&gorm.Session{SkipDefaultTransaction: true}).
 		Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(&states, 500).Error
 }
 
-// MarkNewProject asks the quota reconciler to push the quota of a project just created to every AZ
-// of the organization. When an AZ has limits to enforce, it also deactivates the project
-// (model.DeactivationQuotaFailedToApply) in the same transaction, until those AZs apply the quota
-// (see quotasync.Initialize).
+// MarkNewProject marks the quota of a new project due in every AZ of the organization. When an AZ
+// has limits to enforce, it deactivates the project (model.DeactivationQuotaFailedToApply) in the
+// same transaction.
 func MarkNewProject(ctx context.Context, organizationId, projectId uuid.UUID) error {
 	return inProjectTransaction(ctx, organizationId, projectId, func(transaction *gorm.DB, revision int64) error {
 		hierarchy, err := loadHierarchy(transaction, organizationId, projectId)
@@ -378,8 +371,7 @@ func readOrganizationHierarchies(transaction *gorm.DB, organizationId uuid.UUID)
 	return hierarchies, nil
 }
 
-// GroupByOrganization groups keys by organization, keeping their order; the organizations are
-// sorted.
+// GroupByOrganization groups keys by organization, in order, and returns the sorted organizations.
 func GroupByOrganization(keys []StateKey) ([]uuid.UUID, map[uuid.UUID][]StateKey) {
 	groups := map[uuid.UUID][]StateKey{}
 	var organizationIds []uuid.UUID

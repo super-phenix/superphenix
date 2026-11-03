@@ -1,11 +1,9 @@
 // Package quotasync pushes the quotas stored by the API to the controller of each AZ, which
 // enforces them through a Kubernetes ResourceQuota in the project namespace.
 //
-// The API database is the source of truth: a push sends the whole effective quota of a project in
-// an AZ (never a diff), so pushing again is always safe and fixes any drift. A quota write marks
-// the quota of the projects it changes as dirty in their AZs (the sync states of the crud quota
-// package); the request then pushes it right away (see Apply), and the Reconciler of every API
-// replica retries the failed pushes and pushes every quota again periodically.
+// A push sends the whole effective quota of a project in an AZ. A quota write marks the quotas it
+// changes as dirty, and the request pushes them with Apply. The Reconciler of each API replica
+// retries the failed pushes and pushes each applied quota again after the resync interval.
 package quotasync
 
 import (
@@ -38,8 +36,7 @@ const (
 	pushTimeout = 10 * time.Second
 )
 
-// ErrNotApplied is returned when a quota is saved but not applied on every AZ yet: the
-// reconciler keeps pushing it.
+// ErrNotApplied means the API saved the quota but some AZ has not applied it yet.
 var ErrNotApplied = errors.New("quota saved but not applied on every availability zone yet")
 
 // controllerBody is the body of PUT {controller}/{orgId}/{projectId}/quota.
@@ -56,10 +53,9 @@ type Scope struct {
 	CodeAZ         string
 }
 
-// Apply pushes the changes of scope the AZs did not apply yet, and waits at most quota.applyWait
-// for them. It returns true when every AZ applied them, false when a push failed (the reconciler
-// retries it) or is still running (it goes on in the background). The pushes are not canceled
-// with ctx, e.g. when the client disconnects.
+// Apply pushes the changes of scope that the AZs have not applied yet and waits for them at most
+// quota.applyWait. It returns true when the AZs applied them, and false when a push failed or is
+// still running in the background. Canceling ctx does not cancel the pushes.
 func Apply(ctx context.Context, scope Scope) bool {
 	ctx = context.WithoutCancel(ctx)
 	reconciler := NewReconciler(config.Global.Quota.Resync)
@@ -86,12 +82,10 @@ func Apply(ctx context.Context, scope Scope) bool {
 	}
 }
 
-// Initialize pushes the quota of a project just created to every AZ of its organization. A
-// project that has something to enforce is deactivated (model.DeactivationQuotaFailedToApply) so
-// that it cannot run unbounded workloads, and reactivated once every AZ applied its quota, here or
-// later by the reconciler (see crudQuota.MarkNewProject). When the quota cannot even be computed,
-// the project is deactivated too, until the reconciler applies it. It returns ErrNotApplied when
-// some AZ did not apply it in time.
+// Initialize pushes the quota of a new project to every AZ of its organization. It deactivates the
+// project (model.DeactivationQuotaFailedToApply) when an AZ has limits to enforce or when it cannot
+// compute the quota. The deactivation lasts until the AZs apply the quota. It returns
+// ErrNotApplied when some AZ did not apply the quota within quota.applyWait.
 func Initialize(ctx context.Context, orgId, projectId uuid.UUID) error {
 	ctx = context.WithoutCancel(ctx)
 	if err := crudQuota.MarkNewProject(ctx, orgId, projectId); err != nil {
@@ -106,8 +100,8 @@ func Initialize(ctx context.Context, orgId, projectId uuid.UUID) error {
 	return nil
 }
 
-// reactivate lifts the deactivation of a project whose quota was not applied (see Initialize) once
-// every AZ that has something to enforce applied it.
+// reactivate lifts the DeactivationQuotaFailedToApply of a project once every AZ with limits to
+// enforce applied its quota.
 func reactivate(ctx context.Context, orgId, projectId uuid.UUID) error {
 	deactivations, err := crudProject.ListDeactivations(ctx, orgId, projectId)
 	if err != nil {
@@ -125,7 +119,7 @@ func reactivate(ctx context.Context, orgId, projectId uuid.UUID) error {
 	return crudProject.Reactivate(ctx, projectId, model.DeactivationQuotaFailedToApply)
 }
 
-// pushToAZ sends a prepared push to the controller of its AZ (see push).
+// pushToAZ sends a prepared push to the controller of its AZ.
 func pushToAZ(ctx context.Context, prepared crudQuota.Push) error {
 	azCfg, err := az.GetByCode(prepared.CodeAZ, prepared.OrganizationId.String())
 	if err != nil {
@@ -134,10 +128,10 @@ func pushToAZ(ctx context.Context, prepared crudQuota.Push) error {
 	return push(ctx, azCfg, prepared.OrganizationId, prepared.ProjectId, prepared.Hard, prepared.Revision)
 }
 
-// push sends the Kubernetes quota of a project to the controller of an AZ, at a quota revision of
-// its organization. An empty quota clears the limits of the ResourceQuota. A limit lowered below
-// its usage is refused by the controller (409), reported as crudQuota.ErrBelowUsage. A push older
-// than the revision the controller holds is refused (412).
+// push sends the Kubernetes quota of a project to the controller of an AZ at a quota revision of
+// its organization. An empty quota clears the limits of the ResourceQuota. The controller answers
+// 409 to a limit below its usage, which push returns as crudQuota.ErrBelowUsage, and 412 to a push
+// older than the revision it holds.
 func push(ctx context.Context, azCfg config.AZConfig, orgId, projectId uuid.UUID, hard map[string]string, revision int64) error {
 	body, err := json.Marshal(controllerBody{Hard: hard, Revision: revision})
 	if err != nil {

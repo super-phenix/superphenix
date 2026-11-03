@@ -86,7 +86,7 @@ func toStrings(list v1.ResourceList) map[string]string {
 // setQuota
 //
 //	@Summary		Set the project quota
-//	@Description	Create or replace the ResourceQuota of the project in this AZ. An empty quota removes its limits. A limit cannot be lowered below what is currently used (409). A push older than the revision of the ResourceQuota is refused (412).
+//	@Description	Create or replace the ResourceQuota of the project in this AZ. An empty quota removes its limits. A limit cannot go below what the project uses (409). The controller refuses a push older than the revision of the ResourceQuota (412).
 //	@Tags			v1, Quota
 //	@Accept			json
 //	@Param			orgId		path	string		true	"Organization ID"

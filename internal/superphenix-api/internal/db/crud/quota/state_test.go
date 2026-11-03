@@ -35,8 +35,7 @@ var (
 		`"last_error"=$4,"lease_token"=$5 WHERE project_id = $6 AND code_az = $7 AND prepared_revision = $8`)
 )
 
-// leaseQuery matches the lease of the states selected by due, the end of the claim query from
-// its WHERE clause (see leaseStates).
+// leaseQuery matches a claim query, due being its selection after WHERE.
 func leaseQuery(due string) string {
 	return regexp.QuoteMeta(`WITH due AS (SELECT "project_id","code_az" FROM "project_az_quota_states" WHERE ` + due +
 		`) UPDATE project_az_quota_states AS s SET lease_token = `)

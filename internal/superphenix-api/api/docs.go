@@ -1604,7 +1604,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Set (replace) the quota of a project and apply it to every AZ. Allowed resources: cpu, memory, disk. It must fit in the organization quota and cannot be lower than the sum of its AZ quotas. It is split equally among the AZs only when the project has no AZ quota yet. Answers 202 when some AZ did not apply it yet: it keeps being pushed (see the status of the AZs in the project quota).",
+                "description": "Set (replace) the quota of a project and apply it to every AZ. Allowed resources: cpu, memory, disk. It must fit in the organization quota and cannot be lower than the sum of its AZ quotas. It is split equally among the AZs only when the project has no AZ quota yet. Answers 202 when some AZ has not applied it yet.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1686,7 +1686,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Delete the quota and AZ quotas of a project and apply it to every AZ. Refused while the organization has a quota. Answers 202 when some AZ did not apply it yet: it keeps being pushed.",
+                "description": "Delete the quota and AZ quotas of a project and apply the change to every AZ. Fails while the organization has a quota. Answers 202 when some AZ has not applied the change yet.",
                 "tags": [
                     "v1",
                     "quota"
@@ -1743,7 +1743,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Set (replace) the quota of a project in one AZ and apply it. Allowed resources: cpu, memory, disk. It must fit in the project quota (or the organization quota when the project has none) and cannot be lowered below what the project currently uses in the AZ. Answers 202 when the AZ did not apply it yet: it keeps being pushed (see the status of the AZ in the project quota).",
+                "description": "Set (replace) the quota of a project in one AZ and apply it. Allowed resources: cpu, memory, disk. It must fit in the project quota (or the organization quota when the project has none) and cannot go below what the project uses in the AZ. Answers 202 when the AZ has not applied it yet.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1822,7 +1822,7 @@ const docTemplate = `{
                         "description": "Internal Server Error"
                     },
                     "503": {
-                        "description": "Lowered, but the usage of the AZ cannot be read: nothing changed"
+                        "description": "The AZ cannot report its usage for a lowered limit: nothing changed"
                     }
                 }
             }
@@ -11061,14 +11061,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "error": {
-                    "description": "Error is why the last push to the AZ failed, when Status is error.",
+                    "description": "Error is the error of the last push to the AZ when Status is error.",
                     "type": "string"
                 },
                 "limit": {
                     "$ref": "#/definitions/model.QuotaResources"
                 },
                 "status": {
-                    "description": "Status tells whether the AZ applied Limit: applied, pending, or error (see Error).",
+                    "description": "Status tells whether the AZ applied Limit: applied, pending, or error.",
                     "type": "string",
                     "enum": [
                         "applied",
