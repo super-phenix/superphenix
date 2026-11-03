@@ -99,6 +99,10 @@ type Organization struct {
 
 	// AuditRetentionDays overrides the configured audit log retention. Nil means the default.
 	AuditRetentionDays *int
+
+	// QuotaRevision is the revision of the quotas of the organization, set by the quota writes and the
+	// quota reconciler only.
+	QuotaRevision int64 `gorm:"->;not null;default:0" json:"-"`
 }
 
 type Project struct {
@@ -238,6 +242,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&OrganizationQuota{},
 		&ProjectQuota{},
 		&ProjectAZQuota{},
+		&ProjectAZQuotaState{},
 		&Group{},
 		&ProductType{},
 		&Product{},

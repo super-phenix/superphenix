@@ -43,6 +43,8 @@ func TestDeleteRemovesQuotas(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "organizations" WHERE id = $1`)+`.*FOR UPDATE`).
 		WithArgs(orgaID, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgaID))
+	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_az_quota_states" WHERE organization_id = $1`)).
+		WithArgs(orgaID).WillReturnResult(sqlmock.NewResult(0, 2))
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_az_quotas" WHERE project_id IN `) + projects).
 		WithArgs(orgaID).WillReturnResult(sqlmock.NewResult(0, 2))
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_quotas" WHERE organization_id = $1`)).

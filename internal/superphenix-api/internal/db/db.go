@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/migration"
 
@@ -34,5 +35,18 @@ func InitDatabase(host, user, password, dbname, port string) error {
 		return err
 	}
 	log.Info().Msg("Migration complete")
+	return nil
+}
+
+// ConfigurePool bounds the connection pool of Client, so that a burst of requests waits for a
+// connection instead of exhausting the connections of the database server.
+func ConfigurePool(maxOpenConns, maxIdleConns int, connMaxLifetime time.Duration) error {
+	sqlDB, err := Client.DB()
+	if err != nil {
+		return err
+	}
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
 	return nil
 }

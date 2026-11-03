@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
@@ -32,9 +33,12 @@ func setupMockDB(t *testing.T) sqlmock.Sqlmock {
 
 	oldClient := db.Client
 	db.Client = gormDB
+	oldWait := config.Global.Quota.ApplyWait
+	config.Global.Quota.ApplyWait = 5 * time.Second
 	t.Cleanup(func() {
 		assert.NoError(t, mock.ExpectationsWereMet())
 		db.Client = oldClient
+		config.Global.Quota.ApplyWait = oldWait
 		_ = sqlDB.Close()
 	})
 	return mock
@@ -93,6 +97,8 @@ func TestSetProjectQuotaOfAnotherOrganization(t *testing.T) {
 
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`FROM "organizations"`)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
+	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE organizations SET quota_revision`)).
+		WillReturnRows(sqlmock.NewRows([]string{"quota_revision"}).AddRow(int64(41)))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE (id = $1 AND orga_id = $2)`)).
 		WithArgs(projID, orgID, 1).WillReturnError(gorm.ErrRecordNotFound)
 	mock.ExpectRollback()
@@ -121,6 +127,54 @@ func TestGetProjectQuotaOfAnotherOrganization(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, rr.Code)
 }
 
+// A write answers its success status once the AZs applied it, 202 Accepted otherwise.
+func TestDeleteProjectQuotaApplied(t *testing.T) {
+	orgID, projID := uuid.New(), uuid.New()
+	tests := []struct {
+		name     string
+		claimErr error
+		status   int
+	}{
+		{"applied", nil, http.StatusNoContent},
+		{"not applied yet", assert.AnError, http.StatusAccepted},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			old := config.Global.AZs
+			config.Global.AZs = map[string]config.AZConfig{"az1": {Code: "az1"}}
+			t.Cleanup(func() { config.Global.AZs = old })
+			mock := setupMockDB(t)
+			mock.ExpectBegin()
+			mock.ExpectQuery(regexp.QuoteMeta(`FROM "organizations"`)).WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
+			mock.ExpectQuery(regexp.QuoteMeta(`UPDATE organizations SET quota_revision`)).
+				WillReturnRows(sqlmock.NewRows([]string{"quota_revision"}).AddRow(int64(41)))
+			mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE (id = $1 AND orga_id = $2)`)).
+				WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(projID))
+			mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "organization_quotas"`)).WillReturnError(gorm.ErrRecordNotFound)
+			mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_az_quotas"`)).WillReturnResult(sqlmock.NewResult(0, 0))
+			mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_quotas"`)).WillReturnResult(sqlmock.NewResult(0, 1))
+			mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "project_az_quota_states"`)).
+				WillReturnRows(sqlmock.NewRows([]string{"due_at"}).AddRow(time.Now()))
+			mock.ExpectCommit()
+			claim := mock.ExpectQuery(regexp.QuoteMeta(`WITH due AS`)).WithArgs(orgID, "az1", projID, sqlmock.AnyArg(), sqlmock.AnyArg())
+			if tt.claimErr != nil {
+				claim.WillReturnError(tt.claimErr)
+			} else {
+				claim.WillReturnRows(sqlmock.NewRows([]string{"organization_id", "project_id", "code_az"}))
+			}
+
+			rr := do(newRouter(), http.MethodDelete, fmt.Sprintf("/organization/%s/project/%s/quota", orgID, projID), "")
+			assert.Equal(t, tt.status, rr.Code, rr.Body.String())
+		})
+	}
+}
+
+func TestAppliedStatus(t *testing.T) {
+	assert.Equal(t, http.StatusOK, AppliedStatus(true, http.StatusOK))
+	assert.Equal(t, http.StatusNoContent, AppliedStatus(true, http.StatusNoContent))
+	assert.Equal(t, http.StatusAccepted, AppliedStatus(false, http.StatusOK))
+}
+
 func TestWriteError(t *testing.T) {
 	tests := map[error]int{
 		fmt.Errorf("%w: cpu", crudQuota.ErrInvalidQuantity):      http.StatusBadRequest,
@@ -130,6 +184,7 @@ func TestWriteError(t *testing.T) {
 		crudQuota.ErrProjectNotFound:                             http.StatusNotFound,
 		crudQuota.ErrAZNotFound:                                  http.StatusNotFound,
 		crudQuota.ErrProjectQuotaEnforced:                        http.StatusConflict,
+		fmt.Errorf("%w: az-1", crudQuota.ErrUsageUnavailable):    http.StatusServiceUnavailable,
 	}
 	for err, status := range tests {
 		rr := httptest.NewRecorder()

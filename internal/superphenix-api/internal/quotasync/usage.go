@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,30 +29,27 @@ const (
 	maxUsageBodySize = 1 << 20
 )
 
-// controllerStatus is the body answered by GET {controller}/{orgId}/{projectId}/quota.
+// controllerStatus holds the usage the controller answers to GET {controller}/{orgId}/{projectId}/quota.
 type controllerStatus struct {
-	Hard map[string]string `json:"hard"`
 	Used map[string]string `json:"used"`
 }
 
+// init plugs readAZUsage into crudQuota.ReadUsage.
 func init() {
 	crudQuota.ReadUsage = readAZUsage
 }
 
-// readAZUsage reads the quota enforced and used by a project in one AZ (see crudQuota.ReadUsage).
-func readAZUsage(ctx context.Context, orgId, projectId uuid.UUID, codeAZ string) (crudQuota.AZUsage, error) {
+// readAZUsage asks the controller of one AZ what a project uses there (see crudQuota.ReadUsage).
+func readAZUsage(ctx context.Context, orgId, projectId uuid.UUID, codeAZ string) (spxQuota.Quantities, error) {
 	azCfg, err := az.GetByCode(codeAZ, orgId.String())
 	if err != nil {
-		return crudQuota.AZUsage{}, err
+		return nil, err
 	}
 	status, err := fetch(ctx, azCfg, orgId, projectId)
 	if err != nil {
-		return crudQuota.AZUsage{}, err
+		return nil, err
 	}
-	return crudQuota.AZUsage{
-		Hard: spxQuota.FromKubernetesUsage(status.Hard),
-		Used: spxQuota.FromKubernetesUsage(status.Used),
-	}, nil
+	return spxQuota.FromKubernetesUsage(status.Used), nil
 }
 
 // GetProjectQuotaOverview returns the quota overview of a project of the organization (see
@@ -67,19 +63,18 @@ func GetProjectQuotaOverview(ctx context.Context, orgId, projectId uuid.UUID) (c
 		return overview, err
 	}
 
-	azs := targets(orgId, nil)
 	log := logger.GetLogger(ctx)
 	g := new(errgroup.Group)
 	g.SetLimit(usageConcurrency)
 	for i := range overview.AZQuotas {
 		azq := &overview.AZQuotas[i]
-		idx := slices.IndexFunc(azs, func(a config.AZConfig) bool { return a.Code == azq.CodeAZ })
-		if idx < 0 {
+		azCfg, err := az.GetByCode(azq.CodeAZ, orgId.String())
+		if err != nil {
 			// AZ quota of an AZ no longer available to the organization.
 			continue
 		}
 		g.Go(func() error {
-			status, err := fetch(ctx, azs[idx], orgId, projectId)
+			status, err := fetch(ctx, azCfg, orgId, projectId)
 			if err != nil {
 				log.Err(err).Str("az", azq.CodeAZ).Str("projectId", projectId.String()).Msg("failed to get quota usage")
 				return nil
@@ -104,7 +99,7 @@ func fetch(ctx context.Context, azCfg config.AZConfig, orgId, projectId uuid.UUI
 	if err != nil {
 		return status, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		return status, fmt.Errorf("controller answered %d", resp.StatusCode)
 	}

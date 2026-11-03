@@ -56,6 +56,11 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az", "resources"}).
 			AddRow(projectId, "az-old", `{"cpu":"1"}`).
 			AddRow(projectId, "az1", `{"cpu":"4"}`))
+	// az1 applied its quota, az2 did not yet.
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az", "wanted_revision", "applied_revision"}).
+			AddRow(projectId, "az1", 2, 2).
+			AddRow(projectId, "az2", 2, 1))
 
 	overview, err := GetProjectQuotaOverview(context.Background(), orgId, projectId)
 	require.NoError(t, err)
@@ -65,18 +70,19 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 	assert.Equal(t, model.QuotaResources{"cpu": "11", "memory": "0"}, overview.Remaining)
 	// Each AZ shows the limit it enforces: 0 for what a parent limits without AZ share.
 	assert.Equal(t, []crudQuota.AZQuotaOverview{
-		{CodeAZ: "az-old", Limit: model.QuotaResources{"cpu": "1", "memory": "0"}, Used: model.QuotaResources{}},
-		{CodeAZ: "az1", Limit: model.QuotaResources{"cpu": "4", "memory": "0"}, Available: true, Used: model.QuotaResources{"cpu": "2500m", "memory": "1Gi"}},
-		{CodeAZ: "az2", Limit: model.QuotaResources{"cpu": "0", "memory": "0"}, Available: true, Used: model.QuotaResources{"cpu": "500m", "disk": "10Gi"}},
+		{CodeAZ: "az-old", Limit: model.QuotaResources{"cpu": "1", "memory": "0"}, Status: crudQuota.StatusPending, Used: model.QuotaResources{}},
+		{CodeAZ: "az1", Limit: model.QuotaResources{"cpu": "4", "memory": "0"}, Status: crudQuota.StatusApplied, Available: true,
+			Used: model.QuotaResources{"cpu": "2500m", "memory": "1Gi"}},
+		{CodeAZ: "az2", Limit: model.QuotaResources{"cpu": "0", "memory": "0"}, Status: crudQuota.StatusPending, Available: true,
+			Used: model.QuotaResources{"cpu": "500m", "disk": "10Gi"}},
 		// An unreachable AZ is reported as unavailable.
-		{CodeAZ: "az3", Limit: model.QuotaResources{"cpu": "0", "memory": "0"}, Used: model.QuotaResources{}},
+		{CodeAZ: "az3", Limit: model.QuotaResources{"cpu": "0", "memory": "0"}, Status: crudQuota.StatusPending, Used: model.QuotaResources{}},
 	}, overview.AZQuotas)
 
-	// The reader registered for the crud checks gives the enforced and used quantities of one AZ.
-	azUsage, err := crudQuota.ReadUsage(context.Background(), orgId, projectId, "az1")
+	// The reader registered for the crud checks gives the used quantities of one AZ.
+	used, err := crudQuota.ReadUsage(context.Background(), orgId, projectId, "az1")
 	require.NoError(t, err)
-	assert.Equal(t, spxQuota.Quantities{"cpu": 4000}, azUsage.Hard)
-	assert.Equal(t, spxQuota.Quantities{"cpu": 2500, "memory": 1 << 30}, azUsage.Used)
+	assert.Equal(t, spxQuota.Quantities{"cpu": 2500, "memory": 1 << 30}, used)
 	_, err = crudQuota.ReadUsage(context.Background(), orgId, projectId, "az3")
 	require.Error(t, err)
 	_, err = crudQuota.ReadUsage(context.Background(), orgId, projectId, "az-unknown")

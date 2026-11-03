@@ -10,10 +10,6 @@ import (
 func initSchema(tx *gorm.DB) error {
 	log.Info().Msg("Initializing schema")
 
-	if err := tx.Exec(`CREATE SEQUENCE IF NOT EXISTS quota_revisions_seq`).Error; err != nil {
-		return err
-	}
-
 	err := model.AutoMigrate(tx)
 	if err != nil {
 		return err

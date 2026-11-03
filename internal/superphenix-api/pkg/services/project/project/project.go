@@ -239,9 +239,9 @@ func InitializeProject(ctx context.Context, userId, orgaId uuid.UUID, name strin
 		return model.APIProject{}, err
 	}
 
-	// A project created in an organization with a quota gets 0 for every limited
-	// resource, until a project quota is given to it. When the quota cannot be applied,
-	// the creation soft-fails: the project is kept but deactivated.
+	// A project created in an organization with a quota gets 0 for every limited resource until
+	// someone sets its project quota. When the AZs do not apply the quota within quota.applyWait,
+	// the creation soft-fails: the project stays deactivated until the reconciler applies its quota.
 	quotaErr := quotasync.Initialize(ctx, orgaId, projectEntity.ID)
 	if quotaErr != nil {
 		log.Err(quotaErr).Str("userId", userId.String()).Any("project", projectEntity).Msg("Failed to apply project quota")

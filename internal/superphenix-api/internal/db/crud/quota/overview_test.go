@@ -27,6 +27,10 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 		expectProjectAZQs(mock, projID,
 			[2]string{"az-1", `{"cpu":"4","memory":"1Gi"}`},
 			[2]string{"az-2", `{"cpu":"500m","disk":"10Gi"}`})
+		applyFailure := "controller answered 500"
+		expectProjectStates(mock, projID,
+			stateRow{projectID: projID, codeAZ: "az-1", wantedRevision: 5, appliedRevision: 5},
+			stateRow{projectID: projID, codeAZ: "az-2", wantedRevision: 5, appliedRevision: 4, lastError: &applyFailure})
 
 		overview, err := GetProjectQuotaOverview(context.Background(), orgID, projID)
 		require.NoError(t, err)
@@ -44,8 +48,9 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 			"allocated": {"cpu": "4500m", "memory": "1Gi", "disk": "10Gi"},
 			"remaining": {"cpu": "11500m", "memory": "63Gi"},
 			"azQuotas": [
-				{"codeAZ": "az-1", "limit": {"cpu": "4", "memory": "1Gi"}, "available": false, "used": {}},
-				{"codeAZ": "az-2", "limit": {"cpu": "500m", "memory": "0", "disk": "10Gi"}, "available": false, "used": {}}
+				{"codeAZ": "az-1", "limit": {"cpu": "4", "memory": "1Gi"}, "status": "applied", "available": false, "used": {}},
+				{"codeAZ": "az-2", "limit": {"cpu": "500m", "memory": "0", "disk": "10Gi"}, "status": "error",
+					"error": "controller answered 500", "available": false, "used": {}}
 			]}`, projID, orgID), string(raw))
 	})
 
@@ -55,6 +60,7 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 		expectOrgQuota(mock, orgID, "")
 		mock.ExpectQuery(sqlProjectQuota).WithArgs(projID, 1).WillReturnError(gorm.ErrRecordNotFound)
 		expectProjectAZQs(mock, projID, [2]string{"az-1", `{"cpu":"2"}`})
+		expectProjectStates(mock, projID)
 
 		overview, err := GetProjectQuotaOverview(context.Background(), orgID, projID)
 		require.NoError(t, err)
@@ -71,6 +77,7 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 		mock.ExpectQuery(sqlProjectQuota).WithArgs(projID, 1).
 			WillReturnRows(sqlmock.NewRows([]string{"project_id", "organization_id", "resources"}).AddRow(projID, orgID, `{"cpu":"2"}`))
 		expectProjectAZQs(mock, projID)
+		expectProjectStates(mock, projID)
 
 		overview, err := GetProjectQuotaOverview(context.Background(), orgID, projID)
 		require.NoError(t, err)
@@ -87,6 +94,7 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 		expectOrgQuota(mock, orgID, `{"cpu":"8"}`)
 		mock.ExpectQuery(sqlProjectQuota).WithArgs(projID, 1).WillReturnError(gorm.ErrRecordNotFound)
 		expectProjectAZQs(mock, projID)
+		expectProjectStates(mock, projID)
 
 		overview, err := GetProjectQuotaOverview(context.Background(), orgID, projID)
 		require.NoError(t, err)
@@ -103,6 +111,7 @@ func TestGetProjectQuotaOverview(t *testing.T) {
 		mock.ExpectQuery(sqlProjectQuota).WithArgs(projID, 1).
 			WillReturnRows(sqlmock.NewRows([]string{"project_id", "organization_id", "resources"}).AddRow(projID, orgID, `{}`))
 		expectProjectAZQs(mock, projID)
+		expectProjectStates(mock, projID)
 
 		overview, err := GetProjectQuotaOverview(context.Background(), orgID, projID)
 		require.NoError(t, err)

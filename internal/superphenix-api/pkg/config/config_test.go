@@ -26,6 +26,7 @@ func TestValidate(t *testing.T) {
 		c.AuditLog.GarbageCollection.Interval = time.Hour
 		c.AuditLog.GarbageCollection.Timeout = 10 * time.Minute
 		c.AuditLog.GarbageCollection.BatchSize = 5000
+		c.Quota.Resync.Interval = 10 * time.Minute
 		return c
 	}
 
@@ -54,6 +55,10 @@ func TestValidate(t *testing.T) {
 			c.AuditLog.GarbageCollection.Enabled = false
 			c.AuditLog.GarbageCollection.BatchSize = 0
 		}, wantErr: ""},
+		{name: "quota resync without interval", mutate: func(c *Config) { c.Quota.Resync.Interval = 0 }, wantErr: "quota.resync.interval must be positive"},
+		{name: "negative quota apply wait", mutate: func(c *Config) { c.Quota.ApplyWait = -time.Second }, wantErr: "quota.applyWait cannot be negative"},
+		{name: "negative database pool size", mutate: func(c *Config) { c.Database.MaxOpenConns = -1 }, wantErr: "cannot be negative"},
+		{name: "negative connection lifetime", mutate: func(c *Config) { c.Database.ConnMaxLifetime = -time.Minute }, wantErr: "cannot be negative"},
 	}
 
 	for _, tt := range tests {
@@ -72,6 +77,29 @@ func TestValidate(t *testing.T) {
 			}
 			if !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("Validate() error = %q, want to contain %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+// The defaults bound the database pool, the wait of a quota write for the AZs, and how often the
+// quotas are pushed again.
+func TestQuotaAndDatabaseDefaults(t *testing.T) {
+	tests := []struct {
+		name     string
+		got      any
+		expected any
+	}{
+		{"quota apply wait", Global.Quota.ApplyWait, 5 * time.Second},
+		{"quota resync interval", Global.Quota.Resync.Interval, 10 * time.Minute},
+		{"max open connections", Global.Database.MaxOpenConns, 25},
+		{"max idle connections", Global.Database.MaxIdleConns, 10},
+		{"connection lifetime", Global.Database.ConnMaxLifetime, 30 * time.Minute},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.got != tt.expected {
+				t.Errorf("expected %v, got %v", tt.expected, tt.got)
 			}
 		})
 	}

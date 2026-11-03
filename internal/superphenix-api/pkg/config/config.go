@@ -186,6 +186,8 @@ type Config struct {
 
 	Quota struct {
 		Resync QuotaResyncConfig `yaml:"resync"`
+		// ApplyWait bounds how long a quota write waits for the AZs to apply it before answering.
+		ApplyWait time.Duration `yaml:"applyWait"`
 	} `yaml:"quota"`
 
 	Database struct {
@@ -194,6 +196,12 @@ type Config struct {
 		Username string
 		Password string
 		Database string
+		// MaxOpenConns bounds the open connections of the pool (0: no bound).
+		MaxOpenConns int `yaml:"maxOpenConns"`
+		// MaxIdleConns bounds the idle connections kept in the pool.
+		MaxIdleConns int `yaml:"maxIdleConns"`
+		// ConnMaxLifetime closes connections older than this (0: never).
+		ConnMaxLifetime time.Duration `yaml:"connMaxLifetime"`
 	}
 
 	AZs map[string]AZConfig `yaml:"azs"`
@@ -323,15 +331,17 @@ auditLog:
     batchSize: 5000
 quota:
   resync:
-    enabled: true
     interval: 10m
-    timeout: 9m
+  applyWait: 5s
 database:
   host: ""
   port: ""
   username: ""
   password: ""
   database: ""
+  maxOpenConns: 25
+  maxIdleConns: 10
+  connMaxLifetime: 30m
 azs: {}
 spxPrefix: "spx"
 argoCdUrl: "https://<argocd-host>"
@@ -477,16 +487,17 @@ func (a *AuditLogConfig) validate() []string {
 	return errs
 }
 
-// QuotaResyncConfig drives the periodic push of every project quota to every AZ.
+// QuotaResyncConfig paces the quota reconciler (see quotasync.NewReconciler).
 type QuotaResyncConfig struct {
-	Enabled  bool          `yaml:"enabled"`
+	// Interval is how long the reconciler waits before it pushes an applied quota again or retries
+	// an AZ the organization no longer has. The reconciler also creates the missing sync states at
+	// this interval.
 	Interval time.Duration `yaml:"interval"`
-	Timeout  time.Duration `yaml:"timeout"`
 }
 
 func (q *QuotaResyncConfig) validate() []string {
-	if q.Enabled && (q.Interval <= 0 || q.Timeout <= 0) {
-		return []string{"quota.resync.interval and timeout must be positive"}
+	if q.Interval <= 0 {
+		return []string{"quota.resync.interval must be positive"}
 	}
 	return nil
 }
@@ -533,6 +544,12 @@ func (c *Config) Validate() error {
 
 	errs = append(errs, c.AuditLog.validate()...)
 	errs = append(errs, c.Quota.Resync.validate()...)
+	if c.Quota.ApplyWait < 0 {
+		errs = append(errs, "quota.applyWait cannot be negative")
+	}
+	if c.Database.MaxOpenConns < 0 || c.Database.MaxIdleConns < 0 || c.Database.ConnMaxLifetime < 0 {
+		errs = append(errs, "database.maxOpenConns, maxIdleConns and connMaxLifetime cannot be negative")
+	}
 
 	if len(errs) > 0 {
 		return fmt.Errorf("invalid configuration:\n  - %s", strings.Join(errs, "\n  - "))

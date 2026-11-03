@@ -1604,7 +1604,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Set (replace) the quota of a project and apply it to every AZ. Allowed resources: cpu, memory, disk. It must fit in the organization quota and cannot be lower than the sum of its AZ quotas. It is split equally among the AZs only when the project has no AZ quota yet.",
+                "description": "Set (replace) the quota of a project and apply it to every AZ. Allowed resources: cpu, memory, disk. It must fit in the organization quota and cannot be lower than the sum of its AZ quotas. It is split equally among the AZs only when the project has no AZ quota yet. Answers 202 when some AZ did not apply it yet: it keeps being pushed (see the status of the AZs in the project quota).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1646,7 +1646,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Project quota",
+                        "description": "Project quota, applied on every AZ",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProjectQuota"
+                        }
+                    },
+                    "202": {
+                        "description": "Project quota, saved but not applied on every AZ yet",
                         "schema": {
                             "$ref": "#/definitions/model.ProjectQuota"
                         }
@@ -1668,9 +1674,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error"
-                    },
-                    "502": {
-                        "description": "Saved but not applied on some AZs (retry to apply it again)"
                     }
                 }
             },
@@ -1683,7 +1686,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Delete the quota and AZ quotas of a project and apply it to every AZ. Refused while the organization has a quota.",
+                "description": "Delete the quota and AZ quotas of a project and apply it to every AZ. Refused while the organization has a quota. Answers 202 when some AZ did not apply it yet: it keeps being pushed.",
                 "tags": [
                     "v1",
                     "quota"
@@ -1706,8 +1709,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
+                    "202": {
+                        "description": "Deleted, not applied on every AZ yet"
+                    },
                     "204": {
-                        "description": "No Content"
+                        "description": "Deleted, applied on every AZ"
                     },
                     "400": {
                         "description": "Bad Request"
@@ -1723,9 +1729,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error"
-                    },
-                    "502": {
-                        "description": "Deleted but not applied on some AZs (retry to apply it again)"
                     }
                 }
             }
@@ -1740,7 +1743,7 @@ const docTemplate = `{
                         ]
                     }
                 ],
-                "description": "Set (replace) the quota of a project in one AZ and apply it. Allowed resources: cpu, memory, disk. It must fit in the project quota (or the organization quota when the project has none) and cannot be lowered below what the project currently uses in the AZ.",
+                "description": "Set (replace) the quota of a project in one AZ and apply it. Allowed resources: cpu, memory, disk. It must fit in the project quota (or the organization quota when the project has none) and cannot be lowered below what the project currently uses in the AZ. Answers 202 when the AZ did not apply it yet: it keeps being pushed (see the status of the AZ in the project quota).",
                 "consumes": [
                     "application/json"
                 ],
@@ -1789,7 +1792,13 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Project AZ quota",
+                        "description": "Project AZ quota, applied on the AZ",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProjectAZQuota"
+                        }
+                    },
+                    "202": {
+                        "description": "Project AZ quota, saved but not applied on the AZ yet",
                         "schema": {
                             "$ref": "#/definitions/model.ProjectAZQuota"
                         }
@@ -1812,11 +1821,8 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error"
                     },
-                    "502": {
-                        "description": "Saved but not applied on the AZ (retry to apply it again)"
-                    },
                     "503": {
-                        "description": "AZ or its usage unavailable, nothing changed"
+                        "description": "Lowered, but the usage of the AZ cannot be read: nothing changed"
                     }
                 }
             }
@@ -11054,8 +11060,21 @@ const docTemplate = `{
                 "codeAZ": {
                     "type": "string"
                 },
+                "error": {
+                    "description": "Error is why the last push to the AZ failed, when Status is error.",
+                    "type": "string"
+                },
                 "limit": {
                     "$ref": "#/definitions/model.QuotaResources"
+                },
+                "status": {
+                    "description": "Status tells whether the AZ applied Limit: applied, pending, or error (see Error).",
+                    "type": "string",
+                    "enum": [
+                        "applied",
+                        "pending",
+                        "error"
+                    ]
                 },
                 "used": {
                     "$ref": "#/definitions/model.QuotaResources"

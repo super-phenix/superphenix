@@ -37,11 +37,8 @@ func (h *Service) SetOrganizationQuota(w http.ResponseWriter, r *http.Request) {
 		quotaService.WriteError(w, r, err, "failed to set organization quota")
 		return
 	}
-	if err := quotasync.Organization(r.Context(), orgID); err != nil {
-		quotaService.WriteError(w, r, err, "failed to apply organization quota")
-		return
-	}
-	quotaService.WriteJSON(w, http.StatusOK, oq)
+	applied := quotasync.Apply(r.Context(), quotasync.Scope{OrganizationId: orgID})
+	quotaService.WriteJSON(w, quotaService.AppliedStatus(applied, http.StatusOK), oq)
 }
 
 // DeleteOrganizationQuota handles DELETE /organization/{orgaId}
@@ -54,9 +51,6 @@ func (h *Service) DeleteOrganizationQuota(w http.ResponseWriter, r *http.Request
 		quotaService.WriteError(w, r, err, "failed to delete organization quota")
 		return
 	}
-	if err := quotasync.Organization(r.Context(), orgID); err != nil {
-		quotaService.WriteError(w, r, err, "failed to apply organization quota")
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	applied := quotasync.Apply(r.Context(), quotasync.Scope{OrganizationId: orgID})
+	w.WriteHeader(quotaService.AppliedStatus(applied, http.StatusNoContent))
 }

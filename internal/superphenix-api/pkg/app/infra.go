@@ -46,6 +46,10 @@ func ProvideInfra(cfg *config.Config) error {
 			infraErr = err
 			return
 		}
+		if err := db.ConfigurePool(cfg.Database.MaxOpenConns, cfg.Database.MaxIdleConns, cfg.Database.ConnMaxLifetime); err != nil {
+			infraErr = err
+			return
+		}
 
 		// Runs after InitDatabase, which applies the migrations. Never fatal: the catalog version
 		// is only recorded on success, so a failure is retried on the next boot.
@@ -122,17 +126,13 @@ func StartAuditLogGC(ctx context.Context, cfg *config.Config) {
 	go auditGc.New(cfg.AuditLog).Run(ctx)
 }
 
-// StartQuotaResync pushes the quota of every project to every AZ in the background, on a timer,
-// until ctx is cancelled. One replica re-syncs per tick.
-func StartQuotaResync(ctx context.Context, cfg *config.Config) {
-	if !cfg.Quota.Resync.Enabled {
-		return
-	}
-
+// StartQuotaReconciler pushes the quotas to the AZs in the background until ctx is cancelled:
+// the pushes that failed, and every quota again periodically. Every replica runs one.
+func StartQuotaReconciler(ctx context.Context, cfg *config.Config) {
 	if err := ProvideInfra(cfg); err != nil {
-		log.Error().Err(err).Msg("Failed to initialize infrastructure, quota re-sync not started")
+		log.Error().Err(err).Msg("Failed to initialize infrastructure, quota reconciler not started")
 		return
 	}
 
-	go quotasync.NewResyncer(cfg.Quota.Resync).Run(ctx)
+	go quotasync.NewReconciler(cfg.Quota.Resync).Run(ctx)
 }

@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
@@ -31,9 +32,12 @@ func setupMockDB(t *testing.T) sqlmock.Sqlmock {
 
 	oldClient := db.Client
 	db.Client = gormDB
+	oldWait := config.Global.Quota.ApplyWait
+	config.Global.Quota.ApplyWait = 5 * time.Second
 	t.Cleanup(func() {
 		assert.NoError(t, mock.ExpectationsWereMet())
 		db.Client = oldClient
+		config.Global.Quota.ApplyWait = oldWait
 		_ = sqlDB.Close()
 	})
 	return mock
@@ -58,6 +62,8 @@ func TestAdminGetOrganizationQuota(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "organization_id", "resources"}).AddRow(projectID, orgID, `{"cpu":"16"}`))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quotas"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az", "resources"}))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az"}))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE orga_id = $1`)).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(projectID))
 
@@ -115,26 +121,61 @@ func fakeController(t *testing.T, status int) map[string]map[string]string {
 	return pushed
 }
 
-func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID) {
+// expectDeleteAndSync expects the organization quota to be deleted, its project marked dirty in
+// az1, then the change to be pushed (see quotasync.Apply): claimed, prepared, and, after the push,
+// recorded as applied or failed.
+func expectDeleteAndSync(mock sqlmock.Sqlmock, orgID, projectID uuid.UUID, applied bool) {
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "organizations"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
+	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE organizations SET quota_revision = GREATEST(quota_revision + 1,`)).
+		WithArgs(orgID).WillReturnRows(sqlmock.NewRows([]string{"quota_revision"}).AddRow(int64(41)))
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "organization_quotas" WHERE organization_id = $1`)).
 		WithArgs(orgID).WillReturnResult(sqlmock.NewResult(0, 1))
-	// The quotas left behind get a new revision, so that what is pushed next is not taken for
-	// a stale push by the AZ controllers (see crudQuota.DeleteOrganizationQuota).
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_az_quotas" SET "revision"=nextval('quota_revisions_seq')`)).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "project_quotas" SET "revision"=nextval('quota_revisions_seq')`)).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	mock.ExpectCommit()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE orga_id = $1`)).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(projectID))
+	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "project_az_quota_states"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"due_at"}).AddRow(time.Now()))
+	mock.ExpectCommit()
+
+	mock.ExpectQuery(regexp.QuoteMeta(`WITH due AS (SELECT project_id, code_az FROM project_az_quota_states WHERE organization_id = $1 AND`)).
+		WithArgs(orgID, "az1", sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"organization_id", "project_id", "code_az"}).AddRow(orgID, projectID, "az1"))
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "organizations"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(orgID))
+	mock.ExpectQuery(regexp.QuoteMeta(`UPDATE organizations SET quota_revision = GREATEST(quota_revision + 1,`)).
+		WithArgs(orgID).WillReturnRows(sqlmock.NewRows([]string{"quota_revision"}).AddRow(int64(42)))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "organization_quotas"`)).WillReturnRows(sqlmock.NewRows([]string{"organization_id"}))
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT "id" FROM "projects" WHERE orga_id = $1`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(projectID))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_quotas"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "organization_id", "resources"}).AddRow(projectID, orgID, `{"cpu":"4","disk":"10Gi"}`))
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quotas"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"project_id", "code_az", "resources"}).AddRow(projectID, "az1", `{"cpu":"2"}`))
+	stateRows := func() *sqlmock.Rows {
+		return sqlmock.NewRows([]string{"project_id", "code_az", "wanted_revision", "applied_revision"}).AddRow(projectID, "az1", 41, 30)
+	}
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id IN`)).WillReturnRows(stateRows())
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_az_quota_states" WHERE project_id = $1 AND code_az = $2 AND lease_token = $3`)).
+		WillReturnRows(stateRows())
+	// The AZ quota pushed is held until the AZ applies it.
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE project_az_quota_states SET held = $1, prepared_revision = $2`)).
+		WithArgs(`{"cpu":"2"}`, int64(42), projectID, "az1").WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	if !applied {
+		mock.ExpectExec(regexp.QuoteMeta(`UPDATE project_az_quota_states SET attempts = attempts + 1`)).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+		return
+	}
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE project_az_quota_states SET held = $1, applied_revision = $2`)).
+		WithArgs(`{"cpu":"2"}`, int64(42), int64(42), sqlmock.AnyArg(), projectID, "az1", int64(42)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	// Applied: a project deactivated because its quota was not applied would be reactivated.
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "project_deactivations"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"project_id", "reason"}))
 }
 
 func TestAdminDeleteOrganizationQuota(t *testing.T) {
@@ -143,12 +184,7 @@ func TestAdminDeleteOrganizationQuota(t *testing.T) {
 	t.Run("pushes the remaining project quota to the AZ controllers", func(t *testing.T) {
 		pushed := fakeController(t, http.StatusNoContent)
 		mock := setupMockDB(t)
-		expectDeleteAndSync(mock, orgID, projectID)
-		// Applied on every AZ: a project deactivated by a failed quota push is reactivated.
-		mock.ExpectBegin()
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_deactivations" WHERE project_id = $1 AND reason = $2`)).
-			WithArgs(projectID, "quotaFailedToApply").WillReturnResult(sqlmock.NewResult(0, 0))
-		mock.ExpectCommit()
+		expectDeleteAndSync(mock, orgID, projectID, true)
 
 		rr := httptest.NewRecorder()
 		newRouter().ServeHTTP(rr, httptest.NewRequest(http.MethodDelete, "/organization/"+orgID.String(), nil))
@@ -158,12 +194,12 @@ func TestAdminDeleteOrganizationQuota(t *testing.T) {
 			pushed["PUT /"+orgID.String()+"/"+projectID.String()+"/quota"])
 	})
 
-	t.Run("controller failure", func(t *testing.T) {
+	t.Run("controller failure: saved, accepted, and retried by the reconciler", func(t *testing.T) {
 		fakeController(t, http.StatusInternalServerError)
-		expectDeleteAndSync(setupMockDB(t), orgID, projectID)
+		expectDeleteAndSync(setupMockDB(t), orgID, projectID, false)
 
 		rr := httptest.NewRecorder()
 		newRouter().ServeHTTP(rr, httptest.NewRequest(http.MethodDelete, "/organization/"+orgID.String(), nil))
-		assert.Equal(t, http.StatusBadGateway, rr.Code)
+		assert.Equal(t, http.StatusAccepted, rr.Code)
 	})
 }

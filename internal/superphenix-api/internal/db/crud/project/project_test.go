@@ -120,6 +120,8 @@ func TestDeleteById(t *testing.T) {
 				WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 2))
 			mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_quotas" WHERE project_id = $1`)).
 				WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 1))
+			mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "project_az_quota_states" WHERE project_id = $1`)).
+				WithArgs(projectID).WillReturnResult(sqlmock.NewResult(0, 2))
 			mock.ExpectExec(regexp.QuoteMeta(query)).
 				WithArgs(sqlmock.AnyArg(), projectID, orgaID).
 				WillReturnResult(sqlmock.NewResult(0, tt.rowsAffected))

@@ -94,9 +94,8 @@ serviceMonitor:
 #         batchSize: 5000                    # events hard deleted per statement
 #     quota:
 #       resync:
-#         enabled: true                      # enable periodically resyncing quotas
-#         interval: 10m                      # pushes every project quota to every AZ
-#         timeout: 9m
+#         interval: 10m                      # pushes every applied quota again after this delay
+#       applyWait: 5s                        # how long a quota write waits for the AZs (202 past it)
 #
 # The KaaS/BaaS repos, kubeVersions and schedules live under
 # `config.productsConfig.argoApp.{kubernetes,backup}`.

@@ -77,21 +77,21 @@ func (h *Service) GetProjectQuota(w http.ResponseWriter, r *http.Request) {
 // SetProjectQuota handles PUT /organization/{orgaId}/project/{projectId}/quota
 //
 //	@Summary		Set the project quota
-//	@Description	Set (replace) the quota of a project and apply it to every AZ. Allowed resources: cpu, memory, disk. It must fit in the organization quota and cannot be lower than the sum of its AZ quotas. It is split equally among the AZs only when the project has no AZ quota yet.
+//	@Description	Set (replace) the quota of a project and apply it to every AZ. Allowed resources: cpu, memory, disk. It must fit in the organization quota and cannot be lower than the sum of its AZ quotas. It is split equally among the AZs only when the project has no AZ quota yet. Answers 202 when some AZ did not apply it yet: it keeps being pushed (see the status of the AZs in the project quota).
 //	@Tags			v1, quota
 //	@Accept			json
 //	@Produce		json
 //	@Param			orgaId		path		string				true	"Organization ID"
 //	@Param			projectId	path		string				true	"Project ID"
 //	@Param			Body		body		map[string]string	true	"Quota, e.g. {\"cpu\": \"16\", \"memory\": \"64Gi\", \"disk\": \"1Ti\"}"
-//	@Success		200			{object}	model.ProjectQuota	"Project quota"
+//	@Success		200			{object}	model.ProjectQuota	"Project quota, applied on every AZ"
+//	@Success		202			{object}	model.ProjectQuota	"Project quota, saved but not applied on every AZ yet"
 //	@Failure		400			"Invalid quota, exceeds the organization quota or below the AZ quotas"
 //	@Failure		403
 //	@Failure		404
 //	@Failure		413
 //	@Failure		415
 //	@Failure		500
-//	@Failure		502	"Saved but not applied on some AZs (retry to apply it again)"
 //	@Router			/v1/organization/{orgaId}/project/{projectId}/quota [put]
 //	@Security		Bearer[OrganizationRead, OrganizationProjectQuotaWrite]
 func (h *Service) SetProjectQuota(w http.ResponseWriter, r *http.Request) {
@@ -108,17 +108,14 @@ func (h *Service) SetProjectQuota(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, r, err, "failed to set project quota")
 		return
 	}
-	if err := quotasync.Project(r.Context(), orgID, projID); err != nil {
-		WriteError(w, r, err, "failed to apply project quota")
-		return
-	}
-	WriteJSON(w, http.StatusOK, pq)
+	applied := quotasync.Apply(r.Context(), quotasync.Scope{OrganizationId: orgID, ProjectId: &projID})
+	WriteJSON(w, AppliedStatus(applied, http.StatusOK), pq)
 }
 
 // SetProjectAZQuota handles PUT /organization/{orgaId}/project/{projectId}/quota/az/{codeAZ}
 //
 //	@Summary		Set the project AZ quota
-//	@Description	Set (replace) the quota of a project in one AZ and apply it. Allowed resources: cpu, memory, disk. It must fit in the project quota (or the organization quota when the project has none) and cannot be lowered below what the project currently uses in the AZ.
+//	@Description	Set (replace) the quota of a project in one AZ and apply it. Allowed resources: cpu, memory, disk. It must fit in the project quota (or the organization quota when the project has none) and cannot be lowered below what the project currently uses in the AZ. Answers 202 when the AZ did not apply it yet: it keeps being pushed (see the status of the AZ in the project quota).
 //	@Tags			v1, quota
 //	@Accept			json
 //	@Produce		json
@@ -126,15 +123,15 @@ func (h *Service) SetProjectQuota(w http.ResponseWriter, r *http.Request) {
 //	@Param			projectId	path		string					true	"Project ID"
 //	@Param			codeAZ		path		string					true	"AZ code"
 //	@Param			Body		body		map[string]string		true	"Quota, e.g. {\"cpu\": \"8\", \"memory\": \"32Gi\", \"disk\": \"500Gi\"}"
-//	@Success		200			{object}	model.ProjectAZQuota	"Project AZ quota"
+//	@Success		200			{object}	model.ProjectAZQuota	"Project AZ quota, applied on the AZ"
+//	@Success		202			{object}	model.ProjectAZQuota	"Project AZ quota, saved but not applied on the AZ yet"
 //	@Failure		400			"Invalid quota, exceeds the parent quota or below the current usage"
 //	@Failure		403
 //	@Failure		404
 //	@Failure		413
 //	@Failure		415
 //	@Failure		500
-//	@Failure		502	"Saved but not applied on the AZ (retry to apply it again)"
-//	@Failure		503	"AZ or its usage unavailable, nothing changed"
+//	@Failure		503	"Lowered, but the usage of the AZ cannot be read: nothing changed"
 //	@Router			/v1/organization/{orgaId}/project/{projectId}/quota/az/{codeAZ} [put]
 //	@Security		Bearer[OrganizationRead, ProjectAZQuotaWrite]
 func (h *Service) SetProjectAZQuota(w http.ResponseWriter, r *http.Request) {
@@ -152,27 +149,24 @@ func (h *Service) SetProjectAZQuota(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, r, err, "failed to set project az quota")
 		return
 	}
-	if err := quotasync.Project(r.Context(), orgID, projID, codeAZ); err != nil {
-		WriteError(w, r, err, "failed to apply project az quota")
-		return
-	}
-	WriteJSON(w, http.StatusOK, azq)
+	applied := quotasync.Apply(r.Context(), quotasync.Scope{OrganizationId: orgID, ProjectId: &projID, CodeAZ: codeAZ})
+	WriteJSON(w, AppliedStatus(applied, http.StatusOK), azq)
 }
 
 // DeleteProjectQuota handles DELETE /organization/{orgaId}/project/{projectId}/quota
 //
 //	@Summary		Delete the project quota
-//	@Description	Delete the quota and AZ quotas of a project and apply it to every AZ. Refused while the organization has a quota.
+//	@Description	Delete the quota and AZ quotas of a project and apply it to every AZ. Refused while the organization has a quota. Answers 202 when some AZ did not apply it yet: it keeps being pushed.
 //	@Tags			v1, quota
 //	@Param			orgaId		path	string	true	"Organization ID"
 //	@Param			projectId	path	string	true	"Project ID"
-//	@Success		204
+//	@Success		204			"Deleted, applied on every AZ"
+//	@Success		202			"Deleted, not applied on every AZ yet"
 //	@Failure		400
 //	@Failure		403
 //	@Failure		404
 //	@Failure		409	"The organization has a quota"
 //	@Failure		500
-//	@Failure		502	"Deleted but not applied on some AZs (retry to apply it again)"
 //	@Router			/v1/organization/{orgaId}/project/{projectId}/quota [delete]
 //	@Security		Bearer[OrganizationRead, OrganizationProjectQuotaWrite]
 func (h *Service) DeleteProjectQuota(w http.ResponseWriter, r *http.Request) {
@@ -184,11 +178,8 @@ func (h *Service) DeleteProjectQuota(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, r, err, "failed to delete project quota")
 		return
 	}
-	if err := quotasync.Project(r.Context(), orgID, projID); err != nil {
-		WriteError(w, r, err, "failed to apply project quota")
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	applied := quotasync.Apply(r.Context(), quotasync.Scope{OrganizationId: orgID, ProjectId: &projID})
+	w.WriteHeader(AppliedStatus(applied, http.StatusNoContent))
 }
 
 func parseOrgAndProject(w http.ResponseWriter, r *http.Request) (uuid.UUID, uuid.UUID, bool) {
@@ -240,9 +231,8 @@ func WriteError(w http.ResponseWriter, r *http.Request, err error, msg string) {
 		errors.Is(err, crudQuota.ErrBelowAllocated),
 		errors.Is(err, crudQuota.ErrBelowUsage):
 		status = http.StatusBadRequest
-	case errors.Is(err, crudQuota.ErrUsageUnavailable),
-		errors.Is(err, crudQuota.ErrAZUnavailable):
-		// Logged by the crud layer; the message only holds the AZ code and resource name.
+	case errors.Is(err, crudQuota.ErrUsageUnavailable):
+		// Logged by the crud layer; the message only holds the AZ code.
 		status = http.StatusServiceUnavailable
 	case errors.Is(err, crudQuota.ErrOrganizationNotFound),
 		errors.Is(err, crudQuota.ErrProjectNotFound),
@@ -250,9 +240,6 @@ func WriteError(w http.ResponseWriter, r *http.Request, err error, msg string) {
 		status = http.StatusNotFound
 	case errors.Is(err, crudQuota.ErrProjectQuotaEnforced):
 		status = http.StatusConflict
-	case errors.Is(err, quotasync.ErrNotApplied):
-		// Logged by quotasync; the message only holds AZ codes.
-		status = http.StatusBadGateway
 	}
 	if status == http.StatusInternalServerError {
 		log := logger.GetLogger(r.Context())
@@ -261,6 +248,15 @@ func WriteError(w http.ResponseWriter, r *http.Request, err error, msg string) {
 		return
 	}
 	httpError.Http(w, r, status).Msg(err.Error())
+}
+
+// AppliedStatus returns status when the AZs applied a quota write, 202 Accepted otherwise: the
+// write is saved and keeps being pushed (see quotasync.Apply).
+func AppliedStatus(applied bool, status int) int {
+	if applied {
+		return status
+	}
+	return http.StatusAccepted
 }
 
 // WriteJSON answers body as JSON with the given status.
