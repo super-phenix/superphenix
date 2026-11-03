@@ -1614,7 +1614,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "pod-security.kubernetes.io/enforce": "privileged"
     },
     "repoURL": "https://charts.rook.io/release",
-    "targetRevision": "1.16.3",
+    "targetRevision": "1.17.7",
     "values": {
       "cephBlockPools": [
         {

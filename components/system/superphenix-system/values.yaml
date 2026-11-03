@@ -926,7 +926,8 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
-    targetRevision: "1.16.3"
+    # Keep in sync with the rook-operator chart version above.
+    targetRevision: "1.17.7"
     helm:
       chart: "rook-ceph-cluster"
       releaseName: "rook-local-cluster"
