@@ -262,6 +262,9 @@ func InitializeProject(ctx context.Context, userId, orgaId uuid.UUID, name strin
 
 	var cast model.APIProject
 	temporaryVariable, err := json.Marshal(projectEntity)
+	if err != nil {
+		return cast, err
+	}
 	err = json.Unmarshal(temporaryVariable, &cast)
 	return cast, err
 }

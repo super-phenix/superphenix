@@ -101,14 +101,14 @@ func StartGarbageCollection(ctx context.Context, cfg *config.Config) {
 		return
 	}
 
-	argo := ProvideArgo(cfg)
+	client := ProvideArgo(cfg)
 
 	if err := ProvideInfra(cfg); err != nil {
 		log.Error().Err(err).Msg("Failed to initialize infrastructure, garbage collection not started")
 		return
 	}
 
-	go gc.InitGarbageCollection(ctx, argo, db.Client)
+	go gc.InitGarbageCollection(ctx, client, db.Client)
 }
 
 // StartAuditLogGC runs the audit log retention sweep in the background until ctx is

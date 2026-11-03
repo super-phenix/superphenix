@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 
@@ -17,7 +18,7 @@ const (
 )
 
 var (
-	FileNotFound = errors.New("couldn't find configuration file")
+	ErrFileNotFound = errors.New("couldn't find configuration file")
 )
 
 type RepoArgoAppConfig struct {
@@ -386,11 +387,11 @@ productsConfig:
 var Global Config
 
 func init() {
-	if err := LoadConfig(); errors.Is(err, FileNotFound) {
+	if err := LoadConfig(); errors.Is(err, ErrFileNotFound) {
 		log.Print("Config file not found, falling back to environment variables and defaults")
 	} else if err != nil {
 		// An error was produced while loading the configuration
-		log.Fatalf("An error occured while loading config file: %v", err)
+		log.Fatalf("An error occurred while loading config file: %v", err)
 	}
 }
 
@@ -419,7 +420,7 @@ func LoadConfig() error {
 	// Find and read the config file supplied by the user
 	err := viper.ReadInConfig()
 	if err != nil && errors.Is(err, err.(viper.ConfigFileNotFoundError)) {
-		return FileNotFound
+		return ErrFileNotFound
 	}
 
 	if err != nil {
@@ -528,13 +529,7 @@ func (c *Config) Validate() error {
 	// turns parseReturnUrl into an open redirect that leaks any token later
 	// appended to the callback URL. Operators can opt in for local dev via
 	// session.cors.allowUnsafeWildcard.
-	hasWildcard := false
-	for _, o := range c.Session.Cors.AllowedOrigins {
-		if o == "*" {
-			hasWildcard = true
-			break
-		}
-	}
+	hasWildcard := slices.Contains(c.Session.Cors.AllowedOrigins, "*")
 	if hasWildcard && !c.Session.Cors.AllowUnsafeWildcard {
 		errs = append(errs, `session.cors.allowedOrigins contains "*"; set session.cors.allowUnsafeWildcard=true to enable it (dev only)`)
 	}

@@ -38,10 +38,10 @@ func main() {
 
 func loadConfig() {
 	if err := config.LoadConfig(); err != nil {
-		if err == config.FileNotFound {
+		if err == config.ErrFileNotFound {
 			l.Print("Config file not found, falling back to environment variables and defaults")
 		} else {
-			l.Fatalf("An error occured while loading config file: %v", err)
+			l.Fatalf("An error occurred while loading config file: %v", err)
 		}
 	}
 }
