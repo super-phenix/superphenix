@@ -19,6 +19,7 @@ type API interface {
 	ListSSHs(http.ResponseWriter, *http.Request)
 	ListAZSSHs(http.ResponseWriter, *http.Request)
 	GetSSH(http.ResponseWriter, *http.Request)
+	GetSSHUsage(http.ResponseWriter, *http.Request)
 	CreateSSH(http.ResponseWriter, *http.Request)
 	DeleteSSH(http.ResponseWriter, *http.Request)
 }
@@ -36,9 +37,10 @@ func New(cfg *config.Config) *Service { return &Service{cfg: cfg} }
 // Module builds the SSH routes for any API.
 func Module(cfg *config.Config, s API) router.Module {
 	var (
-		sshRead  = controller.Perm(pwPermission.ProjectSSHRead)
-		sshWrite = controller.Perm(pwPermission.ProjectSSHWrite)
-		quota    = controller.CheckCreationQuota
+		sshRead      = controller.Perm(pwPermission.ProjectSSHRead)
+		sshWrite     = controller.Perm(pwPermission.ProjectSSHWrite)
+		instanceRead = controller.Perm(pwPermission.ProjectInstanceRead)
+		quota        = controller.CheckCreationQuota
 	)
 	return controller.NewControllerModule(moduleName, nil, router.Group{
 		Middlewares: []router.Middleware{sshRead},
@@ -46,6 +48,7 @@ func Module(cfg *config.Config, s API) router.Module {
 			router.Get("/{projectId}/ssh", s.ListSSHs),
 			router.Get("/{az}/{projectId}/ssh", s.ListAZSSHs),
 			router.Get("/{az}/{projectId}/ssh/{effectiveId}", s.GetSSH),
+			router.Get("/{az}/{projectId}/ssh/{effectiveId}/usage", s.GetSSHUsage, instanceRead),
 		},
 		Groups: []router.Group{{
 			Middlewares: []router.Middleware{sshWrite},
