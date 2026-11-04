@@ -1562,7 +1562,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "path": ".",
     "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
-    "targetRevision": "0.2.1",
+    "targetRevision": "0.3.0",
     "values": {
       "clusters": [
         {
@@ -1614,7 +1614,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "pod-security.kubernetes.io/enforce": "privileged"
     },
     "repoURL": "https://charts.rook.io/release",
-    "targetRevision": "1.17.7",
+    "targetRevision": "1.18.11",
     "values": {
       "cephBlockPools": [
         {
@@ -1740,15 +1740,15 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "pod-security.kubernetes.io/enforce": "privileged"
     },
     "repoURL": "https://charts.rook.io/release",
-    "targetRevision": "1.16.5",
+    "targetRevision": "1.18.11",
     "values": {
       "csi": {
         "csiAddons": {
           "enabled": true
         },
-        "csiAddonsRBDProvisionerPort": 9071,
         "enableCephfsDriver": false,
         "enableOMAPGenerator": true,
+        "rookUseCsiOperator": true,
         "serviceMonitor": {
           "enabled": true
         }
@@ -4351,7 +4351,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "path": ".",
   "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
-  "targetRevision": "0.2.1",
+  "targetRevision": "0.3.0",
   "values": {
     "clusters": [
       {
@@ -4442,7 +4442,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "pod-security.kubernetes.io/enforce": "privileged"
   },
   "repoURL": "https://charts.rook.io/release",
-  "targetRevision": "1.16.3",
+  "targetRevision": "1.18.11",
   "values": {
     "cephBlockPools": [
       {
@@ -4576,15 +4576,15 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "pod-security.kubernetes.io/enforce": "privileged"
   },
   "repoURL": "https://charts.rook.io/release",
-  "targetRevision": "1.16.5",
+  "targetRevision": "1.18.11",
   "values": {
     "csi": {
       "csiAddons": {
         "enabled": true
       },
-      "csiAddonsRBDProvisionerPort": 9071,
       "enableCephfsDriver": false,
       "enableOMAPGenerator": true,
+      "rookUseCsiOperator": true,
       "serviceMonitor": {
         "enabled": true
       }

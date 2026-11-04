@@ -35,19 +35,20 @@ function usage() {
 function namespace_secret() {
 	SOURCE_CLUSTER=$1
 
-  # Mapping contains "clusterSource:clusterDestination" or "clusterDestination:clusterSource" to map the source and destination storage clusters
-	# We need to check both syntaxes
-	MAPPING=$(kubectl get --context=admin@${CLUSTER} -n ${ROOK_NAMESPACE} configmap rook-ceph-csi-mapping-config -o json | jq -r '.data."csi-mapping-config-json"')
+  # Since Rook 1.18 the cluster mapping lives in ClientProfileMapping CRs instead of the
+	# rook-ceph-csi-mapping-config ConfigMap. A mapping may be declared in either direction,
+	# so we look the source cluster up as both the local and the remote profile.
+	MAPPINGS=$(kubectl get --context=admin@${CLUSTER} -n ${ROOK_NAMESPACE} clientprofilemappings.csi.ceph.io -o json | jq -c '[.items[].spec.mappings[]]')
 
-	# Find using key
-	NS=$(echo $MAPPING | jq -r ".[].ClusterIDMapping.\"$SOURCE_CLUSTER\"")
+	# Find using the local profile
+	NS=$(echo $MAPPINGS | jq -r --arg src "$SOURCE_CLUSTER" 'map(select(.localClientProfile == $src) | .remoteClientProfile) | first // empty')
 
-	# If not found using key, find by value
-	if [[ "$NS" = null ]]; then
-	NS=$(echo $MAPPING | jq -r ".[].ClusterIDMapping | to_entries[] | select(.value == \"$SOURCE_CLUSTER\")" | jq -r '.key')
+	# If not found, find using the remote profile
+	if [[ -z "$NS" ]]; then
+	NS=$(echo $MAPPINGS | jq -r --arg src "$SOURCE_CLUSTER" 'map(select(.remoteClientProfile == $src) | .localClientProfile) | first // empty')
 	fi
 
-	if [[ "$NS" = null ]]; then msg_warn "Failed to find the corresponding namespace\n"; exit 1; fi
+	if [[ -z "$NS" ]]; then msg_warn "Failed to find the corresponding namespace\n"; exit 1; fi
 	echo $NS
 }
 

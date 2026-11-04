@@ -2,7 +2,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: csi-kms-connection-details
+  # Name expected by the ceph-csi-operator: Rook points `OperatorConfig.spec.driverSpecDefaults.encryption`
+  # at this ConfigMap when `csi.enableCSIEncryption` is set on the Rook operator.
+  name: rook-ceph-csi-kms-config
   namespace: {{ .Values.rookOperatorNamespace }}
 data:
 {{- range .Values.clusters }}

@@ -1,6 +1,6 @@
 # spx-rook-connection
 
-![Version: 0.2.1](https://img.shields.io/badge/Version-0.2.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
+![Version: 0.3.0](https://img.shields.io/badge/Version-0.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.1.0](https://img.shields.io/badge/AppVersion-0.1.0-informational?style=flat-square)
 
 A Helm chart to connect a Superphénix K8s cluster to a Superphénix storage cluster
 
@@ -8,8 +8,8 @@ A Helm chart to connect a Superphénix K8s cluster to a Superphénix storage clu
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| clusters | list | `[]` |  |
-| mapping | string | `""` |  |
+| clientProfileMappings | object | `{}` | Cross-cluster RBD mirroring mappings, keyed by ClientProfileMapping name. Each entry is a list of `{localClientProfile, remoteClientProfile, blockPoolIdMapping}` records, where the profile names are the Ceph cluster namespaces (the `name` of a `clusters` entry) and `blockPoolIdMapping` is a list of `[localPoolId, remotePoolId]` pairs. See the example above. |
+| clusters | string | `nil` |  |
 | rookOperatorNamespace | string | `"rook-system"` |  |
 
 ----------------------------------------------

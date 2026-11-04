@@ -877,27 +877,32 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
-    targetRevision: "1.17.7"
+    # Keep in sync with the rook-local-cluster chart version below.
+    targetRevision: "1.18.11"
     helm:
       chart: "rook-ceph"
       releaseName: "rook-operator"
     values:
-      # Bind the operator to the IPv6 Superphenix storage network.
+      # Bind the operator to the network of the node.
       useOperatorHostNetwork: true
       enforceHostNetwork: true
 
       # Container Storage Interface configuration.
       csi:
+        # The Ceph-CSI driver is managed by the standalone ceph-csi-operator, which Rook
+        # deploys as a sub-chart and drives through the csi.ceph.io CRs. Rook translates the
+        # settings below into a `Driver` CR; from Rook 1.20 on they are deprecated and the
+        # CRs become the source of truth. We'll remove this when we reach that version.
+        rookUseCsiOperator: true
         # csi-addons enables volume replication and mirroring.
         csiAddons:
           enabled: true
         # Object Map generator required by RBD mirroring.
         enableOMAPGenerator: true
-        # Default port 9070 conflicts with the RBD provisioner when running on hostNetwork.
-        csiAddonsRBDProvisionerPort: 9071
         # CephFS driver is intentionally disabled, we only use RBD.
         enableCephfsDriver: false
-        # Expose CSI metrics via a ServiceMonitor.
+        # Only honoured together with `enableLiveness` or `enableGrpcMetrics`, which we
+        # leave disabled; keep it on so metrics are exposed if either is ever enabled.
         serviceMonitor:
           enabled: true
 
@@ -927,7 +932,7 @@ apps:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
     # Keep in sync with the rook-operator chart version above.
-    targetRevision: "1.17.7"
+    targetRevision: "1.18.11"
     helm:
       chart: "rook-ceph-cluster"
       releaseName: "rook-local-cluster"
@@ -1061,7 +1066,7 @@ apps:
     repoURL: "oci://ghcr.io/super-phenix/charts/spx-rook-connection"
     path: "."
     # TODO: We can switch to using the same version as superphenix-system
-    targetRevision: "0.2.1"
+    targetRevision: "0.3.0"
     helm:
       chart: "spx-rook-connection"
       releaseName: "spx-rook-connection"

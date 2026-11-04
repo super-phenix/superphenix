@@ -1,10 +1,30 @@
-{{- if $.Values.mapping }}
+{{- /*
+Cross-cluster mapping used by RBD mirroring failover: it tells Ceph-CSI which clusterID and
+which pool IDs on the peer cluster correspond to the local ones. The ceph-csi-operator
+reconciles every ClientProfileMapping of the driver namespace into the `cluster-mapping.json`
+key of the `ceph-csi-config` ConfigMap, which replaces the former hand-written
+`rook-ceph-csi-mapping-config` ConfigMap.
+
+The profile names are the ClientProfile names, which Rook derives from the namespace of the
+CephCluster, i.e. the cluster name used everywhere else in this chart.
+*/}}
+{{- range $name, $mapping := .Values.clientProfileMappings }}
 ---
-apiVersion: v1
-kind: ConfigMap
+apiVersion: csi.ceph.io/v1
+kind: ClientProfileMapping
 metadata:
-  name: rook-ceph-csi-mapping-config
+  name: {{ $name }}
   namespace: {{ $.Values.rookOperatorNamespace }}
-data:
-  csi-mapping-config-json: '{{ $.Values.mapping }}'
+spec:
+  mappings:
+  {{- range $mapping }}
+    - localClientProfile: {{ .localClientProfile }}
+      remoteClientProfile: {{ .remoteClientProfile }}
+      {{- with .blockPoolIdMapping }}
+      blockPoolIdMapping:
+        {{- range . }}
+        - {{ toJson . }}
+        {{- end }}
+      {{- end }}
+  {{- end }}
 {{- end }}
