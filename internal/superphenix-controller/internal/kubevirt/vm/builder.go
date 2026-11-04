@@ -92,7 +92,7 @@ func withCloudInit(ctx context.Context, vm *v1.VirtualMachine, init CloudInit) e
 		return err
 	}
 
-	userData := strings.Replace(init.Config, "<generated_password>", pwd, 1)
+	userData := strings.ReplaceAll(init.Config, "<generated_password>", pwd)
 
 	spxLabels := map[string]string{}
 	// Fetch all spx labels
