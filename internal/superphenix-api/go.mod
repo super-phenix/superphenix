@@ -21,6 +21,7 @@ require (
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/argoproj/argo-cd/v3 v3.2.1
 	github.com/go-gormigrate/gormigrate/v2 v2.1.5
 	github.com/golang-jwt/jwt/v4 v4.5.2
@@ -51,7 +52,6 @@ require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
-	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Permify/permify-go v0.4.9 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect

@@ -70,6 +70,44 @@ subjects:
     name: {{ include "superphenix-api.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 ---
+# Read the operator Cluster CRs to get the SPX version of each AZ.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "superphenix-api.fullname" . }}-clusters
+  namespace: {{ include "superphenix-api.operatorNamespace" . }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - operator.superphenix.net
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "superphenix-api.fullname" . }}-clusters
+  namespace: {{ include "superphenix-api.operatorNamespace" . }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "superphenix-api.fullname" . }}-clusters
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "superphenix-api.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
