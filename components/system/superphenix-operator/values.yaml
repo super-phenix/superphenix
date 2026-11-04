@@ -162,7 +162,7 @@ config:
 
   database:
     # -- Automatically connect to the default deployed PostgreSQL by probing the 'postgres' secret.
-    autoConnect: true
+    autoConnect: false
     # -- The host of the Superphenix Database.
     host: ""
     # -- The port of the Superphenix Database.
