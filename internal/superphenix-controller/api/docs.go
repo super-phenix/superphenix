@@ -5376,6 +5376,10 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "revision": {
+                    "description": "Revision is the monotonic revision of the quota in the Superphenix database.",
+                    "type": "integer"
                 }
             }
         },
@@ -15421,9 +15425,6 @@ const docTemplate = `{
                 },
                 "config": {
                     "type": "string"
-                },
-                "custom": {
-                    "type": "boolean"
                 }
             }
         },

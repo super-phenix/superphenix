@@ -23,6 +23,10 @@ func UpdateVM(ctx context.Context, namespace, name string, vmInfo UpdateVMInfo) 
 		return err
 	}
 
+	if vmInfo.CloudInit.Config == "" {
+		return errCloudInitRequired
+	}
+
 	// Update the VM
 	vmToUpdate, err := config.VirtClient.VirtualMachine(namespace).Get(ctx, name, k8smetav1.GetOptions{})
 	if err != nil {

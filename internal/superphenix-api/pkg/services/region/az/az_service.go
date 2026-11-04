@@ -19,6 +19,7 @@ const moduleName = "az"
 type API interface {
 	ListAZs(http.ResponseWriter, *http.Request)
 	StatusCheck(http.ResponseWriter, *http.Request)
+	DefaultCloudInit(http.ResponseWriter, *http.Request)
 }
 
 // Service is the default implementation of API.
@@ -45,6 +46,7 @@ func Module(s API) router.Module {
 		Routes: []router.Route{
 			router.Get("/organization/{orgaId}/az-list", s.ListAZs, jwtOrToken, orgaRead),
 			router.Get("/organization/{orgaId}/az-status", s.StatusCheck, jwtOrToken, orgaRead),
+			router.Get("/organization/{orgaId}/az/{az}/default-cloud-init", s.DefaultCloudInit, jwtOrToken, orgaRead),
 		},
 	}
 }

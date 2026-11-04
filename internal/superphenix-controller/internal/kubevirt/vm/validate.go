@@ -1,11 +1,16 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	"github.com/super-phenix/superphenix/pkg/utils/validation"
 )
+
+// errCloudInitRequired is checked before any Kubernetes resource is created, so
+// a rejected request leaves no orphan DataVolume behind.
+var errCloudInitRequired = errors.New("invalid cloud-init: config is required")
 
 // validateNetworkIP checks that any provided static IP falls within the subnet CIDR.
 // Returns an error prefixed "invalid network ip" so the HTTP layer can map it to 400.

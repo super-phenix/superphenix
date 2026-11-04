@@ -70,7 +70,7 @@ func TestUpdateVM_CustomLabels(t *testing.T) {
 	// the function progresses past validation into the builder calls (which
 	// will fail without full mocks, but that's fine — we only care about labels).
 	validInfo := func(labels []string) UpdateVMInfo {
-		info := UpdateVMInfo{}
+		info := UpdateVMInfo{CloudInit: CloudInit{Config: testCloudInit}}
 		info.General.RunStrategy = string(v1.RunStrategyAlways)
 		info.General.VMType = "linux"
 		info.General.Labels = labels
@@ -503,7 +503,8 @@ func TestUpdateVM_NetworkInterfaceState(t *testing.T) {
 			)
 
 			info := UpdateVMInfo{
-				Network: tt.networks,
+				CloudInit: CloudInit{Config: testCloudInit},
+				Network:   tt.networks,
 			}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = "linux"
@@ -622,7 +623,7 @@ func TestUpdateVM_ComputeSize(t *testing.T) {
 				},
 			).AnyTimes()
 
-			info := UpdateVMInfo{Network: []Network{{Order: 0, SubnetEId: "sub-1", Model: "virtio"}}}
+			info := UpdateVMInfo{CloudInit: CloudInit{Config: testCloudInit}, Network: []Network{{Order: 0, SubnetEId: "sub-1", Model: "virtio"}}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = "linux"
 			info.Compute.Cpu = tt.cpu

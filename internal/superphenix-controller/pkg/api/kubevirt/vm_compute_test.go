@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/kubevirt/datavolume"
 	kovm "github.com/super-phenix/superphenix/internal/superphenix-controller/internal/kubevirt/vm"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 
@@ -94,6 +95,68 @@ func TestInstanceHandlers_ComputeSizeRejected(t *testing.T) {
 			}
 			if !strings.Contains(w.Body.String(), tt.want) {
 				t.Errorf("expected body containing %q, got %s", tt.want, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestInstanceHandlers_CloudInitRejected(t *testing.T) {
+	origPrefix := config.Global.SpxPrefix
+	origK8s := config.K8sClient
+	config.Global.SpxPrefix = "spx"
+	t.Cleanup(func() {
+		config.Global.SpxPrefix = origPrefix
+		config.K8sClient = origK8s
+	})
+
+	const (
+		orgId     = "0b9f6a52-3c1e-4d7a-9a51-2f4c8e6d1a01"
+		projectId = "6c2d8e41-7a3b-4f90-b812-5e9d0c3a7f02"
+		eid       = "vm-1"
+	)
+	params := map[string]string{"orgId": orgId, "projectId": projectId, "effectiveId": eid}
+	// Creating this disk would fail, so a 400 proves the request is rejected
+	// before any disk is created.
+	newDisk := kovm.Disk{Disk: datavolume.CreateDiskInfo{}}
+	newDisk.Disk.General.Storage = "10"
+
+	tests := []struct {
+		name   string
+		update bool
+	}{
+		{name: "create without config"},
+		{name: "update without config", update: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config.K8sClient = fake.NewSimpleClientset()
+			// No expectations: the request is rejected before any KubeVirt call.
+			installMockVirtClient(t)
+			w := httptest.NewRecorder()
+
+			if tt.update {
+				body := kovm.UpdateVMInfo{Disks: []kovm.Disk{newDisk}}
+				body.General.RunStrategy = string(v1.RunStrategyAlways)
+				body.Compute.Cpu = 2
+				body.Compute.Memory = "4Gi"
+				updateInstance(w, jsonReqWithParams(t, "/instance/"+eid, body, params))
+			} else {
+				body := kovm.CreateVMInfo{
+					Metadata: spxId.Metadata{OrgId: orgId, ProjectId: projectId, ResourceLocalId: eid},
+					Disks:    []kovm.Disk{newDisk},
+				}
+				body.General.RunStrategy = string(v1.RunStrategyAlways)
+				body.Compute.Cpu = 2
+				body.Compute.Memory = "4Gi"
+				createInstance(w, jsonReqWithParams(t, "/instance", body, params))
+			}
+
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d (%s)", w.Code, w.Body.String())
+			}
+			if !strings.Contains(w.Body.String(), "invalid cloud-init") {
+				t.Errorf("expected body containing the cloud-init error, got %s", w.Body.String())
 			}
 		})
 	}

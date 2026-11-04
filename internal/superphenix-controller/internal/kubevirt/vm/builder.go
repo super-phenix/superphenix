@@ -83,17 +83,12 @@ func withDataVolumeDisks(ctx context.Context, vm *v1.VirtualMachine, diskList []
 }
 
 func withCloudInit(ctx context.Context, vm *v1.VirtualMachine, init CloudInit) error {
-	userData := DEFAULT_CLOUD_INIT
-	if init.Custom {
-		userData = init.Config
-	}
-
 	pwd, err := utils.GeneratePassword(32)
 	if err != nil {
 		return err
 	}
 
-	userData = strings.Replace(userData, "<generated_password>", pwd, 1)
+	userData := strings.ReplaceAll(init.Config, "<generated_password>", pwd)
 
 	spxLabels := map[string]string{}
 	// Fetch all spx labels

@@ -25,7 +25,6 @@ type Disk struct {
 }
 
 type CloudInit struct {
-	Custom bool   `json:"custom"`
 	Bus    string `json:"bus"`
 	Config string `json:"config,omitempty"`
 }

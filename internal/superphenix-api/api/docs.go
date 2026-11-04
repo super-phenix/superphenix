@@ -963,6 +963,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/organization/{orgaId}/az/{az}/default-cloud-init": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead"
+                        ]
+                    }
+                ],
+                "description": "Get the default cloud-init of an AZ, as resolved from the configuration",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "az"
+                ],
+                "summary": "Get AZ default cloud-init",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default cloud-init",
+                        "schema": {
+                            "$ref": "#/definitions/model.APIAzDefaultCloudInit"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
         "/v1/organization/{orgaId}/iam/group": {
             "get": {
                 "security": [
@@ -10468,6 +10515,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.APIAzDefaultCloudInit": {
+            "type": "object",
+            "properties": {
+                "config": {
                     "type": "string"
                 }
             }

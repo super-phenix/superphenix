@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	"github.com/super-phenix/superphenix/pkg/utils/validation"
 )
 
@@ -28,7 +29,7 @@ func TestToUpdateAzControllerBody_ForwardsContainerDisks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			body := UpdateInstanceBody{ContainerDisks: tt.in}
 
-			got := toUpdateAzControllerBody(body, nil)
+			got := toUpdateAzControllerBody(body, nil, config.AZConfig{})
 
 			assert.Equal(t, tt.in, got.ContainerDisks)
 		})
@@ -56,7 +57,7 @@ func TestToUpdateAzControllerBody_RoundTripsAllFields(t *testing.T) {
 		{Order: 0, Cdrom: false, Bus: "virtio", Eid: "disk-eid"},
 	}
 
-	got := toUpdateAzControllerBody(body, disksForCtrl)
+	got := toUpdateAzControllerBody(body, disksForCtrl, config.AZConfig{})
 
 	assert.Equal(t, body.General.RunStrategy, got.General.RunStrategy)
 	assert.Equal(t, body.General.VMType, got.General.VMType)
@@ -64,7 +65,7 @@ func TestToUpdateAzControllerBody_RoundTripsAllFields(t *testing.T) {
 	assert.Equal(t, body.Compute, got.Compute)
 	assert.Equal(t, body.Network, got.Network)
 	assert.Equal(t, disksForCtrl, got.Disks)
-	assert.Equal(t, body.CloudInit, got.CloudInit)
+	assert.Equal(t, InstanceCloudInitSpxControllerBody{Bus: "virtio", Config: "#cloud-config"}, got.CloudInit)
 	assert.Equal(t, body.SSHKeys, got.SSHKeys)
 	assert.Equal(t, body.ContainerDisks, got.ContainerDisks)
 }
@@ -222,7 +223,7 @@ func TestToUpdateAzControllerBody_ForwardsNetworkEnabled(t *testing.T) {
 				},
 			}
 
-			got := toUpdateAzControllerBody(body, nil)
+			got := toUpdateAzControllerBody(body, nil, config.AZConfig{})
 			require.Len(t, got.Network, 1)
 			assert.Equal(t, tt.enabled, got.Network[0].Enabled)
 
@@ -344,7 +345,7 @@ func TestInstanceBody_NetworkEnabledLifecycle(t *testing.T) {
 			}
 
 			// Verify forwarding to AZ controller preserves enabled states
-			ctrlBody := toUpdateAzControllerBody(updateBody, nil)
+			ctrlBody := toUpdateAzControllerBody(updateBody, nil, config.AZConfig{})
 			require.Len(t, ctrlBody.Network, len(tt.expectedOrder))
 			for i, expEnabled := range tt.expectedEnabled {
 				assert.Equal(t, expEnabled, ctrlBody.Network[i].Enabled)
@@ -484,6 +485,59 @@ func TestInstanceNetworkBody_MACAddressSerialization(t *testing.T) {
 			if tt.rejectInWire != "" {
 				assert.NotContains(t, string(marshaled), tt.rejectInWire)
 			}
+		})
+	}
+}
+
+func TestResolveCloudInit(t *testing.T) {
+	az := config.AZConfig{DefaultCloudInit: "#az-default"}
+
+	tests := []struct {
+		name     string
+		body     InstanceCloudInitBody
+		wantJSON string
+	}{
+		{
+			name:     "not custom uses the AZ default",
+			body:     InstanceCloudInitBody{Bus: "sata"},
+			wantJSON: `{"bus":"sata","config":"#az-default"}`,
+		},
+		{
+			name:     "not custom ignores the provided config",
+			body:     InstanceCloudInitBody{Bus: "virtio", Config: "#ignored"},
+			wantJSON: `{"bus":"virtio","config":"#az-default"}`,
+		},
+		{
+			name:     "custom keeps the user config",
+			body:     InstanceCloudInitBody{Custom: true, Bus: "virtio", Config: "#user"},
+			wantJSON: `{"bus":"virtio","config":"#user"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			marshal, err := json.Marshal(resolveCloudInit(tt.body, az))
+			require.NoError(t, err)
+			assert.JSONEq(t, tt.wantJSON, string(marshal))
+		})
+	}
+}
+
+func TestInstanceCloudInitBody_Validation(t *testing.T) {
+	tests := []struct {
+		name    string
+		body    InstanceCloudInitBody
+		wantErr bool
+	}{
+		{name: "not custom without config", body: InstanceCloudInitBody{}},
+		{name: "custom with config", body: InstanceCloudInitBody{Custom: true, Config: "#cloud-config"}},
+		{name: "custom without config", body: InstanceCloudInitBody{Custom: true}, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validation.GetValidatorV1().Validator().Struct(tt.body)
+			assert.Equal(t, tt.wantErr, err != nil, "error: %v", err)
 		})
 	}
 }
