@@ -386,6 +386,13 @@ func withSSHKeys(ctx context.Context, namespace string, sshKeys []string, vm *v1
 		sshEIds = append(sshEIds, s.Name)
 	}
 
+	currentKeys := make([]string, 0)
+	for _, credential := range vm.Spec.Template.Spec.AccessCredentials {
+		if credential.SSHPublicKey != nil && credential.SSHPublicKey.Source.Secret != nil {
+			currentKeys = append(currentKeys, credential.SSHPublicKey.Source.Secret.SecretName)
+		}
+	}
+
 	vm.Spec.Template.Spec.AccessCredentials = make([]v1.AccessCredential, 0)
 	for _, key := range sshKeys {
 		if slices.Contains(sshEIds, key) {
@@ -401,6 +408,9 @@ func withSSHKeys(ctx context.Context, namespace string, sshKeys []string, vm *v1
 					},
 				},
 			})
+		} else if slices.Contains(currentKeys, key) {
+			// A dangling key prevents the VM from booting: dropping it is how the VM gets repaired.
+			log.Warn().Str("namespace", namespace).Str("name", vm.Name).Str("ssh key", key).Msg("Removing deleted SSH key from VM")
 		} else {
 			log.Error().Str("ssh key not found", key).Msg("SSH Key not found for the user")
 			return fmt.Errorf("ssh key %s not found for the user", key)

@@ -2,6 +2,7 @@ package k8s
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"net/http"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/k8s"
@@ -32,6 +33,7 @@ func SSHEndpoint(router chi.Router) {
 		r.With(spxIdMiddleware.AddEffectiveIdToContext()).Get("/localId/{localId}", getSSHByLocalId)
 		r.Route("/{effectiveId}", func(r chi.Router) {
 			r.Get("/", getSSHByEffectiveId)
+			r.Get("/usage", getSSHUsage)
 
 			r.Delete("/", deleteSSH)
 		})
@@ -60,9 +62,17 @@ func listSSHs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	usage, err := ssh.Usage(namespaceParam)
+	if err != nil {
+		log.Err(err).Msg("failed to retrieve ssh key usage")
+		httpError.Http(w, r, http.StatusInternalServerError).Msg("failed to retrieve resource")
+		return
+	}
+
 	var sshs []view.SSH
 	for _, sshItem := range sshList {
 		sshR := view.SSHViewToResource(sshItem)
+		sshR.IsUsed = len(usage[sshItem.Name]) > 0
 		sshs = append(sshs, sshR)
 	}
 
@@ -143,9 +153,60 @@ func getSSH(w http.ResponseWriter, r *http.Request, effectiveId string) {
 		return
 	}
 
+	usage, err := ssh.Usage(namespaceParam)
+	if err != nil {
+		log.Err(err).Msg("failed to retrieve ssh key usage")
+		httpError.Http(w, r, http.StatusInternalServerError).Msg("failed to retrieve resource")
+		return
+	}
+
 	sshResource := view.SSHViewToResource(sshView)
+	sshResource.IsUsed = len(usage[effectiveId]) > 0
 
 	b, _ := json.Marshal(sshResource)
+	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
+}
+
+// getSSHUsage
+//
+//	@Summary		Get SSH usage
+//	@Description	List the VMs referencing an SSH by Effective ID
+//	@Tags			v1, SSH
+//	@Produce		json
+//	@Param			orgId		path	string			true	"Organization ID"
+//	@Param			projectId	path	string			true	"Project ID"
+//	@Param			effectiveId	path	string			true	"SSH Effective ID"
+//	@Success		200			{array}	view.SSHUser	"VMs"
+//	@Failure		404
+//	@Failure		500
+//	@Router			/{orgId}/{projectId}/ssh/{effectiveId}/usage [get]
+func getSSHUsage(w http.ResponseWriter, r *http.Request) {
+	log := logger.GetLogger(r.Context())
+	namespaceParam := utils.GetRequestNamespace(r)
+	effectiveId := chi.URLParam(r, "effectiveId")
+
+	if _, err := ssh.GetSSHKey(r.Context(), namespaceParam, effectiveId); err != nil {
+		if errors.IsNotFound(err) {
+			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
+			return
+		}
+		log.Err(err).Msg("failed to retrieve resource")
+		httpError.Http(w, r, http.StatusInternalServerError).Msg("failed to retrieve resource")
+		return
+	}
+
+	usage, err := ssh.Usage(namespaceParam)
+	if err != nil {
+		log.Err(err).Msg("failed to retrieve ssh key usage")
+		httpError.Http(w, r, http.StatusInternalServerError).Msg("failed to retrieve resource")
+		return
+	}
+
+	users := usage[effectiveId]
+	if users == nil {
+		users = []view.SSHUser{}
+	}
+	b, _ := json.Marshal(users)
 	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
 }
 
@@ -204,6 +265,7 @@ func createSSH(w http.ResponseWriter, r *http.Request) {
 //	@Success		200
 //	@Failure		400
 //	@Failure		404
+//	@Failure		409
 //	@Failure		500
 //	@Router			/{orgId}/{projectId}/ssh [delete]
 func deleteSSH(w http.ResponseWriter, r *http.Request) {
@@ -220,6 +282,8 @@ func deleteSSH(w http.ResponseWriter, r *http.Request) {
 		if errors.IsNotFound(err) {
 			log.Err(err).Msg("Failed to delete resource - Not found")
 			httpError.Http(w, r, http.StatusNotFound).Msg(http.StatusText(http.StatusNotFound))
+		} else if stderrors.Is(err, ssh.ErrSSHKeyInUse) {
+			httpError.Http(w, r, http.StatusConflict).Msg(err.Error())
 		} else {
 			log.Err(err).Msg("Failed to delete resource")
 			httpError.Http(w, r, http.StatusInternalServerError).Msg(http.StatusText(http.StatusInternalServerError))
