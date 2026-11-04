@@ -49,7 +49,7 @@ func TestToUpdateAzControllerBody_RoundTripsAllFields(t *testing.T) {
 	body.General.VMType = "windows-server-2022"
 	body.General.Labels = []string{"env=prod"}
 	body.Compute.Cpu = 4
-	body.Compute.Memory = 8192
+	body.Compute.Memory = "8Gi"
 	body.Compute.Gpu = &[]InstanceGpuBody{{Device: "nvidia-rtx-pro-6000-bse"}}
 
 	disksForCtrl := []InstanceDiskSpxControllerBody{
@@ -297,7 +297,7 @@ func TestInstanceBody_NetworkEnabledLifecycle(t *testing.T) {
 			name: "create instance body with omitted, true, and false interfaces",
 			jsonInput: `{
 				"general": {"productName": "vm-test", "runStrategy": "Always", "vmType": "linux"},
-				"compute": {"cpu": 2, "memory": 4096},
+				"compute": {"cpu": 2, "memory": "4Gi"},
 				"network": [
 					{"order": 0, "subnetEId": "sub-1", "model": "virtio"},
 					{"order": 1, "subnetEId": "sub-2", "model": "virtio", "enabled": true},

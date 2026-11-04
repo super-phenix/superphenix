@@ -184,7 +184,7 @@ func TestConvertToVM_InvalidGpus(t *testing.T) {
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = testVMType
 			info.Compute.Cpu = 2
-			info.Compute.Memory = 4
+			info.Compute.Memory = testMemory
 			info.Compute.Gpu = tt.gpus
 
 			_, err := convertToVM(context.Background(), testNamespace, info, metadata)
@@ -291,7 +291,7 @@ func TestUpdateVM_Gpus(t *testing.T) {
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = testVMType
 			info.Compute.Cpu = 2
-			info.Compute.Memory = 4
+			info.Compute.Memory = testMemory
 			info.Compute.Gpu = tt.gpu
 
 			err := UpdateVM(context.Background(), namespace, name, info)

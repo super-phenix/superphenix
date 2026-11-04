@@ -221,7 +221,7 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		ctrlutils.CleanDb(r.Context(), kaasDb.ID)
 		log.Err(err).Msg("Failed to create argo app")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(specErrorMsg(err))
+		httpError.Http(w, r, http.StatusBadRequest).Str("reason", err.Error()).Msg(specErrorMsg(err))
 		return
 
 	}
@@ -386,7 +386,7 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 	newBody, gtr, err := argokaas.CreateArgoApp(r.Context(), kaasDb.ID.String(), azDb, body.Spec, m, kaasConfig, &app.Spec, chart)
 	if err != nil {
 		log.Err(err).Msg("Failed to create argo app")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(specErrorMsg(err))
+		httpError.Http(w, r, http.StatusBadRequest).Str("reason", err.Error()).Msg(specErrorMsg(err))
 		return
 	}
 
@@ -578,7 +578,7 @@ func (h *Service) applyKaaS(w http.ResponseWriter, r *http.Request, k loadedKaaS
 	newBody, _, err := argokaas.CreateArgoApp(r.Context(), k.product.ID.String(), k.az, spec, k.metadata, k.kaasConfig, &k.app.Spec, chart)
 	if err != nil {
 		log.Err(err).Msg("Failed to create argo app")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(specErrorMsg(err))
+		httpError.Http(w, r, http.StatusBadRequest).Str("reason", err.Error()).Msg(specErrorMsg(err))
 		return false
 	}
 
@@ -813,7 +813,7 @@ func (h *Service) fetchKaaSApp(ctx context.Context, projectId, resourceEId strin
 
 	app.Spec, err = argokaas.ConvertAppToUpdateKaaSSpec(appView)
 	if err != nil {
-		log.Error().Str("effectiveId", resourceEId).Msg("Failed to read app spec")
+		log.Error().Err(err).Str("effectiveId", resourceEId).Msg("Failed to read app spec")
 		return kaasApp{}, true, err
 	}
 

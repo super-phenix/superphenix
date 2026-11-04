@@ -2,6 +2,7 @@ package kubevirt
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"net/http"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/api/utils"
 	"github.com/super-phenix/superphenix/pkg/utils/decoder"
 	httpError "github.com/super-phenix/superphenix/pkg/utils/error"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
@@ -392,6 +394,11 @@ func createInstance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = kovm.CreateVM(r.Context(), namespace, body); err != nil {
+		if stderrors.Is(err, validation.ErrInvalidComputeSize) {
+			log.Err(err).Msg("Compute size rejected")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+			return
+		}
 		if strings.HasPrefix(err.Error(), "invalid container disk") {
 			log.Err(err).Msg("Container disks rejected")
 			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
@@ -486,6 +493,11 @@ func updateInstance(w http.ResponseWriter, r *http.Request) {
 		if errors.IsNotFound(err) {
 			log.Err(err).Msg("Resource not found")
 			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
+			return
+		}
+		if stderrors.Is(err, validation.ErrInvalidComputeSize) {
+			log.Err(err).Msg("Compute size rejected")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
 			return
 		}
 		if strings.HasPrefix(err.Error(), "invalid container disk") {

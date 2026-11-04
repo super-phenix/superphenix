@@ -12,6 +12,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
@@ -20,7 +21,7 @@ import (
 
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/util/validation"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
 var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9-]*$")
@@ -91,6 +92,14 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			return "", nil, fmt.Errorf("replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
 		}
 
+		// Canonical memory, so the comparison with oldSpec below ignores how the size is written.
+		memory, err := validation.ValidateComputeSize(group.Cpu, group.Memory)
+		if err != nil {
+			log.Error().Err(err).Any("group", group).Msg("Invalid node group compute size")
+			return "", nil, err
+		}
+		group.Memory = memory.String()
+
 		// Groups have a version starting at 1. When updating, each group is matched by name
 		// against oldSpec: if unchanged the version is kept, otherwise it is incremented.
 		// Unmatched groups in oldSpec are tracked in mapGroupToRemove for cleanup.
@@ -118,7 +127,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			interfaces = append(interfaces, Interface{Subnet: subnet.Id})
 		}
 
-		err := parseNodeGroup(instances, group, interfaces)
+		err = parseNodeGroup(instances, group, interfaces)
 		if err != nil {
 			log.Error().Err(err).
 				Str("localId", localId).
@@ -259,6 +268,11 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			storage = defaultDataStoreStorageGi
 		}
 
+		if storage > maxStorageGiB {
+			log.Error().Int("storage", storage).Msg("Disaster recovery storage too large")
+			return "", nil, fmt.Errorf("disaster recovery storage (%dGi) must not exceed %dGi", storage, maxStorageGiB)
+		}
+
 		// PVC-backed storage cannot be shrunk.
 		if oldSpec != nil && oldSpec.ControlPlane.DataStore.Dedicated {
 			oldStorage := oldSpec.ControlPlane.DataStore.Storage
@@ -377,23 +391,14 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 		return fmt.Errorf("version must be equals or greater than 0")
 	}
 
-	if !slices.Contains(MemoryValueList, group.Memory) {
-		return fmt.Errorf("no such memory: %d", group.Memory)
-	}
-	if !slices.Contains(CpuValueList, group.Cpu) {
-		return fmt.Errorf("no such cpu value: %d", group.Cpu)
+	if group.BootDiskSize < 1 || group.BootDiskSize > maxStorageGiB {
+		return fmt.Errorf("boot disk size (%d GiB) must be between 1 and %d GiB", group.BootDiskSize, maxStorageGiB)
 	}
 	if err := validateNodeRole(group.NodeRole); err != nil {
 		return err
 	}
 
-	minStorageSize := resource.MustParse(fmt.Sprintf(quantityFormat, 1))
 	storage := resource.MustParse(fmt.Sprintf(quantityFormat, group.BootDiskSize))
-	memory := resource.MustParse(fmt.Sprintf(quantityFormat, group.Memory))
-
-	if storage.Cmp(minStorageSize) < 0 {
-		return fmt.Errorf("storage size is incorrect, minStorageSize: %s", minStorageSize.String())
-	}
 
 	instances[group.Name] = Instance{
 		Deployment: Deployment{
@@ -403,7 +408,7 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 		Template: Template{
 			Version:    group.Version,
 			Cores:      group.Cpu,
-			Memory:     memory.String(),
+			Memory:     group.Memory,
 			Interfaces: interfaces,
 			BootDisk: BootDisk{
 				Storage:          storage.String(),
@@ -419,8 +424,8 @@ func validateNodeRole(role string) error {
 	if role == "" {
 		return nil
 	}
-	errs := validation.IsQualifiedName(nodeRoleLabelPrefix + role)
-	errs = append(errs, validation.IsValidLabelValue(role)...)
+	errs := k8svalidation.IsQualifiedName(nodeRoleLabelPrefix + role)
+	errs = append(errs, k8svalidation.IsValidLabelValue(role)...)
 	if len(errs) > 0 {
 		return &NodeRoleError{Role: role, Reasons: errs}
 	}

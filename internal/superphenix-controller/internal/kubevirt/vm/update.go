@@ -10,14 +10,19 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 
-	"k8s.io/apimachinery/pkg/api/resource"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "kubevirt.io/api/core/v1"
 )
 
 func UpdateVM(ctx context.Context, namespace, name string, vmInfo UpdateVMInfo) error {
 	log := logger.GetLogger(ctx)
+	memory, err := validation.ValidateComputeSize(vmInfo.Compute.Cpu, vmInfo.Compute.Memory)
+	if err != nil {
+		return err
+	}
+
 	// Update the VM
 	vmToUpdate, err := config.VirtClient.VirtualMachine(namespace).Get(ctx, name, k8smetav1.GetOptions{})
 	if err != nil {
@@ -58,13 +63,6 @@ func UpdateVM(ctx context.Context, namespace, name string, vmInfo UpdateVMInfo) 
 
 	// Set global param
 	//Validation part
-	if !slices.Contains(MEMORY_VALUE_LIST, vmInfo.Compute.Memory) {
-		return fmt.Errorf("no such memory: %d", vmInfo.Compute.Memory)
-	}
-	if !slices.Contains(CPU_VALUE_LIST, vmInfo.Compute.Cpu) {
-		return fmt.Errorf("no such cpu value: %d", vmInfo.Compute.Cpu)
-	}
-
 	if !slices.Contains(RUN_STRATEGY_VALUE_LIST, vmInfo.General.RunStrategy) {
 		return fmt.Errorf("unknown run strategy: %s", vmInfo.General.RunStrategy)
 	}
@@ -87,12 +85,18 @@ func UpdateVM(ctx context.Context, namespace, name string, vmInfo UpdateVMInfo) 
 
 	// Create correct values format
 	runStrategy := v1.VirtualMachineRunStrategy(vmInfo.General.RunStrategy)
-	memory, err := resource.ParseQuantity(fmt.Sprintf("%dGi", vmInfo.Compute.Memory))
 	cores := uint32(vmInfo.Compute.Cpu)
 
 	vmToUpdate.Spec.RunStrategy = &runStrategy
-	vmToUpdate.Spec.Template.Spec.Domain.CPU.Cores = cores
-	vmToUpdate.Spec.Template.Spec.Domain.Memory.Guest = &memory
+	domain := &vmToUpdate.Spec.Template.Spec.Domain
+	if domain.CPU == nil {
+		domain.CPU = &v1.CPU{Sockets: 1}
+	}
+	if domain.Memory == nil {
+		domain.Memory = &v1.Memory{}
+	}
+	domain.CPU.Cores = cores
+	domain.Memory.Guest = &memory
 
 	if vmToUpdate.Spec.Preference != nil {
 		vmToUpdate.Spec.Preference.Name = vmPreference

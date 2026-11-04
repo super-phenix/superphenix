@@ -5,6 +5,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
 	adminBilling "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/billing"
 	adminPermission "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/permission"
+	adminQuota "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/admin/quota"
 	apiToken "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/apitoken"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/session"
 	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
@@ -32,6 +33,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/user"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/manager"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/project"
+	quotaService "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/quota"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/region/az"
 
 	"github.com/rs/zerolog/log"
@@ -72,11 +74,13 @@ type Providers struct {
 	KaaS          RegisterFunc
 	Metadata      RegisterFunc
 	Summary       RegisterFunc
+	Quota         RegisterFunc
 	Argo          RegisterFunc
 
 	// admin
 	AdminPermission RegisterFunc
 	AdminBilling    RegisterFunc
+	AdminQuota      RegisterFunc
 
 	// health
 	Health RegisterFunc
@@ -111,10 +115,12 @@ func DefaultProviders() Providers {
 		KaaS:          kaasctrl.ProvideService,
 		Metadata:      metadatactrl.ProvideService,
 		Summary:       summaryctrl.ProvideService,
+		Quota:         quotaService.ProvideService,
 		Argo:          argoApp.ProvideService,
 
 		AdminPermission: adminPermission.ProvideService,
 		AdminBilling:    adminBilling.ProvideService,
+		AdminQuota:      adminQuota.ProvideService,
 
 		Health: health.ProvideService,
 	}
@@ -127,7 +133,7 @@ func (p Providers) registerPublic(cfg *config.Config, reg *router.Registry) {
 		p.Organization, p.Session, p.APIToken, p.AZ, p.User, p.Group, p.IAM,
 		p.Permission, p.Project, p.ProjectMgr, p.AuditLog,
 		p.Instance, p.VmSnapshot, p.Disk, p.Bucket, p.Snapshot, p.BaaS, p.VPC, p.Subnet,
-		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.Metadata, p.Summary, p.Argo,
+		p.Eip, p.LoadBalancer, p.SecurityGroup, p.SSH, p.KaaS, p.Metadata, p.Summary, p.Quota, p.Argo,
 	} {
 		if register == nil {
 			log.Debug().Msg("server: skipping nil public provider")
@@ -141,7 +147,7 @@ func (p Providers) registerPublic(cfg *config.Config, reg *router.Registry) {
 // field is skipped, so an edition can drop a service by zeroing its slot.
 func (p Providers) registerAdmin(cfg *config.Config, reg *router.Registry) {
 	for _, register := range []RegisterFunc{
-		p.AdminPermission, p.AdminBilling,
+		p.AdminPermission, p.AdminBilling, p.AdminQuota,
 	} {
 		if register == nil {
 			log.Debug().Msg("server: skipping nil admin provider")

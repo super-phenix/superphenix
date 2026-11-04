@@ -2,6 +2,7 @@ package vm
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 
@@ -10,8 +11,10 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 
 	"go.uber.org/mock/gomock"
+	"k8s.io/apimachinery/pkg/api/resource"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
@@ -72,7 +75,7 @@ func TestUpdateVM_CustomLabels(t *testing.T) {
 		info.General.VMType = "linux"
 		info.General.Labels = labels
 		info.Compute.Cpu = 2
-		info.Compute.Memory = 4
+		info.Compute.Memory = testMemory
 		return info
 	}
 
@@ -505,7 +508,7 @@ func TestUpdateVM_NetworkInterfaceState(t *testing.T) {
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = "linux"
 			info.Compute.Cpu = 2
-			info.Compute.Memory = 4
+			info.Compute.Memory = testMemory
 
 			err := UpdateVM(context.Background(), namespace, name, info)
 			if err != nil {
@@ -533,6 +536,119 @@ func TestUpdateVM_NetworkInterfaceState(t *testing.T) {
 
 			if len(updatedVM.Spec.Template.Spec.Networks) != len(tt.networks) {
 				t.Fatalf("expected %d networks, got %d", len(tt.networks), len(updatedVM.Spec.Template.Spec.Networks))
+			}
+		})
+	}
+}
+
+func TestUpdateVM_ComputeSize(t *testing.T) {
+	const (
+		namespace = "prj-test"
+		name      = "vm-1"
+	)
+
+	setFakeSubnetWatcher(t, newSubnetUnstructured("sub-1", namespace, "10.0.0.0/24"))
+
+	idxSSH := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{"namespace": cache.MetaNamespaceIndexFunc})
+	oldSSH, hadSSH := informers.WatcherSet[informers.SSH]
+	informers.WatcherSet[informers.SSH] = informers.Watcher{Indexer: idxSSH}
+	t.Cleanup(func() {
+		if hadSSH {
+			informers.WatcherSet[informers.SSH] = oldSSH
+		} else {
+			delete(informers.WatcherSet, informers.SSH)
+		}
+	})
+
+	tests := []struct {
+		name        string
+		domain      v1.DomainSpec
+		cpu         int
+		memory      string
+		wantSockets uint32
+		errContains string
+	}{
+		{
+			name:        "existing cpu and memory are resized",
+			domain:      v1.DomainSpec{CPU: &v1.CPU{Cores: 1, Sockets: 2}, Memory: &v1.Memory{}},
+			cpu:         8,
+			memory:      "24Gi",
+			wantSockets: 2,
+		},
+		{name: "nil cpu and memory are initialized", cpu: 8, memory: "24Gi", wantSockets: 1},
+		{name: "nil cpu only", domain: v1.DomainSpec{Memory: &v1.Memory{}}, cpu: 128, memory: "1024Gi", wantSockets: 1},
+		{name: "fractional memory", cpu: 2, memory: "1536Mi", wantSockets: 1},
+		{name: "cpu above maximum returns error", cpu: 1000000, memory: testMemory, errContains: "cpu value"},
+		{name: "memory not whole mebibytes returns error", cpu: 2, memory: "1.2Gi", errContains: "memory ("},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			client := kubecli.NewMockKubevirtClient(ctrl)
+			vmIface := kubecli.NewMockVirtualMachineInterface(ctrl)
+
+			origVirt := config.VirtClient
+			origK8s := config.K8sClient
+			t.Cleanup(func() {
+				config.VirtClient = origVirt
+				config.K8sClient = origK8s
+			})
+			config.VirtClient = client
+			config.K8sClient = fake.NewSimpleClientset()
+
+			labels := map[string]string{spxId.SpxLabelProjectID: namespace}
+			existingVM := &v1.VirtualMachine{
+				ObjectMeta: k8smetav1.ObjectMeta{Name: name, Namespace: namespace, Labels: labels},
+				Spec: v1.VirtualMachineSpec{
+					Template: &v1.VirtualMachineInstanceTemplateSpec{
+						ObjectMeta: k8smetav1.ObjectMeta{Labels: labels},
+						Spec:       v1.VirtualMachineInstanceSpec{Domain: tt.domain},
+					},
+				},
+				Status: v1.VirtualMachineStatus{PrintableStatus: v1.VirtualMachineStatusStopped},
+			}
+
+			var updatedVM *v1.VirtualMachine
+			client.EXPECT().VirtualMachine(namespace).Return(vmIface).AnyTimes()
+			// Invalid sizes are rejected before the VM is fetched.
+			if tt.errContains == "" {
+				vmIface.EXPECT().Get(gomock.Any(), name, gomock.Any()).Return(existingVM, nil)
+			}
+			vmIface.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+				func(ctx context.Context, vm *v1.VirtualMachine, opts k8smetav1.UpdateOptions) (*v1.VirtualMachine, error) {
+					updatedVM = vm
+					return vm, nil
+				},
+			).AnyTimes()
+
+			info := UpdateVMInfo{Network: []Network{{Order: 0, SubnetEId: "sub-1", Model: "virtio"}}}
+			info.General.RunStrategy = string(v1.RunStrategyAlways)
+			info.General.VMType = "linux"
+			info.Compute.Cpu = tt.cpu
+			info.Compute.Memory = tt.memory
+
+			err := UpdateVM(context.Background(), namespace, name, info)
+			if tt.errContains != "" {
+				if !errors.Is(err, validation.ErrInvalidComputeSize) || !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("expected compute size error containing %q, got %v", tt.errContains, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error updating VM: %v", err)
+			}
+			if updatedVM == nil {
+				t.Fatal("expected VM to be updated via client, but Update was not called")
+			}
+
+			domain := updatedVM.Spec.Template.Spec.Domain
+			if domain.CPU.Cores != uint32(tt.cpu) || domain.CPU.Sockets != tt.wantSockets {
+				t.Errorf("cpu = %d cores / %d sockets, want %d / %d", domain.CPU.Cores, domain.CPU.Sockets, tt.cpu, tt.wantSockets)
+			}
+			wantMemory := resource.MustParse(tt.memory)
+			if domain.Memory.Guest.Cmp(wantMemory) != 0 {
+				t.Errorf("guest memory = %s, want %s", domain.Memory.Guest.String(), wantMemory.String())
 			}
 		})
 	}

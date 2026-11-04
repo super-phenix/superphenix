@@ -19,27 +19,27 @@ func TestInstanceBody_GpuSerialization(t *testing.T) {
 	}{
 		{
 			name:          "omitted gpu stays omitted (preserve on update)",
-			payload:       `{"compute":{"cpu":2,"memory":4}}`,
+			payload:       `{"compute":{"cpu":2,"memory":"4Gi"}}`,
 			wantUpdateGpu: nil,
-			wantCtrlJSON:  `{"cpu":2,"memory":4}`,
+			wantCtrlJSON:  `{"cpu":2,"memory":"4Gi"}`,
 		},
 		{
 			name:          "null gpu is treated as omitted",
-			payload:       `{"compute":{"cpu":2,"memory":4,"gpu":null}}`,
+			payload:       `{"compute":{"cpu":2,"memory":"4Gi","gpu":null}}`,
 			wantUpdateGpu: nil,
-			wantCtrlJSON:  `{"cpu":2,"memory":4}`,
+			wantCtrlJSON:  `{"cpu":2,"memory":"4Gi"}`,
 		},
 		{
 			name:          "empty gpu list is forwarded (remove on update)",
-			payload:       `{"compute":{"cpu":2,"memory":4,"gpu":[]}}`,
+			payload:       `{"compute":{"cpu":2,"memory":"4Gi","gpu":[]}}`,
 			wantUpdateGpu: &[]InstanceGpuBody{},
-			wantCtrlJSON:  `{"cpu":2,"memory":4,"gpu":[]}`,
+			wantCtrlJSON:  `{"cpu":2,"memory":"4Gi","gpu":[]}`,
 		},
 		{
 			name:          "gpu list is forwarded",
-			payload:       `{"compute":{"cpu":2,"memory":4,"gpu":[{"device":"nvidia-rtx-pro-6000-bse"}]}}`,
+			payload:       `{"compute":{"cpu":2,"memory":"4Gi","gpu":[{"device":"nvidia-rtx-pro-6000-bse"}]}}`,
 			wantUpdateGpu: &[]InstanceGpuBody{{Device: "nvidia-rtx-pro-6000-bse"}},
-			wantCtrlJSON:  `{"cpu":2,"memory":4,"gpu":[{"device":"nvidia-rtx-pro-6000-bse"}]}`,
+			wantCtrlJSON:  `{"cpu":2,"memory":"4Gi","gpu":[{"device":"nvidia-rtx-pro-6000-bse"}]}`,
 		},
 	}
 
@@ -63,8 +63,8 @@ func TestCreateInstanceBody_GpuForwarded(t *testing.T) {
 		payload string
 		want    []InstanceGpuBody
 	}{
-		{name: "omitted gpu", payload: `{"compute":{"cpu":2,"memory":4}}`, want: nil},
-		{name: "one gpu", payload: `{"compute":{"cpu":2,"memory":4,"gpu":[{"device":"nvidia-rtx-pro-6000-bse"}]}}`, want: []InstanceGpuBody{{Device: "nvidia-rtx-pro-6000-bse"}}},
+		{name: "omitted gpu", payload: `{"compute":{"cpu":2,"memory":"4Gi"}}`, want: nil},
+		{name: "one gpu", payload: `{"compute":{"cpu":2,"memory":"4Gi","gpu":[{"device":"nvidia-rtx-pro-6000-bse"}]}}`, want: []InstanceGpuBody{{Device: "nvidia-rtx-pro-6000-bse"}}},
 	}
 
 	for _, tt := range tests {

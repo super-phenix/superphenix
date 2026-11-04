@@ -3,8 +3,6 @@ package vm
 import v1 "kubevirt.io/api/core/v1"
 
 var (
-	CPU_VALUE_LIST          = []int{1, 2, 4, 8, 16, 32}
-	MEMORY_VALUE_LIST       = []int{1, 2, 4, 8, 16, 32, 64}
 	RUN_STRATEGY_VALUE_LIST = []string{
 		string(v1.RunStrategyAlways),
 		string(v1.RunStrategyRerunOnFailure),
