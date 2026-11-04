@@ -306,7 +306,7 @@ func (h *Service) CreateInstance(w http.ResponseWriter, r *http.Request) {
 		Compute:        body.Compute,
 		Network:        body.Network,
 		Disks:          disksForCtrl,
-		CloudInit:      body.CloudInit,
+		CloudInit:      resolveCloudInit(body.CloudInit, azDb),
 		SSHKeys:        body.SSHKeys,
 		ContainerDisks: body.ContainerDisks,
 		Advanced:       body.Advanced,
@@ -399,17 +399,20 @@ func (h *Service) UpdateInstance(w http.ResponseWriter, r *http.Request) {
 	disksCreated, disksForCtrl, err := initializeNewDisks(r.Context(), org.ID, projectEntity.ID, azDb.Code, body.Disks)
 	// If something went wrong, clean all disks created from db
 	if err != nil {
+		log.Err(err).Msg("Failed to initialize associated disks into database")
 		for _, disk := range disksCreated {
 			err := product.DeleteById(disk.ID)
 			if err != nil {
 				log.Error().Err(err).Any("disk", disk).Msg("Failed to delete product")
 			}
 		}
+		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
+		return
 	}
 
 	// Container disk IDs are forwarded as-is for the controller to validate
 	// (nil preserves the current mounts).
-	newBody := toUpdateAzControllerBody(body, disksForCtrl)
+	newBody := toUpdateAzControllerBody(body, disksForCtrl, azDb)
 
 	// update body
 	marshal, err := json.Marshal(newBody)
@@ -501,7 +504,7 @@ func (h *Service) DeleteInstance(w http.ResponseWriter, r *http.Request) {
 }
 
 // toUpdateAzControllerBody converts the public UpdateInstanceBody into the az-controller payload.
-func toUpdateAzControllerBody(body UpdateInstanceBody, disksForCtrl []InstanceDiskSpxControllerBody) UpdateInstanceSpxControllerBody {
+func toUpdateAzControllerBody(body UpdateInstanceBody, disksForCtrl []InstanceDiskSpxControllerBody, azConfig config.AZConfig) UpdateInstanceSpxControllerBody {
 	return UpdateInstanceSpxControllerBody{
 		General: struct {
 			RunStrategy string   `json:"runStrategy"`
@@ -515,11 +518,19 @@ func toUpdateAzControllerBody(body UpdateInstanceBody, disksForCtrl []InstanceDi
 		Compute:        body.Compute,
 		Network:        body.Network,
 		Disks:          disksForCtrl,
-		CloudInit:      body.CloudInit,
+		CloudInit:      resolveCloudInit(body.CloudInit, azConfig),
 		SSHKeys:        body.SSHKeys,
 		ContainerDisks: body.ContainerDisks,
 		Advanced:       body.Advanced,
 	}
+}
+
+// resolveCloudInit returns the cloud-init to send to the controller.
+func resolveCloudInit(body InstanceCloudInitBody, azConfig config.AZConfig) InstanceCloudInitSpxControllerBody {
+	if !body.Custom {
+		return InstanceCloudInitSpxControllerBody{Bus: body.Bus, Config: azConfig.DefaultCloudInit}
+	}
+	return InstanceCloudInitSpxControllerBody{Bus: body.Bus, Config: body.Config}
 }
 
 // resolveMountedContainerDisks returns the name of every volume whose source
@@ -754,12 +765,12 @@ type CreateInstanceSpxControllerBody struct {
 		// Gpu lists the passthrough GPUs by class (at most 1). Nil or empty means no GPU.
 		Gpu []InstanceGpuBody `json:"gpu,omitempty"`
 	} `json:"compute"`
-	Network        []InstanceNetworkBody           `json:"network"`
-	Disks          []InstanceDiskSpxControllerBody `json:"disks"`
-	CloudInit      InstanceCloudInitBody           `json:"cloudInit"`
-	SSHKeys        []string                        `json:"sshKeys,omitempty"`
-	ContainerDisks *[]string                       `json:"containerDisks,omitempty"`
-	Advanced       *InstanceAdvancedOptionsBody    `json:"advanced,omitempty"`
+	Network        []InstanceNetworkBody              `json:"network"`
+	Disks          []InstanceDiskSpxControllerBody    `json:"disks"`
+	CloudInit      InstanceCloudInitSpxControllerBody `json:"cloudInit"`
+	SSHKeys        []string                           `json:"sshKeys,omitempty"`
+	ContainerDisks *[]string                          `json:"containerDisks,omitempty"`
+	Advanced       *InstanceAdvancedOptionsBody       `json:"advanced,omitempty"`
 }
 
 type UpdateInstanceBody struct {
@@ -800,12 +811,12 @@ type UpdateInstanceSpxControllerBody struct {
 		// a non-nil slice sets them (empty removes all).
 		Gpu *[]InstanceGpuBody `json:"gpu,omitempty"`
 	} `json:"compute"`
-	Network        []InstanceNetworkBody           `json:"network"`
-	Disks          []InstanceDiskSpxControllerBody `json:"disks"`
-	CloudInit      InstanceCloudInitBody           `json:"cloudInit"`
-	SSHKeys        []string                        `json:"sshKeys,omitempty"`
-	ContainerDisks *[]string                       `json:"containerDisks,omitempty"`
-	Advanced       *InstanceAdvancedOptionsBody    `json:"advanced,omitempty"`
+	Network        []InstanceNetworkBody              `json:"network"`
+	Disks          []InstanceDiskSpxControllerBody    `json:"disks"`
+	CloudInit      InstanceCloudInitSpxControllerBody `json:"cloudInit"`
+	SSHKeys        []string                           `json:"sshKeys,omitempty"`
+	ContainerDisks *[]string                          `json:"containerDisks,omitempty"`
+	Advanced       *InstanceAdvancedOptionsBody       `json:"advanced,omitempty"`
 }
 
 // BlockToggle is the enable baseline every advanced-options block embeds: a
@@ -875,7 +886,13 @@ type InstanceGpuBody struct {
 type InstanceCloudInitBody struct {
 	Custom bool   `json:"custom"`
 	Bus    string `json:"bus"`
-	Config string `json:"config,omitempty"`
+	Config string `json:"config,omitempty" validate:"required_if=Custom true"`
+}
+
+// InstanceCloudInitSpxControllerBody is the resolved cloud-init sent to superphenix-controller.
+type InstanceCloudInitSpxControllerBody struct {
+	Bus    string `json:"bus"`
+	Config string `json:"config"`
 }
 
 type InstanceDiskSpxControllerBody struct {

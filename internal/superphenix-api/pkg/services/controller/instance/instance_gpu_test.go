@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 )
 
 // TestInstanceBody_GpuSerialization checks that compute.gpu survives the
@@ -49,7 +50,7 @@ func TestInstanceBody_GpuSerialization(t *testing.T) {
 			require.NoError(t, json.Unmarshal([]byte(tt.payload), &body))
 			assert.Equal(t, tt.wantUpdateGpu, body.Compute.Gpu)
 
-			ctrlBody := toUpdateAzControllerBody(body, nil)
+			ctrlBody := toUpdateAzControllerBody(body, nil, config.AZConfig{})
 			out, err := json.Marshal(ctrlBody.Compute)
 			require.NoError(t, err)
 			assert.JSONEq(t, tt.wantCtrlJSON, string(out))

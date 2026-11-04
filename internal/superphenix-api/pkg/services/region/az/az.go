@@ -5,8 +5,10 @@ import (
 	"net/http"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	httpModel "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/proxy"
+	httpError "github.com/super-phenix/superphenix/pkg/utils/error"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	"github.com/go-chi/chi/v5"
@@ -44,6 +46,34 @@ func (h *Service) ListAZs(w http.ResponseWriter, r *http.Request) {
 		log.Error().Err(err).Msg("Error marshalling response")
 	}
 	_, _ = w.Write(marshal)
+}
+
+// DefaultCloudInit returns the default cloud-init of an AZ, as resolved from the configuration
+//
+//	@Summary		Get AZ default cloud-init
+//	@Description	Get the default cloud-init of an AZ, as resolved from the configuration
+//	@Tags			v1, az
+//	@Produce		json
+//	@Param			orgaId	path		string						true	"Organization ID"
+//	@Param			az		path		string						true	"AZ code"
+//	@Success		200		{object}	model.APIAzDefaultCloudInit	"Default cloud-init"
+//	@Failure		404
+//	@Router			/v1/organization/{orgaId}/az/{az}/default-cloud-init [get]
+//	@Security		Bearer[OrganizationRead]
+func (h *Service) DefaultCloudInit(w http.ResponseWriter, r *http.Request) {
+	log := logger.GetLogger(r.Context())
+	azCode := chi.URLParam(r, "az")
+
+	azConfig, err := az.GetByCode(azCode, chi.URLParam(r, "orgaId"))
+	if err != nil {
+		httpError.Http(w, r, http.StatusNotFound).Str("az", azCode).Msg(consts.SpxAZNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(httpModel.APIAzDefaultCloudInit{Config: azConfig.DefaultCloudInit}); err != nil {
+		log.Error().Err(err).Msg("Failed to encode default cloud-init")
+	}
 }
 
 // StatusCheck check health of all AZs available for the user

@@ -503,7 +503,8 @@ func TestUpdateVM_NetworkInterfaceState(t *testing.T) {
 			)
 
 			info := UpdateVMInfo{
-				Network: tt.networks,
+				CloudInit: CloudInit{Config: "#cloud-config"},
+				Network:   tt.networks,
 			}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = "linux"
@@ -622,7 +623,7 @@ func TestUpdateVM_ComputeSize(t *testing.T) {
 				},
 			).AnyTimes()
 
-			info := UpdateVMInfo{Network: []Network{{Order: 0, SubnetEId: "sub-1", Model: "virtio"}}}
+			info := UpdateVMInfo{CloudInit: CloudInit{Config: "#cloud-config"}, Network: []Network{{Order: 0, SubnetEId: "sub-1", Model: "virtio"}}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = "linux"
 			info.Compute.Cpu = tt.cpu
