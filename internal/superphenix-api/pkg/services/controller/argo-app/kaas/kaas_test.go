@@ -1253,3 +1253,51 @@ func TestConvertAppToUpdateKaaSSpec_NodeRole(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateKaaSAppValues_NodeGroupName(t *testing.T) {
+	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	kaasConfig := KaaSConfig{
+		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
+	}
+	named := func(name string) Group {
+		g := nodeRoleGroup("", 0)
+		g.Name = name
+		return g
+	}
+
+	tests := []struct {
+		name    string
+		groups  []string
+		wantErr bool
+	}{
+		{name: "generated id is accepted", groups: []string{"aB3xYz9Q"}},
+		{name: "dashed name is accepted", groups: []string{"gpu-large"}},
+		{name: "single char is accepted", groups: []string{"a"}},
+		{name: "14 chars is accepted", groups: []string{strings.Repeat("a", 14)}},
+		{name: "distinct names are accepted", groups: []string{"gpu", "cpu"}},
+		{name: "empty name is rejected", groups: []string{""}, wantErr: true},
+		{name: "leading dash is rejected", groups: []string{"-gpu"}, wantErr: true},
+		{name: "trailing dash is rejected", groups: []string{"gpu-"}, wantErr: true},
+		{name: "dot is rejected", groups: []string{"gpu.large"}, wantErr: true},
+		{name: "15 chars is rejected", groups: []string{strings.Repeat("a", 15)}, wantErr: true},
+		{name: "duplicate name is rejected", groups: []string{"gpu", "gpu"}, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := nodeRoleSpec(Group{})
+			spec.Groups = nil
+			for _, n := range tt.groups {
+				spec.Groups = append(spec.Groups, named(n))
+			}
+			_, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", spec, kaasConfig, nil)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			var nameErr *NodeGroupNameError
+			if tt.wantErr && !errors.As(err, &nameErr) {
+				t.Errorf("error = %v, want a *NodeGroupNameError", err)
+			}
+		})
+	}
+}

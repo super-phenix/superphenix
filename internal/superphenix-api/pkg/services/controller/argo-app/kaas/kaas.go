@@ -24,7 +24,7 @@ import (
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
-var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9-]*$")
+var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?$")
 
 // azDomainValues returns the configured azDomains map, or nil when empty.
 func azDomainValues(cfg map[string]any) map[string]any {
@@ -82,9 +82,9 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 
 	instances := make(map[string]Instance)
 	for _, group := range spec.Groups {
-		if !nodeGroupNameRegex.MatchString(group.Name) {
-			log.Error().Any("spec", spec).Msgf("The name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
-			return "", nil, fmt.Errorf("the name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
+		if err := validateNodeGroupName(group.Name); err != nil {
+			log.Error().Any("spec", spec).Err(err).Msg("Invalid node group name")
+			return "", nil, err
 		}
 
 		if group.Replicas < minReplicas || group.Replicas > maxReplicas {
@@ -397,6 +397,9 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	if err := validateNodeRole(group.NodeRole); err != nil {
 		return err
 	}
+	if _, exists := instances[group.Name]; exists {
+		return &NodeGroupNameError{Name: group.Name, Reason: "duplicate node group name"}
+	}
 
 	storage := resource.MustParse(fmt.Sprintf(quantityFormat, group.BootDiskSize))
 
@@ -440,6 +443,30 @@ type NodeRoleError struct {
 
 func (e *NodeRoleError) Error() string {
 	return fmt.Sprintf("invalid node role %q: %s", e.Role, strings.Join(e.Reasons, ", "))
+}
+
+// validateNodeGroupName checks a node group name, also used as the pool name and the default node role.
+func validateNodeGroupName(name string) error {
+	if len(name) > maxNodeGroupNameLength {
+		return &NodeGroupNameError{Name: name, Reason: fmt.Sprintf("must be at most %d characters", maxNodeGroupNameLength)}
+	}
+	if !nodeGroupNameRegex.MatchString(name) {
+		return &NodeGroupNameError{
+			Name:   name,
+			Reason: "must contain only letters, digits and '-', and start and end with a letter or digit",
+		}
+	}
+	return nil
+}
+
+// NodeGroupNameError is a node group name rejected by the API.
+type NodeGroupNameError struct {
+	Name   string
+	Reason string
+}
+
+func (e *NodeGroupNameError) Error() string {
+	return fmt.Sprintf("invalid node group name %q: %s", e.Name, e.Reason)
 }
 
 // isSameGroup compares two Groups ignoring Replicas, Version and NodeRole.

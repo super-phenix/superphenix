@@ -598,6 +598,10 @@ func specErrorMsg(err error) string {
 	if errors.As(err, &roleErr) {
 		return roleErr.Error()
 	}
+	var nameErr *argokaas.NodeGroupNameError
+	if errors.As(err, &nameErr) {
+		return nameErr.Error()
+	}
 	return http.StatusText(http.StatusBadRequest)
 }
 
