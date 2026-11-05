@@ -1,6 +1,6 @@
 # spx-policies
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square)
+![Version: 0.0.0](https://img.shields.io/badge/Version-0.0.0-informational?style=flat-square)
 
 A Helm chart for templating Validating Admission Policies
 
