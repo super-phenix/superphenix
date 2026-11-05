@@ -18,9 +18,6 @@ metadata:
   labels:
     replication.superphenix.net/storageClassGroup: "{{ $cluster }}"
 parameters:
-  # Must match the ClientProfile name, which the ceph-csi-operator derives from the namespace
-  # of the CephCluster, i.e. the cluster name. Only override it if a dedicated ClientProfile
-  # (RADOS namespace, subvolume group) exists under that name.
   clusterID: {{ .clusterID | default $cluster }}
   csi.storage.k8s.io/fstype: {{ .fs | default "xfs" }}
   csi.storage.k8s.io/node-stage-secret-name: {{ $csi.rbdNodeSecretName | default $cluster }}

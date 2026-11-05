@@ -2,5 +2,6 @@ apiVersion: v2
 name: spx-rook-connection
 description: A Helm chart to connect a Superphénix K8s cluster to a Superphénix storage cluster
 type: application
-version: 0.3.0
+# This chart inherits the tag of the Git repository
+version: 0.0.0
 appVersion: "0.1.0"

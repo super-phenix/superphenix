@@ -952,7 +952,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           },
           "virtualMachineInstancesPerNode": 100,
           "vmRolloutStrategy": "LiveUpdate",
-          "vmStateStorageClass": "default.spx-rbd-3x"
+          "vmStateStorageClass": "spx-storage.spx-rbd-3x"
         },
         "imagePullPolicy": "IfNotPresent",
         "monitorAccount": "prometheus-kube-prometheus-prometheus",
@@ -1562,7 +1562,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "path": ".",
     "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
-    "targetRevision": "0.3.0",
+    "targetRevision": "",
     "values": {
       "clusters": [
         {
