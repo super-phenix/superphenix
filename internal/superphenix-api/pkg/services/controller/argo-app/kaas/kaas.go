@@ -21,9 +21,10 @@ import (
 
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
-var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9-]*$")
+var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?$")
 
 // azDomainValues returns the configured azDomains map, or nil when empty.
 func azDomainValues(cfg map[string]any) map[string]any {
@@ -81,9 +82,9 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 
 	instances := make(map[string]Instance)
 	for _, group := range spec.Groups {
-		if !nodeGroupNameRegex.MatchString(group.Name) {
-			log.Error().Any("spec", spec).Msgf("The name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
-			return "", nil, fmt.Errorf("the name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
+		if err := validateNodeGroupName(group.Name); err != nil {
+			log.Error().Any("spec", spec).Err(err).Msg("Invalid node group name")
+			return "", nil, err
 		}
 
 		if group.Replicas < minReplicas || group.Replicas > maxReplicas {
@@ -393,12 +394,19 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	if group.BootDiskSize < 1 || group.BootDiskSize > maxStorageGiB {
 		return fmt.Errorf("boot disk size (%d GiB) must be between 1 and %d GiB", group.BootDiskSize, maxStorageGiB)
 	}
+	if err := validateNodeRole(group.NodeRole); err != nil {
+		return err
+	}
+	if _, exists := instances[group.Name]; exists {
+		return &NodeGroupNameError{Name: group.Name, Reason: "duplicate node group name"}
+	}
 
 	storage := resource.MustParse(fmt.Sprintf(quantityFormat, group.BootDiskSize))
 
 	instances[group.Name] = Instance{
 		Deployment: Deployment{
 			Replicas: group.Replicas,
+			NodeRole: group.NodeRole,
 		},
 		Template: Template{
 			Version:    group.Version,
@@ -414,7 +422,54 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	return nil
 }
 
-// isSameGroup compares two Groups ignoring Replicas and Version.
+// validateNodeRole checks a node role is valid as both the node-role label name and value. Empty is valid.
+func validateNodeRole(role string) error {
+	if role == "" {
+		return nil
+	}
+	errs := k8svalidation.IsQualifiedName(nodeRoleLabelPrefix + role)
+	errs = append(errs, k8svalidation.IsValidLabelValue(role)...)
+	if len(errs) > 0 {
+		return &NodeRoleError{Role: role, Reasons: errs}
+	}
+	return nil
+}
+
+// NodeRoleError is a node role rejected by validateNodeRole.
+type NodeRoleError struct {
+	Role    string
+	Reasons []string
+}
+
+func (e *NodeRoleError) Error() string {
+	return fmt.Sprintf("invalid node role %q: %s", e.Role, strings.Join(e.Reasons, ", "))
+}
+
+// validateNodeGroupName checks a node group name, also used as the pool name and the default node role.
+func validateNodeGroupName(name string) error {
+	if len(name) > maxNodeGroupNameLength {
+		return &NodeGroupNameError{Name: name, Reason: fmt.Sprintf("must be at most %d characters", maxNodeGroupNameLength)}
+	}
+	if !nodeGroupNameRegex.MatchString(name) {
+		return &NodeGroupNameError{
+			Name:   name,
+			Reason: "must contain only letters, digits and '-', and start and end with a letter or digit",
+		}
+	}
+	return nil
+}
+
+// NodeGroupNameError is a node group name rejected by the API.
+type NodeGroupNameError struct {
+	Name   string
+	Reason string
+}
+
+func (e *NodeGroupNameError) Error() string {
+	return fmt.Sprintf("invalid node group name %q: %s", e.Name, e.Reason)
+}
+
+// isSameGroup compares two Groups ignoring Replicas, Version and NodeRole.
 func isSameGroup(g1, g2 Group) bool {
 	if g1.Cpu != g2.Cpu ||
 		g1.Memory != g2.Memory ||

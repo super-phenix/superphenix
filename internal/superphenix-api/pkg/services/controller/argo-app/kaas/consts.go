@@ -15,6 +15,12 @@ const (
 	quantityFormat = "%dGi"
 	maxnodeGroup   = 5
 
+	nodeRoleLabelPrefix = "node-role.kubernetes.io/"
+
+	// Longest node group name: the chart renders "<cluster uuid>-<name>-<kube version>-<template version>"
+	// as a label value, limited to 63 characters.
+	maxNodeGroupNameLength = 14
+
 	minReplicas = 1
 	maxReplicas = validation.MaxComputeValue
 
