@@ -58,8 +58,21 @@ The Superphenix Operator is the core component responsible for managing the life
   "clustersConfigMap": {
     "name": "superphenix-clusters-config"
   },
+  "database": {
+    "autoConnect": true,
+    "host": "",
+    "name": "",
+    "password": "",
+    "port": "",
+    "user": ""
+  },
   "disableVersionValidation": false,
   "enableHTTP2": false,
+  "gitops": {
+    "path": ".",
+    "repoURL": "",
+    "targetRevision": "HEAD"
+  },
   "syncPeriod": "5m",
   "syncTimeout": "15m",
   "system": {
@@ -137,6 +150,60 @@ false
 			<td>ConfigMap where all clusters will append their configuration.</td>
 		</tr>
 		<tr>
+			<td>config.database.autoConnect</td>
+			<td>bool</td>
+			<td><pre lang="json">
+true
+</pre>
+</td>
+			<td>Automatically connect to the default deployed PostgreSQL by probing the 'postgres' secret.</td>
+		</tr>
+		<tr>
+			<td>config.database.host</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>The host of the Superphenix Database.</td>
+		</tr>
+		<tr>
+			<td>config.database.name</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>The name of the Superphenix Database.</td>
+		</tr>
+		<tr>
+			<td>config.database.password</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>The password of the Superphenix Database.</td>
+		</tr>
+		<tr>
+			<td>config.database.port</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>The port of the Superphenix Database.</td>
+		</tr>
+		<tr>
+			<td>config.database.user</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>The user of the Superphenix Database.</td>
+		</tr>
+		<tr>
 			<td>config.disableVersionValidation</td>
 			<td>bool</td>
 			<td><pre lang="json">
@@ -153,6 +220,33 @@ false
 </pre>
 </td>
 			<td>Enable HTTP/2 for the metrics and webhook servers.</td>
+		</tr>
+		<tr>
+			<td>config.gitops.path</td>
+			<td>string</td>
+			<td><pre lang="json">
+"."
+</pre>
+</td>
+			<td>Default path for project GitOps applications.</td>
+		</tr>
+		<tr>
+			<td>config.gitops.repoURL</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>Default repository URL for project GitOps applications.</td>
+		</tr>
+		<tr>
+			<td>config.gitops.targetRevision</td>
+			<td>string</td>
+			<td><pre lang="json">
+"HEAD"
+</pre>
+</td>
+			<td>Default target revision for project GitOps applications.</td>
 		</tr>
 		<tr>
 			<td>config.syncPeriod</td>
@@ -285,6 +379,17 @@ false
 			<td>String to fully override fullname template.</td>
 		</tr>
 		<tr>
+			<td>health</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "probeBindAddress": ":8081"
+}
+</pre>
+</td>
+			<td>Health check configuration.</td>
+		</tr>
+		<tr>
 			<td>health.probeBindAddress</td>
 			<td>string</td>
 			<td><pre lang="json">
@@ -354,16 +459,13 @@ true
 {
   "availabilityZone": "",
   "lifecycle": {
-    "cleanupOnDeletion": true,
+    "cleanupOnDeletion": false,
     "manual": false,
     "pause": false
   },
   "region": "",
   "systemConfiguration": {},
-  "systemLocation": {
-    "chartName": "",
-    "repoURL": ""
-  },
+  "systemLocation": {},
   "version": ""
 }
 </pre>
@@ -384,7 +486,7 @@ true
 			<td>object</td>
 			<td><pre lang="json">
 {
-  "cleanupOnDeletion": true,
+  "cleanupOnDeletion": false,
   "manual": false,
   "pause": false
 }
@@ -396,10 +498,10 @@ true
 			<td>management.lifecycle.cleanupOnDeletion</td>
 			<td>bool</td>
 			<td><pre lang="json">
-true
+false
 </pre>
 </td>
-			<td>Whether to clean up resources deployed by the management stack applications when they get deleted.</td>
+			<td>Whether to clean up the cluster when it gets deleted.</td>
 		</tr>
 		<tr>
 			<td>management.lifecycle.manual</td>
@@ -441,31 +543,10 @@ false
 			<td>management.systemLocation</td>
 			<td>object</td>
 			<td><pre lang="json">
-{
-  "chartName": "",
-  "repoURL": ""
-}
+{}
 </pre>
 </td>
 			<td>Override the default Superphenix system chart location. This is useful if you want to use a custom chart.</td>
-		</tr>
-		<tr>
-			<td>management.systemLocation.chartName</td>
-			<td>string</td>
-			<td><pre lang="json">
-""
-</pre>
-</td>
-			<td>Override the default Superphenix system chart name.</td>
-		</tr>
-		<tr>
-			<td>management.systemLocation.repoURL</td>
-			<td>string</td>
-			<td><pre lang="json">
-""
-</pre>
-</td>
-			<td>Override the default Superphenix system chart repository.</td>
 		</tr>
 		<tr>
 			<td>management.version</td>
@@ -486,7 +567,7 @@ false
 }
 </pre>
 </td>
-			<td>Metrics and Health configuration.</td>
+			<td>Metrics configuration.</td>
 		</tr>
 		<tr>
 			<td>metrics.bindAddress</td>
@@ -514,6 +595,17 @@ true
 </pre>
 </td>
 			<td>String to partially override fullname template.</td>
+		</tr>
+		<tr>
+			<td>networkPolicy</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "enabled": true
+}
+</pre>
+</td>
+			<td>Network policy configuration.</td>
 		</tr>
 		<tr>
 			<td>nodeSelector</td>
@@ -580,8 +672,7 @@ true
 			<td><pre lang="json">
 {
   "limits": {
-    "cpu": "500m",
-    "memory": "256Mi"
+    "cpu": "500m"
   },
   "requests": {
     "cpu": "10m",
@@ -600,15 +691,6 @@ true
 </pre>
 </td>
 			<td>CPU limit for the operator.</td>
-		</tr>
-		<tr>
-			<td>resources.limits.memory</td>
-			<td>string</td>
-			<td><pre lang="json">
-"256Mi"
-</pre>
-</td>
-			<td>Memory limit for the operator.</td>
 		</tr>
 		<tr>
 			<td>resources.requests.cpu</td>
@@ -698,6 +780,156 @@ true
 </pre>
 </td>
 			<td>Tolerations for pod assignment.</td>
+		</tr>
+		<tr>
+			<td>toolbox</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "affinity": {},
+  "enabled": false,
+  "image": {
+    "pullPolicy": "IfNotPresent",
+    "repository": "ghcr.io/super-phenix/superphenix-toolbox",
+    "tag": ""
+  },
+  "imagePullSecrets": [],
+  "nodeSelector": {},
+  "podAnnotations": {},
+  "podSecurityContext": {},
+  "resources": {
+    "limits": {
+      "cpu": "200m",
+      "memory": "256Mi"
+    },
+    "requests": {
+      "cpu": "10m",
+      "memory": "64Mi"
+    }
+  },
+  "securityContext": {},
+  "tolerations": []
+}
+</pre>
+</td>
+			<td>Superphenix toolbox configuration. The toolbox is an optional standalone Deployment deployed alongside the operator. It provides standard tooling (bash, jq, kubectl, helm, k9s and more) and mounts the kubeconfig of every cluster managed by the operator, allowing administrators to access all clusters from a single container.</td>
+		</tr>
+		<tr>
+			<td>toolbox.affinity</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Affinity rules for toolbox pod assignment.</td>
+		</tr>
+		<tr>
+			<td>toolbox.enabled</td>
+			<td>bool</td>
+			<td><pre lang="json">
+false
+</pre>
+</td>
+			<td>Enable the toolbox deployment. Disabled by default.</td>
+		</tr>
+		<tr>
+			<td>toolbox.image.pullPolicy</td>
+			<td>string</td>
+			<td><pre lang="json">
+"IfNotPresent"
+</pre>
+</td>
+			<td>Pull policy for the toolbox image.</td>
+		</tr>
+		<tr>
+			<td>toolbox.image.repository</td>
+			<td>string</td>
+			<td><pre lang="json">
+"ghcr.io/super-phenix/superphenix-toolbox"
+</pre>
+</td>
+			<td>Repository for the toolbox image.</td>
+		</tr>
+		<tr>
+			<td>toolbox.image.tag</td>
+			<td>string</td>
+			<td><pre lang="json">
+""
+</pre>
+</td>
+			<td>Overrides the image tag whose default is the chart appVersion.</td>
+		</tr>
+		<tr>
+			<td>toolbox.imagePullSecrets</td>
+			<td>list</td>
+			<td><pre lang="json">
+[]
+</pre>
+</td>
+			<td>Secrets for pulling the toolbox image.</td>
+		</tr>
+		<tr>
+			<td>toolbox.nodeSelector</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Node selector for toolbox pod assignment.</td>
+		</tr>
+		<tr>
+			<td>toolbox.podAnnotations</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Annotations for the toolbox pods.</td>
+		</tr>
+		<tr>
+			<td>toolbox.podSecurityContext</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Pod-level security context for the toolbox.</td>
+		</tr>
+		<tr>
+			<td>toolbox.resources</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "limits": {
+    "cpu": "200m",
+    "memory": "256Mi"
+  },
+  "requests": {
+    "cpu": "10m",
+    "memory": "64Mi"
+  }
+}
+</pre>
+</td>
+			<td>Resource limits and requests for the toolbox container.</td>
+		</tr>
+		<tr>
+			<td>toolbox.securityContext</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Container-level security context for the toolbox.</td>
+		</tr>
+		<tr>
+			<td>toolbox.tolerations</td>
+			<td>list</td>
+			<td><pre lang="json">
+[]
+</pre>
+</td>
+			<td>Tolerations for toolbox pod assignment.</td>
 		</tr>
 	</tbody>
 </table>

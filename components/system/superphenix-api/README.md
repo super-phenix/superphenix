@@ -18,19 +18,21 @@ Helm chart to deploy the Superphenix API
 | containerPorts.adminHttp | int | `7000` |  |
 | containerPorts.http | int | `8080` |  |
 | containerPorts.metrics | int | `9090` |  |
-| domain | string | `"api.superphenix.net"` | Domain on which the API is exposed |
 | fullnameOverride | string | `""` |  |
 | image.pullPolicy | string | `"IfNotPresent"` |  |
 | image.repository | string | `"ghcr.io/super-phenix/superphenix-api"` |  |
 | image.tag | string | `""` |  |
 | imagePullSecrets | list | `[]` |  |
-| ingress.annotations."cert-manager.io/cluster-issuer" | string | `"letsencrypt"` |  |
 | ingress.className | string | `""` |  |
-| ingress.enabled | bool | `true` |  |
-| ingress.hosts[0].host | string | `"api.superphenix.net"` |  |
+| ingress.enabled | bool | `false` |  |
+| ingress.hosts[0].host | string | `""` |  |
 | ingress.hosts[0].paths[0].path | string | `"/"` |  |
-| ingress.tls[0].hosts[0] | string | `"api.superphenix.net"` |  |
+| ingress.tls[0].hosts[0] | string | `""` |  |
 | ingress.tls[0].secretName | string | `"superphenix-api-tls"` |  |
+| jwtSecret.generate | bool | `true` | Whether to generate a random JWT secret using a Kubernetes Job. |
+| jwtSecret.image.repository | string | `"alpine/kubectl"` | The image repository to use for the JWT secret generation job. |
+| jwtSecret.image.tag | string | `"1.35.0"` | The image tag to use for the JWT secret generation job. |
+| jwtSecret.secretName | string | `""` | The name of the secret to create/use. Defaults to `{{ include "superphenix-api.fullname" . }}-jwt`. |
 | nameOverride | string | `""` |  |
 | networkPolicy.allowedFrom | list | `[]` | Peers allowed to call the API port. Empty means any source (e.g. Ingress controller). |
 | networkPolicy.enabled | bool | `false` | Restrict ingress to the API. Disabled by default: validate it on your CNI first (kubelet probes, ingress controller reaching the API). |
@@ -38,6 +40,7 @@ Helm chart to deploy the Superphenix API
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podSecurityContext | object | `{}` |  |
+| rbac.create | bool | `true` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | revisionHistoryLimit | int | `3` |  |
@@ -45,6 +48,7 @@ Helm chart to deploy the Superphenix API
 | service.port | int | `80` |  |
 | service.type | string | `"ClusterIP"` |  |
 | serviceAccount.annotations | object | `{}` |  |
+| serviceAccount.automount | bool | `true` |  |
 | serviceAccount.create | bool | `true` |  |
 | serviceAccount.name | string | `""` |  |
 | serviceMonitor.bearerTokenFile | string | `""` |  |
