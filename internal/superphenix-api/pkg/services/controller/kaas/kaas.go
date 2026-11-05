@@ -345,7 +345,7 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 	productEid := chi.URLParam(r, "effectiveId")
 	kaasDb, err := controller.FindForUpdate(r.Context(), productEid, model.ProductTypeKaaS.Name, azDb.Code, projectDb.ID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to save product in database")
+		log.Error().Err(err).Msg("Failed to find product for update")
 		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
 		return
 	}
@@ -397,14 +397,6 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The rename is saved once the spec is accepted.
-	if kaasDb.ID != uuid.Nil {
-		if _, err := controller.RenameProduct(r.Context(), kaasDb, body.General.ProductName); err != nil {
-			httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
-			return
-		}
-	}
-
 	// Check for group to remove and send request to delete them to the Superphenix Controller
 	// We have to do this manually because ArgoCD cannot clean them because they have a OwnerReference
 	if len(gtr) > 0 {
@@ -417,12 +409,20 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 			resp2, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(gdBody), azDb.AuthSecret)
 			if err != nil {
 				log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-				return
+			} else {
+				defer resp2.Body.Close()
+				if resp2.StatusCode != 200 {
+					log.Err(err).Str("az", azDb.Code).Str("status", resp2.Status).Int("statusCode", resp2.StatusCode).Msg(consts.SpxProxyToAZFailure)
+				}
 			}
-			defer resp2.Body.Close()
-			if resp2.StatusCode != 200 {
-				log.Err(err).Str("az", azDb.Code).Str("status", resp2.Status).Int("statusCode", resp2.StatusCode).Msg(consts.SpxProxyToAZFailure)
-			}
+		}
+	}
+
+	// The rename is saved once the spec is accepted.
+	if kaasDb.ID != uuid.Nil {
+		if _, err := controller.RenameProduct(r.Context(), kaasDb, body.General.ProductName); err != nil {
+			httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
+			return
 		}
 	}
 
