@@ -823,6 +823,8 @@ apps:
               - ExpandDisks
               - Snapshot
               - HotplugVolumes
+              - GPU	
+              - DisableMDEVConfiguration
               #- DeclarativeHotplugVolumes
 
         # Defines how we upgrade KubeVirt's controlplane and VMIs.
