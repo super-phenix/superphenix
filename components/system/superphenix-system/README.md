@@ -1325,7 +1325,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "kube-system",
     "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
-    "targetRevision": "0.1.0"
+    "targetRevision": ""
   },
   "postgres": {
     "automation": {
@@ -4045,7 +4045,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "kube-system",
   "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
-  "targetRevision": "0.1.0"
+  "targetRevision": ""
 }
 </pre>
 </td>

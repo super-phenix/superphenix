@@ -1148,7 +1148,8 @@ apps:
       syncOptions: {}
     namespace: "kube-system"
     repoURL: "oci://ghcr.io/super-phenix/charts/spx-policies"
-    targetRevision: "0.1.0"
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
     helm:
       chart: "spx-policies"
       releaseName: "spx-policies"
