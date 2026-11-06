@@ -195,6 +195,7 @@ func (h *Service) GetSSH(w http.ResponseWriter, r *http.Request) {
 	result := SSHFullResponse{ProductResponse: productResponse}
 	if azResult != nil {
 		result.SSH = azResult["ssh"]
+		result.IsUsed, _ = azResult["isUsed"].(bool)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -205,6 +206,87 @@ func (h *Service) GetSSH(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, _ = w.Write(marshal)
+}
+
+// GetSSHUsage
+//
+//	@Summary		Get SSH usage
+//	@Description	List the instances using an SSH key
+//	@Tags			v1, Superphenix Controller
+//	@Produce		json
+//	@Param			orgaId		path	string	true	"Organization ID"
+//	@Param			az			path	string	true	"AZ Code"
+//	@Param			projectId	path	string	true	"Project ID"
+//	@Param			effectiveId	path	string	true	"SSH EID"
+//	@Success		200			{array}	SSHUser	"Instances"
+//	@Failure		404
+//	@Failure		500
+//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/ssh/{effectiveId}/usage [get]
+//	@Security		Bearer[OrganizationRead, ProjectSSHRead, ProjectInstanceRead]
+func (h *Service) GetSSHUsage(w http.ResponseWriter, r *http.Request) {
+	log := logger.GetLogger(r.Context())
+	azDb, _, projectEntity, code, errMsg := ctrlutils.CheckPathParams(r)
+	if code != 0 {
+		httpError.Http(w, r, code).Msg(errMsg)
+		return
+	}
+
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+		return
+	}
+
+	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
+	if err != nil {
+		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
+		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		failureCode := consts.SpxProxyToAZFailureCode
+		if resp.StatusCode == http.StatusNotFound {
+			failureCode = resp.StatusCode
+		}
+		ctrlutils.HandleControllerError(w, r, resp, failureCode, consts.SpxProxyToAZFailure)
+		return
+	}
+
+	users := make([]SSHUser, 0)
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		log.Err(err).Msg(consts.SpxResponseParseFailure)
+		httpError.Http(w, r, consts.SpxResponseParseFailureCode).Msg(consts.SpxResponseParseFailure)
+		return
+	}
+
+	// The controller only knows the name of gitops VMs. A database failure only costs the names.
+	instances, err := product.FindAllByProjectIdAndResourceType(projectEntity.ID.String(), model.ProductTypeInstance.Name)
+	if err != nil {
+		log.Err(err).Str("projectId", projectEntity.ID.String()).Msg(consts.SpxFindAllResourcesError)
+	}
+	fillUserNames(users, instances)
+
+	w.Header().Set("Content-Type", "application/json")
+	marshal, err := json.Marshal(users)
+	if err != nil {
+		log.Err(err).Msg(consts.SpxResponseParseFailure)
+		httpError.Http(w, r, consts.SpxResponseParseFailureCode).Msg(consts.SpxResponseParseFailure)
+		return
+	}
+	_, _ = w.Write(marshal)
+}
+
+// fillUserNames completes the users without a name from the instances of the project
+func fillUserNames(users []SSHUser, instances []model.Product) {
+	names := make(map[string]string, len(instances))
+	for _, instance := range instances {
+		names[instance.EffectiveID] = instance.ProductName
+	}
+	for i := range users {
+		if users[i].ProductName == "" {
+			users[i].ProductName = names[users[i].EId]
+		}
+	}
 }
 
 // CreateSSH
@@ -293,6 +375,7 @@ func (h *Service) CreateSSH(w http.ResponseWriter, r *http.Request) {
 //	@Success		200
 //	@Failure		400
 //	@Failure		404
+//	@Failure		409
 //	@Failure		500
 //	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/ssh/{effectiveId} [delete]
 //	@Security		Bearer[OrganizationRead, ProjectSSHWrite]
@@ -331,7 +414,12 @@ func (h *Service) DeleteSSH(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(http.StatusOK)
 	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceDeletionFailureCode, consts.SpxResourceDeletionFailure)
+		// Keep the key being in use as such
+		failureCode := consts.SpxResourceDeletionFailureCode
+		if resp.StatusCode == http.StatusConflict {
+			failureCode = resp.StatusCode
+		}
+		ctrlutils.HandleControllerError(w, r, resp, failureCode, consts.SpxResourceDeletionFailure)
 		return
 	}
 }
@@ -342,6 +430,7 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 	for azCode, results := range concatResults {
 		for _, result := range results {
 			mapResult := result.(map[string]interface{})
+			isUsed, _ := mapResult["isUsed"].(bool)
 			found := false
 			for _, p := range resources {
 				if p.ID.String() == mapResult["id"] {
@@ -354,7 +443,8 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 							ProductTypeId: p.ProductTypeId,
 							Gitops:        mapResult["gitops"].(string),
 						},
-						SSH: mapResult["ssh"],
+						SSH:    mapResult["ssh"],
+						IsUsed: isUsed,
 					})
 					mapResourceCheck[p.ID] = true
 					found = true
@@ -372,7 +462,8 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 						CodeAZ:      azCode,
 						Gitops:      mapResult["gitops"].(string),
 					},
-					SSH: mapResult["ssh"],
+					SSH:    mapResult["ssh"],
+					IsUsed: isUsed,
 				})
 			}
 		}
@@ -423,4 +514,11 @@ type CreateSSHSpxControllerBody struct {
 type SSHFullResponse struct {
 	ProductResponse `json:",inline"`
 	SSH             interface{} `json:"ssh"`
+	IsUsed          bool        `json:"isUsed"`
+}
+
+// SSHUser is an instance referencing an SSH key
+type SSHUser struct {
+	EId         string `json:"eid"`
+	ProductName string `json:"productName"`
 }
