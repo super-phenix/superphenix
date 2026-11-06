@@ -111,7 +111,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       },
       "enableCertificateOwnerRef": true,
       "extraObjects": [
-        "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress:\n          class: traefik\n"
+        "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress: {}\n",
+        "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: selfsigned\nspec:\n  selfSigned: {}\n"
       ],
       "prometheus": {
         "servicemonitor": {
@@ -139,7 +140,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "kube-system",
     "repoURL": "https://helm.cilium.io/",
-    "targetRevision": "1.17.2",
+    "targetRevision": "1.20.4",
     "values": {
       "cgroup": {
         "autoMount": {
@@ -376,7 +377,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "enabled": true,
     "modes": [
       "Hyperconverged",
-      "DecoupledWorkload"
+      "DecoupledWorkload",
+      "DecoupledStorage"
     ],
     "namespace": "kube-system",
     "path": "config/crd/standard",
@@ -533,9 +535,6 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "targetRevision": "0.43.1",
     "values": {
       "globalSecret": "change-me-to-something-random-at-least-16-char-long",
-      "image": {
-        "tag": "v1.1.0"
-      },
       "ingress": {
         "public": {
           "annotations": {
@@ -544,7 +543,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "enabled": true,
           "hosts": [
             {
-              "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+              "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
               "paths": [
                 {
                   "path": "/accounts(/|$)(.*)",
@@ -556,7 +555,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "tls": [
             {
               "hosts": [
-                "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+                "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
               ],
               "secretName": "kratos-public-tls"
             }
@@ -569,7 +568,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "config": {
           "cookies": {
-            "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+            "domain": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
             "same_site": "Strict"
           },
           "courier": {
@@ -579,7 +578,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
               "from_name": "Superphenix Console"
             }
           },
-          "dsn": "postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable",
+          "dsn": "postgres://superphenix:{{ $.Values.apps.postgres.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable",
           "identity": {
             "default_schema_id": "default",
             "schemas": [
@@ -591,26 +590,26 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           },
           "secrets": {
             "cipher": [
-              "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cipher\" | sha256sum | trunc 32 }}"
+              "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").values.globalSecret \"cipher\" | sha256sum | trunc 32 }}"
             ],
             "cookie": [
-              "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cookie\" | sha256sum | trunc 32 }}"
+              "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").values.globalSecret \"cookie\" | sha256sum | trunc 32 }}"
             ],
             "default": [
-              "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"default\" | sha256sum | trunc 32 }}"
+              "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").values.globalSecret \"default\" | sha256sum | trunc 32 }}"
             ]
           },
           "selfservice": {
             "allowed_return_urls": [
-              "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+              "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/"
             ],
-            "default_browser_return_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/",
+            "default_browser_return_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/",
             "flows": {
               "error": {
-                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
+                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/error"
               },
               "login": {
-                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
+                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/login"
               },
               "recovery": {
                 "after": {
@@ -621,7 +620,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
                   ]
                 },
                 "enabled": true,
-                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
+                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/recovery"
               },
               "registration": {
                 "after": {
@@ -647,17 +646,17 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
                     ]
                   }
                 },
-                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
+                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/registration"
               },
               "settings": {
                 "privileged_session_max_age": "15m",
-                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
+                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/settings"
               },
               "verification": {
                 "enabled": false,
                 "lifespan": "1h",
                 "notify_unknown_recipients": false,
-                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
+                "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/verification",
                 "use": "code"
               }
             },
@@ -672,7 +671,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           },
           "serve": {
             "public": {
-              "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
+              "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/accounts",
               "cors": {
                 "allow_credentials": true,
                 "allowed_headers": [
@@ -692,7 +691,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
                   "DELETE"
                 ],
                 "allowed_origins": [
-                  "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+                  "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
                 ],
                 "enabled": true,
                 "exposed_headers": [
@@ -860,7 +859,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "ovsDirectory": "/var/lib/openvswitch"
       },
       "validatingWebhook": {
-        "enabled": true
+        "enabled": false
       }
     },
     "wave": "-100"
@@ -1295,7 +1294,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "garbage_collection": {
             "enabled": false
           },
-          "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
+          "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
         },
         "distributed": {
           "address": "permify.{{ $.Release.Namespace }}.svc:5000",
@@ -1325,7 +1324,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "kube-system",
     "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
-    "targetRevision": "0.1.0"
+    "targetRevision": ""
   },
   "postgres": {
     "automation": {
@@ -1659,6 +1658,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             "rbd_move_to_trash_on_remove_expire_seconds": "604800"
           }
         },
+        "cephVersion": {
+          "image": "quay.io/ceph/ceph:v19.2.4"
+        },
         "crashCollector": {
           "daysToRetain": 30,
           "disable": false
@@ -1826,7 +1828,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "database": {
           "database": "superphenix",
           "host": "postgres.{{ $.Release.Namespace }}.svc",
-          "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
+          "password": "{{ $.Values.apps.postgres.values.auth.password }}",
           "port": 5432,
           "username": "superphenix"
         },
@@ -1838,8 +1840,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             "kubernetes": {
               "azDomains": {
                 "local": {
-                  "external": "%s.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-                  "internal": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+                  "external": "%s.{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
+                  "internal": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
                 }
               }
             }
@@ -1847,17 +1849,17 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "session": {
           "cookies": {
-            "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+            "domain": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
           },
           "cors": {
             "allowedOrigins": [
-              "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+              "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
             ]
           },
-          "defaultReturnUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/callback"
+          "defaultReturnUrl": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/callback"
         },
         "swagger": {
-          "baseURL": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api"
+          "baseURL": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
         },
         "userSettings": {
           "enableProjectDefaultResources": true,
@@ -1871,7 +1873,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "enabled": true,
         "hosts": [
           {
-            "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+            "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
             "paths": [
               {
                 "path": "/api(/|$)(.*)"
@@ -1882,7 +1884,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "tls": [
           {
             "hosts": [
-              "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+              "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
             ],
             "secretName": "superphenix-api-tls"
           }
@@ -1905,18 +1907,18 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "Management"
     ],
     "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
-    "targetRevision": "0.5.0",
+    "targetRevision": "0.7.0",
     "values": {
       "config": {
-        "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api",
-        "authUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
+        "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}/api",
+        "authUrl": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/accounts"
       },
       "domain": "console.example.org",
       "ingress": {
         "enabled": true,
         "hosts": [
           {
-            "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+            "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
             "paths": [
               {
                 "path": "/"
@@ -1927,7 +1929,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "tls": [
           {
             "hosts": [
-              "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+              "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
             ],
             "secretName": "superphenix-console-tls"
           }
@@ -2080,6 +2082,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "enabled": true,
         "kind": "DaemonSet"
       },
+      "extraObjects": [
+        "apiVersion: cert-manager.io/v1\nkind: Certificate\nmetadata:\n  name: superphenix-self-signed\nspec:\n  commonName: superphenix-self-signed\n  secretName: superphenix-self-signed\n  duration: 168h\n  renewBefore: 24h\n  issuerRef:\n    name: selfsigned\n    kind: ClusterIssuer\n"
+      ],
       "gateway": {
         "enabled": false
       },
@@ -2097,7 +2102,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "metrics": {
         "prometheus": {
           "serviceMonitor": {
-            "enabled": true
+            "enabled": false
           }
         }
       },
@@ -2178,6 +2183,13 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       },
       "service": {
         "type": "ClusterIP"
+      },
+      "tlsStore": {
+        "default": {
+          "defaultCertificate": {
+            "secretName": "superphenix-self-signed"
+          }
+        }
       },
       "updateStrategy": {
         "rollingUpdate": {
@@ -2404,7 +2416,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "enableCertificateOwnerRef": true,
     "extraObjects": [
-      "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress:\n          class: traefik\n"
+      "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: letsencrypt\nspec:\n  acme:\n    # The ACME server URL\n    server: https://acme-v02.api.letsencrypt.org/directory\n\n    # Name of a secret used to store the ACME account private key\n    privateKeySecretRef:\n      name: letsencrypt\n\n    # Enable the HTTP-01 challenge provider\n    solvers:\n    - http01:\n        ingress: {}\n",
+      "apiVersion: cert-manager.io/v1\nkind: ClusterIssuer\nmetadata:\n  name: selfsigned\nspec:\n  selfSigned: {}\n"
     ],
     "prometheus": {
       "servicemonitor": {
@@ -2440,7 +2453,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "kube-system",
   "repoURL": "https://helm.cilium.io/",
-  "targetRevision": "1.17.2",
+  "targetRevision": "1.20.4",
   "values": {
     "cgroup": {
       "autoMount": {
@@ -2725,7 +2738,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "enabled": true,
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledWorkload",
+    "DecoupledStorage"
   ],
   "namespace": "kube-system",
   "path": "config/crd/standard",
@@ -2922,9 +2936,6 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "targetRevision": "0.43.1",
   "values": {
     "globalSecret": "change-me-to-something-random-at-least-16-char-long",
-    "image": {
-      "tag": "v1.1.0"
-    },
     "ingress": {
       "public": {
         "annotations": {
@@ -2933,7 +2944,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "enabled": true,
         "hosts": [
           {
-            "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+            "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
             "paths": [
               {
                 "path": "/accounts(/|$)(.*)",
@@ -2945,7 +2956,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "tls": [
           {
             "hosts": [
-              "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+              "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
             ],
             "secretName": "kratos-public-tls"
           }
@@ -2958,7 +2969,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       },
       "config": {
         "cookies": {
-          "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+          "domain": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
           "same_site": "Strict"
         },
         "courier": {
@@ -2968,7 +2979,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             "from_name": "Superphenix Console"
           }
         },
-        "dsn": "postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable",
+        "dsn": "postgres://superphenix:{{ $.Values.apps.postgres.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable",
         "identity": {
           "default_schema_id": "default",
           "schemas": [
@@ -2980,26 +2991,26 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "secrets": {
           "cipher": [
-            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cipher\" | sha256sum | trunc 32 }}"
+            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").values.globalSecret \"cipher\" | sha256sum | trunc 32 }}"
           ],
           "cookie": [
-            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"cookie\" | sha256sum | trunc 32 }}"
+            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").values.globalSecret \"cookie\" | sha256sum | trunc 32 }}"
           ],
           "default": [
-            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").helm.values.globalSecret \"default\" | sha256sum | trunc 32 }}"
+            "{{ printf \"%s-%s\" (index $.Values.apps \"kratos\").values.globalSecret \"default\" | sha256sum | trunc 32 }}"
           ]
         },
         "selfservice": {
           "allowed_return_urls": [
-            "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+            "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/"
           ],
-          "default_browser_return_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/",
+          "default_browser_return_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/",
           "flows": {
             "error": {
-              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/error"
             },
             "login": {
-              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/login"
             },
             "recovery": {
               "after": {
@@ -3010,7 +3021,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
                 ]
               },
               "enabled": true,
-              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/recovery"
             },
             "registration": {
               "after": {
@@ -3036,17 +3047,17 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
                   ]
                 }
               },
-              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/registration"
             },
             "settings": {
               "privileged_session_max_age": "15m",
-              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/settings"
             },
             "verification": {
               "enabled": false,
               "lifespan": "1h",
               "notify_unknown_recipients": false,
-              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
+              "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/verification",
               "use": "code"
             }
           },
@@ -3061,7 +3072,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "serve": {
           "public": {
-            "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
+            "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/accounts",
             "cors": {
               "allow_credentials": true,
               "allowed_headers": [
@@ -3081,7 +3092,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
                 "DELETE"
               ],
               "allowed_origins": [
-                "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+                "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
               ],
               "enabled": true,
               "exposed_headers": [
@@ -3137,7 +3148,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td>object</td>
 			<td><pre lang="json">
 {
-  "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+  "domain": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
   "same_site": "Strict"
 }
 </pre>
@@ -3163,7 +3174,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td>apps.kratos.values.kratos.config.dsn</td>
 			<td>string</td>
 			<td><pre lang="json">
-"postgres://superphenix:{{ $.Values.apps.postgres.helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable"
+"postgres://superphenix:{{ $.Values.apps.postgres.values.auth.password }}@postgres.{{ $.Release.Namespace }}.svc:5432/kratos?sslmode=disable"
 </pre>
 </td>
 			<td>Kratos DSN stores users, sessions, recovery codes and verification data.</td>
@@ -3190,7 +3201,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td>list</td>
 			<td><pre lang="json">
 [
-  "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+  "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/"
 ]
 </pre>
 </td>
@@ -3200,7 +3211,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td>apps.kratos.values.kratos.config.selfservice.default_browser_return_url</td>
 			<td>string</td>
 			<td><pre lang="json">
-"https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/"
+"https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/"
 </pre>
 </td>
 			<td>Default post-flow redirect target.</td>
@@ -3211,10 +3222,10 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td><pre lang="json">
 {
   "error": {
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/error"
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/error"
   },
   "login": {
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/login"
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/login"
   },
   "recovery": {
     "after": {
@@ -3225,7 +3236,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       ]
     },
     "enabled": true,
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/recovery"
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/recovery"
   },
   "registration": {
     "after": {
@@ -3251,17 +3262,17 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         ]
       }
     },
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/registration"
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/registration"
   },
   "settings": {
     "privileged_session_max_age": "15m",
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/settings"
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/settings"
   },
   "verification": {
     "enabled": false,
     "lifespan": "1h",
     "notify_unknown_recipients": false,
-    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/auth/verification",
+    "ui_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/auth/verification",
     "use": "code"
   }
 }
@@ -3291,7 +3302,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td><pre lang="json">
 {
   "public": {
-    "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts",
+    "base_url": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/accounts",
     "cors": {
       "allow_credentials": true,
       "allowed_headers": [
@@ -3311,7 +3322,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "DELETE"
       ],
       "allowed_origins": [
-        "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+        "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
       ],
       "enabled": true,
       "exposed_headers": [
@@ -3332,7 +3343,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td>apps.kratos.values.kratos.config.serve.public.base_url</td>
 			<td>string</td>
 			<td><pre lang="json">
-"https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
+"https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/accounts"
 </pre>
 </td>
 			<td>URL on which Kratos will listen, defaults to the same as the console The ingress adds a path prefix, that is not passed to Kratos. It is only used to avoid routing conflicts between the different elements of the console.</td>
@@ -3493,7 +3504,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "ovsDirectory": "/var/lib/openvswitch"
     },
     "validatingWebhook": {
-      "enabled": true
+      "enabled": false
     }
   },
   "wave": "-100"
@@ -3601,7 +3612,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "virtualMachineInstancesPerNode": 100,
         "vmRolloutStrategy": "LiveUpdate",
-        "vmStateStorageClass": "default.spx-rbd-3x"
+        "vmStateStorageClass": "spx-storage.spx-rbd-3x"
       },
       "imagePullPolicy": "IfNotPresent",
       "monitorAccount": "prometheus-kube-prometheus-prometheus",
@@ -3970,7 +3981,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "garbage_collection": {
           "enabled": false
         },
-        "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
+        "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
       },
       "distributed": {
         "address": "permify.{{ $.Release.Namespace }}.svc:5000",
@@ -3994,7 +4005,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "garbage_collection": {
     "enabled": false
   },
-  "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").helm.values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
+  "uri": "postgres://superphenix:{{ (index $.Values.apps \"postgres\").values.auth.password }}@postgres.{{ $.Release.Namespace }}:5432/permify"
 }
 </pre>
 </td>
@@ -4045,7 +4056,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "kube-system",
   "repoURL": "oci://ghcr.io/super-phenix/charts/spx-policies",
-  "targetRevision": "0.1.0"
+  "targetRevision": ""
 }
 </pre>
 </td>
@@ -4487,6 +4498,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "rbd_move_to_trash_on_remove_expire_seconds": "604800"
         }
       },
+      "cephVersion": {
+        "image": "quay.io/ceph/ceph:v19.2.4"
+      },
       "crashCollector": {
         "daysToRetain": 30,
         "disable": false
@@ -4678,7 +4692,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "database": {
         "database": "superphenix",
         "host": "postgres.{{ $.Release.Namespace }}.svc",
-        "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
+        "password": "{{ $.Values.apps.postgres.values.auth.password }}",
         "port": 5432,
         "username": "superphenix"
       },
@@ -4690,8 +4704,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "kubernetes": {
             "azDomains": {
               "local": {
-                "external": "%s.{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
-                "internal": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+                "external": "%s.{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
+                "internal": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
               }
             }
           }
@@ -4699,17 +4713,17 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       },
       "session": {
         "cookies": {
-          "domain": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+          "domain": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
         },
         "cors": {
           "allowedOrigins": [
-            "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+            "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
           ]
         },
-        "defaultReturnUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/callback"
+        "defaultReturnUrl": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/callback"
       },
       "swagger": {
-        "baseURL": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api"
+        "baseURL": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
       },
       "userSettings": {
         "enableProjectDefaultResources": true,
@@ -4723,7 +4737,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "enabled": true,
       "hosts": [
         {
-          "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+          "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
           "paths": [
             {
               "path": "/api(/|$)(.*)"
@@ -4734,7 +4748,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "tls": [
         {
           "hosts": [
-            "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+            "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
           ],
           "secretName": "superphenix-api-tls"
         }
@@ -4753,7 +4767,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 {
   "database": "superphenix",
   "host": "postgres.{{ $.Release.Namespace }}.svc",
-  "password": "{{ $.Values.apps.postgres.helm.values.auth.password }}",
+  "password": "{{ $.Values.apps.postgres.values.auth.password }}",
   "port": 5432,
   "username": "superphenix"
 }
@@ -4783,7 +4797,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "enabled": true,
   "hosts": [
     {
-      "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+      "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
       "paths": [
         {
           "path": "/api(/|$)(.*)"
@@ -4794,7 +4808,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   "tls": [
     {
       "hosts": [
-        "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+        "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
       ],
       "secretName": "superphenix-api-tls"
     }
@@ -4823,18 +4837,18 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "Management"
   ],
   "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
-  "targetRevision": "0.5.0",
+  "targetRevision": "0.7.0",
   "values": {
     "config": {
-      "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/api",
-      "authUrl": "https://{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}/accounts"
+      "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}/api",
+      "authUrl": "https://{{ (index $.Values.apps \"superphenix-console\").values.domain }}/accounts"
     },
     "domain": "console.example.org",
     "ingress": {
       "enabled": true,
       "hosts": [
         {
-          "host": "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}",
+          "host": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}",
           "paths": [
             {
               "path": "/"
@@ -4845,7 +4859,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "tls": [
         {
           "hosts": [
-            "{{ (index $.Values.apps \"superphenix-console\").helm.values.domain }}"
+            "{{ (index $.Values.apps \"superphenix-console\").values.domain }}"
           ],
           "secretName": "superphenix-console-tls"
         }
@@ -5039,6 +5053,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "enabled": true,
       "kind": "DaemonSet"
     },
+    "extraObjects": [
+      "apiVersion: cert-manager.io/v1\nkind: Certificate\nmetadata:\n  name: superphenix-self-signed\nspec:\n  commonName: superphenix-self-signed\n  secretName: superphenix-self-signed\n  duration: 168h\n  renewBefore: 24h\n  issuerRef:\n    name: selfsigned\n    kind: ClusterIssuer\n"
+    ],
     "gateway": {
       "enabled": false
     },
@@ -5056,7 +5073,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "metrics": {
       "prometheus": {
         "serviceMonitor": {
-          "enabled": true
+          "enabled": false
         }
       }
     },
@@ -5137,6 +5154,13 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "service": {
       "type": "ClusterIP"
+    },
+    "tlsStore": {
+      "default": {
+        "defaultCertificate": {
+          "secretName": "superphenix-self-signed"
+        }
+      }
     },
     "updateStrategy": {
       "rollingUpdate": {

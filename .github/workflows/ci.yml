@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  dco:
+    name: DCO
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Check DCO sign-offs
+        uses: KineticCafe/actions-dco@5f160e3ee086af8fc0fb567b8add0937d074123e # v3.2.0
+
+  tests:
+    name: Go tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: |
+            go.sum
+            go.work.sum
+            **/go.sum
+
+      - name: Test workspace unit packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          modules="$(go list -m -f '{{.Dir}}')"
+          while IFS= read -r module_dir; do
+            echo "::group::Go unit tests ($module_dir)"
+            packages="$(cd "$module_dir" && go list ./... | awk '!/(^|\/)e2e(\/|$)/')"
+            if [[ -n "$packages" ]]; then
+              (cd "$module_dir" && go test -v -skip '^TestControllers$' $packages)
+            fi
+            echo "::endgroup::"
+          done <<< "$modules"
