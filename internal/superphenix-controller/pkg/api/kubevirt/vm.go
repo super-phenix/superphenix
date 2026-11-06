@@ -419,6 +419,11 @@ func createInstance(w http.ResponseWriter, r *http.Request) {
 			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
 			return
 		}
+		if strings.HasPrefix(err.Error(), "invalid cloud-init") {
+			log.Err(err).Msg("Cloud-init rejected")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+			return
+		}
 		log.Err(err).Str("namespace", namespace).Msg("Error creating VM")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Error creating VM")
 	} else {
@@ -517,6 +522,11 @@ func updateInstance(w http.ResponseWriter, r *http.Request) {
 		}
 		if strings.HasPrefix(err.Error(), "invalid gpu") {
 			log.Err(err).Msg("GPUs rejected")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+			return
+		}
+		if strings.HasPrefix(err.Error(), "invalid cloud-init") {
+			log.Err(err).Msg("Cloud-init rejected")
 			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
 			return
 		}

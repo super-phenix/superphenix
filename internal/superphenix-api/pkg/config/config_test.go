@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ func TestValidate(t *testing.T) {
 	// field at a time to exercise each rejection path.
 	good := func() Config {
 		var c Config
+		c.DefaultCloudInit = "#cloud-config"
 		c.Authentication.JwtIssuer = "superphenix-api"
 		c.Authentication.JwtSecret = strings.Repeat("x", 32)
 		c.Session.Cors.AllowedOrigins = []string{"https://app.example.com"}
@@ -35,6 +37,7 @@ func TestValidate(t *testing.T) {
 		wantErr string
 	}{
 		{name: "valid config", mutate: func(c *Config) {}, wantErr: ""},
+		{name: "empty default cloud-init", mutate: func(c *Config) { c.DefaultCloudInit = "" }, wantErr: "defaultCloudInit must not be empty"},
 		{name: "empty jwt secret", mutate: func(c *Config) { c.Authentication.JwtSecret = "" }, wantErr: "jwtSecret must not be empty"},
 		{name: "default jwt secret", mutate: func(c *Config) { c.Authentication.JwtSecret = "secret" }, wantErr: `must not be the built-in default "secret"`},
 		{name: "short jwt secret", mutate: func(c *Config) { c.Authentication.JwtSecret = "too-short" }, wantErr: "at least 32 bytes"},
@@ -72,6 +75,87 @@ func TestValidate(t *testing.T) {
 			}
 			if !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("Validate() error = %q, want to contain %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPopulateAZs(t *testing.T) {
+	tests := []struct {
+		name          string
+		azCloudInit   string
+		wantCloudInit string
+	}{
+		{name: "inherits the global default", azCloudInit: "", wantCloudInit: "global"},
+		{name: "keeps its own default", azCloudInit: "own", wantCloudInit: "own"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			original := Global
+			t.Cleanup(func() { Global = original })
+			Global = Config{
+				DefaultCloudInit: "global",
+				AZs:              map[string]AZConfig{"az1": {DefaultCloudInit: tt.azCloudInit}},
+			}
+
+			populateAZs()
+
+			if got := Global.AZs["az1"]; got.Code != "az1" || got.DefaultCloudInit != tt.wantCloudInit {
+				t.Fatalf("got %+v, want code az1 and cloud-init %q", got, tt.wantCloudInit)
+			}
+		})
+	}
+}
+
+// A config file that omits defaultCloudInit must keep the built-in value, or
+// Validate would refuse to start on upgrade.
+func TestLoadConfigDefaultCloudInit(t *testing.T) {
+	base := `
+authentication:
+  jwtIssuer: superphenix-api
+  jwtSecret: 0123456789abcdef0123456789abcdef
+azs:
+  az1:
+    name: AZ 1
+  az2:
+    name: AZ 2
+    defaultCloudInit: "#az2"
+`
+	tests := []struct {
+		name       string
+		config     string
+		wantGlobal string
+	}{
+		{name: "built-in value when omitted", config: base},
+		{name: "user value when set", config: base + "defaultCloudInit: \"#global\"\n", wantGlobal: "#global"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			original := Global
+			t.Cleanup(func() { Global = original })
+			Global = Config{}
+
+			t.Chdir(t.TempDir())
+			if err := os.WriteFile("config.yaml", []byte(tt.config), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := LoadConfig(); err != nil {
+				t.Fatalf("LoadConfig: %v", err)
+			}
+
+			if tt.wantGlobal == "" && !strings.HasPrefix(Global.DefaultCloudInit, "#cloud-config\n") {
+				t.Fatalf("unexpected built-in default cloud-init: %q", Global.DefaultCloudInit)
+			}
+			if tt.wantGlobal != "" && Global.DefaultCloudInit != tt.wantGlobal {
+				t.Fatalf("global default = %q, want %q", Global.DefaultCloudInit, tt.wantGlobal)
+			}
+			if got := Global.AZs["az1"].DefaultCloudInit; got != Global.DefaultCloudInit {
+				t.Fatalf("az1 default = %q, want the global one", got)
+			}
+			if got := Global.AZs["az2"].DefaultCloudInit; got != "#az2" {
+				t.Fatalf("az2 default = %q, want its own", got)
 			}
 		})
 	}

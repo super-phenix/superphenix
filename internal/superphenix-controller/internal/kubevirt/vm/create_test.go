@@ -132,7 +132,7 @@ func TestConvertToVM_ComputeSize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			info := CreateVMInfo{}
+			info := CreateVMInfo{CloudInit: CloudInit{Config: "#cloud-config"}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.Compute.Cpu = tt.cpu
 			info.Compute.Memory = tt.memory

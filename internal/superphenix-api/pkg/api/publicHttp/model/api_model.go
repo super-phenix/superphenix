@@ -93,6 +93,10 @@ type APIAz struct {
 	LogoUrl string `json:"logoUrl"`
 }
 
+type APIAzDefaultCloudInit struct {
+	Config string `json:"config"`
+}
+
 type APIApiToken struct {
 	APIModel
 	Name      string    `json:"name"`

@@ -287,7 +287,7 @@ func TestUpdateVM_Gpus(t *testing.T) {
 				},
 			).AnyTimes()
 
-			info := UpdateVMInfo{}
+			info := UpdateVMInfo{CloudInit: CloudInit{Config: "#cloud-config"}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = testVMType
 			info.Compute.Cpu = 2

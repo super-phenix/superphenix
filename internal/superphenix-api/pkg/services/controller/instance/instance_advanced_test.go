@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 )
 
 func boolPtr(b bool) *bool { return &b }
@@ -20,7 +22,7 @@ func advancedBody() *InstanceAdvancedOptionsBody {
 func TestToUpdateAzControllerBody_ForwardsAdvanced(t *testing.T) {
 	t.Run("nil stays nil", func(t *testing.T) {
 		body := UpdateInstanceBody{Advanced: nil}
-		got := toUpdateAzControllerBody(body, nil)
+		got := toUpdateAzControllerBody(body, nil, config.AZConfig{})
 		if got.Advanced != nil {
 			t.Fatalf("expected nil Advanced, got %+v", got.Advanced)
 		}
@@ -28,7 +30,7 @@ func TestToUpdateAzControllerBody_ForwardsAdvanced(t *testing.T) {
 
 	t.Run("block is forwarded", func(t *testing.T) {
 		body := UpdateInstanceBody{Advanced: advancedBody()}
-		got := toUpdateAzControllerBody(body, nil)
+		got := toUpdateAzControllerBody(body, nil, config.AZConfig{})
 		if got.Advanced == nil {
 			t.Fatal("expected Advanced to be forwarded, got nil")
 		}
