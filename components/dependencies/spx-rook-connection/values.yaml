@@ -1,5 +1,16 @@
 rookOperatorNamespace: "rook-system"
-mapping: ""
+
+# Example of a clientProfileMappings entry:
+#
+#   clientProfileMappings:
+#     aq01-to-aq02:
+#       - localClientProfile: "spx-aq01-storage01"
+#         remoteClientProfile: "spx-aq02-storage01"
+#         blockPoolIdMapping:
+#           - ["2", "3"]
+
+# -- Cross-cluster RBD mirroring mappings, keyed by ClientProfileMapping name. Each entry is a list of `{localClientProfile, remoteClientProfile, blockPoolIdMapping}` records, where the profile names are the Ceph cluster namespaces (the `name` of a `clusters` entry) and `blockPoolIdMapping` is a list of `[localPoolId, remotePoolId]` pairs. See the example above.
+clientProfileMappings: {}
 clusters:
 #  - name: "spx-aq01-test01-storage01"
 #    # -- Whether the cluster is enabled.

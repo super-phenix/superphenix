@@ -751,7 +751,8 @@ apps:
           virtualMachineInstancesPerNode: 100
 
           # Storageclass used to store TPM/EFI and more (VM backend storage)
-          vmStateStorageClass: spx-storage.spx-rbd-3x
+          # Picks the default storageclass if not set
+          # vmStateStorageClass: spx-storage.spx-rbd-3x
 
           # Defines how VMs are evicted from a node when it is drained.
           # We run live migrations of the VMs to prevent interruptions.
@@ -879,26 +880,31 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
-    targetRevision: "1.17.7"
+    # Keep in sync with the rook-local-cluster chart version below.
+    targetRevision: "1.18.11"
     helm:
       chart: "rook-ceph"
       releaseName: "rook-operator"
     values:
-      # Bind the operator to the IPv6 Superphenix storage network.
+      # Bind the operator to the network of the node.
       useOperatorHostNetwork: true
       enforceHostNetwork: true
 
       # Container Storage Interface configuration.
       csi:
+        # The Ceph-CSI driver is managed by the standalone ceph-csi-operator, which Rook
+        # deploys as a sub-chart and drives through the csi.ceph.io CRs. Rook translates the
+        # settings below into a `Driver` CR; from Rook 1.20 on they are deprecated and the
+        # CRs become the source of truth. We'll remove this when we reach that version.
+        rookUseCsiOperator: true
         # csi-addons enables volume replication and mirroring.
         csiAddons:
           enabled: true
         # Object Map generator required by RBD mirroring.
         enableOMAPGenerator: true
-        # Default port 9070 conflicts with the RBD provisioner when running on hostNetwork.
-        csiAddonsRBDProvisionerPort: 9071
         # CephFS driver is intentionally disabled, we only use RBD.
         enableCephfsDriver: false
+        enableCSIHostNetwork: true
         # Expose CSI metrics via a ServiceMonitor.
         serviceMonitor:
           enabled: true
@@ -906,12 +912,69 @@ apps:
       monitoring:
         enabled: true
 
-      # Auto-discover new disks so they appear in the Ceph dashboard.
-      enableDiscoveryDaemon: true
+      # Auto-discover new disks so they appear in the Ceph dashboard. Only relevant where Ceph
+      # actually owns local disks (Hyperconverged, DecoupledStorage); DecoupledWorkload clusters
+      # only consume an external cluster and have no local disks for Rook to scan.
+      enableDiscoveryDaemon: '{{- has (include "superphenix-system.effectiveMode" $) (list "Hyperconverged" "DecoupledStorage") | ternary "true" "false" -}}'
       discoveryDaemonInterval: 5m
 
       # Allow tenants to set additional options on ObjectBucketClaims (self-service quotas etc.).
       obcAllowAdditionalConfigFields: "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle"
+
+  # -- The Ceph CSI driver, used to consume Ceph storage.
+  # Do NOT enable this while `rook-operator` is still reconciling its own Driver/OperatorConfig
+  # CRs, or the two controllers will fight over the same objects.
+  # The driver name below is kept identical to what Rook generates today
+  # (`<operator-namespace>.rbd.csi.ceph.com`), so existing StorageClasses, the
+  # VolumeReplicationClass and PVs are unaffected if this is ever enabled in Rook's place.
+  #
+  # Known gaps versus `rook-operator.values.csi` (this chart has no equivalent setting):
+  #   - `csiAddonsRBDProvisionerPort: 9071`, our workaround for the host-network port clash.
+  #   - `serviceMonitor.enabled` (CSI metrics ServiceMonitor) has no counterpart here.
+  #   - `enableCSIHostNetwork`: the `Driver` CR only exposes `hostNetwork` on the
+  #     controller plugin (set below); the node plugin DaemonSets have no equivalent field
+  #     in this chart and always run on the pod network.
+  ceph-csi-drivers:
+    enabled: false
+    wave: "-4"
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions: {}
+    namespace: "rook-system"
+    repoURL: "https://ceph.github.io/ceph-csi-operator"
+    targetRevision: "1.1.0"
+    helm:
+      chart: "ceph-csi-drivers"
+      releaseName: "ceph-csi-drivers"
+    values:
+      operatorConfig:
+        namespace: rook-system
+
+      drivers:
+        rbd:
+          enabled: true
+          name: "rook-system.rbd.csi.ceph.com"
+          imageSet:
+            name: rook-csi-operator-image-set-configmap
+          # csi-addons enables volume replication and mirroring.
+          deployCsiAddons: true
+          # Object Map generator required by RBD mirroring.
+          generateOMapInfo: true
+          nodePlugin:
+            priorityClassName: system-node-critical
+          controllerPlugin:
+            priorityClassName: system-cluster-critical
+            hostNetwork: true
+        cephfs:
+          enabled: false
+        nfs:
+          enabled: false
+        nvmeof:
+          enabled: false
 
   # -- Local Rook/Ceph cluster deployed on storage-capable clusters (hyperconverged or decoupled storage).
   rook-local-cluster:
@@ -929,7 +992,7 @@ apps:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
     # Keep in sync with the rook-operator chart version above.
-    targetRevision: "1.17.7"
+    targetRevision: "1.18.11"
     helm:
       chart: "rook-ceph-cluster"
       releaseName: "rook-local-cluster"
@@ -1017,7 +1080,7 @@ apps:
           # on hyperconverged clusters (including the snapshots, replications...).
           # For storage clusters, we have a default basic storage class for system PVCs (Prometheus, Loki...)
           storageClass:
-            enabled: '{{- eq $.Values.cluster.deploymentTopology "DecoupledStorage" | ternary "true" "" -}}'
+            enabled: '{{- eq (include "superphenix-system.effectiveMode" $) "DecoupledStorage" | ternary "true" "" -}}'
             name: spx-storage.spx-rbd-3x
             isDefault: true
             reclaimPolicy: Delete
@@ -1062,8 +1125,8 @@ apps:
           - /data/mapping
     repoURL: "oci://ghcr.io/super-phenix/charts/spx-rook-connection"
     path: "."
-    # TODO: We can switch to using the same version as superphenix-system
-    targetRevision: "0.2.1"
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
     helm:
       chart: "spx-rook-connection"
       releaseName: "spx-rook-connection"
@@ -1270,7 +1333,7 @@ apps:
   csi-addons:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledWorkload]
+    modes: [Hyperconverged, DecoupledWorkload, DecoupledStorage]
     automation:
       enabled: true
       selfHeal: true
@@ -1289,7 +1352,7 @@ apps:
   csi-snapshotter:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledWorkload]
+    modes: [Hyperconverged, DecoupledWorkload, DecoupledStorage]
     automation:
       enabled: true
       selfHeal: true
