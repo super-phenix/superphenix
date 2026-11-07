@@ -33,6 +33,13 @@ docker compose up -d
 docker compose -f hacks/compose/docker-compose.yml up -d --build
 ```
 
+## Logging in locally
+
+Sign up at `http://localhost:4200/auth/registration` with any email, then log
+in. There is no email check, same as a default Superphenix install. Password
+recovery sends an email, so it only works if `courier.smtp` in
+`local/kratos/kratos.yml` points at a real SMTP server.
+
 ## Docker Compose Profiles
 
 Every service in the stack is assigned to a **profile**. Only the profiles you activate will be started.
