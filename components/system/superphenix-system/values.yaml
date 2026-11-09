@@ -1758,7 +1758,7 @@ apps:
     enabled: true
     modes: [Management]
     repoURL: "oci://ghcr.io/super-phenix/charts/superphenix-console"
-    targetRevision: "0.7.0"
+    targetRevision: "0.8.0"
     automation:
       enabled: true
       prune: true
