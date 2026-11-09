@@ -1929,7 +1929,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "Management"
     ],
     "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
-    "targetRevision": "0.7.0",
+    "targetRevision": "0.8.0",
     "values": {
       "config": {
         "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}/api",
@@ -4889,7 +4889,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "Management"
   ],
   "repoURL": "oci://ghcr.io/super-phenix/charts/superphenix-console",
-  "targetRevision": "0.7.0",
+  "targetRevision": "0.8.0",
   "values": {
     "config": {
       "apiUrl": "{{ (index $.Values.apps \"superphenix-console\").values.domain }}/api",
