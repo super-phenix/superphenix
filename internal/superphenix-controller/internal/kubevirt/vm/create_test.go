@@ -17,6 +17,8 @@ import (
 	v1 "kubevirt.io/api/core/v1"
 )
 
+const testCloudInit = "#cloud-config"
+
 const testMemory = "4Gi"
 
 func TestConvertToVM_CustomLabels(t *testing.T) {
@@ -29,7 +31,7 @@ func TestConvertToVM_CustomLabels(t *testing.T) {
 	}
 
 	baseInfo := func(labels []string) CreateVMInfo {
-		info := CreateVMInfo{}
+		info := CreateVMInfo{CloudInit: CloudInit{Config: testCloudInit}}
 		info.General.RunStrategy = string(v1.RunStrategyAlways)
 		info.General.VMType = "linux"
 		info.General.Labels = labels
@@ -132,7 +134,7 @@ func TestConvertToVM_ComputeSize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			info := CreateVMInfo{}
+			info := CreateVMInfo{CloudInit: CloudInit{Config: testCloudInit}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.Compute.Cpu = tt.cpu
 			info.Compute.Memory = tt.memory

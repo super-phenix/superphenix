@@ -7,10 +7,12 @@ import (
 	"testing"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/informers"
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
 	v1 "kubevirt.io/api/core/v1"
 )
@@ -450,4 +452,59 @@ func TestWithNetworks_MACAddress(t *testing.T) {
 			t.Errorf("expected error prefixed 'invalid network mac', got %q", err.Error())
 		}
 	})
+}
+
+func TestWithCloudInit(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      string
+		wantPrefix  string
+		wantLiteral string
+	}{
+		{
+			name:        "config is applied as received",
+			config:      "#cloud-config\nhostname: az1\n",
+			wantLiteral: "#cloud-config\nhostname: az1\n",
+		},
+		{
+			name:       "generated password placeholder is replaced",
+			config:     "password: <generated_password>",
+			wantPrefix: "password: ",
+		},
+		{
+			name:       "every generated password placeholder is replaced",
+			config:     "password: <generated_password>\nagain: <generated_password>",
+			wantPrefix: "password: ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			origK8s := config.K8sClient
+			t.Cleanup(func() { config.K8sClient = origK8s })
+			config.K8sClient = fake.NewSimpleClientset()
+
+			vm := &v1.VirtualMachine{
+				ObjectMeta: k8smetav1.ObjectMeta{Name: "vm-1", Namespace: "ns"},
+				Spec:       v1.VirtualMachineSpec{Template: &v1.VirtualMachineInstanceTemplateSpec{}},
+			}
+
+			err := withCloudInit(context.Background(), vm, CloudInit{Config: tt.config})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			secret, err := config.K8sClient.CoreV1().Secrets("ns").Get(context.Background(), "cloudinit-vm-1", k8smetav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("secret not created: %v", err)
+			}
+			userData := secret.StringData[cloudInitDataKey]
+			if tt.wantLiteral != "" && userData != tt.wantLiteral {
+				t.Fatalf("userData = %q, want %q", userData, tt.wantLiteral)
+			}
+			if tt.wantPrefix != "" && (!strings.HasPrefix(userData, tt.wantPrefix) || strings.Contains(userData, "<generated_password>")) {
+				t.Fatalf("placeholder not replaced: %q", userData)
+			}
+		})
+	}
 }

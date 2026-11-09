@@ -15495,9 +15495,6 @@ const docTemplate = `{
                 },
                 "config": {
                     "type": "string"
-                },
-                "custom": {
-                    "type": "boolean"
                 }
             }
         },
