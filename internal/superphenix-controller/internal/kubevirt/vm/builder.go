@@ -11,11 +11,14 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/kubeovn/subnet"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/models/view"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
+	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
 	v2 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	v1 "kubevirt.io/api/core/v1"
 )
@@ -386,25 +389,39 @@ func withSSHKeys(ctx context.Context, namespace string, sshKeys []string, vm *v1
 		sshEIds = append(sshEIds, s.Name)
 	}
 
+	currentKeys := ssh.KeyNames(vm.Spec.Template.Spec.AccessCredentials)
+
 	vm.Spec.Template.Spec.AccessCredentials = make([]v1.AccessCredential, 0)
 	for _, key := range sshKeys {
-		if slices.Contains(sshEIds, key) {
-			vm.Spec.Template.Spec.AccessCredentials = append(vm.Spec.Template.Spec.AccessCredentials, v1.AccessCredential{
-				SSHPublicKey: &v1.SSHPublicKeyAccessCredential{
-					PropagationMethod: v1.SSHPublicKeyAccessCredentialPropagationMethod{
-						NoCloud: &v1.NoCloudSSHPublicKeyAccessCredentialPropagation{},
-					},
-					Source: v1.SSHPublicKeyAccessCredentialSource{
-						Secret: &v1.AccessCredentialSecretSource{
-							SecretName: key,
-						},
+		if !slices.Contains(sshEIds, key) {
+			if !slices.Contains(currentKeys, key) {
+				log.Error().Str("ssh key not found", key).Msg("SSH Key not found for the user")
+				return fmt.Errorf("ssh key %s not found for the user", key)
+			}
+			// A dangling key prevents the VM from booting: dropping it repairs the VM. The informer may lag or
+			// not be synced yet, so only the API server can tell the key is gone.
+			_, err := config.K8sClient.CoreV1().Secrets(namespace).Get(ctx, key, k8smetav1.GetOptions{})
+			if apierrors.IsNotFound(err) {
+				log.Warn().Str("namespace", namespace).Str("name", vm.Name).Str("ssh key", key).Msg("Removing deleted SSH key from VM")
+				continue
+			}
+			if err != nil {
+				log.Err(err).Str("namespace", namespace).Str("ssh key", key).Msg("SSH Key cannot be checked")
+				return fmt.Errorf("ssh key %s cannot be checked", key)
+			}
+		}
+		vm.Spec.Template.Spec.AccessCredentials = append(vm.Spec.Template.Spec.AccessCredentials, v1.AccessCredential{
+			SSHPublicKey: &v1.SSHPublicKeyAccessCredential{
+				PropagationMethod: v1.SSHPublicKeyAccessCredentialPropagationMethod{
+					NoCloud: &v1.NoCloudSSHPublicKeyAccessCredentialPropagation{},
+				},
+				Source: v1.SSHPublicKeyAccessCredentialSource{
+					Secret: &v1.AccessCredentialSecretSource{
+						SecretName: key,
 					},
 				},
-			})
-		} else {
-			log.Error().Str("ssh key not found", key).Msg("SSH Key not found for the user")
-			return fmt.Errorf("ssh key %s not found for the user", key)
-		}
+			},
+		})
 	}
 	return nil
 }
