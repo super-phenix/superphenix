@@ -24,6 +24,24 @@ selfservice:
       enabled: true
       config:
         lifespan: "15m"
+    totp:
+      enabled: true
+      config:
+        issuer: Superphenix
+    lookup_secret:
+      enabled: true
+    webauthn:
+      enabled: true
+      config:
+        # Second factor only: true would let a key replace the password.
+        passwordless: false
+        rp:
+          display_name: Superphenix
+          # Credentials are bound to this domain: changing it invalidates every registered key.
+          id: localhost
+          origins:
+            - http://localhost:4200
+            - http://localhost:3000
   default_browser_return_url: http://localhost:4200/
   allowed_return_urls:
     - http://localhost:5000/
@@ -71,6 +89,10 @@ selfservice:
       # Sessions older than 15 minute requires the user to sign in again before
       # the password is changed.
       privileged_session_max_age: 15m
+      required_aal: highest_available
+session:
+  whoami:
+    required_aal: highest_available
 cookies:
   domain: localhost
   same_site: Lax

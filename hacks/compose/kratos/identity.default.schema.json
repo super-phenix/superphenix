@@ -15,6 +15,12 @@
             "credentials": {
               "password": {
                 "identifier": true
+              },
+              "totp": {
+                "account_name": true
+              },
+              "webauthn": {
+                "identifier": true
               }
             },
             "recovery": {
