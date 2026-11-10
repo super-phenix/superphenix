@@ -10119,6 +10119,10 @@ const docTemplate = `{
         "dbaas.DBaaSEndpoint": {
             "type": "object",
             "properties": {
+                "external": {
+                    "description": "External is true when Host is the EIP of the database instead of the load balancer VIP.",
+                    "type": "boolean"
+                },
                 "host": {
                     "type": "string"
                 },
