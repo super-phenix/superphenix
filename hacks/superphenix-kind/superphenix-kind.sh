@@ -86,7 +86,7 @@ done
 if [[ -f "${DIR}/.env" ]]; then source "${DIR}/.env"; fi
 for var in "${!from_cli[@]}"; do printf -v "${var}" '%s' "${from_cli[${var}]}"; done
 
-SPX_VERSION="${SPX_VERSION:-0.9.0}"
+SPX_VERSION="${SPX_VERSION:-latest}"
 SUPERPHENIX_REPO="${SUPERPHENIX_REPO:-../..}"          # this checkout
 CONSOLE_REPO="${CONSOLE_REPO:-../../../console-ui}"    # next to this checkout
 KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.37.0}"
