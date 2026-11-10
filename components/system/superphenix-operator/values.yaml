@@ -39,7 +39,7 @@ health:
 
 # -- Network policy configuration.
 networkPolicy:
-  enabled: true
+  enabled: false
 
 image:
   # -- Repository for the operator image.
