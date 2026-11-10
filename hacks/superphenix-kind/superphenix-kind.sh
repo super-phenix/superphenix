@@ -24,14 +24,22 @@ MGMT_APPS="management.systemConfiguration.apps"
 # ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
+# Print a success status message.
 ok()   { echo "  ok    $*"; }
+# Print a warning message.
 warn() { echo "  warn  $*"; }
+# Print an error message to stderr and exit with code 1.
 die()  { echo "  error $*" >&2; exit 1; }
+# Print a step header banner.
 step() { echo; echo "==> $*"; }
+# Run kubectl within the lab kind cluster context.
 k()    { kubectl --context "${CTX}" "$@"; }
+# Check whether the lab kind cluster exists.
 exists() { kind get clusters 2>/dev/null | grep -qx "${NAME}"; }
+# Check if a TCP port on localhost is in use.
 port_in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }   # true if something answers
 
+# Display usage instructions for the script.
 usage() {
   cat <<EOF
 Usage: ./superphenix-kind.sh <command>
@@ -53,8 +61,10 @@ if (( BASH_VERSINFO[0] < 4 )); then
   die "This script needs bash 4 or newer (found ${BASH_VERSION})."
 fi
 
+# Retrieve Superphenix clusters in JSON format.
 spx_clusters() { k -n "${NS}" get clusters.operator.superphenix.net -o json 2>/dev/null || echo '{"items":[]}'; }
 
+# Check if all Superphenix clusters are Deployed or Ready.
 all_deployed() {
   spx_clusters | jq -e '(.items | length) > 0 and all(.items[]; .status.phase == "Deployed"
     or any(.status.conditions[]?; .type == "Ready" and .status == "True"))' >/dev/null
@@ -68,8 +78,11 @@ progress() {
 }
 
 # Helm release helpers
+# Fetch current Helm release values in JSON format.
 release_values() { helm --kube-context "${CTX}" -n "${NS}" get values "${RELEASE}" -o json 2>/dev/null || echo '{}'; }
+# Check whether the Helm release runs on the host network.
 release_on_host_network() { release_values | jq -r '.installOnClusterWithoutCNI | tostring'; }
+# Check whether the deployed release has KaaS enabled (1) or disabled (0).
 release_has_kaas() { release_values | jq -r 'if .clusters.local.systemConfiguration.apps["kaas-controller"].enabled == true then 1 else 0 end' 2>/dev/null || echo 0; }
 
 # ---------------------------------------------------------------------------
@@ -90,8 +103,14 @@ SPX_VERSION="${SPX_VERSION:-latest}"
 SUPERPHENIX_REPO="${SUPERPHENIX_REPO:-../..}"          # this checkout
 CONSOLE_REPO="${CONSOLE_REPO:-../../../console-ui}"    # next to this checkout
 KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.37.0}"
-# KAAS set nowhere: keep what the lab runs, so `make up KAAS=1` then `make apply` keeps KaaS.
-KAAS="${KAAS:-$(release_has_kaas)}"
+# KAAS set nowhere: keep what the lab runs for commands that apply values,
+# so `make up KAAS=1` then `make apply` keeps KaaS.
+if [[ -z "${KAAS:-}" ]]; then
+  case "${1:-}" in
+    up|apply|dev) KAAS="$(release_has_kaas)" ;;
+    *)            KAAS=0 ;;
+  esac
+fi
 [[ "${KAAS}" == 0 || "${KAAS}" == 1 ]] || die "KAAS must be 0 or 1 (got '${KAAS}')."
 # Relative paths start from this folder.
 if [[ "${SUPERPHENIX_REPO}" != /* ]]; then SUPERPHENIX_REPO="${DIR}/${SUPERPHENIX_REPO}"; fi
@@ -100,6 +119,7 @@ if [[ "${CONSOLE_REPO}" != /* ]]; then CONSOLE_REPO="${DIR}/${CONSOLE_REPO}"; fi
 # ---------------------------------------------------------------------------
 # Step 1: host
 # ---------------------------------------------------------------------------
+# Verify host requirements, tools, resources, and kernel settings.
 preflight() {
   local tool
   for tool in docker kind kubectl helm jq openssl; do
@@ -133,6 +153,7 @@ preflight() {
 # ---------------------------------------------------------------------------
 # Step 2: kind cluster
 # ---------------------------------------------------------------------------
+# Create the kind network, cluster, and persistent storage.
 create_cluster() {
   # Plays the datacenter network: nodes in 172.30.0.0/24, NAT gateways and elastic IPs in the rest.
   if ! docker network inspect "${NAME}" >/dev/null 2>&1; then
@@ -211,6 +232,7 @@ helm_args() {
   done
 }
 
+# Apply or upgrade the Superphenix Helm chart and manifests.
 cmd_apply() {
   exists || die "No lab yet. Run 'make up' first."
   if [[ "${SPX_VERSION}" == latest ]]; then
@@ -266,6 +288,7 @@ wait_deployed() {
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
+# Provision the full lab: preflight checks, kind cluster, and Superphenix.
 cmd_up() {
   step "Checking the host";       preflight
   step "Creating the cluster";    create_cluster
@@ -283,6 +306,7 @@ cmd_up() {
   cmd_info
 }
 
+# Tear down and delete the lab cluster, Docker network, and dev overrides.
 cmd_down() {
   if exists; then kind delete cluster --name "${NAME}"; fi
   docker network rm "${NAME}" >/dev/null 2>&1 || true
@@ -290,6 +314,7 @@ cmd_down() {
   ok "lab deleted (the CA in ${CA_DIR} is kept)"
 }
 
+# Print URLs and initial credentials for the lab.
 cmd_info() {
   local pw
   pw="$(k -n "${NS}" get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || true)"
@@ -303,6 +328,7 @@ cmd_info() {
 EOF
 }
 
+# Show status of clusters, unhealthy ArgoCD apps, and failing pods.
 cmd_status() {
   exists || die "No lab yet. Run 'make up' first."
   step "Superphenix clusters"
@@ -351,6 +377,7 @@ cmd_dev() {
   ok "${component} runs ${image}:${tag}; ArgoCD rolls it out in a minute or two"
 }
 
+# Print instructions to trust the lab CA certificate on the host.
 cmd_ca() {
   [[ -f "${CA_DIR}/ca.crt" ]] || die "No lab CA yet. Run 'make up' first."
   echo "Trust ${CA_DIR}/ca.crt once. It can only sign names under ${DOMAIN}."

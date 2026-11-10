@@ -35,10 +35,23 @@ docker compose -f hacks/compose/docker-compose.yml up -d --build
 
 ## Logging in locally
 
-Sign up at `http://localhost:4200/auth/registration` with any email, then log
+Sign up at `http://localhost:${SPX_PANEL_PORT:-4200}/auth/registration` (or
+your configured `SPX_PANEL_PORT`, default `4200`) with any email, then log
 in. There is no email check, same as a default Superphenix install. Password
 recovery sends an email, so it only works if `courier.smtp` in
 `local/kratos/kratos.yml` points at a real SMTP server.
+
+If you configure a custom `SPX_PANEL_PORT`, update the copied Kratos
+configuration (`local/kratos/kratos.yml`) so its flow URLs
+(`selfservice.default_browser_return_url`, `selfservice.flows.*.ui_url`) and
+CORS settings (`serve.public.cors.allowed_origins`) match the custom port.
+
+If you copied `local/kratos/kratos.yml` before verification was disabled by
+default, edit it to disable verification
+(`selfservice.flows.verification.enabled: false`) and comment out or remove the
+`require_verified_address` hook under `selfservice.flows.login.after.hooks`, then
+restart Kratos (`docker compose restart kratos`) so new users can log in without
+a working mail server.
 
 ## Docker Compose Profiles
 
