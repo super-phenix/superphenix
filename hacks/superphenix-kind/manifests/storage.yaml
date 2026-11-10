@@ -1,4 +1,4 @@
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicy
 metadata:
   name: lab-local-path-disks
@@ -25,7 +25,7 @@ spec:
             JSONPatch{op: "add", path: "/spec/storage/accessModes", value: ["ReadWriteOnce"]}
           ]
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingAdmissionPolicyBinding
 metadata:
   name: lab-local-path-disks
