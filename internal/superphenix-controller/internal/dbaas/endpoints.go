@@ -38,13 +38,14 @@ func findRendered(ctx context.Context, resource, namespace, localId string) *uns
 		return nil
 	}
 
-	for _, item := range watcher.List() {
-		obj, ok := item.(*unstructured.Unstructured)
-		if !ok {
-			continue
-		}
-		labels := obj.GetLabels()
-		if labels[spxId.SpxLabelProjectID] == namespace && labels[spxId.SpxLabelResourceLocalID] == localId {
+	items, err := watcher.ByIndex(informers.ProjectLocalIDIndex, informers.ProjectLocalIDKey(namespace, localId))
+	if err != nil {
+		log.Err(err).Str("resource", resource).Msg("Failed to look up rendered object")
+		return nil
+	}
+
+	for _, item := range items {
+		if obj, ok := item.(*unstructured.Unstructured); ok {
 			return obj
 		}
 	}

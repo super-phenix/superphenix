@@ -61,7 +61,7 @@ func setFakeDynamicClient(t *testing.T, objects ...runtime.Object) *dynamicfake.
 // setFakeWatcher seeds the informer registry with a prefilled indexer and restores the previous entry on cleanup.
 func setFakeWatcher(t *testing.T, resource string, objects ...*unstructured.Unstructured) {
 	t.Helper()
-	idx := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc})
+	idx := cache.NewIndexer(cache.MetaNamespaceKeyFunc, informers.ResourceIndexers(resource))
 	for _, obj := range objects {
 		if err := idx.Add(obj); err != nil {
 			t.Fatalf("failed to seed fake watcher: %v", err)
