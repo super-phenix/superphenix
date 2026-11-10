@@ -28,9 +28,9 @@ func (e *AZStatusError) Error() string {
 }
 
 // GetFromAZ decodes the JSON answer of a GET on the AZ controller.
-func GetFromAZ(ctx context.Context, azDb config.AZConfig, url string, out any) error {
+func GetFromAZ(ctx context.Context, azDb config.AZConfig, endpoint string, out any) error {
 	log := logger.GetLogger(ctx)
-	resp, err := proxy.SendRequest(ctx, url, http.MethodGet, http.NoBody, azDb.AuthSecret)
+	resp, err := proxy.SendRequest(ctx, endpoint, http.MethodGet, http.NoBody, azDb.AuthSecret)
 	if err != nil {
 		log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
 		return err
@@ -41,7 +41,7 @@ func GetFromAZ(ctx context.Context, azDb config.AZConfig, url string, out any) e
 		errorBody := httpError.RetrieveHttpError(resp)
 		log.Error().Any("responseBody", errorBody).
 			Str("status", resp.Status).Int("statusCode", resp.StatusCode).
-			Str("azCode", azDb.Code).Str("url", url).
+			Str("azCode", azDb.Code).Str("url", endpoint).
 			Msg("Request on superphenix-controller failed")
 		statusErr := &AZStatusError{StatusCode: resp.StatusCode}
 		if errorBody != nil {
