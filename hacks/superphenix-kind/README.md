@@ -17,7 +17,7 @@ make down        # delete everything
 ## Requirements
 
 - Linux x86-64 or Windows with WSL2 (not ARM64 compatible: the released Superphenix images are based on amd64 only)
-- Docker, kind, kubectl, Helm, jq, openssl, `sudo` (to load kernel modules)
+- Docker, kind v0.33.0 or newer (older versions fail on the Kubernetes 1.37 node image), kubectl, Helm, jq, openssl, `sudo` (to load kernel modules)
 - 16 GiB RAM, 8 threads, ~30 GiB disk, ports 80 and 443 free
 - `/dev/kvm` makes VMs fast. Without it they run emulated: slow, but they work.
 
