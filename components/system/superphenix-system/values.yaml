@@ -1758,7 +1758,7 @@ apps:
     enabled: true
     modes: [Management]
     repoURL: "oci://ghcr.io/super-phenix/charts/superphenix-console"
-    targetRevision: "0.7.0"
+    targetRevision: "0.8.0"
     automation:
       enabled: true
       prune: true
@@ -1858,6 +1858,16 @@ apps:
             controllerUrl: 'http://superphenix-controller.{{ (index $.Values.apps "superphenix-controller").namespace }}.svc.cluster.local:8080'
             authSecret: "secret!"
             destination: "in-cluster"
+            # Optional, overrides defaultCloudInit for this AZ
+            # defaultCloudInit: |
+            #   #cloud-config
+
+        # Cloud-init of instances created without a custom one. The built-in
+        # value is used when unset; an AZ can override it under azs.<az>.
+        # These values go through Helm `tpl`, so escape any `{{ }}`: a Jinja
+        # `{{ v1.local_hostname }}` must be written {{`{{ v1.local_hostname }}`}}.
+        # defaultCloudInit: |
+        #   #cloud-config
 
         userSettings:
           userIsActiveOnCreate: true

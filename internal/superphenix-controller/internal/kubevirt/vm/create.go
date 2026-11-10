@@ -61,6 +61,10 @@ func convertToVM(ctx context.Context, namespace string, vmInfo CreateVMInfo, met
 		return &v1.VirtualMachine{}, err
 	}
 
+	if vmInfo.CloudInit.Config == "" {
+		return &v1.VirtualMachine{}, errCloudInitRequired
+	}
+
 	if !slices.Contains(RUN_STRATEGY_VALUE_LIST, vmInfo.General.RunStrategy) {
 		return &v1.VirtualMachine{}, fmt.Errorf("unknown run strategy: %s", vmInfo.General.RunStrategy)
 	}

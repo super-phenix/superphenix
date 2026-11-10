@@ -81,6 +81,9 @@ type AZConfig struct {
 	ControllerUrl string   `yaml:"controllerUrl"`
 	Destination   string   `yaml:"destination"`
 	Whitelist     []string `yaml:"whitelist"`
+	// DefaultCloudInit is used for instances without a custom cloud-init.
+	// Empty inherits Config.DefaultCloudInit.
+	DefaultCloudInit string `yaml:"defaultCloudInit"`
 }
 
 // Config describes the configuration structure accepted by this application
@@ -198,6 +201,10 @@ type Config struct {
 
 	AZs map[string]AZConfig `yaml:"azs"`
 
+	// DefaultCloudInit applies to every AZ that does not define its own. The
+	// controller replaces the <generated_password> placeholder.
+	DefaultCloudInit string `yaml:"defaultCloudInit"`
+
 	SpxPrefix string `yaml:"spxPrefix"`
 	ArgoCdUrl string `yaml:"argoCdUrl"`
 
@@ -249,6 +256,26 @@ type Config struct {
 }
 
 var defaultConfig = []byte(`
+defaultCloudInit: |
+  #cloud-config
+  ssh_pwauth: true
+  users:
+    - name: spx
+      groups: sudo
+      sudo: ['ALL=(ALL) NOPASSWD:ALL']
+      shell: /bin/bash
+  chpasswd:
+    expire: true
+    users:
+      - {name: spx, password: "<generated_password>", type: text}
+  write_files:
+    - path: /etc/systemd/resolved.conf.d/dns_servers.conf
+      content: |
+        [Resolve]
+        DNS=1.1.1.1 1.0.0.1
+      permissions: '0644'
+  runcmd:
+    - systemctl restart systemd-resolved
 logging:
   pretty: true
 publicHttp:
@@ -419,7 +446,7 @@ func LoadConfig() error {
 	if err := viper.Unmarshal(&Global); err != nil {
 		return err
 	}
-	populateAZCodes()
+	populateAZs()
 	if err := Global.Validate(); err != nil {
 		return err
 	}
@@ -531,6 +558,10 @@ func (c *Config) Validate() error {
 		log.Print("WARNING: session.cors.allowedOrigins contains \"*\" and allowUnsafeWildcard is enabled — do not use this configuration in production")
 	}
 
+	if c.DefaultCloudInit == "" {
+		errs = append(errs, "defaultCloudInit must not be empty")
+	}
+
 	errs = append(errs, c.AuditLog.validate()...)
 	errs = append(errs, c.Quota.Resync.validate()...)
 
@@ -550,14 +581,18 @@ func loadDefaults() error {
 	if err := viper.Unmarshal(&Global); err != nil {
 		return err
 	}
-	populateAZCodes()
+	populateAZs()
 	return nil
 }
 
-// populateAZCodes sets each AZConfig.Code from its map key.
-func populateAZCodes() {
+// populateAZs sets each AZConfig.Code from its map key and resolves its default
+// cloud-init against the global one.
+func populateAZs() {
 	for code, az := range Global.AZs {
 		az.Code = code
+		if az.DefaultCloudInit == "" {
+			az.DefaultCloudInit = Global.DefaultCloudInit
+		}
 		Global.AZs[code] = az
 	}
 }

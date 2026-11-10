@@ -963,6 +963,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/organization/{orgaId}/az/{az}/default-cloud-init": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead"
+                        ]
+                    }
+                ],
+                "description": "Get the default cloud-init of an AZ, as resolved from the configuration",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "az"
+                ],
+                "summary": "Get AZ default cloud-init",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Default cloud-init",
+                        "schema": {
+                            "$ref": "#/definitions/model.APIAzDefaultCloudInit"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
         "/v1/organization/{orgaId}/iam/group": {
             "get": {
                 "security": [
@@ -7185,6 +7232,78 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     },
+                    "409": {
+                        "description": "Conflict"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgaId}/api/spx-ctrl/{az}/{projectId}/ssh/{effectiveId}/usage": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": [
+                            "OrganizationRead",
+                            "ProjectSSHRead",
+                            "ProjectInstanceRead"
+                        ]
+                    }
+                ],
+                "description": "List the instances using an SSH key",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "Superphenix Controller"
+                ],
+                "summary": "Get SSH usage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "AZ Code",
+                        "name": "az",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SSH EID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Instances",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ssh.SSHUser"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
                     "500": {
                         "description": "Internal Server Error"
                     }
@@ -10472,6 +10591,14 @@ const docTemplate = `{
                 }
             }
         },
+        "model.APIAzDefaultCloudInit": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "string"
+                }
+            }
+        },
         "model.APIGroup": {
             "type": "object",
             "properties": {
@@ -11513,6 +11640,9 @@ const docTemplate = `{
                     "description": "local ID",
                     "type": "string"
                 },
+                "isUsed": {
+                    "type": "boolean"
+                },
                 "productName": {
                     "description": "human-readable name",
                     "type": "string"
@@ -11521,6 +11651,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ssh": {}
+            }
+        },
+        "ssh.SSHUser": {
+            "type": "object",
+            "properties": {
+                "eid": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
+                }
             }
         },
         "subnet.CreateSubnetBody": {

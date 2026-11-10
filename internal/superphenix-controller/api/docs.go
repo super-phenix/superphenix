@@ -4051,6 +4051,9 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found"
                     },
+                    "409": {
+                        "description": "Conflict"
+                    },
                     "500": {
                         "description": "Internal Server Error"
                     }
@@ -4153,6 +4156,59 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/{orgId}/{projectId}/ssh/{effectiveId}/usage": {
+            "get": {
+                "description": "List the VMs referencing an SSH by Effective ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "v1",
+                    "SSH"
+                ],
+                "summary": "Get SSH usage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Organization ID",
+                        "name": "orgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Project ID",
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "SSH Effective ID",
+                        "name": "effectiveId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "VMs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/view.SSHUser"
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not Found"
@@ -5376,6 +5432,10 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "revision": {
+                    "description": "Revision is the monotonic revision of the quota in the Superphenix database.",
+                    "type": "integer"
                 }
             }
         },
@@ -14395,6 +14455,9 @@ const docTemplate = `{
                     "description": "local ID",
                     "type": "string"
                 },
+                "isUsed": {
+                    "type": "boolean"
+                },
                 "productName": {
                     "description": "human-readable name",
                     "type": "string"
@@ -14404,6 +14467,17 @@ const docTemplate = `{
                 },
                 "ssh": {
                     "$ref": "#/definitions/view.SSHView"
+                }
+            }
+        },
+        "view.SSHUser": {
+            "type": "object",
+            "properties": {
+                "eid": {
+                    "type": "string"
+                },
+                "productName": {
+                    "type": "string"
                 }
             }
         },
@@ -15421,9 +15495,6 @@ const docTemplate = `{
                 },
                 "config": {
                     "type": "string"
-                },
-                "custom": {
-                    "type": "boolean"
                 }
             }
         },

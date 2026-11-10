@@ -180,7 +180,7 @@ func TestConvertToVM_InvalidGpus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			info := CreateVMInfo{}
+			info := CreateVMInfo{CloudInit: CloudInit{Config: testCloudInit}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = testVMType
 			info.Compute.Cpu = 2
@@ -287,7 +287,7 @@ func TestUpdateVM_Gpus(t *testing.T) {
 				},
 			).AnyTimes()
 
-			info := UpdateVMInfo{}
+			info := UpdateVMInfo{CloudInit: CloudInit{Config: testCloudInit}}
 			info.General.RunStrategy = string(v1.RunStrategyAlways)
 			info.General.VMType = testVMType
 			info.Compute.Cpu = 2

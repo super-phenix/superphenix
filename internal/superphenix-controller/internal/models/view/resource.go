@@ -61,6 +61,13 @@ type VmSnapshot struct {
 type SSH struct {
 	Resource `json:",inline"`
 	SSH      SSHView `json:"ssh"`
+	IsUsed   bool    `json:"isUsed"`
+}
+
+// SSHUser is a VM referencing an SSH key. ProductName is only set on gitops VMs.
+type SSHUser struct {
+	EId         string `json:"eid"`
+	ProductName string `json:"productName"`
 }
 
 type LoadBalancer struct {
