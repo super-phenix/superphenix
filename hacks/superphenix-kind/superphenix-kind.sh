@@ -82,8 +82,17 @@ progress() {
 release_values() { helm --kube-context "${CTX}" -n "${NS}" get values "${RELEASE}" -o json 2>/dev/null || echo '{}'; }
 # Check whether the Helm release runs on the host network.
 release_on_host_network() { release_values | jq -r '.installOnClusterWithoutCNI | tostring'; }
-# Check whether the deployed release has KaaS enabled (1) or disabled (0).
-release_has_kaas() { release_values | jq -r 'if .clusters.local.systemConfiguration.apps["kaas-controller"].enabled == true then 1 else 0 end' 2>/dev/null || echo 0; }
+# No lab or no release: 0. A failed Helm lookup stops the script.
+release_has_kaas() {
+  exists || { echo 0; return; }
+  local found
+  found="$(helm --kube-context "${CTX}" -n "${NS}" list --all -q --filter "^${RELEASE}\$")" \
+    || die "Could not look up the Helm release ${RELEASE}."
+  [[ -n "${found}" ]] || { echo 0; return; }
+  helm --kube-context "${CTX}" -n "${NS}" get values "${RELEASE}" -o json \
+    | jq -r 'if .clusters.local.systemConfiguration.apps["kaas-controller"].enabled == true then 1 else 0 end' \
+    || die "Could not read the values of ${RELEASE}."
+}
 
 # ---------------------------------------------------------------------------
 # Settings: command line > .env > defaults below (for KAAS: what the lab runs).
@@ -103,8 +112,7 @@ SPX_VERSION="${SPX_VERSION:-latest}"
 SUPERPHENIX_REPO="${SUPERPHENIX_REPO:-../..}"          # this checkout
 CONSOLE_REPO="${CONSOLE_REPO:-../../../console-ui}"    # next to this checkout
 KIND_NODE_IMAGE="${KIND_NODE_IMAGE:-kindest/node:v1.37.0}"
-# KAAS set nowhere: keep what the lab runs for commands that apply values,
-# so `make up KAAS=1` then `make apply` keeps KaaS.
+
 if [[ -z "${KAAS:-}" ]]; then
   case "${1:-}" in
     up|apply|dev) KAAS="$(release_has_kaas)" ;;
@@ -112,6 +120,7 @@ if [[ -z "${KAAS:-}" ]]; then
   esac
 fi
 [[ "${KAAS}" == 0 || "${KAAS}" == 1 ]] || die "KAAS must be 0 or 1 (got '${KAAS}')."
+
 # Relative paths start from this folder.
 if [[ "${SUPERPHENIX_REPO}" != /* ]]; then SUPERPHENIX_REPO="${DIR}/${SUPERPHENIX_REPO}"; fi
 if [[ "${CONSOLE_REPO}" != /* ]]; then CONSOLE_REPO="${DIR}/${CONSOLE_REPO}"; fi
@@ -156,7 +165,10 @@ preflight() {
 # Create the kind network, cluster, and persistent storage.
 create_cluster() {
   # Plays the datacenter network: nodes in 172.30.0.0/24, NAT gateways and elastic IPs in the rest.
-  if ! docker network inspect "${NAME}" >/dev/null 2>&1; then
+  if docker network inspect "${NAME}" >/dev/null 2>&1; then
+    [[ " $(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' "${NAME}") " == *" 172.30.0.0/16 "* ]] \
+      || die "Docker network ${NAME} exists without subnet 172.30.0.0/16. Run 'make down' first."
+  else
     docker network create --driver bridge --ipv6 \
       --subnet 172.30.0.0/16 --ip-range 172.30.0.0/24 --gateway 172.30.0.1 \
       --subnet fd00:172:30::/64 "${NAME}" >/dev/null
