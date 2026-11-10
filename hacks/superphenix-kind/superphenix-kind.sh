@@ -34,8 +34,12 @@ die()  { echo "  error $*" >&2; exit 1; }
 step() { echo; echo "==> $*"; }
 # Run kubectl within the lab kind cluster context.
 k()    { kubectl --context "${CTX}" "$@"; }
-# Check whether the lab kind cluster exists.
-exists() { kind get clusters 2>/dev/null | grep -qx "${NAME}"; }
+# Check whether the lab kind cluster exists. A failed lookup stops the script.
+exists() {
+  local clusters
+  clusters="$(kind get clusters 2>/dev/null)" || die "Could not list kind clusters."
+  grep -qx "${NAME}" <<<"${clusters}"
+}
 # Check if a TCP port on localhost is in use.
 port_in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }   # true if something answers
 
@@ -165,9 +169,11 @@ preflight() {
 # Create the kind network, cluster, and persistent storage.
 create_cluster() {
   # Plays the datacenter network: nodes in 172.30.0.0/24, NAT gateways and elastic IPs in the rest.
+  # Must match external-subnet in values.yaml (cidrBlock, gateway, excludeIps).
   if docker network inspect "${NAME}" >/dev/null 2>&1; then
-    [[ " $(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' "${NAME}") " == *" 172.30.0.0/16 "* ]] \
-      || die "Docker network ${NAME} exists without subnet 172.30.0.0/16. Run 'make down' first."
+    docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{.IPRange}} {{.Gateway}}{{"\n"}}{{end}}' "${NAME}" \
+      | grep -qx "172.30.0.0/16 172.30.0.0/24 172.30.0.1" \
+      || die "Docker network ${NAME} is not subnet 172.30.0.0/16, range 172.30.0.0/24, gateway 172.30.0.1. Run 'make down' first."
   else
     docker network create --driver bridge --ipv6 \
       --subnet 172.30.0.0/16 --ip-range 172.30.0.0/24 --gateway 172.30.0.1 \
