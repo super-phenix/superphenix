@@ -33,6 +33,15 @@ docker compose up -d
 docker compose -f hacks/compose/docker-compose.yml up -d --build
 ```
 
+## Permify version
+
+`docker-compose.yml` pins Permify to the app version of the chart deployed by `superphenix-system`. If your database was
+migrated by a newer Permify (the migration `20250913120000_fix_xid_wraparound` is applied), v1.1.3 still starts and
+reads
+it, but deleting relationships silently does nothing. Check with `select version_id from migrations` in the `permify`
+database, stop Permify, then run `permify migrate down` from the newer image until `20231230174418` is the latest
+version.
+
 ## Docker Compose Profiles
 
 Every service in the stack is assigned to a **profile**. Only the profiles you activate will be started.
