@@ -93,8 +93,8 @@ data:
       name: {{ $cluster.name | quote }}
       kubeVersion: {{ $kubeVersion }}
       controlplaneUrl: {{ $controlplaneUrl }}
-      organizationID: {{ $.Values.organizationID }}
-      projectID: {{ $projectID }}
+      organizationID: spx-{{ $.Values.organizationID }}
+      projectID: spx-{{ $projectID }}
       location: {{ $.Values.location }}
 
     # Values from clusters.<cluster>.kaasEssentials.values are imported here
