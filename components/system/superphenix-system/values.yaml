@@ -99,7 +99,7 @@ apps:
       syncOptions:
         - SkipDryRunOnMissingResource=true
     repoURL: https://coredns.github.io/helm
-    targetRevision: "1.47.0"
+    targetRevision: "1.50.4"
     namespace: coredns-system
     helm:
       chart: coredns
@@ -418,7 +418,7 @@ apps:
       syncOptions: {}
     namespace: "metrics-server-system"
     repoURL: "https://kubernetes-sigs.github.io/metrics-server/"
-    targetRevision: "3.13.1"
+    targetRevision: "3.14.0"
     helm:
       chart: "metrics-server"
       releaseName: "metrics-server"
@@ -448,7 +448,7 @@ apps:
       syncOptions: {}
     namespace: "cert-manager-system"
     repoURL: "https://charts.jetstack.io"
-    targetRevision: "1.21.1"
+    targetRevision: "1.21.3"
     helm:
       chart: "cert-manager"
       releaseName: "cert-manager"
@@ -502,7 +502,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://prometheus-community.github.io/helm-charts"
-    targetRevision: "88.2.0"
+    targetRevision: "93.1.1"
     helm:
       chart: "kube-prometheus-stack"
       releaseName: "prometheus"
@@ -1251,7 +1251,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://vmware-tanzu.github.io/helm-charts"
-    targetRevision: "12.0.0"
+    targetRevision: "12.2.4"
     helm:
       chart: velero
       releaseName: velero
@@ -1380,7 +1380,7 @@ apps:
       syncOptions: {}
     namespace: "snapscheduler-system"
     repoURL: "https://backube.github.io/helm-charts/"
-    targetRevision: "*"
+    targetRevision: "3.5.0"
     helm:
       chart: snapscheduler
       releaseName: "snapscheduler"
@@ -1409,6 +1409,7 @@ apps:
       syncOptions: {}
     namespace: "kaas-system"
     repoURL: "ghcr.io/super-phenix/charts"
+    # Will be overridden by the chart version to achieve version parity
     targetRevision: ""
     helm:
       chart: "kaas-controller"
@@ -1427,6 +1428,7 @@ apps:
       syncOptions: {}
     namespace: "kaas-datastore-system"
     repoURL: "ghcr.io/super-phenix/charts"
+    # Will be overridden by the chart version to achieve version parity
     targetRevision: ""
     helm:
       chart: "kaas-datastore"
@@ -2101,7 +2103,7 @@ apps:
     enabled: true
     modes: [Management]
     repoURL: "https://permify.github.io/helm-charts"
-    targetRevision: "0.3.*"
+    targetRevision: "0.3.9"
     automation:
       enabled: true
       prune: true
