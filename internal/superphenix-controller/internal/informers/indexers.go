@@ -5,6 +5,8 @@ import (
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 
+	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/tools/cache"
 )
@@ -14,10 +16,31 @@ const (
 	SwitchLBRuleVPCVIPIndex = "vpc-vip"
 	// UnpinnedVPC is the VPC key of the rules without a pinned VPC.
 	UnpinnedVPC = "*"
+	// ProjectLocalIDIndex indexes objects by their project and local ID labels.
+	ProjectLocalIDIndex = "project-local-id"
 )
 
 var extraIndexers = map[string]cache.Indexers{
-	SwitchLBRules: {SwitchLBRuleVPCVIPIndex: switchLBRuleVPCVIP},
+	SwitchLBRules: {SwitchLBRuleVPCVIPIndex: switchLBRuleVPCVIP, ProjectLocalIDIndex: projectLocalID},
+	EIP:           {ProjectLocalIDIndex: projectLocalID},
+}
+
+// ProjectLocalIDKey returns the ProjectLocalIDIndex key of a project and a local ID.
+func ProjectLocalIDKey(project, localID string) string {
+	return project + "|" + localID
+}
+
+func projectLocalID(obj any) ([]string, error) {
+	u, ok := obj.(*unstructured.Unstructured)
+	if !ok {
+		return nil, nil
+	}
+	labels := u.GetLabels()
+	project, localID := labels[spxId.SpxLabelProjectID], labels[spxId.SpxLabelResourceLocalID]
+	if project == "" || localID == "" {
+		return nil, nil
+	}
+	return []string{ProjectLocalIDKey(project, localID)}, nil
 }
 
 // SwitchLBRuleVPCVIPKey returns the SwitchLBRuleVPCVIPIndex key of a VPC and a VIP.
