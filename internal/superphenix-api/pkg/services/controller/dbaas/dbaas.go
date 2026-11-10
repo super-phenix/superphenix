@@ -366,10 +366,9 @@ func (h *Service) UpdateDBaaS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	// An empty name only validates the row, the rename happens once Argo holds the new spec.
-	dbaasDb, err := controller.UpdateIntoDb(r.Context(), productEid, "", model.ProductTypeDBaaS.Name, azDb.Code, projectDb.ID)
+	dbaasDb, err := controller.FindForUpdate(r.Context(), productEid, model.ProductTypeDBaaS.Name, azDb.Code, projectDb.ID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to save product in database")
+		log.Error().Err(err).Msg("Failed to find product in database")
 		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
 		return
 	}
@@ -425,7 +424,7 @@ func (h *Service) UpdateDBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeDBaaS.Name, azDb.Code, projectDb.ID); err != nil {
+	if _, err := controller.RenameProduct(r.Context(), dbaasDb, body.General.ProductName); err != nil {
 		log.Error().Err(err).Msg("Failed to save product in database")
 		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
 		return
