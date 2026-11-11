@@ -10,7 +10,7 @@
     alt="Releases"
   /></a>
   <a href="https://github.com/super-phenix/superphenix/actions"><img
-    src="https://github.com/super-phenix/superphenix/actions/workflows/build.yml/badge.svg"
+    src="https://github.com/super-phenix/superphenix/actions/workflows/ci.yml/badge.svg"
     alt="Build"
   /></a>
   <a href="LICENSE"><img

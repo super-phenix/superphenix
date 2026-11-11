@@ -7,8 +7,20 @@ set -euo pipefail
 # so the merged kubeconfig is always up to date without any extra work.
 KUBECONFIG_FILE="${KUBECONFIG_FILE:-/etc/superphenix/toolbox/kubeconfig}"
 KUBE_DIR="${HOME}/.kube"
+K9S_SHARE_DIR="/usr/local/share/k9s"
+K9S_CONFIG_DIR="${HOME}/.config/k9s"
 
-mkdir -p "${KUBE_DIR}"
+mkdir -p "${KUBE_DIR}" "${K9S_CONFIG_DIR}/skins"
+
+# /root is an emptyDir, so the image cannot bake k9s config there. Seed it
+# on startup when the home directory does not already have a copy.
+if [[ ! -f "${K9S_CONFIG_DIR}/config.yaml" ]]; then
+    cp "${K9S_SHARE_DIR}/config.yaml" "${K9S_CONFIG_DIR}/config.yaml"
+fi
+if [[ ! -f "${K9S_CONFIG_DIR}/skins/superphenix.yaml" ]]; then
+    cp "${K9S_SHARE_DIR}/skins/superphenix.yaml" "${K9S_CONFIG_DIR}/skins/superphenix.yaml"
+fi
+echo "[toolbox] K9s config: ${K9S_CONFIG_DIR}"
 
 echo "[toolbox] Superphenix toolbox starting."
 echo "[toolbox] Kubeconfig source: ${KUBECONFIG_FILE}"

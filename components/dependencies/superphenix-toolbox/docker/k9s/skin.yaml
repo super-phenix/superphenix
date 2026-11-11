@@ -10,6 +10,12 @@ k9s:
   info:
     fgColor: "#FF8352"
     sectionColor: "#FFFFFF"
+  help:
+    fgColor: "#FFFFFF"
+    bgColor: "#141110"
+    sectionColor: "#7DB893"
+    keyColor: "#EB5E28"
+    numKeyColor: "#F9A11C"
   dialog:
     fgColor: "#FFFFFF"
     bgColor: "#2A2623"
@@ -48,7 +54,9 @@ k9s:
       filterColor: "#FFC2A0"
   views:
     charts:
-      bgColor: default
+      bgColor: "#141110"
+      dialBgColor: "#141110"
+      chartBgColor: "#141110"
       defaultDialColors:
         - "#EB5E28"
         - "#CC2936"
@@ -59,7 +67,7 @@ k9s:
         cpu:
           - "#EB5E28"
           - "#FFC2A0"
-        mem:
+        memory:
           - "#F9A11C"
           - "#E5E1D6"
     table:
@@ -90,9 +98,3 @@ k9s:
         bgColor: "#141110"
         toggleOnColor: "#7DB893"
         toggleOffColor: "#D22936"
-    help:
-      fgColor: "#FFFFFF"
-      bgColor: "#141110"
-      sectionColor: "#7DB893"
-      keyColor: "#EB5E28"
-      numKeyColor: "#F9A11C"
