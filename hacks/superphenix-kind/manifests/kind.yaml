@@ -18,15 +18,15 @@ kubeadmConfigPatches:
   # Each patch is written twice: kind uses kubeadm API v1beta3 or v1beta4
   # depending on its version, and only applies the patches that match.
 
-  # Superphenix brings its own CoreDNS.
+  # Superphenix brings its own CoreDNS; keep preflight skipped as kind does by default.
   - |
     apiVersion: kubeadm.k8s.io/v1beta3
     kind: InitConfiguration
-    skipPhases: [addon/coredns]
+    skipPhases: [preflight, addon/coredns]
   - |
     apiVersion: kubeadm.k8s.io/v1beta4
     kind: InitConfiguration
-    skipPhases: [addon/coredns]
+    skipPhases: [preflight, addon/coredns]
   # Kube-OVN gives pods a /96 IPv6 range; node ranges must be smaller.
   - |
     apiVersion: kubeadm.k8s.io/v1beta3
