@@ -191,9 +191,9 @@ toolbox:
   # -- Enable the toolbox deployment. Disabled by default.
   enabled: false
 
-  # -- Inject database credentials as PGHOST, PGPORT, PGUSER, PGPASSWORD and PGDATABASE.
-  # When config.database.autoConnect is set, the values come from the postgres Secret.
-  # Otherwise they come from config.database.
+  # -- Inject the database connection string as DATABASE_URL.
+  # When config.database.autoConnect is set, the value is the uri key of the postgres Secret.
+  # Otherwise it is built from config.database.
   injectDatabaseCredentials: false
 
   image:

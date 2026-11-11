@@ -5,13 +5,13 @@
 # is_active is true and deleted_at is null. Soft-deleted rows are shown
 # but cannot be toggled.
 #
-# Connection uses libpq env vars. With toolbox.injectDatabaseCredentials
-# enabled, the toolbox Deployment sets PGHOST, PGPORT, PGUSER, PGPASSWORD,
-# PGDATABASE and PGSSLMODE from the postgres Secret when autoConnect is on,
-# or from config.database otherwise, so spx-users needs no credentials.
+# Connection uses DATABASE_URL when set. The toolbox Deployment sets it from
+# the postgres Secret uri key when autoConnect is on, or builds it from
+# config.database otherwise, so spx-users needs no credentials.
 # With none set, it targets the local compose database from hacks/compose
 # (localhost:5433, db superphenix).
 #
+#   DATABASE_URL
 #   PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGSSLMODE
 #   SUPERPHENIX_DB_USER SUPERPHENIX_DB_PASSWORD SUPERPHENIX_DB_NAME
 #
@@ -53,7 +53,12 @@ if [[ -z "${PGHOST:-}" && -z "${DATABASE_URL:-}" ]]; then
 fi
 
 psql_q() {
-	psql -X --no-psqlrc -v ON_ERROR_STOP=1 -A -F $'\t' -t -P pager=off "$@"
+	# libpq does not read DATABASE_URL. Pass it as the connection string.
+	if [[ -n "${DATABASE_URL:-}" ]]; then
+		psql "$DATABASE_URL" -X --no-psqlrc -v ON_ERROR_STOP=1 -A -F $'\t' -t -P pager=off "$@"
+	else
+		psql -X --no-psqlrc -v ON_ERROR_STOP=1 -A -F $'\t' -t -P pager=off "$@"
+	fi
 }
 
 if ! psql_q -c 'SELECT 1 FROM users LIMIT 1' >/dev/null; then
@@ -274,8 +279,16 @@ toggle_user() {
 	set_active "$RESOLVED_ID" "$next" || true
 }
 
+if [[ -n "${DATABASE_URL:-}" ]]; then
+	db_display="${DATABASE_URL#*://}"
+	db_display="${db_display#*@}"
+	db_display="${db_display%%\?*}"
+else
+	db_display="${PGUSER:-}@${PGHOST:-url}:${PGPORT:-}/${PGDATABASE:-}"
+fi
+
 echo
-msg_info "Superphenix user activation. Database: ${PGUSER:-}@${PGHOST:-url}:${PGPORT:-}/${PGDATABASE:-}\n"
+msg_info "Superphenix user activation. Database: ${db_display}\n"
 
 while true; do
 	load_users

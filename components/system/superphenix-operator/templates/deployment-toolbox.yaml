@@ -39,57 +39,17 @@ spec:
             - name: COLORTERM
               value: "truecolor"
             {{- if .Values.toolbox.injectDatabaseCredentials }}
-            - name: PGSSLMODE
-              value: disable
             {{- if .Values.config.database.autoConnect }}
-            - name: PGHOST
+            - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: postgres
-                  key: host
-            - name: PGPORT
-              valueFrom:
-                secretKeyRef:
-                  name: postgres
-                  key: port
-            - name: PGUSER
-              valueFrom:
-                secretKeyRef:
-                  name: postgres
-                  key: username
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres
-                  key: postgres-password
-            - name: PGDATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: postgres
-                  key: database
-            {{- else }}
-            {{- with .Values.config.database.host }}
-            - name: PGHOST
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.config.database.port }}
-            - name: PGPORT
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.config.database.user }}
-            - name: PGUSER
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.config.database.password }}
-            - name: PGPASSWORD
-              value: {{ . | quote }}
-            {{- end }}
-            {{- with .Values.config.database.name }}
-            - name: PGDATABASE
-              value: {{ . | quote }}
+                  key: uri
+            {{- else if .Values.config.database.host }}
+            - name: DATABASE_URL
+              value: {{ printf "postgresql://%s:%s@%s:%v/%s?sslmode=disable" (.Values.config.database.user | urlquery) (.Values.config.database.password | urlquery) .Values.config.database.host (.Values.config.database.port | default 5432) (.Values.config.database.name | urlquery) | quote }}
             {{- end }}
             {{- end }}
-          {{- end }}
           resources:
             {{- toYaml .Values.toolbox.resources | nindent 12 }}
           volumeMounts:
