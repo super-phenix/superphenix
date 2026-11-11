@@ -1037,10 +1037,11 @@ apps:
           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090"
           prometheusEndpointSSLVerify: false
 
-        mgr:
-          modules:
-            - name: rook
-              enabled: true
+        # Known bugs with the MGR and the Rook orchestrator
+        #mgr:
+        #  modules:
+        #   - name: rook
+        #      enabled: true
 
         storage:
           useAllDevices: true
