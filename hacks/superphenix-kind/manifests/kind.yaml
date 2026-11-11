@@ -1,0 +1,55 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: spx-lab
+
+networking:
+  disableDefaultCNI: true
+  ipFamily: dual
+  podSubnet: "10.0.0.0/12,fd00:100::/96"
+  serviceSubnet: "10.16.0.0/12,fd00:100:ffff::/112"
+
+containerdConfigPatches:
+  # Lets non-root VM processes open /dev/kvm (KubeVirt).
+  - |-
+    [plugins."io.containerd.grpc.v1.cri"]
+      device_ownership_from_security_context = true
+
+kubeadmConfigPatches:
+  # Each patch is written twice: kind uses kubeadm API v1beta3 or v1beta4
+  # depending on its version, and only applies the patches that match.
+
+  # Superphenix brings its own CoreDNS; keep preflight skipped as kind does by default.
+  - |
+    apiVersion: kubeadm.k8s.io/v1beta3
+    kind: InitConfiguration
+    skipPhases: [preflight, addon/coredns]
+  - |
+    apiVersion: kubeadm.k8s.io/v1beta4
+    kind: InitConfiguration
+    skipPhases: [preflight, addon/coredns]
+  # Kube-OVN gives pods a /96 IPv6 range; node ranges must be smaller.
+  - |
+    apiVersion: kubeadm.k8s.io/v1beta3
+    kind: ClusterConfiguration
+    controllerManager:
+      extraArgs:
+        node-cidr-mask-size-ipv6: "112"
+  - |
+    apiVersion: kubeadm.k8s.io/v1beta4
+    kind: ClusterConfiguration
+    controllerManager:
+      extraArgs:
+        - name: node-cidr-mask-size-ipv6
+          value: "112"
+
+nodes:
+  - role: control-plane
+    # Traefik on localhost: 80/443 for the web, 7442-7444 for KaaS API servers.
+    extraPortMappings:
+      - { containerPort: 80,   hostPort: 80,   listenAddress: "127.0.0.1" }
+      - { containerPort: 443,  hostPort: 443,  listenAddress: "127.0.0.1" }
+      - { containerPort: 7442, hostPort: 7442, listenAddress: "127.0.0.1" }
+      - { containerPort: 7443, hostPort: 7443, listenAddress: "127.0.0.1" }
+      - { containerPort: 7444, hostPort: 7444, listenAddress: "127.0.0.1" }
+  - role: worker
+  - role: worker

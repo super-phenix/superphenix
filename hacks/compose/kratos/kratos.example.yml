@@ -13,8 +13,8 @@ identity:
       url: file:///etc/config/kratos/identity.default.schema.json
 courier:
   smtp:
-    # Point this at any SMTP server you can reach. Recovery / verification flows
-    # need it, but otherwise local dev works fine with the placeholder.
+    # Kratos needs a value here even when no email is sent. Sign-up and login work
+    # with this placeholder; password recovery emails need a real SMTP server.
     connection_uri: smtps://user:pass@smtp.example.com:465/
     from_address: console@example.com
     from_name: Console Auth
@@ -41,8 +41,9 @@ selfservice:
       after:
         hooks:
           - hook: revoke_active_sessions
+    # Off, like the Helm default (superphenix-system values): no mail server needed.
     verification:
-      enabled: true
+      enabled: false
       ui_url: http://localhost:4200/auth/verification
       lifespan: "1h"
       use: code
@@ -61,9 +62,9 @@ selfservice:
             - hook: show_verification_ui
     login:
       ui_url: http://localhost:4200/auth/login
-      after:
-        hooks:
-          - hook: require_verified_address
+      # after:
+      #   hooks:
+      #     - hook: require_verified_address
     error:
       ui_url: http://localhost:4200/auth/error
     settings:

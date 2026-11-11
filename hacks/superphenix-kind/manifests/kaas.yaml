@@ -1,0 +1,22 @@
+clusters:
+  local:
+    systemConfiguration:
+      apps:
+        kamaji:
+          enabled: true
+          values:
+            replicaCount: 1
+        kaas-controller:
+          enabled: true
+        kaas-datastore:
+          enabled: true
+          values:
+            dataStores:
+              default:
+                # Tenant control planes keep their data in this etcd, on local disks.
+                replicas: 1
+                storageClassName: local-path
+        cluster-api-operator:
+          enabled: true
+        etcd-operator:
+          enabled: true

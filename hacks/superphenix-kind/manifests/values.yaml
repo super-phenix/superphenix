@@ -1,0 +1,169 @@
+config:
+  telemetry:
+    disabled: true
+  argocd:
+    values:
+      server:
+        ingress:
+          hostname: argocd.127.0.0.1.nip.io
+          annotations:
+            # No Let's Encrypt on 127.0.0.1
+            cert-manager.io/cluster-issuer: null
+
+management:
+  systemConfiguration:
+    apps:
+      kratos:
+        values:
+          # Lab-only secret. Never reuse it outside the lab.
+          globalSecret: "superphenix-in-kind-lab-only-secret"
+      superphenix-console:
+        values:
+          domain: console.127.0.0.1.nip.io
+      superphenix-api:
+        values:
+          config:
+            argoCdUrl: "https://argocd.127.0.0.1.nip.io"
+
+clusters:
+  local:
+    deploymentTopology: Hyperconverged
+    region: lab
+    availabilityZone: lab-a
+    # kind nodes are not Talos machines: never let the operator manage them.
+    talosManagementMode: Unmanaged
+    connection:
+      mode: Local
+    systemConfiguration:
+      apps:
+        # --- Storage: local-path instead of Ceph (see storage.yaml) ---
+        rook-operator:
+          enabled: false
+        rook-local-cluster:
+          enabled: false
+        rook-connection:
+          enabled: false
+        volume-replicator:
+          enabled: false
+        local-path-provisioner:
+          enabled: true
+          values:
+            storageClass:
+              defaultClass: true
+        superphenix-controller:
+          values:
+            config:
+              productsConfig:
+                blockStorage:
+                  storageClassMapping:
+                    default: local-path
+
+        # VMs
+        kubevirt-config:
+          values:
+            config:
+              configuration:
+                # A kind node has all the CPU flags the host has.
+                cpuModel: host-model
+                virtualMachineInstancesPerNode: 20
+                vmStateStorageClass: local-path
+                # local-path disks cannot live-migrate: don't block node drains on it.
+                evictionStrategy: LiveMigrateIfPossible
+
+        # Network: the docker network spx-lab plays the datacenter network
+        misc:
+          values:
+            objects:
+              # Nodes use 172.30.0.0/24, NAT gateways and elastic IPs the rest.
+              external-subnet:
+                spec:
+                  cidrBlock: 172.30.0.0/16
+                  gateway: 172.30.0.1
+                  excludeIps:
+                    - 172.30.0.0..172.30.0.255
+              # NAT gateways attach to eth0, the node's interface on that network.
+              external-subnet-nad:
+                spec:
+                  config: '{
+                      "cniVersion": "0.3.0",
+                      "type": "macvlan",
+                      "master": "eth0",
+                      "mode": "bridge",
+                      "ipam": {
+                        "type": "kube-ovn",
+                        "server_socket": "/run/openvswitch/kube-ovn-daemon.sock",
+                        "provider": "external-subnet.kube-system"
+                      }
+                    }'
+
+        # Chart default servers plus a rewrite: in pods, lab hostnames resolve to Traefik, not 127.0.0.1.
+        coredns:
+          values:
+            servers:
+              - zones:
+                  - zone: .
+                    use_tcp: true
+                port: 53
+                plugins:
+                  - name: errors
+                  - name: health
+                    configBlock: |-
+                      lameduck 10s
+                  - name: ready
+                  - name: rewrite
+                    parameters: stop name regex (.+)\.127\.0\.0\.1\.nip\.io traefik.traefik-system.svc.cluster.local answer auto
+                  - name: kubernetes
+                    parameters: cluster.local in-addr.arpa ip6.arpa
+                    configBlock: |-
+                      pods insecure
+                      fallthrough in-addr.arpa ip6.arpa
+                      ttl 30
+                  - name: prometheus
+                    parameters: 0.0.0.0:9153
+                  - name: forward
+                    parameters: . /etc/resolv.conf
+                  - name: cache
+                    parameters: 30
+                  - name: loop
+                  - name: reload
+                  - name: loadbalance
+        # Lab certificate for every hostname (created by superphenix-kind.sh).
+        traefik:
+          values:
+            tlsStore:
+              default:
+                defaultCertificate:
+                  secretName: spx-lab-tls
+        # No secretName, so Traefik serves the lab certificate.
+        prometheus-stack:
+          values:
+            grafana:
+              ingress:
+                hosts:
+                  - grafana.127.0.0.1.nip.io
+                tls:
+                  - hosts:
+                      - grafana.127.0.0.1.nip.io
+        metrics-server:
+          values:
+            replicas: 1
+        loki:
+          enabled: false
+        promtail:
+          enabled: false
+        # Kept for its CRDs; no S3 in the lab.
+        velero:
+          values:
+            deployNodeAgent: false
+
+        # KaaS is opt-in, need heavy resources to be able to run it.
+        kamaji:
+          enabled: false
+        kaas-controller:
+          enabled: false
+        kaas-datastore:
+          enabled: false
+        cluster-api-operator:
+          enabled: false
+        etcd-operator:
+          enabled: false
