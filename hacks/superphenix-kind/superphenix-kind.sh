@@ -82,17 +82,29 @@ progress() {
 }
 
 # Helm release helpers
-# Fetch current Helm release values in JSON format.
-release_values() { helm --kube-context "${CTX}" -n "${NS}" get values "${RELEASE}" -o json 2>/dev/null || echo '{}'; }
-# Check whether the Helm release runs on the host network.
-release_on_host_network() { release_values | jq -r '.installOnClusterWithoutCNI | tostring'; }
-# No lab or no release: 0. A failed Helm lookup stops the script.
-release_has_kaas() {
-  exists || { echo 0; return; }
+# Check whether the Helm release exists in the cluster.
+release_exists() {
+  exists || return 1
   local found
   found="$(helm --kube-context "${CTX}" -n "${NS}" list --all -q --filter "^${RELEASE}\$")" \
     || die "Could not look up the Helm release ${RELEASE}."
-  [[ -n "${found}" ]] || { echo 0; return; }
+  [[ -n "${found}" ]]
+}
+
+# Fetch current Helm release values in JSON format.
+# A new lab (no release yet) returns '{}'; a failed lookup for an existing release stops the script.
+release_values() {
+  release_exists || { echo '{}'; return 0; }
+  helm --kube-context "${CTX}" -n "${NS}" get values "${RELEASE}" -o json \
+    || die "Could not read the values of ${RELEASE}."
+}
+
+# Check whether the Helm release runs on the host network.
+release_on_host_network() { release_values | jq -r '.installOnClusterWithoutCNI | tostring'; }
+
+# No lab or no release: 0. A failed Helm lookup stops the script.
+release_has_kaas() {
+  release_exists || { echo 0; return 0; }
   helm --kube-context "${CTX}" -n "${NS}" get values "${RELEASE}" -o json \
     | jq -r 'if .clusters.local.systemConfiguration.apps["kaas-controller"].enabled == true then 1 else 0 end' \
     || die "Could not read the values of ${RELEASE}."
