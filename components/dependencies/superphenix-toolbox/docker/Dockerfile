@@ -19,7 +19,8 @@ RUN apk add --no-cache \
     openssl \
     wget \
     tar \
-    gzip
+    gzip \
+    postgresql-client
 
 # Install kubectl
 RUN case "${TARGETARCH}" in \
@@ -69,14 +70,17 @@ RUN case "${TARGETARCH}" in \
     | tar -xz --strip-components=1 -C /usr/local/bin "velero-${VELERO_VERSION}-linux-${ARCH}/velero" \
     && chmod +x /usr/local/bin/velero
 
-# Add a Superphenix K9S skin and configuration
-COPY components/dependencies/superphenix-toolbox/docker/k9s/skin.yaml /root/.config/k9s/skins/superphenix.yaml
-COPY components/dependencies/superphenix-toolbox/docker/k9s/config.yaml /root/.config/k9s/config.yaml
+# Ship the skin outside /root. The toolbox Deployment mounts an emptyDir
+# on /root, which would hide anything copied there. The entrypoint seeds
+# $HOME/.config/k9s from this directory on startup.
+COPY components/dependencies/superphenix-toolbox/docker/k9s/skin.yaml /usr/local/share/k9s/skins/superphenix.yaml
+COPY components/dependencies/superphenix-toolbox/docker/k9s/config.yaml /usr/local/share/k9s/config.yaml
 
 # Entrypoint script: symlinks the operator-managed aggregated kubeconfig into
 # ~/.kube/config so all tools pick it up automatically. The kubelet updates
 # the mounted Secret file in place when credentials are rotated.
 COPY components/dependencies/superphenix-toolbox/docker/toolbox-entrypoint.sh /usr/local/bin/toolbox-entrypoint.sh
-RUN chmod +x /usr/local/bin/toolbox-entrypoint.sh
+COPY hacks/users/users.sh /usr/local/bin/spx-users
+RUN chmod +x /usr/local/bin/toolbox-entrypoint.sh /usr/local/bin/spx-users
 
 ENTRYPOINT ["/bin/bash", "/usr/local/bin/toolbox-entrypoint.sh"]

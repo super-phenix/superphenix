@@ -35,6 +35,61 @@ spec:
             {{- toYaml .Values.toolbox.securityContext | nindent 12 }}
           image: "{{ .Values.toolbox.image.repository }}:{{ .Values.toolbox.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.toolbox.image.pullPolicy }}
+          env:
+            - name: COLORTERM
+              value: "truecolor"
+            {{- if .Values.toolbox.injectDatabaseCredentials }}
+            - name: PGSSLMODE
+              value: disable
+            {{- if .Values.config.database.autoConnect }}
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: host
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: port
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: postgres-password
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: database
+            {{- else }}
+            {{- with .Values.config.database.host }}
+            - name: PGHOST
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.database.port }}
+            - name: PGPORT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.database.user }}
+            - name: PGUSER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.database.password }}
+            - name: PGPASSWORD
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.config.database.name }}
+            - name: PGDATABASE
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
           resources:
             {{- toYaml .Values.toolbox.resources | nindent 12 }}
           volumeMounts:

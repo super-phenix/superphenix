@@ -184,12 +184,17 @@ config:
 
 # -- Superphenix toolbox configuration.
 # The toolbox is an optional standalone Deployment deployed alongside the operator.
-# It provides standard tooling (bash, jq, kubectl, helm, k9s and more) and mounts the
+# It provides standard tooling (bash, jq, kubectl, helm, k9s, psql and more) and mounts the
 # kubeconfig of every cluster managed by the operator, allowing administrators
 # to access all clusters from a single container.
 toolbox:
   # -- Enable the toolbox deployment. Disabled by default.
   enabled: false
+
+  # -- Inject database credentials as PGHOST, PGPORT, PGUSER, PGPASSWORD and PGDATABASE.
+  # When config.database.autoConnect is set, the values come from the postgres Secret.
+  # Otherwise they come from config.database.
+  injectDatabaseCredentials: false
 
   image:
     # -- Repository for the toolbox image.
@@ -202,7 +207,6 @@ toolbox:
   # -- Resource limits and requests for the toolbox container.
   resources:
     limits:
-      cpu: 200m
       memory: 256Mi
     requests:
       cpu: 10m
