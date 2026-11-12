@@ -1504,10 +1504,10 @@ apps:
       core:
         # K8s version support: https://cluster-api.sigs.k8s.io/reference/versions.html#supported-versions-matrix-by-provider-or-component
         cluster-api:
-          version: v1.13.7 # https://github.com/kubernetes-sigs/cluster-api/releases
+          version: v1.13.8 # https://github.com/kubernetes-sigs/cluster-api/releases
       bootstrap:
         kubeadm:
-          version: v1.13.7 # https://github.com/kubernetes-sigs/cluster-api/releases
+          version: v1.13.8 # https://github.com/kubernetes-sigs/cluster-api/releases
       infrastructure:
         kubevirt:
           version: v0.11.2 # https://github.com/kubernetes-sigs/cluster-api-provider-kubevirt/releases
