@@ -12,6 +12,8 @@ func TestReverseProxy(t *testing.T) {
 	const rawUrlValid = "http://100.81.3.17"
 	const rawUrlInvalid = "URLINVALID"
 	const pattern = "/api/kubevirt"
+	const urlScheme = "http"
+	const urlHost = "100.81.3.17"
 
 	emptyProxy := httputil.ReverseProxy{}
 
@@ -92,6 +94,24 @@ func TestReverseProxy(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Encoded slashes stay encoded",
+			args: args{
+				rawUrl:  rawUrlValid,
+				pattern: pattern,
+				proxyRequest: httputil.ProxyRequest{
+					In:  httptest.NewRequest(http.MethodGet, "/api/kubevirt/vm/..%2F..%2Fother%2Fvm", nil),
+					Out: httptest.NewRequest(http.MethodGet, "/api/kubevirt/vm/..%2F..%2Fother%2Fvm", nil),
+				}},
+			want: want{
+				url:        "http://100.81.3.17/vm/..%2F..%2Fother%2Fvm",
+				urlScheme:  urlScheme,
+				urlHost:    urlHost,
+				path:       "/vm/../../other/vm",
+				requestURI: "/vm/..%2F..%2Fother%2Fvm",
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,6 +154,62 @@ func TestReverseProxy(t *testing.T) {
 				t.Errorf("ReverseProxy() requestURI got = %v, want %v", tt.args.proxyRequest.Out.RequestURI, tt.want.requestURI)
 			}
 
+		})
+	}
+}
+
+func TestRewriteRequest(t *testing.T) {
+	const controllerUrl = "http://ctrl"
+	const pattern = "/api/spx-ctrl/az1"
+
+	tests := []struct {
+		name     string
+		rawUrl   string
+		pattern  string
+		target   string
+		wantUrl  string
+		wantPath string
+		wantErr  bool
+	}{
+		{
+			name:    "Empty pattern",
+			rawUrl:  controllerUrl,
+			target:  "/api/spx-ctrl/az1/proj/instance",
+			wantErr: true,
+		},
+		{
+			name:     "Plain path",
+			rawUrl:   controllerUrl,
+			pattern:  pattern,
+			target:   "/orga/api/spx-ctrl/az1/proj/instance/eid?all=true",
+			wantUrl:  "http://ctrl/orga/proj/instance/eid?all=true",
+			wantPath: "/orga/proj/instance/eid",
+		},
+		{
+			name:     "Encoded slashes stay encoded",
+			rawUrl:   controllerUrl,
+			pattern:  pattern,
+			target:   "/orga/api/spx-ctrl/az1/proj/instance/..%2F..%2Fother%2Finstance%2Feid",
+			wantUrl:  "http://ctrl/orga/proj/instance/..%2F..%2Fother%2Finstance%2Feid",
+			wantPath: "/orga/proj/instance/../../other/instance/eid",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := httptest.NewRequest(http.MethodGet, tt.target, nil)
+			err := RewriteRequest(r, tt.rawUrl, tt.pattern)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("RewriteRequest() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return
+			}
+			if r.URL.String() != tt.wantUrl {
+				t.Errorf("RewriteRequest() url got = %v, want %v", r.URL.String(), tt.wantUrl)
+			}
+			if r.URL.Path != tt.wantPath {
+				t.Errorf("RewriteRequest() path got = %v, want %v", r.URL.Path, tt.wantPath)
+			}
 		})
 	}
 }

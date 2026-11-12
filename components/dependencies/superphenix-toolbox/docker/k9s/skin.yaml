@@ -1,0 +1,100 @@
+k9s:
+  body:
+    fgColor: "#FFFFFF"
+    bgColor: "#141110"
+    logoColor: "#EB5E28"
+  prompt:
+    fgColor: "#FFFFFF"
+    bgColor: "#141110"
+    suggestColor: "#FF8352"
+  info:
+    fgColor: "#FF8352"
+    sectionColor: "#FFFFFF"
+  help:
+    fgColor: "#FFFFFF"
+    bgColor: "#141110"
+    sectionColor: "#7DB893"
+    keyColor: "#EB5E28"
+    numKeyColor: "#F9A11C"
+  dialog:
+    fgColor: "#FFFFFF"
+    bgColor: "#2A2623"
+    buttonFgColor: "#141110"
+    buttonBgColor: "#999491"
+    buttonFocusFgColor: "#141110"
+    buttonFocusBgColor: "#EB5E28"
+    labelFgColor: "#F9A11C"
+    fieldFgColor: "#FFFFFF"
+  frame:
+    border:
+      fgColor: "#3F3A37"
+      focusColor: "#EB5E28"
+    menu:
+      fgColor: "#FFFFFF"
+      keyColor: "#EB5E28"
+      numKeyColor: "#F9A11C"
+    crumbs:
+      fgColor: "#141110"
+      bgColor: "#999491"
+      activeColor: "#EB5E28"
+    status:
+      newColor: "#F4F4F4"
+      modifyColor: "#C5488F"
+      addColor: "#7DB893"
+      errorColor: "#E25555"
+      highlightColor: "#9B3DB5"
+      killColor: "#CC2936"
+      pendingColor: "#F9A11C"
+      completedColor: "#1A9CB0"
+    title:
+      fgColor: "#FFFFFF"
+      bgColor: "#141110"
+      highlightColor: "#EB5E28"
+      counterColor: "#F9A11C"
+      filterColor: "#FFC2A0"
+  views:
+    charts:
+      bgColor: "#141110"
+      dialBgColor: "#141110"
+      chartBgColor: "#141110"
+      defaultDialColors:
+        - "#EB5E28"
+        - "#CC2936"
+      defaultChartColors:
+        - "#EB5E28"
+        - "#CC2936"
+      resourceColors:
+        cpu:
+          - "#EB5E28"
+          - "#FFC2A0"
+        memory:
+          - "#F9A11C"
+          - "#E5E1D6"
+    table:
+      fgColor: "#FFFFFF"
+      bgColor: "#141110"
+      cursorFgColor: "#141110"
+      cursorBgColor: "#EB5E28"
+      markColor: "#9B3DB5"
+      header:
+        fgColor: "#FFC2A0"
+        bgColor: "#141110"
+        sorterColor: "#F9A11C"
+    xray:
+      fgColor: "#FFFFFF"
+      bgColor: "#141110"
+      cursorColor: "#EB5E28"
+      cursorTextColor: "#141110"
+      graphicColor: "#FF8352"
+    yaml:
+      keyColor: "#EB5E28"
+      colonColor: "#837D79"
+      valueColor: "#FFFFFF"
+    logs:
+      fgColor: "#FFFFFF"
+      bgColor: "#141110"
+      indicator:
+        fgColor: "#FFFFFF"
+        bgColor: "#141110"
+        toggleOnColor: "#7DB893"
+        toggleOffColor: "#D22936"

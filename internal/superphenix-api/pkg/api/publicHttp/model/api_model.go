@@ -63,6 +63,16 @@ type APIProject struct {
 	Name string `json:"name,omitempty"`
 
 	OrgaId uuid.UUID `json:"orgaId,omitempty"`
+
+	// Deactivations is empty when the project is active. Otherwise, every operation on the
+	// resources of the project is refused until each cause is lifted.
+	Deactivations []APIProjectDeactivation `json:"deactivations,omitempty"`
+}
+
+type APIProjectDeactivation struct {
+	Reason    string    `json:"reason"`
+	Message   string    `json:"message,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type APIGroup struct {
@@ -81,6 +91,10 @@ type APIAz struct {
 	Code    string `json:"code"`
 	Name    string `json:"name"`
 	LogoUrl string `json:"logoUrl"`
+}
+
+type APIAzDefaultCloudInit struct {
+	Config string `json:"config"`
 }
 
 type APIApiToken struct {

@@ -127,6 +127,10 @@ docker-build: ## Build docker image with the manager.
 .PHONY: docker-build-superphenix-operator
 docker-build-superphenix-operator: docker-build ## Specific target for superphenix-operator image build.
 
+.PHONY: docker-build-superphenix-toolbox
+docker-build-superphenix-toolbox: ## Build docker image for superphenix-toolbox.
+	$(CONTAINER_TOOL) build -t ${IMG} -f components/dependencies/superphenix-toolbox/docker/Dockerfile .
+
 .PHONY: docker-build-uuidv5
 docker-build-uuidv5: ## Build docker image for uuidv5.
 	$(CONTAINER_TOOL) build -t ${IMG} -f components/dependencies/uuidv5/docker/Dockerfile .

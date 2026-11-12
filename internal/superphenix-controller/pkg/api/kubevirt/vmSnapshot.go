@@ -2,6 +2,7 @@ package kubevirt
 
 import (
 	"encoding/json"
+	stderrors "errors"
 	"net/http"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/k8s"
@@ -32,7 +33,7 @@ func InstanceSnapshotEndpoint(router chi.Router) {
 		r.With(spxIdMiddleware.AddEffectiveIdToContext()).Get("/localId/{localId}", getInstanceSnapshotByLocalId)
 		r.Route("/{effectiveId}", func(r chi.Router) {
 			r.Get("/", getInstanceSnapshotByEffectiveId)
-			r.Get("/restore", restoreInstanceSnapshot)
+			r.Post("/restore", restoreInstanceSnapshot)
 			r.Post("/clone", cloneInstanceSnapshot)
 
 			r.Delete("/", deleteInstanceSnapshot)
@@ -290,16 +291,19 @@ func cloneInstanceSnapshot(w http.ResponseWriter, r *http.Request) {
 // restoreInstanceSnapshot
 //
 //	@Summary		Restore a VM Snapshot
-//	@Description	Restore a VM Snapshot
+//	@Description	Restore a VM Snapshot in place onto its source instance, which must exist
 //	@Tags			v1, VmSnapshot
 //	@Accept			json
 //	@Produce		plain
 //	@Param			orgId		path	string	true	"Organization ID"
 //	@Param			projectId	path	string	true	"Project ID"
+//	@Param			effectiveId	path	string	true	"Snapshot EID"
 //	@Success		200
 //	@Failure		400
+//	@Failure		404
+//	@Failure		409
 //	@Failure		500
-//	@Router			/{orgId}/{projectId}/instance-snapshot/{effectiveId}/restore [get]
+//	@Router			/{orgId}/{projectId}/instance-snapshot/{effectiveId}/restore [post]
 func restoreInstanceSnapshot(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
 	orgId := chi.URLParam(r, "orgId")
@@ -309,17 +313,20 @@ func restoreInstanceSnapshot(w http.ResponseWriter, r *http.Request) {
 	if effectiveId == "" {
 		log.Error().Msg("no Resource Effective Id provided")
 		httpError.Http(w, r, http.StatusBadRequest).Msg("no Resource Effective Id provided")
+		return
 	}
 
-	if err := vmSnapshot.RestoreVmSnapshot(r.Context(), orgId, projectId, effectiveId); err != nil {
-		if errors.IsNotFound(err) {
-			log.Err(err).Msg("Resource not found")
-			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
-			return
-		}
+	err := vmSnapshot.RestoreVmSnapshot(r.Context(), orgId, projectId, effectiveId)
+	switch {
+	case err == nil:
+		w.WriteHeader(http.StatusOK)
+	case stderrors.Is(err, vmSnapshot.ErrRestoreSourceMissing):
+		httpError.Http(w, r, http.StatusConflict).Msg(vmSnapshot.ErrRestoreSourceMissing.Error())
+	case errors.IsNotFound(err):
+		log.Err(err).Msg("Resource not found")
+		httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
+	default:
 		log.Err(err).Msg("Failed to restore vm snapshot")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to restore vm snapshot")
-	} else {
-		w.WriteHeader(http.StatusOK)
 	}
 }

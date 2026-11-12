@@ -115,7 +115,7 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.StringVar(&argocdChartURL, "argocd-chart-url", "https://argoproj.github.io/argo-helm", "The URL of the ArgoCD chart repository")
-	flag.StringVar(&argocdChartVersion, "argocd-chart-version", "10.5.0", "The version of the ArgoCD chart")
+	flag.StringVar(&argocdChartVersion, "argocd-chart-version", "10.10.3", "The version of the ArgoCD chart")
 	flag.StringVar(&valuesConfigMapName, "values-configmap-name", "superphenix-mgmt-values", "The name of the general management ConfigMap holding Helm values for each component under dedicated sub-keys")
 	flag.StringVar(&clustersConfigMapName, "clusters-configmap-name", "superphenix-clusters-config", "The name of the ConfigMap where all clusters will append their configuration")
 	flag.StringVar(&argocdDefaultConfig, "argocd-default-config", "/etc/superphenix/argocd/default/values.yaml", "Path to the default ArgoCD configuration file")

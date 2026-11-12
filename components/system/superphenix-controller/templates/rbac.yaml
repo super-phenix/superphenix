@@ -63,12 +63,30 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - resourcequotas
+    verbs:
+      - create
+      - update
+      - patch
+      - get
+      - list
+      - watch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
       - pods
     verbs:
       - update
       - get
       - list
       - watch
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
   - apiGroups:
       - kubeovn.io
     resources:
@@ -255,7 +273,7 @@ metadata:
   name: {{ include "superphenix-controller.fullname" . }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "superphenix-controller.fullname" . }}
+    name: {{ include "superphenix-controller.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole

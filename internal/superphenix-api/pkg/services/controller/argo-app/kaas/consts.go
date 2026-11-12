@@ -1,11 +1,11 @@
 package kaas
 
-import "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+import (
+	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
+)
 
 var (
-	CpuValueList    = []int{1, 2, 4, 8, 16, 32}
-	MemoryValueList = []int{1, 2, 4, 8, 16, 32, 64}
-
 	CpNetworkPolicies      = []string{"default", "none"}
 	WorkersNetworkPolicies = []string{"default", "strict", "none"}
 )
@@ -15,8 +15,17 @@ const (
 	quantityFormat = "%dGi"
 	maxnodeGroup   = 5
 
+	nodeRoleLabelPrefix = "node-role.kubernetes.io/"
+
+	// Longest node group name: the chart renders "<cluster uuid>-<name>-<kube version>-<template version>"
+	// as a label value, limited to 63 characters.
+	maxNodeGroupNameLength = 14
+
 	minReplicas = 1
-	maxReplicas = 10
+	maxReplicas = validation.MaxComputeValue
+
+	// Largest boot disk or datastore size (GiB) accepted for a KaaS cluster.
+	maxStorageGiB = validation.MaxComputeValue
 
 	// Disaster recovery (dedicated control plane datastore) requires Kubernetes >= 1.35.
 	dataStoreMinMajor = 1
@@ -34,9 +43,7 @@ var ignoreDifferences = v1alpha1.IgnoreDifferences{
 			"/metadata/labels/app.kubernetes.io~1version",
 			"/metadata/labels/helm.sh~1chart",
 			"/metadata/labels/superphenix.net~1gitops",
-			"/spec/template/metadata/labels/app.kubernetes.io~1version",
-			"/spec/template/metadata/labels/helm.sh~1chart",
-			"/spec/template/metadata/labels/superphenix.net~1gitops",
+			"/spec",
 		},
 	},
 	v1alpha1.ResourceIgnoreDifferences{

@@ -44,10 +44,11 @@ func getAccessibleSubnet(ctx context.Context, name, projectID string) (*v1.Subne
 
 // validateInternalTargets ensures every internal address targeted by the EIP
 // (FIP and DNAT IPs, SNAT CIDRs) lies within the subnet the EIP is bound to.
+// FIP and DNAT IPs may also be a load balancer VIP.
 // subnetCIDR is the Kube-OVN CIDR block, possibly dual-stack ("v4,v6").
 func validateInternalTargets(subnetCIDR, internalIP string, snatCIDRs []string, dnatRules []dnat.InfoDNAT) error {
 	if internalIP != "" {
-		if err := checkIPInSubnet(subnetCIDR, internalIP); err != nil {
+		if err := checkInternalIP(subnetCIDR, internalIP); err != nil {
 			return err
 		}
 	}
@@ -59,12 +60,20 @@ func validateInternalTargets(subnetCIDR, internalIP string, snatCIDRs []string, 
 	}
 
 	for _, rule := range dnatRules {
-		if err := checkIPInSubnet(subnetCIDR, rule.InternalIP); err != nil {
+		if err := checkInternalIP(subnetCIDR, rule.InternalIP); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// checkInternalIP accepts an IP of the subnet or other allowed VIP CIDR (such as LB)
+func checkInternalIP(subnetCIDR, ip string) error {
+	if ok, err := utils.IsIPInCIDR(utils.LoadBalancerVIPCIDR, strings.TrimSpace(ip)); err == nil && ok {
+		return nil
+	}
+	return checkIPInSubnet(subnetCIDR, ip)
 }
 
 func checkIPInSubnet(subnetCIDR, ip string) error {

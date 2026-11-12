@@ -171,15 +171,15 @@ func (r *Reconciler) extractConnectionData(secret *corev1.Secret) *connectionDat
 		if len(data.certData) > 0 {
 			data.tlsClientConfig["certData"] = base64.StdEncoding.EncodeToString(data.certData)
 		}
-		if len(data.certData) > 0 && len(getData("keyData")) > 0 {
-			data.hasAuth = true
-		}
 	}
 	if keyData := getData("keyData"); keyData != nil {
 		data.keyData = keyData
 		if len(data.keyData) > 0 {
 			data.tlsClientConfig["keyData"] = base64.StdEncoding.EncodeToString(data.keyData)
 		}
+	}
+	if len(data.certData) > 0 && len(data.keyData) > 0 {
+		data.hasAuth = true
 	}
 	if insecure := getString("insecure"); insecure != "" {
 		data.insecure = insecure == "true"

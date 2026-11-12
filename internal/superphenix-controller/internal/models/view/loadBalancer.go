@@ -14,6 +14,9 @@ type LBView struct {
 	k8smetav1.TypeMeta `json:",inline"`
 	ObjectMeta         `json:"metadata,omitempty"`
 
+	// Subnet the load balancer is pinned to, empty for unpinned rules
+	SubnetEId string `json:"subnetEId,omitempty"`
+
 	Spec   LBSpec   `json:"spec"`
 	Status LBStatus `json:"status,omitempty"`
 }
@@ -50,16 +53,20 @@ func UnstructuredLBToView(lb *unstructured.Unstructured) LBView {
 	if err := utils.UnstructuredToStruct(lb, &view); err != nil {
 		return LBView{}
 	}
+	view.SubnetEId = view.Annotations[utils.LogicalSwitchAnnotation]
 	view.Labels = utils.FilterLabels(view.Labels)
 	view.Annotations = utils.FilterAnnotations(view.Annotations)
 	return view
 }
 
 func LBToView(lb v1.SwitchLBRule) LBView {
+	subnetEId := lb.GetAnnotations()[utils.LogicalSwitchAnnotation]
 	lb.Labels = utils.FilterLabels(lb.GetLabels())
 	lb.Annotations = utils.FilterAnnotations(lb.GetAnnotations())
 
-	return Transform[v1.SwitchLBRule, LBView](lb)
+	view := Transform[v1.SwitchLBRule, LBView](lb)
+	view.SubnetEId = subnetEId
+	return view
 }
 
 func (view LBView) ToResource() LoadBalancer {

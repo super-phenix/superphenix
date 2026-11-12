@@ -72,4 +72,3 @@ func ProjectExists(id string) (bool, error) {
 	}
 	return true, nil
 }
-

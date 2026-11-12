@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/models/view"
@@ -96,5 +97,53 @@ func TestGetVMClusterPreferenceAdvancedOptionsHandler(t *testing.T) {
 	if tpmPersistent.Source != view.SourcePreference ||
 		tpmPersistent.Value == nil || !*tpmPersistent.Value {
 		t.Fatalf("expected tpm.persistent {true, preference}, got %+v", tpmPersistent)
+	}
+}
+
+func TestGetGpuClassHandler(t *testing.T) {
+	const (
+		rtxClass  = "nvidia-rtx-pro-6000-bse"
+		a100Class = "nvidia-a100"
+	)
+
+	tests := []struct {
+		name    string
+		mapping map[string]config.GpuClassEntry
+		want    []map[string]any
+	}{
+		{name: "no mapping returns an empty list", mapping: nil, want: []map[string]any{}},
+		{
+			name: "classes are sorted and the device name is not exposed",
+			mapping: map[string]config.GpuClassEntry{
+				rtxClass:  {ID: rtxClass, DisplayName: "NVIDIA RTX PRO 6000", DeviceName: "nvidia.com/RTX"},
+				a100Class: {ID: a100Class, DisplayName: "NVIDIA A100", DeviceName: "nvidia.com/A100"},
+			},
+			want: []map[string]any{
+				{"id": a100Class, "displayName": "NVIDIA A100"},
+				{"id": rtxClass, "displayName": "NVIDIA RTX PRO 6000"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			prev := config.Global.ProductsConfig.Compute.DeviceMapping
+			config.Global.ProductsConfig.Compute.DeviceMapping = tt.mapping
+			t.Cleanup(func() { config.Global.ProductsConfig.Compute.DeviceMapping = prev })
+
+			w := httptest.NewRecorder()
+			GetGpuClass(w, httptest.NewRequest(http.MethodGet, "/org/prj/gpu-class", nil))
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("status = %d, want %d", w.Code, http.StatusOK)
+			}
+			var got []map[string]any
+			if err := json.Unmarshal(w.Body.Bytes(), &got); err != nil {
+				t.Fatalf("invalid JSON body %q: %v", w.Body.String(), err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("body = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

@@ -100,6 +100,27 @@ func GetContainerDiskCatalog(w http.ResponseWriter, r *http.Request) {
 	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
 }
 
+// GetGpuClass
+//
+//	@Summary		Get the GPU classes
+//	@Description	Returns this AZ's passthrough GPU classes declared in the controller config, sorted by ID.
+//	@Tags			v1, Config
+//	@Produce		json
+//	@Param			orgId		path	string					true	"Organization ID"
+//	@Param			projectId	path	string					true	"Project ID"
+//	@Success		200			{array}	config.GpuClassEntry	"GPU classes"
+//	@Failure		500
+//	@Router			/{orgId}/{projectId}/gpu-class [get]
+//	@Security		Bearer
+func GetGpuClass(w http.ResponseWriter, r *http.Request) {
+	b, err := json.Marshal(kovm.GpuClassList())
+	if err != nil {
+		httpError.Http(w, r, http.StatusInternalServerError).Msg("Error getting GPU classes")
+		return
+	}
+	ch.Data(w, http.StatusOK, ch.MIMEJSON, b)
+}
+
 // GetVMClusterPreferenceByName
 //
 //	@Summary		Get a VM Cluster Preference by name

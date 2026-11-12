@@ -3,14 +3,12 @@ package vmsnapshot
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"slices"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
-	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/api/publicHttp/proxy"
@@ -25,7 +23,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // ListVmSnapshots
@@ -344,62 +341,31 @@ func (h *Service) DeleteVmSnapshot(w http.ResponseWriter, r *http.Request) {
 // RestoreVmSnapshot
 //
 //	@Summary		Restore a VM snapshot
-//	@Description	Restore a VM snapshot by creating a new instance from it
+//	@Description	Restore a VM snapshot in place onto its source instance, which must exist
 //	@Tags			v1, Superphenix Controller
 //	@Produce		json
 //	@Param			orgaId		path	string	true	"Organization ID"
 //	@Param			az			path	string	true	"AZ Code"
 //	@Param			projectId	path	string	true	"Project ID"
 //	@Param			effectiveId	path	string	true	"Snapshot EID"
-//	@Param			name		query	string	true	"New instance name"
-//	@Param			localId		query	string	true	"New instance local ID (UUID)"
 //	@Success		200
 //	@Failure		400
 //	@Failure		404
+//	@Failure		409
 //	@Failure		500
-//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot/{effectiveId}/restore [get]
+//	@Router			/{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot/{effectiveId}/restore [post]
 //	@Security		Bearer[OrganizationRead, ProjectSnapshotWrite, ProjectInstanceWrite]
 func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
-	// Fetch and check all required information
-	azDb, org, projectEntity, code, errMsg := ctrlutils.CheckPathParams(r)
+	azDb, _, projectEntity, code, errMsg := ctrlutils.CheckPathParams(r)
 	if code != 0 {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
 	}
 
-	// Check query params
-	name := r.URL.Query().Get("name")
-	// Check if the name complies with the conditions
-	if len(name) > 63 {
-		reason := fmt.Errorf("name too long %d > 63", len(name))
-		log.Err(reason).Str("name", name).Msg(consts.SpxResourceCreationFailure)
-		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Str("reason", reason.Error()).Msg(consts.SpxResourceCreationFailure)
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
 		return
 	}
-
-	// Check localId
-	localId := r.URL.Query().Get("localId")
-	localIdUuid, err := uuid.Parse(localId)
-	if err != nil {
-		log.Err(err).Str("localId", localId).Msg("Failed to parse localId")
-		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-		return
-	}
-	m := spxId.Metadata{}
-	if err = m.GenerateMetadata(projectEntity.ID.String(), org.ID.String(), localId); err != nil {
-		log.Err(err).Str("localId", localId).Msg("Failed to generate metadata")
-		httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-		return
-	}
-
-	// TODO check if the localID provided is the good one (HOW ????)
-	//resourceEId := chi.URLParam(r, "effectiveId")
-	//if m.GetResourceEffectiveID() != resourceEId {
-	//	httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Err(err).Str("effectiveId", resourceEId).Str("computeEid", m.GetResourceEffectiveID()).Msg(consts.SpxResourceCreationFailure)
-	//	return
-	//
-	//}
 
 	resp, err := proxy.SendProxy(r, azDb, config.ApiPrefix, http.NoBody)
 	if err != nil {
@@ -409,42 +375,13 @@ func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 || resp.StatusCode == 404 {
-		// Check if instance exist in db
-		var instance model.Product
-		result := db.Client.Unscoped().Where(model.Product{EffectiveID: m.GetResourceEffectiveID()}).First(&instance)
-
-		if result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Err(result.Error).Str("effectiveId", m.GetResourceEffectiveID()).Msg("Failed to find product in database")
-			httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-			return
+	if resp.StatusCode != http.StatusOK {
+		// Keep snapshot not found and source instance missing as such
+		failureCode := consts.SpxResourceUpdateFailureCode
+		if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusConflict {
+			failureCode = resp.StatusCode
 		}
-
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Debug().Msg("Instance not found, creation in db")
-			instance.ID = localIdUuid
-			instance.ProductName = name
-			instance.CodeAZ = azDb.Code
-			instance.ProjectId = projectEntity.ID
-			instance.ProductTypeId = model.ProductTypeInstance.Name
-			instance.EffectiveID = m.GetResourceEffectiveID()
-
-			_, err := product.Save(instance)
-			if err != nil {
-				log.Err(err).Msg("Failed to save product in database")
-				httpError.Http(w, r, consts.SpxResourceCreationFailureCode).Msg(consts.SpxResourceCreationFailure)
-				return
-			}
-		} else {
-			log.Debug().Msgf("Instance found, deletion status %t", instance.DeletedAt.Valid)
-			result = db.Client.Unscoped().Model(instance).Updates(map[string]interface{}{"deleted_at": nil, "product_name": name})
-			if result.Error != nil {
-				log.Debug().Err(result.Error).Msg("failed to restore instance in db")
-			}
-		}
-
-	} else {
-		ctrlutils.HandleControllerError(w, r, resp, consts.SpxResourceCreationFailureCode, consts.SpxResourceCreationFailure)
+		ctrlutils.HandleControllerError(w, r, resp, failureCode, consts.SpxResourceUpdateFailure)
 		return
 	}
 	w.WriteHeader(http.StatusOK)

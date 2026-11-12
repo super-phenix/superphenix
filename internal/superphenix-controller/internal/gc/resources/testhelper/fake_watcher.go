@@ -9,7 +9,7 @@ import (
 // SetupFakeWatcher populates informers.WatcherSet with a fake cache indexer
 // containing the given objects for the specified resource type.
 func SetupFakeWatcher(resourceType string, objects ...interface{}) {
-	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
+	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, informers.ResourceIndexers(resourceType))
 	for _, obj := range objects {
 		_ = indexer.Add(obj)
 	}

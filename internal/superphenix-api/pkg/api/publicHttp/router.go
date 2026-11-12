@@ -2,7 +2,10 @@ package publicHttp
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	apiToken "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/apitoken"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/auth/session"
 	argoApp "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app"
@@ -29,6 +32,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/user"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/manager"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/project"
+	quotaService "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/quota"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/region/az"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/api"
@@ -37,6 +41,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/metrics"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/opentelemetry/tracing"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/router"
+	httpError "github.com/super-phenix/superphenix/pkg/utils/error"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -54,6 +59,7 @@ func RegisterModules(cfg *config.Config, reg *router.Registry) {
 	reg.Use("peer-addr", audit.CapturePeerAddr)
 	reg.Use("real-ip", middleware.RealIP)
 	reg.Use("clean-path", middleware.CleanPath)
+	reg.Use("reject-path-traversal", rejectPathTraversal)
 	reg.Use("tracing", tracing.MiddlewareHTTP)
 	reg.Use("metrics", metrics.MiddlewareHTTP)
 	reg.Use("cors", sessionCorsMiddleware(cfg))
@@ -106,6 +112,7 @@ func wirePublicRoutes() chi.Router {
 	kaasctrl.ProvideService(&config.Global, reg)
 	metadatactrl.ProvideService(&config.Global, reg)
 	summaryctrl.ProvideService(&config.Global, reg)
+	quotaService.ProvideService(&config.Global, reg)
 	argoApp.ProvideService(&config.Global, reg)
 
 	return BuildPublicRouter(reg)
@@ -126,6 +133,22 @@ func swaggerModule(cfg *config.Config) router.Module {
 			},
 		},
 	}
+}
+
+// rejectPathTraversal refuses path segments that decode to a separator or a dot segment. chi
+// routes on the escaped path, so "..%2F" stays inside one parameter here and passes the
+// permission check, but anything that decodes it later sees a path to another project.
+func rejectPathTraversal(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for segment := range strings.SplitSeq(r.URL.EscapedPath(), "/") {
+			decoded, err := url.PathUnescape(segment)
+			if err != nil || decoded == "." || decoded == ".." || strings.ContainsAny(decoded, `/\%`) {
+				httpError.Http(w, r, http.StatusBadRequest).Msg(consts.SpxWrongPathParam)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func sessionCorsMiddleware(cfg *config.Config) func(http.Handler) http.Handler {

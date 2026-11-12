@@ -11,6 +11,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// LoadBalancerVIPCIDR is the range reserved for load balancer VIPs (RFC008).
+const LoadBalancerVIPCIDR = "198.18.0.0/16"
+
+// LogicalSwitchAnnotation is the Kube-OVN annotation holding the subnet of a pod or load balancer rule.
+const LogicalSwitchAnnotation = "ovn.kubernetes.io/logical_switch"
+
+// LogicalRouterAnnotation is the Kube-OVN annotation holding the VPC of a load balancer rule.
+const LogicalRouterAnnotation = "ovn.kubernetes.io/logical_router"
+
 // Code from : https://github.com/apparentlymart/go-cidr/blob/v1.1.0/cidr/cidr.go
 
 // FirstAndLastAvailable first and last available IP (excluding Range and Broadcast address)

@@ -57,7 +57,7 @@ func Module(cfg *config.Config, s API) router.Module {
 					Audited(model.ProductTypeVmSnapshot, router.ActionCreate, ""),
 				router.Delete("/{az}/{projectId}/instance-snapshot/{effectiveId}", s.DeleteVmSnapshot).
 					Audited(model.ProductTypeVmSnapshot, router.ActionDelete, controller.ParamEffectiveID),
-				router.Get("/{az}/{projectId}/instance-snapshot/{effectiveId}/restore", s.RestoreVmSnapshot, instanceWrite).
+				router.Post("/{az}/{projectId}/instance-snapshot/{effectiveId}/restore", s.RestoreVmSnapshot, instanceWrite).
 					Audited(model.ProductTypeVmSnapshot, controller.ActionRestore, controller.ParamEffectiveID),
 				router.Post("/{az}/{projectId}/instance-snapshot/{effectiveId}/clone", s.CloneVmSnapshot, instanceWrite).
 					Audited(model.ProductTypeVmSnapshot, controller.ActionClone, controller.ParamEffectiveID),

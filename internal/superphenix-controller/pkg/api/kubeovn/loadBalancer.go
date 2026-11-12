@@ -170,6 +170,11 @@ func createLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = body.CreateLoadBalancer(r.Context())
+	if errors.IsBadRequest(err) {
+		log.Warn().Err(err).Msg("Invalid load balancer")
+		httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+		return
+	}
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to create load balancer")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to create load balancer")
@@ -187,9 +192,11 @@ func createLoadBalancer(w http.ResponseWriter, r *http.Request) {
 //	@Produce		plain
 //	@Param			orgId		path	string						true	"Organization ID"
 //	@Param			projectId	path	string						true	"Project ID"
-//	@Param			Body		body	lb.CreateLoadBalancerInfo	true	"LoadBalancer info"
+//	@Param			effectiveId	path	string						true	"LoadBalancer Effective ID"
+//	@Param			Body		body	lb.UpdateLoadBalancerInfo	true	"LoadBalancer info"
 //	@Success		200
 //	@Failure		400
+//	@Failure		404
 //	@Failure		500
 //	@Router			/{orgId}/{projectId}/load-balancer/{effectiveId} [post]
 func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
@@ -216,6 +223,11 @@ func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 			httpError.Http(w, r, http.StatusNotFound).Msg("Resource not found")
 			return
 		}
+		if errors.IsBadRequest(err) {
+			log.Warn().Err(err).Msg("Invalid load balancer")
+			httpError.Http(w, r, http.StatusBadRequest).Msg(err.Error())
+			return
+		}
 		log.Error().Err(err).Msg("Failed to update load balancer")
 		httpError.Http(w, r, http.StatusInternalServerError).Msg("Failed to update load balancer")
 	} else {
@@ -236,7 +248,7 @@ func updateLoadBalancer(w http.ResponseWriter, r *http.Request) {
 //	@Failure		400
 //	@Failure		404
 //	@Failure		500
-//	@Router			/{orgId}/{projectId}/load-balancer [delete]
+//	@Router			/{orgId}/{projectId}/load-balancer/{effectiveId} [delete]
 func deleteLoadBalancer(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
 	effectiveId := chi.URLParam(r, "effectiveId")

@@ -2,6 +2,8 @@ package kaas
 
 import (
 	"context"
+	"errors"
+	"math"
 	"strings"
 	"testing"
 
@@ -29,7 +31,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 		Name:         "group-1",
 		Replicas:     3,
 		Cpu:          2,
-		Memory:       4,
+		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
 		Version:      1,
@@ -135,8 +137,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -144,8 +146,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
-					{Name: "group-2", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-2", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
 				},
 			},
 			wantErr: false,
@@ -162,8 +164,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
-					{Name: "group-1", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -171,8 +173,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
-					{Name: "group-1", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 2},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 2},
 				},
 			},
 			wantErr: false,
@@ -188,8 +190,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -197,7 +199,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
 				},
 			},
 			wantErr: false,
@@ -212,7 +214,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -220,8 +222,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
-					{Name: "group-1", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
 				},
 			},
 			wantErr: false,
@@ -311,11 +313,43 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 0, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 0, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 				},
 			},
 			oldSpec: nil,
 			wantErr: true,
+		},
+		{
+			name: "Large replicas count and custom size - should succeed",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 100, Cpu: 8, Memory: "24Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: false,
+			expectedStrings: []string{
+				"replicas: 100",
+				"cores: 8",
+				"memory: 24Gi",
+			},
+		},
+		{
+			name: "Replicas at maximum - should succeed",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 999999, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec:         nil,
+			wantErr:         false,
+			expectedStrings: []string{"replicas: 999999"},
 		},
 		{
 			name: "Replicas above maximum - should return error",
@@ -324,11 +358,138 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 11, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1000000, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 				},
 			},
 			oldSpec: nil,
 			wantErr: true,
+		},
+		{
+			name: "CPU above maximum - should return error",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 1000000, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: true,
+		},
+		{
+			name: "Memory above maximum - should return error",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1000000Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: true,
+		},
+		{
+			name: "Boot disk at maximum - should succeed",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 999999, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec:         nil,
+			wantErr:         false,
+			expectedStrings: []string{"storage: 999999Gi"},
+		},
+		{
+			name: "Boot disk above maximum - should return error",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 1000000, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: true,
+		},
+		{
+			name: "Boot disk at max int - should return error",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: math.MaxInt64, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: true,
+		},
+		{
+			name: "Fractional memory - should render canonical quantity",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1.5Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec:         nil,
+			wantErr:         false,
+			expectedStrings: []string{"memory: 1536Mi"},
+		},
+		{
+			name: "Memory below minimum - should return error",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "127Mi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: true,
+		},
+		{
+			name: "Memory unparseable - should return error",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "abc", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: nil,
+			wantErr: true,
+		},
+		{
+			name: "Same memory written differently - should keep the version",
+			spec: KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1.5Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				},
+			},
+			oldSpec: &KaaSSpec{
+				KubeVersion:   "1.24.0",
+				CPNetPol:      "default",
+				WorkersNetPol: "default",
+				Groups: []Group{
+					{Name: "group-1", Cpu: 2, Memory: "1536Mi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 3},
+				},
+			},
+			wantErr:         false,
+			expectedStrings: []string{"version: 3", "memory: 1536Mi"},
 		},
 		{
 			name: "Both NetPol invalid - should return error on CPNetPol first",
@@ -348,9 +509,9 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 1, Memory: 1, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // Same as old[1] -> version 4
-					{Name: "group-0", Replicas: 1, Cpu: 4, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // Changed from old[0] -> version 3
-					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // New -> version 1
+					{Name: "group-1", Replicas: 1, Cpu: 1, Memory: "1Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // Same as old[1] -> version 4
+					{Name: "group-0", Replicas: 1, Cpu: 4, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // Changed from old[0] -> version 3
+					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // New -> version 1
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -358,8 +519,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 2},
-					{Name: "group-1", Cpu: 1, Memory: 1, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 4},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 2},
+					{Name: "group-1", Cpu: 1, Memory: "1Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 4},
 				},
 			},
 			wantErr: false,
@@ -404,7 +565,7 @@ func TestCreateKaaSAppValues_DataStore(t *testing.T) {
 		Name:         "group-1",
 		Replicas:     3,
 		Cpu:          2,
-		Memory:       4,
+		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
 		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
@@ -486,6 +647,11 @@ func TestCreateKaaSAppValues_DataStore(t *testing.T) {
 			name: "DR disabled on v-prefixed unsupported version is allowed",
 			spec: specWith("v1.34.5", DataStoreSpec{Dedicated: false}),
 			want: nil,
+		},
+		{
+			name:    "storage above maximum is rejected",
+			spec:    specWith("1.35.0", DataStoreSpec{Dedicated: true, StorageClassName: "default", Storage: 1000000}),
+			wantErr: true,
 		},
 		{
 			name:    "shrinking storage is rejected",
@@ -583,7 +749,7 @@ func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 		Name:         "group-1",
 		Replicas:     3,
 		Cpu:          2,
-		Memory:       4,
+		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
 		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
@@ -646,7 +812,7 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 		CPNetPol:      "default",
 		WorkersNetPol: "default",
 		Groups: []Group{
-			{Name: "group-1", Replicas: 3, Cpu: 2, Memory: 4, BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+			{Name: "group-1", Replicas: 3, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
 		},
 	}
 
@@ -738,7 +904,7 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 		Name:         "group-1",
 		Replicas:     3,
 		Cpu:          2,
-		Memory:       4,
+		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
 		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
@@ -792,7 +958,7 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 func TestCreateArgoApp_HelmParams(t *testing.T) {
 	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	group := Group{
-		Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20,
+		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
 		StorageClass: "default", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
 	}
 	az := config.AZConfig{Code: "az01", Destination: "dest1"}
@@ -889,7 +1055,7 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}
 	group := Group{
-		Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20,
+		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
 		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
 	}
 	az := config.AZConfig{Code: "az1", Destination: "dest1"}
@@ -933,7 +1099,7 @@ func TestCreateKaaSAppValues_KubeVersionSupport(t *testing.T) {
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}
 	group := Group{
-		Name: "group-1", Replicas: 1, Cpu: 2, Memory: 4, BootDiskSize: 20,
+		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
 		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
 	}
 	specFor := func(version string) KaaSSpec {
@@ -959,6 +1125,178 @@ func TestCreateKaaSAppValues_KubeVersionSupport(t *testing.T) {
 			_, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", tt.spec, kaasConfig, tt.oldSpec)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// nodeRoleGroup is a valid group with a legacy-style mixed-case name.
+func nodeRoleGroup(role string, version int) Group {
+	return Group{
+		Name:         "aB3xYz9Q",
+		NodeRole:     role,
+		Replicas:     3,
+		Cpu:          2,
+		Memory:       "4Gi",
+		BootDiskSize: 20,
+		StorageClass: "sc1",
+		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		Version:      version,
+	}
+}
+
+func nodeRoleSpec(g Group) KaaSSpec {
+	return KaaSSpec{
+		KubeVersion:   "1.35.0",
+		CPNetPol:      "default",
+		WorkersNetPol: "default",
+		Groups:        []Group{g},
+	}
+}
+
+func TestCreateKaaSAppValues_NodeRole(t *testing.T) {
+	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	localId := "test-cluster"
+	kaasConfig := KaaSConfig{
+		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
+	}
+	updateFrom := func(role string) *KaaSSpec {
+		s := nodeRoleSpec(nodeRoleGroup(role, 2))
+		return &s
+	}
+
+	tests := []struct {
+		name        string
+		role        string
+		oldSpec     *KaaSSpec
+		wantErr     bool
+		wantRole    string
+		wantVersion int
+	}{
+		{name: "role is rendered", role: "gpu", wantRole: "gpu", wantVersion: 1},
+		{name: "empty role is omitted", role: "", wantRole: "", wantVersion: 1},
+		{name: "uppercase role is rendered", role: "GPU", wantRole: "GPU", wantVersion: 1},
+		{name: "role with dot is rendered", role: "gpu.large", wantRole: "gpu.large", wantVersion: 1},
+		{name: "role with underscore is rendered", role: "gpu_large", wantRole: "gpu_large", wantVersion: 1},
+		{name: "control-plane is rendered", role: "control-plane", wantRole: "control-plane", wantVersion: 1},
+		{name: "63 chars is rendered", role: strings.Repeat("a", 63), wantRole: strings.Repeat("a", 63), wantVersion: 1},
+		{name: "leading dash is rejected", role: "-gpu", wantErr: true},
+		{name: "trailing dot is rejected", role: "gpu.", wantErr: true},
+		{name: "slash is rejected", role: "gpu/large", wantErr: true},
+		{name: "space is rejected", role: "gpu large", wantErr: true},
+		{name: "role over 63 chars is rejected", role: strings.Repeat("a", 64), wantErr: true},
+		{name: "role change keeps version", role: "compute", oldSpec: updateFrom("gpu"), wantRole: "compute", wantVersion: 2},
+		{name: "legacy group gets a role and keeps version", role: "worker", oldSpec: updateFrom(""), wantRole: "worker", wantVersion: 2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			values, _, err := CreateKaaSAppValues(context.Background(), localId, "test-loc", nodeRoleSpec(nodeRoleGroup(tt.role, 0)), kaasConfig, tt.oldSpec)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				var roleErr *NodeRoleError
+				if !errors.As(err, &roleErr) {
+					t.Errorf("error = %v, want a *NodeRoleError", err)
+				}
+				return
+			}
+			if tt.wantRole == "" && strings.Contains(values, "nodeRole") {
+				t.Errorf("expected values to NOT contain nodeRole.\nValues:\n%s", values)
+			}
+			var parsed Values
+			if err := yaml.Unmarshal([]byte(values), &parsed); err != nil {
+				t.Fatalf("failed to unmarshal values: %v", err)
+			}
+			instance := parsed.Clusters[localId].Workers.Instances["aB3xYz9Q"]
+			if instance.Deployment.NodeRole != tt.wantRole {
+				t.Errorf("nodeRole = %q, want %q", instance.Deployment.NodeRole, tt.wantRole)
+			}
+			if instance.Template.Version != tt.wantVersion {
+				t.Errorf("version = %d, want %d", instance.Template.Version, tt.wantVersion)
+			}
+		})
+	}
+}
+
+func TestConvertAppToUpdateKaaSSpec_NodeRole(t *testing.T) {
+	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	kaasConfig := KaaSConfig{
+		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
+	}
+
+	tests := []struct {
+		name string
+		role string
+	}{
+		{name: "round-trips a set role", role: "gpu"},
+		{name: "round-trips a mixed-case dotted role", role: "GPU.large"},
+		{name: "legacy group keeps an empty role", role: ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := nodeRoleSpec(nodeRoleGroup(tt.role, 0))
+			values, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", spec, kaasConfig, nil)
+			if err != nil {
+				t.Fatalf("CreateKaaSAppValues() error = %v", err)
+			}
+
+			got, err := ConvertAppToUpdateKaaSSpec(appViewWithHelmValues(values))
+			if err != nil {
+				t.Fatalf("ConvertAppToUpdateKaaSSpec() error = %v", err)
+			}
+			if len(got.Groups) != 1 || got.Groups[0].NodeRole != tt.role {
+				t.Errorf("Groups = %+v, want one group with nodeRole %q", got.Groups, tt.role)
+			}
+		})
+	}
+}
+
+func TestCreateKaaSAppValues_NodeGroupName(t *testing.T) {
+	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
+	kaasConfig := KaaSConfig{
+		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
+	}
+	named := func(name string) Group {
+		g := nodeRoleGroup("", 0)
+		g.Name = name
+		return g
+	}
+
+	tests := []struct {
+		name    string
+		groups  []string
+		wantErr bool
+	}{
+		{name: "generated id is accepted", groups: []string{"aB3xYz9Q"}},
+		{name: "dashed name is accepted", groups: []string{"gpu-large"}},
+		{name: "single char is accepted", groups: []string{"a"}},
+		{name: "14 chars is accepted", groups: []string{strings.Repeat("a", 14)}},
+		{name: "distinct names are accepted", groups: []string{"gpu", "cpu"}},
+		{name: "empty name is rejected", groups: []string{""}, wantErr: true},
+		{name: "leading dash is rejected", groups: []string{"-gpu"}, wantErr: true},
+		{name: "trailing dash is rejected", groups: []string{"gpu-"}, wantErr: true},
+		{name: "dot is rejected", groups: []string{"gpu.large"}, wantErr: true},
+		{name: "15 chars is rejected", groups: []string{strings.Repeat("a", 15)}, wantErr: true},
+		{name: "duplicate name is rejected", groups: []string{"gpu", "gpu"}, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := nodeRoleSpec(Group{})
+			spec.Groups = nil
+			for _, n := range tt.groups {
+				spec.Groups = append(spec.Groups, named(n))
+			}
+			_, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", spec, kaasConfig, nil)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			var nameErr *NodeGroupNameError
+			if tt.wantErr && !errors.As(err, &nameErr) {
+				t.Errorf("error = %v, want a *NodeGroupNameError", err)
 			}
 		})
 	}

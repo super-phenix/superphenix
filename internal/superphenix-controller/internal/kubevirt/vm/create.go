@@ -9,10 +9,10 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/utils"
 	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
-	"k8s.io/apimachinery/pkg/api/resource"
 	k8smetav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "kubevirt.io/api/core/v1"
 )
@@ -56,24 +56,26 @@ func CreateVM(ctx context.Context, namespace string, vmInfo CreateVMInfo) error 
 func convertToVM(ctx context.Context, namespace string, vmInfo CreateVMInfo, metadata spxId.Metadata) (*v1.VirtualMachine, error) {
 	log := logger.GetLogger(ctx)
 	//Validation part
-	if !slices.Contains(MEMORY_VALUE_LIST, vmInfo.Compute.Memory) {
-		return &v1.VirtualMachine{}, fmt.Errorf("no such memory: %d", vmInfo.Compute.Memory)
+	memory, err := validation.ValidateComputeSize(vmInfo.Compute.Cpu, vmInfo.Compute.Memory)
+	if err != nil {
+		return &v1.VirtualMachine{}, err
 	}
-	if !slices.Contains(CPU_VALUE_LIST, vmInfo.Compute.Cpu) {
-		return &v1.VirtualMachine{}, fmt.Errorf("no such cpu value: %d", vmInfo.Compute.Cpu)
+
+	if vmInfo.CloudInit.Config == "" {
+		return &v1.VirtualMachine{}, errCloudInitRequired
 	}
 
 	if !slices.Contains(RUN_STRATEGY_VALUE_LIST, vmInfo.General.RunStrategy) {
 		return &v1.VirtualMachine{}, fmt.Errorf("unknown run strategy: %s", vmInfo.General.RunStrategy)
 	}
 
+	gpus, err := resolveGPUs(vmInfo.Compute.Gpu)
+	if err != nil {
+		return nil, err
+	}
+
 	// Create correct values format
 	runStrategy := v1.VirtualMachineRunStrategy(vmInfo.General.RunStrategy)
-	memory, err := resource.ParseQuantity(fmt.Sprintf("%dGi", vmInfo.Compute.Memory))
-	if err != nil {
-		return nil, fmt.Errorf("%s %w", "memory", err)
-
-	}
 	cores := uint32(vmInfo.Compute.Cpu)
 
 	terminationGracePeriod := int64(180)
@@ -189,6 +191,8 @@ func convertToVM(ctx context.Context, namespace string, vmInfo CreateVMInfo, met
 	}
 
 	withAdvancedOptions(vm, vmInfo.Advanced)
+
+	setGPUs(vm, gpus)
 
 	return vm, nil
 }

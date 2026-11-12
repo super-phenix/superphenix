@@ -3,6 +3,7 @@ package project
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
@@ -34,17 +35,30 @@ func FindById(projectId string) (httpModel.APIProject, error) {
 
 // DeleteById deletes the project only when it belongs to the given
 // organization. It returns gorm.ErrRecordNotFound when no row matches.
+//
+// Its quotas (project and AZ quotas) and deactivations are removed in the same transaction; the
+// ResourceQuotas in the AZs are left to the garbage collector.
 func DeleteById(projectId, orgaId uuid.UUID) error {
-	result := db.Client.
-		Where("id = ? AND orga_id = ?", projectId, orgaId).
-		Delete(&model.Project{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
-	}
-	return nil
+	return db.Client.Transaction(func(tx *gorm.DB) error {
+		// First, as it takes the organization lock the quota writes take. A project of another
+		// organization rolls everything back below.
+		if err := quota.DeleteForProject(tx, orgaId, projectId); err != nil {
+			if errors.Is(err, quota.ErrOrganizationNotFound) {
+				return gorm.ErrRecordNotFound
+			}
+			return err
+		}
+		result := tx.
+			Where("id = ? AND orga_id = ?", projectId, orgaId).
+			Delete(&model.Project{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return gorm.ErrRecordNotFound
+		}
+		return tx.Where("project_id = ?", projectId).Delete(&model.ProjectDeactivation{}).Error
+	})
 }
 
 // FindByIdAndOrgaId returns the project only when it belongs to the given

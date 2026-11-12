@@ -1,6 +1,6 @@
 module github.com/super-phenix/superphenix
 
-go 1.25.7
+go 1.25.8
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -326,6 +326,7 @@ require (
 	k8s.io/component-helpers v0.34.2 // indirect
 	k8s.io/controller-manager v0.34.0 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
+	k8s.io/kops v1.34.2 // indirect
 	k8s.io/kube-aggregator v0.34.3 // indirect
 	k8s.io/kube-openapi v0.34.3 // indirect
 	k8s.io/kubectl v0.34.3 // indirect

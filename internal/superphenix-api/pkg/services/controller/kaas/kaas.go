@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -215,11 +216,12 @@ func (h *Service) CreateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	body.Spec.KaasEssentials.ClusterFriendlyName = kaasDb.ProductName
 	newBody, _, err := argokaas.CreateArgoApp(r.Context(), kaasDb.ID.String(), azDb, body.Spec, m, kaasConfig, nil, chart)
 	if err != nil {
 		ctrlutils.CleanDb(r.Context(), kaasDb.ID)
 		log.Err(err).Msg("Failed to create argo app")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+		httpError.Http(w, r, http.StatusBadRequest).Str("reason", err.Error()).Msg(specErrorMsg(err))
 		return
 
 	}
@@ -341,9 +343,9 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	productEid := chi.URLParam(r, "effectiveId")
-	kaasDb, err := controller.UpdateIntoDb(r.Context(), productEid, body.General.ProductName, model.ProductTypeKaaS.Name, azDb.Code, projectDb.ID)
+	kaasDb, err := controller.FindForUpdate(r.Context(), productEid, model.ProductTypeKaaS.Name, azDb.Code, projectDb.ID)
 	if err != nil {
-		log.Error().Err(err).Msg("Failed to save product in database")
+		log.Error().Err(err).Msg("Failed to find product for update")
 		httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
 		return
 	}
@@ -375,10 +377,16 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// An empty request name keeps the stored one.
+	body.Spec.KaasEssentials.ClusterFriendlyName = body.General.ProductName
+	if body.General.ProductName == "" {
+		body.Spec.KaasEssentials.ClusterFriendlyName = kaasDb.ProductName
+	}
+
 	newBody, gtr, err := argokaas.CreateArgoApp(r.Context(), kaasDb.ID.String(), azDb, body.Spec, m, kaasConfig, &app.Spec, chart)
 	if err != nil {
 		log.Err(err).Msg("Failed to create argo app")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+		httpError.Http(w, r, http.StatusBadRequest).Str("reason", err.Error()).Msg(specErrorMsg(err))
 		return
 	}
 
@@ -401,12 +409,20 @@ func (h *Service) UpdateKaaS(w http.ResponseWriter, r *http.Request) {
 			resp2, err := proxy.SendRequest(r.Context(), url, "POST", bytes.NewReader(gdBody), azDb.AuthSecret)
 			if err != nil {
 				log.Err(err).Str("az", azDb.Code).Msg(consts.SpxProxyToAZFailure)
-				return
+			} else {
+				defer resp2.Body.Close()
+				if resp2.StatusCode != 200 {
+					log.Err(err).Str("az", azDb.Code).Str("status", resp2.Status).Int("statusCode", resp2.StatusCode).Msg(consts.SpxProxyToAZFailure)
+				}
 			}
-			defer resp2.Body.Close()
-			if resp2.StatusCode != 200 {
-				log.Err(err).Str("az", azDb.Code).Str("status", resp2.Status).Int("statusCode", resp2.StatusCode).Msg(consts.SpxProxyToAZFailure)
-			}
+		}
+	}
+
+	// The rename is saved once the spec is accepted.
+	if kaasDb.ID != uuid.Nil {
+		if _, err := controller.RenameProduct(r.Context(), kaasDb, body.General.ProductName); err != nil {
+			httpError.Http(w, r, consts.SpxResourceUpdateFailureCode).Msg(consts.SpxResourceUpdateFailure)
+			return
 		}
 	}
 
@@ -558,10 +574,11 @@ func (h *Service) loadKaaS(w http.ResponseWriter, r *http.Request) (loadedKaaS, 
 // and writes the response. It reports whether the Application was updated.
 func (h *Service) applyKaaS(w http.ResponseWriter, r *http.Request, k loadedKaaS, spec argokaas.KaaSSpec, chart config.RepoArgoAppConfig) bool {
 	log := logger.GetLogger(r.Context())
+	spec.KaasEssentials.ClusterFriendlyName = k.product.ProductName
 	newBody, _, err := argokaas.CreateArgoApp(r.Context(), k.product.ID.String(), k.az, spec, k.metadata, k.kaasConfig, &k.app.Spec, chart)
 	if err != nil {
 		log.Err(err).Msg("Failed to create argo app")
-		httpError.Http(w, r, http.StatusBadRequest).Msg(http.StatusText(http.StatusBadRequest))
+		httpError.Http(w, r, http.StatusBadRequest).Str("reason", err.Error()).Msg(specErrorMsg(err))
 		return false
 	}
 
@@ -573,6 +590,19 @@ func (h *Service) applyKaaS(w http.ResponseWriter, r *http.Request, k loadedKaaS
 
 	w.WriteHeader(http.StatusOK)
 	return true
+}
+
+// specErrorMsg returns the message of a spec error the caller can fix, else the generic 400 text.
+func specErrorMsg(err error) string {
+	var roleErr *argokaas.NodeRoleError
+	if errors.As(err, &roleErr) {
+		return roleErr.Error()
+	}
+	var nameErr *argokaas.NodeGroupNameError
+	if errors.As(err, &nameErr) {
+		return nameErr.Error()
+	}
+	return http.StatusText(http.StatusBadRequest)
 }
 
 // DeleteKaaS
@@ -787,7 +817,7 @@ func (h *Service) fetchKaaSApp(ctx context.Context, projectId, resourceEId strin
 
 	app.Spec, err = argokaas.ConvertAppToUpdateKaaSSpec(appView)
 	if err != nil {
-		log.Error().Str("effectiveId", resourceEId).Msg("Failed to read app spec")
+		log.Error().Err(err).Str("effectiveId", resourceEId).Msg("Failed to read app spec")
 		return kaasApp{}, true, err
 	}
 

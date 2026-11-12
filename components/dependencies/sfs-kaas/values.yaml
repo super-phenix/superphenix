@@ -21,6 +21,12 @@ projectName: "null"
 # @section -- Organization parameters
 location: ""
 
+# -- Mapping between user-friendly names of devices and their real names.
+# The mapping is specified for the current AZ, meaning that each AZ can have a different mapping.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+deviceMapping: {}
+
 # -- Whether this chart is deployed through GitOps or not.
 # This parameter cannot be overriden by the user.
 # @section -- Organization parameters
@@ -246,6 +252,18 @@ clusters: {}
   #             # -- Url of the main disk image
   #             # @section -- Worker main disk
   #             imageUrl: ""
+
+  #           # -- GPU Passthrough configuration
+  #           # @section -- Worker VM template
+  #           # @default -- []
+  #           gpus:
+  #             - device: ""
+
+  #           # -- List of NTP server IPs or DNS names
+  #           # Uses systemd-timesyncd which implements SNTP
+  #           # @section -- Worker VM template
+  #           # @default -- []
+  #           ntpServers: []
 
   #           # -- Custom taints to be set on node creation
   #           # @section -- Worker VM template

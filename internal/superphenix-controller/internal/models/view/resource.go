@@ -1,5 +1,7 @@
 package view
 
+import "github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
+
 type Resource struct {
 	ID             string `json:"id"`          // local ID
 	EId            string `json:"eid"`         // effective ID
@@ -14,6 +16,7 @@ type Instance struct {
 	Vm        VirtualMachineView         `json:"vm"`
 	Vmi       VirtualMachineInstanceView `json:"vmi,omitempty"`
 	CloudInit string                     `json:"cloudInit,omitempty"`
+	Gpus      []config.GpuClassEntry     `json:"gpus,omitempty"`
 }
 
 type Subnet struct {
@@ -58,6 +61,13 @@ type VmSnapshot struct {
 type SSH struct {
 	Resource `json:",inline"`
 	SSH      SSHView `json:"ssh"`
+	IsUsed   bool    `json:"isUsed"`
+}
+
+// SSHUser is a VM referencing an SSH key. ProductName is only set on gitops VMs.
+type SSHUser struct {
+	EId         string `json:"eid"`
+	ProductName string `json:"productName"`
 }
 
 type LoadBalancer struct {

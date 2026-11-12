@@ -1,6 +1,7 @@
 package summary
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"maps"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/authorization"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/az"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/consts"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/product"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/quota"
@@ -19,6 +21,7 @@ import (
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	"github.com/super-phenix/superphenix/pkg/permify-wrapper/pkg/base/v1/entity"
+	pwPermission "github.com/super-phenix/superphenix/pkg/permify-wrapper/pkg/base/v1/permission"
 	pw "github.com/super-phenix/superphenix/pkg/permify-wrapper/pkg/permission"
 
 	"github.com/go-chi/chi/v5"
@@ -28,12 +31,15 @@ import (
 const recentProductLimit = 5
 
 // ProjectSummaryResponse is the resource overview of a project.
-// Product types the caller may not read are absent from Counts, CountsByAZ and Recent.
+// Product types the caller may not read, and AZs the organization may not use, are absent from
+// Counts, CountsByAZ and Recent, and
+// ResourceLimit (the limits of the project quota) is absent without ProjectAZQuotaRead.
 type ProjectSummaryResponse struct {
-	Counts     map[string]int64 `json:"counts"`
-	CountsByAZ map[string]int64 `json:"countsByAz"`
-	Quota      ProjectQuota     `json:"quota"`
-	Recent     []RecentProduct  `json:"recent"`
+	Counts        map[string]int64     `json:"counts"`
+	CountsByAZ    map[string]int64     `json:"countsByAz"`
+	Quota         ProjectQuota         `json:"quota"`
+	ResourceLimit model.QuotaResources `json:"resourceLimit,omitempty"`
+	Recent        []RecentProduct      `json:"recent"`
 }
 
 // ProjectQuota is the product creation quota of a project. Used counts every product type,
@@ -71,20 +77,25 @@ type RecentProduct struct {
 //	@Security		Bearer[OrganizationRead, ProjectRead]
 func (h *Service) GetProjectSummary(w http.ResponseWriter, r *http.Request) {
 	log := logger.GetLogger(r.Context())
-	_, project, code, errMsg := ctrlutils.CheckListPathParams(r)
+	orga, project, code, errMsg := ctrlutils.CheckListPathParams(r)
 	if code != 0 {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
 	}
 
-	readableTypes, err := readableProductTypes(r)
+	readableTypes, readQuota, err := readableProductTypes(r)
 	if err != nil {
 		log.Err(err).Str("projectId", project.ID.String()).Msg(consts.SpxListPermissionsError)
 		httpError.Http(w, r, consts.SpxListPermissionsErrorCode).Msg(consts.SpxListPermissionsError)
 		return
 	}
 
-	summary, err := buildSummary(project.ID, readableTypes)
+	var azCodes []string
+	for _, azCfg := range az.FindAll(orga.ID.String()) {
+		azCodes = append(azCodes, azCfg.Code)
+	}
+
+	summary, err := buildSummary(project.ID, readableTypes, azCodes, readQuota)
 	if err != nil {
 		log.Err(err).Str("projectId", project.ID.String()).Msg(consts.SpxFindAllResourcesError)
 		httpError.Http(w, r, consts.SpxFindAllResourcesErrorCode).Msg(consts.SpxFindAllResourcesError)
@@ -101,16 +112,16 @@ func (h *Service) GetProjectSummary(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(marshal)
 }
 
-// readableProductTypes returns the product types the caller may read, from a single permission
-// lookup. Super admins get every type.
-func readableProductTypes(r *http.Request) ([]string, error) {
+// readableProductTypes returns the product types the caller may read, and whether it may read the
+// project quota, from a single permission lookup. Super admins get everything.
+func readableProductTypes(r *http.Request) ([]string, bool, error) {
 	userId, ok := r.Context().Value(consts.ContextUserId).(string)
 	if !ok || userId == "" {
-		return nil, errors.New("no user id found in context")
+		return nil, false, errors.New("no user id found in context")
 	}
 
 	if authorization.IsSuperAdminUser(userId) {
-		return slices.Sorted(maps.Keys(model.ProductTypeReadPermission)), nil
+		return slices.Sorted(maps.Keys(model.ProductTypeReadPermission)), true, nil
 	}
 
 	permissions, err := pw.ListUserPermission(
@@ -121,7 +132,7 @@ func readableProductTypes(r *http.Request) ([]string, error) {
 		userId,
 	)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	granted := make(map[string]bool, len(permissions))
@@ -129,7 +140,7 @@ func readableProductTypes(r *http.Request) ([]string, error) {
 		granted[permission] = true
 	}
 
-	return filterReadable(granted), nil
+	return filterReadable(granted), granted[pwPermission.ProjectAZQuotaRead], nil
 }
 
 // filterReadable returns, sorted, the product types whose read permission is granted.
@@ -145,13 +156,13 @@ func filterReadable(granted map[string]bool) []string {
 	return types
 }
 
-func buildSummary(projectId uuid.UUID, readableTypes []string) (ProjectSummaryResponse, error) {
-	counts, err := product.CountByTypeForProject(projectId, readableTypes)
+func buildSummary(projectId uuid.UUID, readableTypes, azCodes []string, readQuota bool) (ProjectSummaryResponse, error) {
+	counts, err := product.CountByTypeForProject(projectId, readableTypes, azCodes)
 	if err != nil {
 		return ProjectSummaryResponse{}, err
 	}
 
-	countsByAZ, err := product.CountByAZForProject(projectId, readableTypes)
+	countsByAZ, err := product.CountByAZForProject(projectId, readableTypes, azCodes)
 	if err != nil {
 		return ProjectSummaryResponse{}, err
 	}
@@ -161,16 +172,24 @@ func buildSummary(projectId uuid.UUID, readableTypes []string) (ProjectSummaryRe
 		return ProjectSummaryResponse{}, err
 	}
 
-	recent, err := buildRecent(projectId, readableTypes)
+	recent, err := buildRecent(projectId, readableTypes, azCodes)
 	if err != nil {
 		return ProjectSummaryResponse{}, err
 	}
 
+	var resourceLimit model.QuotaResources
+	if readQuota {
+		if pq, err := quota.GetProjectQuota(context.Background(), projectId); err == nil && pq != nil {
+			resourceLimit = pq.Resources
+		}
+	}
+
 	return ProjectSummaryResponse{
-		Counts:     counts,
-		CountsByAZ: countsByAZ,
-		Quota:      projectQuota,
-		Recent:     recent,
+		Counts:        counts,
+		CountsByAZ:    countsByAZ,
+		Quota:         projectQuota,
+		ResourceLimit: resourceLimit,
+		Recent:        recent,
 	}, nil
 }
 
@@ -197,8 +216,8 @@ func buildQuota(projectId uuid.UUID) (ProjectQuota, error) {
 	return ProjectQuota{Used: used, Limit: limit}, nil
 }
 
-func buildRecent(projectId uuid.UUID, readableTypes []string) ([]RecentProduct, error) {
-	products, err := product.FindLastCreatedByProject(projectId, readableTypes, recentProductLimit)
+func buildRecent(projectId uuid.UUID, readableTypes, azCodes []string) ([]RecentProduct, error) {
+	products, err := product.FindLastCreatedByProject(projectId, readableTypes, azCodes, recentProductLimit)
 	if err != nil {
 		return nil, err
 	}

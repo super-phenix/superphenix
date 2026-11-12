@@ -3,6 +3,7 @@ package organization
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strconv"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db"
@@ -14,6 +15,7 @@ import (
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 func Save(orga model.Organization) (model.Organization, error) {
@@ -21,15 +23,27 @@ func Save(orga model.Organization) (model.Organization, error) {
 	return orga, result.Error
 }
 
+// Delete deletes the organization with its projects and user roles. Its quotas (organization,
+// project and AZ quotas) and the deactivations of its projects are removed in the same
+// transaction; the ResourceQuotas in the AZs are left to the garbage collector.
 func Delete(id string) error {
 	orgaUuid, _ := uuid.Parse(id)
-	result := db.Client.Select("Projects", "UserRoles").Delete(&model.Organization{
-		Model: model.Model{
-			ID: orgaUuid,
-		},
+	err := db.Client.Transaction(func(tx *gorm.DB) error {
+		if err := quota.DeleteForOrganization(tx, orgaUuid); err != nil && !errors.Is(err, quota.ErrOrganizationNotFound) {
+			return err
+		}
+		allProjectIds := tx.Session(&gorm.Session{NewDB: true}).Unscoped().Model(&model.Project{}).Select("id").Where("orga_id = ?", orgaUuid)
+		if err := tx.Where("project_id IN (?)", allProjectIds).Delete(&model.ProjectDeactivation{}).Error; err != nil {
+			return err
+		}
+		return tx.Select("Projects", "UserRoles").Delete(&model.Organization{
+			Model: model.Model{
+				ID: orgaUuid,
+			},
+		}).Error
 	})
-	if result.Error != nil {
-		return result.Error
+	if err != nil {
+		return err
 	}
 	return group.DeleteAllByOrgaId(id)
 }
@@ -78,7 +92,7 @@ func FindCompleteOrgById(orgaId string) (httpModel.APIOrganization, error) {
 		Model: model.Model{
 			ID: orgaUuid,
 		},
-	}, "Users", "UserRoles", "Projects")
+	}, "Users", "UserRoles", "Projects", "Projects.Deactivations")
 
 	if err != nil {
 		return httpModel.APIOrganization{}, err

@@ -32,6 +32,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/iam/user"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/manager"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/project/project"
+	quotaService "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/quota"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/region/az"
 
 	"github.com/stretchr/testify/assert"
@@ -71,6 +72,7 @@ func declaredRegistry() *router.Registry {
 		kaasctrl.Module(cfg, kaasctrl.New(cfg, nil)),
 		metadatactrl.Module(cfg, metadatactrl.New(cfg)),
 		summaryctrl.Module(cfg, summaryctrl.New(cfg)),
+		quotaService.Module(quotaService.New(cfg)),
 		argoApp.Module(cfg, argoApp.New(cfg)),
 	} {
 		reg.Register(module)
@@ -86,7 +88,6 @@ var mutatingGets = []string{
 	"/{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/stop-force",
 	"/{orgaId}/api/spx-ctrl/{az}/{projectId}/instance/{effectiveId}/restart",
 	"/{orgaId}/api/spx-ctrl/{az}/{projectId}/disk/{effectiveId}/unmount",
-	"/{orgaId}/api/spx-ctrl/{az}/{projectId}/instance-snapshot/{effectiveId}/restore",
 	"/{orgaId}/api/spx-ctrl/{az}/{projectId}/kaas/{effectiveId}/reinstall-essentials",
 	"/v1/session/token",
 }

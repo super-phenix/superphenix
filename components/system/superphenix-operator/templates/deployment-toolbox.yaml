@@ -26,7 +26,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "superphenix-operator.serviceAccountName" . }}
+      automountServiceAccountToken: false
       securityContext:
         {{- toYaml .Values.toolbox.podSecurityContext | nindent 8 }}
       containers:
@@ -35,6 +35,21 @@ spec:
             {{- toYaml .Values.toolbox.securityContext | nindent 12 }}
           image: "{{ .Values.toolbox.image.repository }}:{{ .Values.toolbox.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
           imagePullPolicy: {{ .Values.toolbox.image.pullPolicy }}
+          env:
+            - name: COLORTERM
+              value: "truecolor"
+            {{- if .Values.toolbox.injectDatabaseCredentials }}
+            {{- if .Values.config.database.autoConnect }}
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: uri
+            {{- else if .Values.config.database.host }}
+            - name: DATABASE_URL
+              value: {{ printf "postgresql://%s:%s@%s:%v/%s?sslmode=disable" (.Values.config.database.user | urlquery) (.Values.config.database.password | urlquery) .Values.config.database.host (.Values.config.database.port | default 5432) (.Values.config.database.name | urlquery) | quote }}
+            {{- end }}
+            {{- end }}
           resources:
             {{- toYaml .Values.toolbox.resources | nindent 12 }}
           volumeMounts:

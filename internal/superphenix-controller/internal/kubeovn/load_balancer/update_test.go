@@ -4,63 +4,122 @@ import (
 	"context"
 	"testing"
 
-	"github.com/super-phenix/superphenix/internal/superphenix-controller/internal/gc/resources/testhelper"
-	"github.com/super-phenix/superphenix/internal/superphenix-controller/pkg/config"
-
-	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
-
 	v1 "github.com/kubeovn/kube-ovn/pkg/apis/kubeovn/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TestUpdateLoadBalancer_EndpointIPv4Validation verifies only valid IPv4 endpoints are accepted.
-func TestUpdateLoadBalancer_EndpointIPv4Validation(t *testing.T) {
-	const (
-		namespace = "prj-test"
-		name      = "lb-effective"
-	)
+func TestUpdateLoadBalancer(t *testing.T) {
+	const name = "lb-effective"
 
 	tests := []struct {
-		name      string
-		endpoints []string
-		wantErr   bool
+		name         string
+		fixture      fixture
+		subnet       string
+		vip          string
+		endpoints    []string
+		wantErr      bool
+		wantNotFound bool
+		wantVPC      string
 	}{
-		{name: "valid IPv4 endpoint", endpoints: []string{"10.0.0.1"}, wantErr: false},
-		{name: "multiple valid IPv4 endpoints", endpoints: []string{"10.0.0.1", "192.168.1.2"}, wantErr: false},
-		{name: "IPv6 endpoint rejected", endpoints: []string{"fe80::1"}, wantErr: true},
-		{name: "IPv6 loopback rejected", endpoints: []string{"::1"}, wantErr: true},
-		{name: "garbage endpoint rejected", endpoints: []string{"not-an-ip"}, wantErr: true},
-		{name: "empty endpoint rejected", endpoints: []string{""}, wantErr: true},
-		{name: "one invalid among valid rejected", endpoints: []string{"10.0.0.1", "bad"}, wantErr: true},
+		{
+			name:      "pinned rule updated in place",
+			fixture:   fixture{rules: []*v1.SwitchLBRule{ruleObj(name, project, testVIP, pinned(vpcA, subnetA))}},
+			subnet:    subnetA,
+			vip:       "198.18.0.11",
+			endpoints: []string{"10.10.0.6"},
+			wantVPC:   vpcA,
+			wantErr:   false,
+		},
+		{
+			name:      "pinned rule keeps its own vip",
+			fixture:   fixture{rules: []*v1.SwitchLBRule{ruleObj(name, project, testVIP, pinned(vpcA, subnetA))}},
+			subnet:    subnetA,
+			vip:       testVIP,
+			endpoints: []string{"10.10.0.6"},
+			wantVPC:   vpcA,
+			wantErr:   false,
+		},
+		{
+			name:      "subnet of a pinned rule can't change",
+			fixture:   fixture{rules: []*v1.SwitchLBRule{ruleObj(name, project, testVIP, pinned(vpcA, subnetA))}},
+			subnet:    subnetA2,
+			vip:       testVIP,
+			endpoints: []string{"10.11.0.6"},
+			wantErr:   true,
+		},
+		{
+			name:    "missing subnet rejected",
+			fixture: fixture{rules: []*v1.SwitchLBRule{ruleObj(name, project, testVIP, pinned(vpcA, subnetA))}},
+			vip:     testVIP,
+			wantErr: true,
+		},
+		{
+			name:      "endpoint outside the subnet rejected",
+			fixture:   fixture{rules: []*v1.SwitchLBRule{ruleObj(name, project, testVIP, pinned(vpcA, subnetA))}},
+			subnet:    subnetA,
+			vip:       testVIP,
+			endpoints: []string{"10.11.0.6"},
+			wantErr:   true,
+		},
+		{
+			name: "vip used by another rule of the VPC rejected",
+			fixture: fixture{rules: []*v1.SwitchLBRule{
+				ruleObj(name, project, testVIP, pinned(vpcA, subnetA)),
+				ruleObj("other", project, "198.18.0.11", pinned(vpcA, subnetA2)),
+			}},
+			subnet:    subnetA,
+			vip:       "198.18.0.11",
+			endpoints: []string{"10.10.0.6"},
+			wantErr:   true,
+		},
+		{
+			name:      "unpinned rule rejected",
+			fixture:   fixture{rules: []*v1.SwitchLBRule{ruleObj(name, project, testVIP, nil)}},
+			subnet:    subnetA,
+			vip:       testVIP,
+			endpoints: []string{"10.10.0.6"},
+			wantErr:   true,
+		},
+		{
+			name:         "rule of another project not found",
+			fixture:      fixture{rules: []*v1.SwitchLBRule{ruleObj(name, otherProject, testVIP, pinned(vpcB, subnetOther))}},
+			subnet:       subnetA,
+			vip:          testVIP,
+			endpoints:    []string{"10.10.0.6"},
+			wantErr:      true,
+			wantNotFound: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Seed an existing rule whose project label matches the namespace so the
-			// CheckProjectLabel / IsEditAllowed guards pass and the endpoint loop is reached.
-			existing := &v1.SwitchLBRule{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:   name,
-					Labels: map[string]string{spxId.SpxLabelProjectID: namespace},
-				},
+			client := setup(t, tt.fixture)
+
+			info := &UpdateLoadBalancerInfo{VIP: tt.vip, SubnetEId: tt.subnet, Endpoints: tt.endpoints}
+			err := info.UpdateLoadBalancer(context.Background(), project, name)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("UpdateLoadBalancer() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			client := testhelper.NewFakeKubeOvnClientset()
-			config.KubeOvnClient = client
-			if _, err := client.KubeovnV1().SwitchLBRules().Create(context.Background(), existing, metav1.CreateOptions{}); err != nil {
-				t.Fatalf("failed to seed existing load balancer: %v", err)
+			if err != nil {
+				if tt.wantNotFound && !errors.IsNotFound(err) || !tt.wantNotFound && !errors.IsBadRequest(err) {
+					t.Errorf("unexpected error type: %v", err)
+				}
+				return
 			}
 
-			info := &UpdateLoadBalancerInfo{
-				VIP:       "198.18.0.1",
-				Endpoints: tt.endpoints,
+			rule, err := client.KubeovnV1().SwitchLBRules().Get(context.Background(), name, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("rule not found after update: %v", err)
 			}
-
-			err := info.UpdateLoadBalancer(context.Background(), namespace, name)
-			if tt.wantErr && err == nil {
-				t.Errorf("expected an error but got nil")
+			if rule.Spec.Vip != tt.vip {
+				t.Errorf("vip = %q, want %q", rule.Spec.Vip, tt.vip)
 			}
-			if !tt.wantErr && err != nil {
-				t.Errorf("expected no error but got: %v", err)
+			if got := rule.Annotations[logicalRouterAnnotation]; got != tt.wantVPC {
+				t.Errorf("logical_router = %q, want %q", got, tt.wantVPC)
+			}
+			if got := rule.Annotations[logicalSwitchAnnotation]; got != tt.subnet {
+				t.Errorf("logical_switch = %q, want %q", got, tt.subnet)
 			}
 		})
 	}

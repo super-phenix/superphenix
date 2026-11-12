@@ -122,6 +122,9 @@ func InitResourceInformers(ctx context.Context) {
 	for _, res := range resourceList {
 		logger.Info().Msgf("Starting informer %s", res.Resource)
 		informer := factory.ForResource(res).Informer()
+		if err := informer.AddIndexers(extraIndexers[res.Resource]); err != nil {
+			logger.Fatal().Err(err).Msgf("Failed to add the indexers of informer %s", res.Resource)
+		}
 		go informer.Run(wait.NeverStop)
 		WatcherSet[res.Resource] = Watcher{informer.GetIndexer()}
 	}

@@ -1,0 +1,33 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: lab-local-path-disks
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["cdi.kubevirt.io"]
+        apiVersions: ["*"]
+        operations: ["CREATE"]
+        resources: ["datavolumes"]
+  matchConditions:
+    - name: on-local-path
+      expression: >-
+        has(object.spec.storage) && has(object.spec.storage.storageClassName) &&
+        object.spec.storage.storageClassName == "local-path"
+  failurePolicy: Fail
+  reinvocationPolicy: Never
+  mutations:
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >
+          [
+            JSONPatch{op: "add", path: "/spec/storage/volumeMode", value: "Filesystem"},
+            JSONPatch{op: "add", path: "/spec/storage/accessModes", value: ["ReadWriteOnce"]}
+          ]
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: lab-local-path-disks
+spec:
+  policyName: lab-local-path-disks

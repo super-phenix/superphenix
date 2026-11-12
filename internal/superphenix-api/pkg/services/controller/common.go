@@ -12,6 +12,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/audit"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
+	"github.com/super-phenix/superphenix/pkg/utils/names"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
@@ -31,6 +32,10 @@ func WriteCreateResponse(w http.ResponseWriter, eid string) {
 
 func CreateIntoDb(ctx context.Context, productName, productType, azCode string, orgUuid, projectUuid uuid.UUID) (model.Product, spxId.Metadata, error) {
 	log := logger.GetLogger(ctx)
+
+	if productName == "" {
+		productName = names.Generate()
+	}
 
 	product, err := crud.Save(model.Product{
 		ProductName:   productName,
@@ -80,6 +85,15 @@ func CreateIntoDb(ctx context.Context, productName, productType, azCode string, 
 // pre-flight CheckProductBelongsToProject; this function defends in depth by
 // re-checking project / AZ on the found row.
 func UpdateIntoDb(ctx context.Context, productEid, productName, productType, azCode string, projectUuid uuid.UUID) (model.Product, error) {
+	product, err := FindForUpdate(ctx, productEid, productType, azCode, projectUuid)
+	if err != nil || product.ID == uuid.Nil {
+		return product, err
+	}
+	return RenameProduct(ctx, product, productName)
+}
+
+// FindForUpdate returns the product to update, or an empty product when it has no DB row.
+func FindForUpdate(ctx context.Context, productEid, productType, azCode string, projectUuid uuid.UUID) (model.Product, error) {
 	log := logger.GetLogger(ctx)
 
 	product, err := crud.FindByEId(productEid)
@@ -102,8 +116,17 @@ func UpdateIntoDb(ctx context.Context, productEid, productName, productType, azC
 		return model.Product{}, err
 	}
 
-	product.ProductName = productName
-	product, err = crud.Save(product)
+	return product, nil
+}
+
+// RenameProduct saves productName on product. An empty name keeps the stored one.
+func RenameProduct(ctx context.Context, product model.Product, productName string) (model.Product, error) {
+	log := logger.GetLogger(ctx)
+
+	if productName != "" {
+		product.ProductName = productName
+	}
+	product, err := crud.Save(product)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to save product in database")
 		return model.Product{}, err

@@ -99,7 +99,7 @@ apps:
       syncOptions:
         - SkipDryRunOnMissingResource=true
     repoURL: https://coredns.github.io/helm
-    targetRevision: "1.47.0"
+    targetRevision: "1.50.4"
     namespace: coredns-system
     helm:
       chart: coredns
@@ -342,7 +342,7 @@ apps:
       cleanupOnDeletion: false
       syncOptions: {}
     repoURL: https://helm.cilium.io/
-    targetRevision: "1.17.2"
+    targetRevision: "1.20.4"
     namespace: kube-system
     helm:
       chart: cilium
@@ -418,7 +418,7 @@ apps:
       syncOptions: {}
     namespace: "metrics-server-system"
     repoURL: "https://kubernetes-sigs.github.io/metrics-server/"
-    targetRevision: "3.13.1"
+    targetRevision: "3.14.0"
     helm:
       chart: "metrics-server"
       releaseName: "metrics-server"
@@ -448,7 +448,7 @@ apps:
       syncOptions: {}
     namespace: "cert-manager-system"
     repoURL: "https://charts.jetstack.io"
-    targetRevision: "1.21.1"
+    targetRevision: "1.21.3"
     helm:
       chart: "cert-manager"
       releaseName: "cert-manager"
@@ -477,8 +477,7 @@ apps:
               # Enable the HTTP-01 challenge provider
               solvers:
               - http01:
-                  ingress:
-                    class: traefik
+                  ingress: {}
         - |
           apiVersion: cert-manager.io/v1
           kind: ClusterIssuer
@@ -503,7 +502,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://prometheus-community.github.io/helm-charts"
-    targetRevision: "88.2.0"
+    targetRevision: "93.1.1"
     helm:
       chart: "kube-prometheus-stack"
       releaseName: "prometheus"
@@ -752,7 +751,8 @@ apps:
           virtualMachineInstancesPerNode: 100
 
           # Storageclass used to store TPM/EFI and more (VM backend storage)
-          vmStateStorageClass: default.spx-rbd-3x
+          # Picks the default storageclass if not set
+          # vmStateStorageClass: spx-storage.spx-rbd-3x
 
           # Defines how VMs are evicted from a node when it is drained.
           # We run live migrations of the VMs to prevent interruptions.
@@ -824,6 +824,8 @@ apps:
               - ExpandDisks
               - Snapshot
               - HotplugVolumes
+              - GPU	
+              - DisableMDEVConfiguration
               #- DeclarativeHotplugVolumes
 
         # Defines how we upgrade KubeVirt's controlplane and VMIs.
@@ -878,26 +880,31 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
-    targetRevision: "1.17.7"
+    # Keep in sync with the rook-local-cluster chart version below.
+    targetRevision: "1.18.11"
     helm:
       chart: "rook-ceph"
       releaseName: "rook-operator"
     values:
-      # Bind the operator to the IPv6 Superphenix storage network.
+      # Bind the operator to the network of the node.
       useOperatorHostNetwork: true
       enforceHostNetwork: true
 
       # Container Storage Interface configuration.
       csi:
+        # The Ceph-CSI driver is managed by the standalone ceph-csi-operator, which Rook
+        # deploys as a sub-chart and drives through the csi.ceph.io CRs. Rook translates the
+        # settings below into a `Driver` CR; from Rook 1.20 on they are deprecated and the
+        # CRs become the source of truth. We'll remove this when we reach that version.
+        rookUseCsiOperator: true
         # csi-addons enables volume replication and mirroring.
         csiAddons:
           enabled: true
         # Object Map generator required by RBD mirroring.
         enableOMAPGenerator: true
-        # Default port 9070 conflicts with the RBD provisioner when running on hostNetwork.
-        csiAddonsRBDProvisionerPort: 9071
         # CephFS driver is intentionally disabled, we only use RBD.
         enableCephfsDriver: false
+        enableCSIHostNetwork: true
         # Expose CSI metrics via a ServiceMonitor.
         serviceMonitor:
           enabled: true
@@ -905,12 +912,69 @@ apps:
       monitoring:
         enabled: true
 
-      # Auto-discover new disks so they appear in the Ceph dashboard.
-      enableDiscoveryDaemon: true
+      # Auto-discover new disks so they appear in the Ceph dashboard. Only relevant where Ceph
+      # actually owns local disks (Hyperconverged, DecoupledStorage); DecoupledWorkload clusters
+      # only consume an external cluster and have no local disks for Rook to scan.
+      enableDiscoveryDaemon: '{{- has (include "superphenix-system.effectiveMode" $) (list "Hyperconverged" "DecoupledStorage") | ternary "true" "false" -}}'
       discoveryDaemonInterval: 5m
 
       # Allow tenants to set additional options on ObjectBucketClaims (self-service quotas etc.).
       obcAllowAdditionalConfigFields: "maxObjects,maxSize,bucketMaxObjects,bucketMaxSize,bucketPolicy,bucketLifecycle"
+
+  # -- The Ceph CSI driver, used to consume Ceph storage.
+  # Do NOT enable this while `rook-operator` is still reconciling its own Driver/OperatorConfig
+  # CRs, or the two controllers will fight over the same objects.
+  # The driver name below is kept identical to what Rook generates today
+  # (`<operator-namespace>.rbd.csi.ceph.com`), so existing StorageClasses, the
+  # VolumeReplicationClass and PVs are unaffected if this is ever enabled in Rook's place.
+  #
+  # Known gaps versus `rook-operator.values.csi` (this chart has no equivalent setting):
+  #   - `csiAddonsRBDProvisionerPort: 9071`, our workaround for the host-network port clash.
+  #   - `serviceMonitor.enabled` (CSI metrics ServiceMonitor) has no counterpart here.
+  #   - `enableCSIHostNetwork`: the `Driver` CR only exposes `hostNetwork` on the
+  #     controller plugin (set below); the node plugin DaemonSets have no equivalent field
+  #     in this chart and always run on the pod network.
+  ceph-csi-drivers:
+    enabled: false
+    wave: "-4"
+    modes: [Hyperconverged, DecoupledStorage, DecoupledWorkload]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions: {}
+    namespace: "rook-system"
+    repoURL: "https://ceph.github.io/ceph-csi-operator"
+    targetRevision: "1.1.0"
+    helm:
+      chart: "ceph-csi-drivers"
+      releaseName: "ceph-csi-drivers"
+    values:
+      operatorConfig:
+        namespace: rook-system
+
+      drivers:
+        rbd:
+          enabled: true
+          name: "rook-system.rbd.csi.ceph.com"
+          imageSet:
+            name: rook-csi-operator-image-set-configmap
+          # csi-addons enables volume replication and mirroring.
+          deployCsiAddons: true
+          # Object Map generator required by RBD mirroring.
+          generateOMapInfo: true
+          nodePlugin:
+            priorityClassName: system-node-critical
+          controllerPlugin:
+            priorityClassName: system-cluster-critical
+            hostNetwork: true
+        cephfs:
+          enabled: false
+        nfs:
+          enabled: false
+        nvmeof:
+          enabled: false
 
   # -- Local Rook/Ceph cluster deployed on storage-capable clusters (hyperconverged or decoupled storage).
   rook-local-cluster:
@@ -927,7 +991,8 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://charts.rook.io/release"
-    targetRevision: "1.16.3"
+    # Keep in sync with the rook-operator chart version above.
+    targetRevision: "1.18.11"
     helm:
       chart: "rook-ceph-cluster"
       releaseName: "rook-local-cluster"
@@ -972,10 +1037,11 @@ apps:
           prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090"
           prometheusEndpointSSLVerify: false
 
-        mgr:
-          modules:
-            - name: rook
-              enabled: true
+        # Known bugs with the MGR and the Rook orchestrator
+        #mgr:
+        #  modules:
+        #   - name: rook
+        #      enabled: true
 
         storage:
           useAllDevices: true
@@ -1015,7 +1081,7 @@ apps:
           # on hyperconverged clusters (including the snapshots, replications...).
           # For storage clusters, we have a default basic storage class for system PVCs (Prometheus, Loki...)
           storageClass:
-            enabled: '{{- eq $.Values.cluster.deploymentTopology "DecoupledStorage" | ternary "true" "" -}}'
+            enabled: '{{- eq (include "superphenix-system.effectiveMode" $) "DecoupledStorage" | ternary "true" "" -}}'
             name: spx-storage.spx-rbd-3x
             isDefault: true
             reclaimPolicy: Delete
@@ -1060,8 +1126,8 @@ apps:
           - /data/mapping
     repoURL: "oci://ghcr.io/super-phenix/charts/spx-rook-connection"
     path: "."
-    # TODO: We can switch to using the same version as superphenix-system
-    targetRevision: "0.2.1"
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
     helm:
       chart: "spx-rook-connection"
       releaseName: "spx-rook-connection"
@@ -1148,7 +1214,8 @@ apps:
       syncOptions: {}
     namespace: "kube-system"
     repoURL: "oci://ghcr.io/super-phenix/charts/spx-policies"
-    targetRevision: "0.1.0"
+    # Will be overridden by the chart version to achieve version parity
+    targetRevision: ""
     helm:
       chart: "spx-policies"
       releaseName: "spx-policies"
@@ -1185,7 +1252,7 @@ apps:
     nsLabels:
       pod-security.kubernetes.io/enforce: privileged
     repoURL: "https://vmware-tanzu.github.io/helm-charts"
-    targetRevision: "12.0.0"
+    targetRevision: "12.2.4"
     helm:
       chart: velero
       releaseName: velero
@@ -1267,7 +1334,7 @@ apps:
   csi-addons:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledWorkload]
+    modes: [Hyperconverged, DecoupledWorkload, DecoupledStorage]
     automation:
       enabled: true
       selfHeal: true
@@ -1286,7 +1353,7 @@ apps:
   csi-snapshotter:
     enabled: true
     wave: "0"
-    modes: [Hyperconverged, DecoupledWorkload]
+    modes: [Hyperconverged, DecoupledWorkload, DecoupledStorage]
     automation:
       enabled: true
       selfHeal: true
@@ -1314,7 +1381,7 @@ apps:
       syncOptions: {}
     namespace: "snapscheduler-system"
     repoURL: "https://backube.github.io/helm-charts/"
-    targetRevision: "*"
+    targetRevision: "3.5.0"
     helm:
       chart: snapscheduler
       releaseName: "snapscheduler"
@@ -1343,6 +1410,7 @@ apps:
       syncOptions: {}
     namespace: "kaas-system"
     repoURL: "ghcr.io/super-phenix/charts"
+    # Will be overridden by the chart version to achieve version parity
     targetRevision: ""
     helm:
       chart: "kaas-controller"
@@ -1361,6 +1429,7 @@ apps:
       syncOptions: {}
     namespace: "kaas-datastore-system"
     repoURL: "ghcr.io/super-phenix/charts"
+    # Will be overridden by the chart version to achieve version parity
     targetRevision: ""
     helm:
       chart: "kaas-datastore"
@@ -1471,6 +1540,24 @@ apps:
       kubeRbacProxy:
         vpa:
           enabled: false
+
+  # -- CloudNative-PG: operator and CRDs backing the managed PostgreSQL product. Disabled by default.
+  cnpg:
+    enabled: false
+    wave: "5"
+    modes: [Hyperconverged, DecoupledWorkload]
+    automation:
+      enabled: true
+      selfHeal: true
+      prune: true
+      cleanupOnDeletion: false
+      syncOptions: {}
+    namespace: "cnpg-system"
+    repoURL: "https://cloudnative-pg.github.io/charts"
+    targetRevision: "0.29.1" # https://github.com/cloudnative-pg/charts/releases
+    helm:
+      chart: "cloudnative-pg"
+      releaseName: "cnpg"
 
   # -- TuneD: node-level performance-tuning daemon (Superphenix-specific profiles). Disabled by default.
   tuned:
@@ -1674,7 +1761,7 @@ apps:
     enabled: true
     modes: [Management]
     repoURL: "oci://ghcr.io/super-phenix/charts/superphenix-console"
-    targetRevision: "0.6.1"
+    targetRevision: "0.8.0"
     automation:
       enabled: true
       prune: true
@@ -1745,7 +1832,7 @@ apps:
           password: "{{ $.Values.apps.postgres.values.auth.password }}"
 
         swagger:
-          baseURL: '{{ (index $.Values.apps "superphenix-console").values.domain }}/api'
+          baseURL: '{{ (index $.Values.apps "superphenix-console").values.domain }}'
 
         argoCdUrl: "https://argocd.example.org"
         argoController:
@@ -1774,6 +1861,16 @@ apps:
             controllerUrl: 'http://superphenix-controller.{{ (index $.Values.apps "superphenix-controller").namespace }}.svc.cluster.local:8080'
             authSecret: "secret!"
             destination: "in-cluster"
+            # Optional, overrides defaultCloudInit for this AZ
+            # defaultCloudInit: |
+            #   #cloud-config
+
+        # Cloud-init of instances created without a custom one. The built-in
+        # value is used when unset; an AZ can override it under azs.<az>.
+        # These values go through Helm `tpl`, so escape any `{{ }}`: a Jinja
+        # `{{ v1.local_hostname }}` must be written {{`{{ v1.local_hostname }}`}}.
+        # defaultCloudInit: |
+        #   #cloud-config
 
         userSettings:
           userIsActiveOnCreate: true
@@ -2007,7 +2104,7 @@ apps:
     enabled: true
     modes: [Management]
     repoURL: "https://permify.github.io/helm-charts"
-    targetRevision: "0.3.*"
+    targetRevision: "0.3.9"
     automation:
       enabled: true
       prune: true

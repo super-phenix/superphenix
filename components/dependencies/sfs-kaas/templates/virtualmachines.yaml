@@ -43,6 +43,12 @@ spec:
         superphenix.net/resourceLocalID: {{ $preID | quote }}
         superphenix.net/resourceName: {{ $cluster.name | quote }}
     spec:
+      {{- if $template.ntpServers }}
+      ntp:
+        enabled: true
+        servers:
+          {{- $template.ntpServers | toYaml | nindent 10 }}
+      {{- end }}
       bootCommands:
         - ip link add api-proxy type dummy; ip addr add 10.96.0.1/32 dev api-proxy
       preKubeadmCommands:
@@ -60,6 +66,12 @@ spec:
             {
               "apiVersion": "kubelet.config.k8s.io/v1beta1",
               "kind": "KubeletConfiguration",
+              "systemReserved": {
+                "cpu": "50m",
+                "memory": "384Mi",
+                "ephemeral-storage": "256Mi",
+                "pid": "100"
+              },
               "serializeImagePulls": false,
               "maxParallelImagePulls": 3
             }
@@ -188,6 +200,10 @@ spec:
               architecture: amd64
               domain:
                 cpu:
+                  {{- if $template.gpus }}
+                  # Large GPUs need a CPU model close to the host's, or the guest can't use them
+                  model: host-model
+                  {{- end }}
                   sockets: 1
                   cores: {{ $template.cores | default 1 }}
                   threads: 1
@@ -212,6 +228,13 @@ spec:
                         bus: {{ . | quote }}
                         {{- end }}
                       errorPolicy: "report"
+                  {{- end }}
+                  {{- with $template.gpus }}
+                  gpus:
+                    {{- range $i, $gpu := . }}
+                    - deviceName: {{ (get $.Values.deviceMapping $gpu.device) | required (printf "Could not find deviceMapping for device `%s`" $gpu.device) }}
+                      name: gpu-{{ $i }}
+                    {{- end }}
                   {{- end }}
               volumes:
                 - name: boot-disk

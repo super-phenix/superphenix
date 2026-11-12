@@ -60,6 +60,8 @@ Every live organization picks the change up on the next API start.
 | OrganizationBillingRead       | View the organization's billing information                                                                       |
 | OrganizationBillingWrite      | Modify the organization's billing information                                                                     |
 | OrganizationProjectManagement | Manage the organization's projects (creation, renaming, and deletion)                                             |
+| OrganizationProjectQuotaRead  | View the organization quota and the quotas allocated to its projects                                              |
+| OrganizationProjectQuotaWrite | Modify quotas allocated to organization projects                                                                  |
 
 ### Project Permissions
 
@@ -91,6 +93,8 @@ Every live organization picks the change up on the next API start.
 | ProjectKaaSWrite         | Create, modify, and delete a KaaS cluster                                    |
 | ProjectBaaSRead          | View the list and details of the project's BaaS backups                      |
 | ProjectBaaSWrite         | Create, modify, and delete a BaaS backup                                     |
+| ProjectAZQuotaRead       | View the project quota and its availability zone quotas                      |
+| ProjectAZQuotaWrite      | Modify availability zone quotas for the project                              |
 | ProjectArgoCdRead        | View the list and details of the project's Argo CD applications              |
 
 ## PermissionSets by Right
@@ -104,6 +108,8 @@ Every live organization picks the change up on the next API start.
 | BillingFullAccess | `OrganizationBillingRead`, `OrganizationBillingWrite` |
 | BillingReadOnly   | `OrganizationBillingRead`                             |
 | ProjectManagement | `OrganizationProjectManagement`                       |
+| ProjectQuotaFullAccess | `OrganizationProjectQuotaRead`, `OrganizationProjectQuotaWrite`, `ProjectAZQuotaRead` (every project) |
+| ProjectQuotaReadOnly   | `OrganizationProjectQuotaRead`, `ProjectAZQuotaRead` (every project) |
 | SettingsEdition   | `OrganizationWrite`                                   |
 
 ### Project PermissionSets
@@ -134,6 +140,8 @@ Every live organization picks the change up on the next API start.
 | ProjectKaaSReadOnly           | `ProjectKaaSRead`                                                                                  |
 | ProjectBaaSFullAccess         | `ProjectBaaSRead`, `ProjectBaaSWrite`                                                              |
 | ProjectBaaSReadOnly           | `ProjectBaaSRead`                                                                                  |
+| ProjectAZQuotaFullAccess      | `ProjectAZQuotaRead`, `ProjectAZQuotaWrite`                                                        |
+| ProjectAZQuotaReadOnly        | `ProjectAZQuotaRead`                                                                               |
 | ProjectArgoCdAccess           | `ProjectArgoCdRead`                                                                                |
 
 ### Internal PermissionSets

@@ -32,11 +32,25 @@ gitops: false
 # @section -- Organization parameters
 storageClassMapping: {}
 
+# -- Mapping between user-friendly names of devices and their real names.
+# The mapping is specified for the current AZ, meaning that each AZ can have a different mapping.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+deviceMapping: {}
+
 # -- BGP speaker configuration for this AZ.
 # The value is passed as an escape JSON and must be decoded in the template
 # This parameter cannot be overriden by the user.
 # @section -- Organization parameters
 bgpSpeaker: ""
+
+# -- Optional ResourceQuota of the project namespace: every entry is rendered as is in `spec.hard`.
+# @section -- Quotas
+quota: {}
+  # requests.cpu: "16"
+  # limits.memory: "64Gi"
+  # pods: "50"
+  # count/virtualmachines.kubevirt.io: "20"
 
 # @section -- Global overrides
 global:
@@ -368,6 +382,9 @@ vms:
 #        threads: 1
 #      memory:
 #        guest: 2Gi
+#      # -- VMs with GPUs get the host-model CPU model.
+#      gpus:
+#      - device: ""
 #    # -- Mouse & keyboard control
 #    controls:
 #      # -- Enabled by default if omitted
@@ -497,9 +514,17 @@ loadbalancers:
 #    # @section -- Load balancers
 #    location: ""
 #    # -- Virtual IP of the load balancer
-#    # Must be in range 198.18.0.0/16 and not conflict with another LB
+#    # Must be in range 198.18.0.0/16 and not conflict with another LB of the VPC
 #    # @section -- Load balancers
 #    vip: "198.18.1.1"
+#    # -- Subnet the load balancer attaches to, must be equal to the name of a key in the `subnets` dictionary
+#    # or of a subnet of the project. Required. Backends (endpoints and selected VMs) must be in that subnet,
+#    # the VIP is reachable from every subnet of its VPC
+#    # @section -- Load balancers
+#    subnet: "default-subnet"
+#    # -- VPC of the subnet, only required when the subnet is not declared in `subnets`
+#    # @section -- Load balancers
+#    vpc: ""
 #    # -- Label selector to target a set of VMs, mutually exclusive with `.endpoints`
 #    # @section -- Load balancers
 #    selector:

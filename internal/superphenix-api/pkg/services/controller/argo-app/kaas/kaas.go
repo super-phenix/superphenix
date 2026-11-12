@@ -12,6 +12,7 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo"
 	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 	logger "github.com/super-phenix/superphenix/pkg/utils/log"
+	"github.com/super-phenix/superphenix/pkg/utils/validation"
 
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 
@@ -20,9 +21,10 @@ import (
 
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
-var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9-]*$")
+var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?$")
 
 // azDomainValues returns the configured azDomains map, or nil when empty.
 func azDomainValues(cfg map[string]any) map[string]any {
@@ -30,6 +32,24 @@ func azDomainValues(cfg map[string]any) map[string]any {
 		return nil
 	}
 	return cfg
+}
+
+// essentialsRevision keeps the old revision and increments it when the essentials job must rerun:
+// changed essentials values, renamed cluster, or a requested revision above the old one.
+func essentialsRevision(spec EssentialsSpec, oldSpec *KaaSSpec) int {
+	if oldSpec == nil {
+		return 1
+	}
+	old := oldSpec.KaasEssentials
+	revision := max(old.Revision, 1)
+	if spec.CorednsValues != old.CorednsValues ||
+		spec.CiliumValues != old.CiliumValues ||
+		spec.MetricsServerValues != old.MetricsServerValues ||
+		spec.ClusterFriendlyName != old.ClusterFriendlyName ||
+		spec.Revision > old.Revision {
+		revision++
+	}
+	return revision
 }
 
 // CreateKaaSAppValues generates the Helm values YAML for a KaaS application.
@@ -62,15 +82,23 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 
 	instances := make(map[string]Instance)
 	for _, group := range spec.Groups {
-		if !nodeGroupNameRegex.MatchString(group.Name) {
-			log.Error().Any("spec", spec).Msgf("The name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
-			return "", nil, fmt.Errorf("the name '%s' does not meet the criteria : %s", group.Name, nodeGroupNameRegex.String())
+		if err := validateNodeGroupName(group.Name); err != nil {
+			log.Error().Any("spec", spec).Err(err).Msg("Invalid node group name")
+			return "", nil, err
 		}
 
 		if group.Replicas < minReplicas || group.Replicas > maxReplicas {
 			log.Error().Any("spec", spec).Msgf("Replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
 			return "", nil, fmt.Errorf("replicas count value (%d) must be between %d and %d for group '%s'", group.Replicas, minReplicas, maxReplicas, group.Name)
 		}
+
+		// Canonical memory, so the comparison with oldSpec below ignores how the size is written.
+		memory, err := validation.ValidateComputeSize(group.Cpu, group.Memory)
+		if err != nil {
+			log.Error().Err(err).Any("group", group).Msg("Invalid node group compute size")
+			return "", nil, err
+		}
+		group.Memory = memory.String()
 
 		// Groups have a version starting at 1. When updating, each group is matched by name
 		// against oldSpec: if unchanged the version is kept, otherwise it is incremented.
@@ -99,7 +127,7 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			interfaces = append(interfaces, Interface{Subnet: subnet.Id})
 		}
 
-		err := parseNodeGroup(instances, group, interfaces)
+		err = parseNodeGroup(instances, group, interfaces)
 		if err != nil {
 			log.Error().Err(err).
 				Str("localId", localId).
@@ -128,19 +156,11 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		}
 	}
 
-	revision := 1
 	essentialsValues := EssentialsValues{}
 
 	if spec.KaasEssentials.CorednsValues != "" ||
 		spec.KaasEssentials.CiliumValues != "" ||
 		spec.KaasEssentials.MetricsServerValues != "" {
-
-		if oldSpec != nil &&
-			(spec.KaasEssentials.CorednsValues != oldSpec.KaasEssentials.CorednsValues ||
-				spec.KaasEssentials.CiliumValues != oldSpec.KaasEssentials.CiliumValues ||
-				spec.KaasEssentials.MetricsServerValues != oldSpec.KaasEssentials.MetricsServerValues) {
-			revision = oldSpec.KaasEssentials.Revision + 1
-		}
 
 		var corednsInterface interface{}
 		if spec.KaasEssentials.CorednsValues != "" {
@@ -170,19 +190,14 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			Cilium:        ciliumInterface,
 			MetricsServer: metricsServerInterface,
 		}
-
-	} else if oldSpec != nil && (oldSpec.KaasEssentials.CorednsValues != "" ||
-		oldSpec.KaasEssentials.CiliumValues != "" ||
-		oldSpec.KaasEssentials.MetricsServerValues != "") {
-		// If essentialsValues has been reset, update the revision version
-		revision = oldSpec.KaasEssentials.Revision + 1
 	}
 
 	kaasEsssentials := Essentials{
-		Revision:        revision,
-		StorageClasses:  storageClasses,
-		SnapshotClasses: storageClasses, // StorageClass always match with SnapshotClass
-		Values:          essentialsValues,
+		ClusterFriendlyName: spec.KaasEssentials.ClusterFriendlyName,
+		Revision:            essentialsRevision(spec.KaasEssentials, oldSpec),
+		StorageClasses:      storageClasses,
+		SnapshotClasses:     storageClasses, // StorageClass always match with SnapshotClass
+		Values:              essentialsValues,
 	}
 
 	// Post Install Chart Validation
@@ -251,6 +266,11 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		storage := spec.ControlPlane.DataStore.Storage
 		if storage <= 0 {
 			storage = defaultDataStoreStorageGi
+		}
+
+		if storage > maxStorageGiB {
+			log.Error().Int("storage", storage).Msg("Disaster recovery storage too large")
+			return "", nil, fmt.Errorf("disaster recovery storage (%dGi) must not exceed %dGi", storage, maxStorageGiB)
 		}
 
 		// PVC-backed storage cannot be shrunk.
@@ -326,7 +346,7 @@ func CreateArgoApp(
 	values, gtr, err := CreateKaaSAppValues(ctx, localId, az.Code, spec, kaasConfig, oldSpec)
 	if err != nil {
 		log.Err(err).Msg("Failed to create app values")
-		return argo.CreateAppInfo{}, nil, fmt.Errorf("failed to create app values")
+		return argo.CreateAppInfo{}, nil, fmt.Errorf("failed to create app values: %w", err)
 	}
 
 	var helmParams strings.Builder
@@ -371,29 +391,27 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 		return fmt.Errorf("version must be equals or greater than 0")
 	}
 
-	if !slices.Contains(MemoryValueList, group.Memory) {
-		return fmt.Errorf("no such memory: %d", group.Memory)
+	if group.BootDiskSize < 1 || group.BootDiskSize > maxStorageGiB {
+		return fmt.Errorf("boot disk size (%d GiB) must be between 1 and %d GiB", group.BootDiskSize, maxStorageGiB)
 	}
-	if !slices.Contains(CpuValueList, group.Cpu) {
-		return fmt.Errorf("no such cpu value: %d", group.Cpu)
+	if err := validateNodeRole(group.NodeRole); err != nil {
+		return err
+	}
+	if _, exists := instances[group.Name]; exists {
+		return &NodeGroupNameError{Name: group.Name, Reason: "duplicate node group name"}
 	}
 
-	minStorageSize := resource.MustParse(fmt.Sprintf(quantityFormat, 1))
 	storage := resource.MustParse(fmt.Sprintf(quantityFormat, group.BootDiskSize))
-	memory := resource.MustParse(fmt.Sprintf(quantityFormat, group.Memory))
-
-	if storage.Cmp(minStorageSize) < 0 {
-		return fmt.Errorf("storage size is incorrect, minStorageSize: %s", minStorageSize.String())
-	}
 
 	instances[group.Name] = Instance{
 		Deployment: Deployment{
 			Replicas: group.Replicas,
+			NodeRole: group.NodeRole,
 		},
 		Template: Template{
 			Version:    group.Version,
 			Cores:      group.Cpu,
-			Memory:     memory.String(),
+			Memory:     group.Memory,
 			Interfaces: interfaces,
 			BootDisk: BootDisk{
 				Storage:          storage.String(),
@@ -404,7 +422,54 @@ func parseNodeGroup(instances map[string]Instance, group Group, interfaces []Int
 	return nil
 }
 
-// isSameGroup compares two Groups ignoring Replicas and Version.
+// validateNodeRole checks a node role is valid as both the node-role label name and value. Empty is valid.
+func validateNodeRole(role string) error {
+	if role == "" {
+		return nil
+	}
+	errs := k8svalidation.IsQualifiedName(nodeRoleLabelPrefix + role)
+	errs = append(errs, k8svalidation.IsValidLabelValue(role)...)
+	if len(errs) > 0 {
+		return &NodeRoleError{Role: role, Reasons: errs}
+	}
+	return nil
+}
+
+// NodeRoleError is a node role rejected by validateNodeRole.
+type NodeRoleError struct {
+	Role    string
+	Reasons []string
+}
+
+func (e *NodeRoleError) Error() string {
+	return fmt.Sprintf("invalid node role %q: %s", e.Role, strings.Join(e.Reasons, ", "))
+}
+
+// validateNodeGroupName checks a node group name, also used as the pool name and the default node role.
+func validateNodeGroupName(name string) error {
+	if len(name) > maxNodeGroupNameLength {
+		return &NodeGroupNameError{Name: name, Reason: fmt.Sprintf("must be at most %d characters", maxNodeGroupNameLength)}
+	}
+	if !nodeGroupNameRegex.MatchString(name) {
+		return &NodeGroupNameError{
+			Name:   name,
+			Reason: "must contain only letters, digits and '-', and start and end with a letter or digit",
+		}
+	}
+	return nil
+}
+
+// NodeGroupNameError is a node group name rejected by the API.
+type NodeGroupNameError struct {
+	Name   string
+	Reason string
+}
+
+func (e *NodeGroupNameError) Error() string {
+	return fmt.Sprintf("invalid node group name %q: %s", e.Name, e.Reason)
+}
+
+// isSameGroup compares two Groups ignoring Replicas, Version and NodeRole.
 func isSameGroup(g1, g2 Group) bool {
 	if g1.Cpu != g2.Cpu ||
 		g1.Memory != g2.Memory ||

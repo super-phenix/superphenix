@@ -8,6 +8,9 @@ cluster:
   name: ""
   kubeVersion: ""
   controlplaneUrl: ""
+  organizationID: ""
+  projectID: ""
+  location: ""
 
 controlPlane:
   fqdn: ""

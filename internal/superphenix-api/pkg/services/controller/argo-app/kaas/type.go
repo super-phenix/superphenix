@@ -37,9 +37,10 @@ type DataStoreSpec struct {
 
 type Group struct {
 	Name         string        `json:"name" validate:"max=63"`
+	NodeRole     string        `json:"nodeRole,omitempty"`
 	Replicas     int           `json:"replicas"`
 	Cpu          int           `json:"cpu"`
-	Memory       int           `json:"memory"`
+	Memory       string        `json:"memory"`
 	BootDiskSize int           `json:"bootDiskSize"`
 	StorageClass string        `json:"storageClass"`
 	Subnets      []GroupSubnet `json:"subnets"`
@@ -60,6 +61,8 @@ type EssentialsSpec struct {
 	CorednsValues       string `json:"corednsValues,omitempty"`
 	CiliumValues        string `json:"ciliumValues,omitempty"`
 	MetricsServerValues string `json:"metricsServerValues,omitempty"`
+	// ClusterFriendlyName is the product name, set by the handlers.
+	ClusterFriendlyName string `json:"-"`
 }
 
 type GroupSubnet struct {
@@ -148,11 +151,12 @@ type BootDisk struct {
 }
 
 type Essentials struct {
-	ChartVersion    string                  `yaml:"chartVersion,omitempty"`
-	Revision        int                     `yaml:"revision"`
-	StorageClasses  map[string]StorageClass `yaml:"storageClasses,omitempty"`
-	SnapshotClasses map[string]StorageClass `yaml:"snapshotClasses,omitempty"`
-	Values          EssentialsValues        `yaml:"values,omitempty"`
+	ChartVersion        string                  `yaml:"chartVersion,omitempty"`
+	ClusterFriendlyName string                  `yaml:"clusterFriendlyName,omitempty"`
+	Revision            int                     `yaml:"revision"`
+	StorageClasses      map[string]StorageClass `yaml:"storageClasses,omitempty"`
+	SnapshotClasses     map[string]StorageClass `yaml:"snapshotClasses,omitempty"`
+	Values              EssentialsValues        `yaml:"values,omitempty"`
 }
 
 type PostInstallChart struct {
