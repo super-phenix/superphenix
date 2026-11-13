@@ -109,7 +109,7 @@ databases: {}
   #   # @section -- Database
   #   cpu: "1"
 
-  #   # -- Memory for each instance
+  #   # -- Memory for each instance, in Mi, Gi or Ti
   #   # @section -- Database
   #   memory: 2Gi
 
