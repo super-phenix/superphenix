@@ -8,6 +8,8 @@
 {{- $lbLocalID := printf "lb.%s" $localID }}
 {{- $lbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $lbLocalID) }}
 {{- $vip := required "Must provide a VIP for the load balancer" ($db.loadBalancer).vip }}
+{{- $subnetID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
+{{- $vpcID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required (printf "Database %s must set vpc" $localID) $db.vpc)) }}
 
 ---
 apiVersion: kubeovn.io/v1
@@ -20,6 +22,10 @@ metadata:
     superphenix.net/resourceLocalID: {{ $lbLocalID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}
     superphenix.net/generated: "true"
+  annotations:
+    # Pins the rule to the subnet and its VPC, backends must be in the subnet
+    ovn.kubernetes.io/logical_router: {{ $vpcID | quote }}
+    ovn.kubernetes.io/logical_switch: {{ $subnetID | quote }}
 spec:
   # Only target endpoints in the project's namespace
   namespace: {{ $.Release.Namespace | quote }}
