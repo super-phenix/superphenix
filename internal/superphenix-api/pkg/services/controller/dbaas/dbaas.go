@@ -611,7 +611,7 @@ func checkVIP(w http.ResponseWriter, r *http.Request, azDb config.AZConfig, orgI
 	return true
 }
 
-// resolveSubnet reads the local ID and the CIDR of a subnet from the AZ controller.
+// resolveSubnet reads the local ID, the CIDR and the VPC local ID of a subnet from the AZ controller.
 func resolveSubnet(ctx context.Context, azDb config.AZConfig, orgId, projectId, subnetEId string) (argodbaas.Subnet, error) {
 	if subnetEId == "" {
 		return argodbaas.Subnet{}, fmt.Errorf("subnet is required")
@@ -622,6 +622,7 @@ func resolveSubnet(ctx context.Context, azDb config.AZConfig, orgId, projectId, 
 		Subnet struct {
 			Spec struct {
 				CIDRBlock string `json:"cidrBlock"`
+				Vpc       string `json:"vpc"`
 			} `json:"spec"`
 		} `json:"subnet"`
 	}
@@ -629,11 +630,22 @@ func resolveSubnet(ctx context.Context, azDb config.AZConfig, orgId, projectId, 
 	if err := ctrlutils.GetFromAZ(ctx, azDb, url, &res); err != nil {
 		return argodbaas.Subnet{}, err
 	}
-	if res.ID == "" || res.Subnet.Spec.CIDRBlock == "" {
-		return argodbaas.Subnet{}, fmt.Errorf("subnet %s has no local ID or CIDR", subnetEId)
+	if res.ID == "" || res.Subnet.Spec.CIDRBlock == "" || res.Subnet.Spec.Vpc == "" {
+		return argodbaas.Subnet{}, fmt.Errorf("subnet %s has no local ID, CIDR or VPC", subnetEId)
 	}
 
-	return argodbaas.Subnet{LocalID: res.ID, CIDR: res.Subnet.Spec.CIDRBlock}, nil
+	var vpc struct {
+		ID string `json:"id"`
+	}
+	url = fmt.Sprintf("%s/%s/%s/vpc/%s", azDb.ControllerUrl, orgId, projectId, res.Subnet.Spec.Vpc)
+	if err := ctrlutils.GetFromAZ(ctx, azDb, url, &vpc); err != nil {
+		return argodbaas.Subnet{}, err
+	}
+	if vpc.ID == "" {
+		return argodbaas.Subnet{}, fmt.Errorf("vpc %s has no local ID", res.Subnet.Spec.Vpc)
+	}
+
+	return argodbaas.Subnet{LocalID: res.ID, VPC: vpc.ID, CIDR: res.Subnet.Spec.CIDRBlock}, nil
 }
 
 // combineListResult regroups the results of the AZ controllers and the database.

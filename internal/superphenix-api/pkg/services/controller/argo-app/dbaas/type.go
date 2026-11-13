@@ -29,6 +29,8 @@ type DBaaSSpec struct {
 // Subnet is the subnet the proxies of a database attach to.
 type Subnet struct {
 	LocalID string
+	// VPC is the local ID of the subnet's VPC.
+	VPC string
 	// CIDR is comma-separated when dual stack.
 	CIDR string
 }
@@ -47,6 +49,7 @@ type Database struct {
 	Storage          string       `yaml:"storage"`
 	StorageClassName string       `yaml:"storageClassName"`
 	Subnet           string       `yaml:"subnet"`
+	VPC              string       `yaml:"vpc"`
 	SubnetCIDR       string       `yaml:"subnetCIDR"`
 	LoadBalancer     LoadBalancer `yaml:"loadBalancer"`
 	ExternalAccess   bool         `yaml:"externalAccess,omitempty"`
