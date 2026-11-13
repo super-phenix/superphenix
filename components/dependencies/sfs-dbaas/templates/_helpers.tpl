@@ -72,17 +72,20 @@ instance, and r
 {{- end }}
 
 {{/*
-Memory of an instance in MiB, from a Gi or Mi quantity
+Memory of an instance in MiB, from a Mi, Gi or Ti quantity
 */}}
 {{- define "sfs-dbaas.memoryMi" -}}
 {{- $memory := toString . }}
-{{- if hasSuffix "Gi" $memory }}
-{{- mul (trimSuffix "Gi" $memory | int) 1024 }}
-{{- else if hasSuffix "Mi" $memory }}
-{{- trimSuffix "Mi" $memory | int }}
-{{- else }}
-{{- fail (printf "Database memory %s must be in Gi or Mi" $memory) }}
+{{- $factors := dict "Mi" 1 "Gi" 1024 "Ti" 1048576 }}
+{{- if not (regexMatch "^[0-9]+(\\.[0-9]+)?(Mi|Gi|Ti)$" $memory) }}
+{{- fail (printf "Database memory %s must be a quantity in Mi, Gi or Ti" $memory) }}
 {{- end }}
+{{- $unit := regexFind "(Mi|Gi|Ti)$" $memory }}
+{{- $mi := mulf (trimSuffix $unit $memory | float64) (get $factors $unit) | floor | int }}
+{{- if lt $mi 4 }}
+{{- fail (printf "Database memory %s must be at least 4Mi" $memory) }}
+{{- end }}
+{{- $mi }}
 {{- end }}
 
 {{/*
