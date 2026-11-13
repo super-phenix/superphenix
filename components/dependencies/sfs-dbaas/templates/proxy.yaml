@@ -1,0 +1,133 @@
+{{- range $localID, $db := .Values.databases }}
+{{- if eq $db.location $.Values.location }}
+
+{{- $projectID := $.Values.projectID -}}
+{{- $defaults := $.Values.databaseDefaults -}}
+{{- $proxy := $defaults.proxy -}}
+{{- $apiNetwork := $proxy.apiNetwork -}}
+{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
+{{- $subnetID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
+{{- $proxyLocalID := printf "proxy.%s" $localID }}
+{{- $proxyID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $proxyLocalID) }}
+{{- $apiProvider := printf "%s.%s.ovn" $apiNetwork.name $apiNetwork.namespace }}
+
+{{- $config := include "sfs-dbaas.proxyConfig" (dict "root" $ "dbID" $dbID "roles" $roles "maxConnections" ($db.maxConnections | default 100)) }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $proxyID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $proxyID | quote }}
+    superphenix.net/resourceLocalID: {{ $proxyLocalID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+    superphenix.net/generated: "true"
+data:
+  haproxy.cfg: |
+    {{- $config | nindent 4 }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $proxyID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $proxyID | quote }}
+    superphenix.net/resourceLocalID: {{ $proxyLocalID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+    superphenix.net/generated: "true"
+spec:
+  replicas: {{ $proxy.replicas }}
+  selector:
+    matchLabels:
+      superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+      superphenix.net/workloadClass: dbaas-proxy
+  template:
+    metadata:
+      labels:
+        # No selector labels, every database of the release shares them
+        {{- include "sfs-dbaas.spxLabels" $ | nindent 8 }}
+        superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+        superphenix.net/resourceLocalID: {{ $localID | quote }}
+        superphenix.net/resourceName: {{ $db.name | quote }}
+        superphenix.net/workloadClass: dbaas-proxy
+        superphenix.net/generated: "true"
+      annotations:
+        checksum/config: {{ $config | sha256sum }}
+        # Primary interface on the customer subnet, targeted by the load balancer
+        v1.multus-cni.io/default-network: {{ printf "%s/%s" $.Release.Namespace $subnetID | quote }}
+        # Secondary interface reaching the cluster services
+        k8s.v1.cni.cncf.io/networks: {{ printf "%s/%s" $apiNetwork.namespace $apiNetwork.name | quote }}
+        {{ printf "%s.kubernetes.io/routes" $apiProvider }}: {{ toJson $apiNetwork.routes | quote }}
+    spec:
+      securityContext:
+        # haproxy user of the image
+        runAsNonRoot: true
+        runAsUser: 99
+        runAsGroup: 99
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+                  superphenix.net/workloadClass: dbaas-proxy
+      containers:
+      - name: haproxy
+        image: {{ $proxy.image | quote }}
+        ports:
+        {{- range $role := $roles }}
+        - name: {{ printf "pg-%s" $role }}
+          containerPort: {{ get $proxy.ports $role }}
+          protocol: TCP
+        {{- end }}
+        # No probes: kubelet can't reach pods in a custom VPC without Kube-OVN tproxy
+        resources:
+          {{- toYaml $proxy.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: config
+          mountPath: /usr/local/etc/haproxy/haproxy.cfg
+          subPath: haproxy.cfg
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: {{ $proxyID | quote }}
+
+{{- if gt (int $proxy.replicas) 1 }}
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $proxyID | quote }}
+  labels:
+    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    superphenix.net/resourceEffectiveID: {{ $proxyID | quote }}
+    superphenix.net/resourceLocalID: {{ $proxyLocalID | quote }}
+    superphenix.net/resourceName: {{ $db.name | quote }}
+    superphenix.net/generated: "true"
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
+      superphenix.net/workloadClass: dbaas-proxy
+{{- end }}
+
+{{- end }}
+{{- end }}

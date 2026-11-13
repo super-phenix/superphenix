@@ -61,6 +61,8 @@ const (
 
 	ProjectAZQuotaFullAccess = "ProjectAZQuotaFullAccess"
 	ProjectAZQuotaReadOnly   = "ProjectAZQuotaReadOnly"
+	ProjectDBaaSFullAccess   = "ProjectDBaaSFullAccess"
+	ProjectDBaaSReadOnly     = "ProjectDBaaSReadOnly"
 
 	ProjectArgoCdAccess = "ProjectArgoCdAccess"
 )
@@ -121,6 +123,8 @@ var PermissionSetsEntityMap = map[string]string{
 
 	ProjectAZQuotaFullAccess: entity.Project,
 	ProjectAZQuotaReadOnly:   entity.Project,
+	ProjectDBaaSFullAccess:   entity.Project,
+	ProjectDBaaSReadOnly:     entity.Project,
 
 	ProjectArgoCdAccess: entity.Project,
 }

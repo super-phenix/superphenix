@@ -1,7 +1,8 @@
 package argoApp
 
 const (
-	KindKaaS = "kaas"
-	KindBaaS = "baas"
-	KindIaaS = "iaas"
+	KindKaaS  = "kaas"
+	KindBaaS  = "baas"
+	KindIaaS  = "iaas"
+	KindDBaaS = "dbaas"
 )

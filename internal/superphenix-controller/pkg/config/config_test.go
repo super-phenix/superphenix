@@ -35,15 +35,16 @@ func TestConfigCaseSensitiveKeys(t *testing.T) {
 		"v1.multus-cni.io/default-network":   "kube-system/system-isolated-egress",
 		"cdi.kubevirt.io/allowClaimAdoption": "true",
 	}
-	defaultLabels := map[string]string{
-		"app.kubernetes.io/name": "sfs-kaas",
+	defaultLabels := KeyValueList{
+		{Key: "app.kubernetes.io/name", Value: "sfs-kaas"},
+		{Key: "app.kubernetes.io/name", Value: "sfs-dbaas"},
 	}
 
 	tests := []struct {
 		name            string
 		raw             string
 		wantAnnotations map[string]string
-		wantLabels      map[string]string
+		wantLabels      KeyValueList
 		wantMtu         int
 		wantMtuAuto     bool
 	}{
@@ -75,7 +76,7 @@ disableEditionForResourcesByLabels:
     value: "operator"
 `,
 			wantAnnotations: defaultAnnotations,
-			wantLabels:      map[string]string{"superphenix.net/managedBy": "operator"},
+			wantLabels:      KeyValueList{{Key: "superphenix.net/managedBy", Value: "operator"}},
 			wantMtuAuto:     true,
 		},
 		{
@@ -115,7 +116,7 @@ productsConfig:
 			if got := Global.ProductsConfig.Datavolume.DefaultAnnotations.Map(); !maps.Equal(got, tt.wantAnnotations) {
 				t.Errorf("datavolume annotations = %v, want %v", got, tt.wantAnnotations)
 			}
-			if got := Global.DisableEditionForResourcesByLabels.Map(); !maps.Equal(got, tt.wantLabels) {
+			if got := Global.DisableEditionForResourcesByLabels; !reflect.DeepEqual(got, tt.wantLabels) {
 				t.Errorf("disableEditionForResourcesByLabels = %v, want %v", got, tt.wantLabels)
 			}
 		})

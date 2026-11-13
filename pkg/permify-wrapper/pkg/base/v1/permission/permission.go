@@ -59,6 +59,8 @@ const (
 
 	ProjectAZQuotaRead  = "ProjectAZQuotaRead"
 	ProjectAZQuotaWrite = "ProjectAZQuotaWrite"
+	ProjectDBaaSRead    = "ProjectDBaaSRead"
+	ProjectDBaaSWrite   = "ProjectDBaaSWrite"
 
 	ProjectArgoCdRead = "ProjectArgoCdRead"
 )
@@ -116,6 +118,8 @@ var PermissionsEntityMap = map[string]string{
 
 	ProjectAZQuotaRead:  entity.Project,
 	ProjectAZQuotaWrite: entity.Project,
+	ProjectDBaaSRead:    entity.Project,
+	ProjectDBaaSWrite:   entity.Project,
 
 	ProjectArgoCdRead: entity.Project,
 }
