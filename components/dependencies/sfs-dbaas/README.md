@@ -23,7 +23,7 @@ Each resource lives in one AZ (*availability zone*), identified by a unique code
 
 ### Network access
 
-Instances run on the system network. Clients on the subnet set in `.subnet` reach them through HAProxy pods attached to that subnet, behind the virtual IP `.loadBalancer.vip` from `198.18.0.0/16`.
+Instances run on the system network. Clients on the subnet set in `.subnet` reach them through HAProxy pods attached to that subnet, behind the virtual IP `.loadBalancer.vip` from `198.18.0.0/16`. The load balancer is pinned to `.subnet` and its VPC `.vpc`.
 
 Port 5432 reaches the primary instance, including after a failover, 5433 the replicas (with more than one instance) and 5434 any instance. The chart disables the CloudNative-PG services it doesn't expose.
 

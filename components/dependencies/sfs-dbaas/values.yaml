@@ -131,6 +131,11 @@ databases: {}
   #   # @section -- Database
   #   subnet: ""
 
+  #   # -- VPC of the subnet, the load balancer is pinned to it
+  #   # References VPCs defined in /vpcs/values.yaml
+  #   # @section -- Database
+  #   vpc: ""
+
   #   # -- CIDR block of the subnet, comma-separated when dual stack
   #   # The proxies reply to the load balancer health checks in this range
   #   # @section -- Database
