@@ -173,7 +173,7 @@ func CheckProductBelongsToProject(w http.ResponseWriter, r *http.Request, projec
 		httpError.Http(w, r, http.StatusInternalServerError).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
 		return false
 	}
-	if dbProduct.ProjectId != projectUuid {
+	if dbProduct.ProjectId != projectUuid || dbProduct.CodeAZ != azCode {
 		log.Warn().Str("effectiveId", productEId).Str("projectId", projectUuid.String()).Str("az", azCode).Msg("Cross-tenant resource access denied")
 		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
 		return false
