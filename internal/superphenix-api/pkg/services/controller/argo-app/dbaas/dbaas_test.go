@@ -36,7 +36,7 @@ func validSpec() DBaaSSpec {
 
 func TestCreateAppValues(t *testing.T) {
 	setPostgresVersions(t, "17.6", "17.7", "18.1")
-	subnet := Subnet{LocalID: "subnet-local", CIDR: "10.10.0.0/24"}
+	subnet := Subnet{LocalID: "subnet-local", VPC: "vpc-local", CIDR: "10.10.0.0/24"}
 	old := validSpec()
 
 	tests := []struct {
@@ -58,6 +58,7 @@ func TestCreateAppValues(t *testing.T) {
 				"storage: 20Gi",
 				"storageClassName: standard",
 				"subnet: subnet-local",
+				"vpc: vpc-local",
 				"subnetCIDR: 10.10.0.0/24",
 				"vip: 198.18.1.10",
 				"location: az1",

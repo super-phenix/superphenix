@@ -45,6 +45,7 @@ func CreateAppValues(ctx context.Context, localId, location string, spec DBaaSSp
 				Storage:          fmt.Sprintf(quantityFormat, spec.Storage),
 				StorageClassName: spec.StorageClass,
 				Subnet:           subnet.LocalID,
+				VPC:              subnet.VPC,
 				SubnetCIDR:       subnet.CIDR,
 				LoadBalancer:     LoadBalancer{VIP: spec.VIP},
 				ExternalAccess:   spec.ExternalAccess,

@@ -57,7 +57,7 @@ func ConvertAppToDBaaSSpec(app view.AppView, projectId string) (DBaaSSpec, Subne
 
 			ExternalAccess: db.ExternalAccess,
 		}
-		return spec, Subnet{LocalID: db.Subnet, CIDR: db.SubnetCIDR}, nil // a single database per Application
+		return spec, Subnet{LocalID: db.Subnet, VPC: db.VPC, CIDR: db.SubnetCIDR}, nil // a single database per Application
 	}
 
 	return DBaaSSpec{}, Subnet{}, fmt.Errorf("no database in app values")

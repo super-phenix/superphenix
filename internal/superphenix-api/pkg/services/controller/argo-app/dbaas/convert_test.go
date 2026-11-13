@@ -9,7 +9,7 @@ import (
 
 func TestConvertAppToDBaaSSpec(t *testing.T) {
 	setPostgresVersions(t, "17.6")
-	subnet := Subnet{LocalID: "subnet-local", CIDR: "10.10.0.0/24,fd00::/64"}
+	subnet := Subnet{LocalID: "subnet-local", VPC: "vpc-local", CIDR: "10.10.0.0/24,fd00::/64"}
 	subnetEId, err := effectiveID(testProjectID, subnet.LocalID)
 	if err != nil {
 		t.Fatalf("effectiveID() error: %v", err)
