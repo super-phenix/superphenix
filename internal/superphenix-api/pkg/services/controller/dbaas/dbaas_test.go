@@ -1,9 +1,15 @@
 package dbaas
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/model"
+	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
+	argodbaas "github.com/super-phenix/superphenix/internal/superphenix-api/pkg/services/controller/argo-app/dbaas"
 
 	"github.com/google/uuid"
 )
@@ -70,6 +76,60 @@ func TestCombineListResult(t *testing.T) {
 				if (got[i].Cluster != nil) != tt.wantState[i] {
 					t.Errorf("entry %d cluster = %v, want present %v", i, got[i].Cluster, tt.wantState[i])
 				}
+			}
+		})
+	}
+}
+
+func TestResolveSubnet(t *testing.T) {
+	tests := []struct {
+		name      string
+		subnetEId string
+		wantPath  string
+		want      argodbaas.Subnet
+		wantErr   bool
+	}{
+		{
+			name:      "subnet of the project",
+			subnetEId: "spx-subnet",
+			wantPath:  "/org/project/subnet/spx-subnet",
+			want:      argodbaas.Subnet{LocalID: "my-subnet", VPC: "my-vpc", CIDR: "10.0.0.0/24"},
+		},
+		{
+			name:      "dot segments stay in one segment",
+			subnetEId: "../../other/mark",
+			wantPath:  "/org/project/subnet/..%2F..%2Fother%2Fmark",
+			want:      argodbaas.Subnet{LocalID: "my-subnet", VPC: "my-vpc", CIDR: "10.0.0.0/24"},
+		},
+		{name: "missing subnet", subnetEId: "", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var subnetPath string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch {
+				case strings.HasPrefix(r.URL.EscapedPath(), "/org/project/subnet/"):
+					subnetPath = r.URL.EscapedPath()
+					_, _ = w.Write([]byte(`{"id":"my-subnet","subnet":{"spec":{"cidrBlock":"10.0.0.0/24","vpc":"spx-vpc"}}}`))
+				case r.URL.EscapedPath() == "/org/project/vpc/spx-vpc":
+					_, _ = w.Write([]byte(`{"id":"my-vpc"}`))
+				default:
+					w.WriteHeader(http.StatusNotFound)
+				}
+			}))
+			defer srv.Close()
+
+			azDb := config.AZConfig{Code: "az1", ControllerUrl: srv.URL}
+			got, err := resolveSubnet(context.Background(), azDb, "org", "project", tt.subnetEId)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("resolveSubnet() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if subnetPath != tt.wantPath {
+				t.Errorf("subnet path = %q, want %q", subnetPath, tt.wantPath)
+			}
+			if got != tt.want {
+				t.Errorf("resolveSubnet() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
