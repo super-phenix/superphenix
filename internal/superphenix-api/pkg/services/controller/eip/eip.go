@@ -167,7 +167,7 @@ func (h *Service) GetEip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeEIP.Name) {
 		return
 	}
 
@@ -386,7 +386,7 @@ func (h *Service) DeleteEip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeEIP.Name) {
 		return
 	}
 
