@@ -167,7 +167,7 @@ func (h *Service) GetDisk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeDisk.Name) {
 		return
 	}
 
@@ -412,7 +412,7 @@ func (h *Service) DeleteDisk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeDisk.Name) {
 		return
 	}
 

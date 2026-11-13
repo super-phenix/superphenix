@@ -116,7 +116,7 @@ func (h *Service) GetBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeBaaS.Name) {
 		return
 	}
 
@@ -251,7 +251,7 @@ func (h *Service) GetForUpdateBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeBaaS.Name) {
 		return
 	}
 
@@ -395,7 +395,7 @@ func (h *Service) DeleteBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeBaaS.Name) {
 		return
 	}
 

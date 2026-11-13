@@ -135,7 +135,7 @@ func (h *Service) GetDBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeDBaaS.Name) {
 		return
 	}
 
@@ -207,7 +207,7 @@ func (h *Service) GetForUpdateDBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeDBaaS.Name) {
 		return
 	}
 
@@ -458,7 +458,7 @@ func (h *Service) DeleteDBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeDBaaS.Name) {
 		return
 	}
 
@@ -529,7 +529,7 @@ func (h *Service) redirectOwned(w http.ResponseWriter, r *http.Request) {
 		httpError.Http(w, r, code).Msg(errMsg)
 		return
 	}
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeDBaaS.Name) {
 		return
 	}
 	ctrlutils.SimpleRedirect()(w, r)

@@ -166,7 +166,7 @@ func (h *Service) GetVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeVmSnapshot.Name) {
 		return
 	}
 
@@ -306,7 +306,7 @@ func (h *Service) DeleteVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeVmSnapshot.Name) {
 		return
 	}
 
@@ -363,7 +363,7 @@ func (h *Service) RestoreVmSnapshot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeVmSnapshot.Name) {
 		return
 	}
 
