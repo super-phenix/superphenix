@@ -4,7 +4,7 @@
 
 This Helm Chart is used by the self-service ArgoCDs of Superphénix to create PostgreSQL databases.
 
-Each entry of `.databases` creates a [CloudNative-PG](https://cloudnative-pg.io/) cluster in the project's namespace.
+Each entry of `.databases` whose `.location` matches the chart's `location` creates a [CloudNative-PG](https://cloudnative-pg.io/) cluster in the project's namespace. Entries for other AZs render nothing.
 
 ### Resource names
 
@@ -15,7 +15,7 @@ Names don't have to be unique. Use them as tags to filter and find resources.
 To set a name on a resource, use the `.name` value.
 
 > [!note]
-> Names **must** begin with a letter or number, and may contain letters, numbers, hyphens, dots, and underscores, up to 63 characters each.
+> Names **must** begin and end with a letter or number, and may contain letters, numbers, hyphens, dots, and underscores, up to 63 characters each.
 
 ### Setting a resource location
 
