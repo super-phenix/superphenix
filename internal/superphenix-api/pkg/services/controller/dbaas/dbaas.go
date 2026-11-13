@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 
 	"github.com/super-phenix/superphenix/internal/superphenix-api/internal/argo/view"
@@ -585,8 +586,8 @@ func externalAccess(ctx context.Context, projectId, localId string) *DBaaSExtern
 // getDBaaSConfig fetches the AZ specific configuration.
 func getDBaaSConfig(ctx context.Context, azDb config.AZConfig, orgId, projectId string) (argodbaas.DBaaSConfig, error) {
 	var res argodbaas.DBaaSConfig
-	url := fmt.Sprintf("%s/%s/%s/dbaas-config", azDb.ControllerUrl, orgId, projectId)
-	err := ctrlutils.GetFromAZ(ctx, azDb, url, &res)
+	endpoint := fmt.Sprintf("%s/%s/%s/dbaas-config", azDb.ControllerUrl, orgId, projectId)
+	err := ctrlutils.GetFromAZ(ctx, azDb, endpoint, &res)
 	return res, err
 }
 
@@ -626,8 +627,8 @@ func resolveSubnet(ctx context.Context, azDb config.AZConfig, orgId, projectId, 
 			} `json:"spec"`
 		} `json:"subnet"`
 	}
-	url := fmt.Sprintf("%s/%s/%s/subnet/%s", azDb.ControllerUrl, orgId, projectId, subnetEId)
-	if err := ctrlutils.GetFromAZ(ctx, azDb, url, &res); err != nil {
+	endpoint := fmt.Sprintf("%s/%s/%s/subnet/%s", azDb.ControllerUrl, orgId, projectId, url.PathEscape(subnetEId))
+	if err := ctrlutils.GetFromAZ(ctx, azDb, endpoint, &res); err != nil {
 		return argodbaas.Subnet{}, err
 	}
 	if res.ID == "" || res.Subnet.Spec.CIDRBlock == "" || res.Subnet.Spec.Vpc == "" {
@@ -637,8 +638,8 @@ func resolveSubnet(ctx context.Context, azDb config.AZConfig, orgId, projectId, 
 	var vpc struct {
 		ID string `json:"id"`
 	}
-	url = fmt.Sprintf("%s/%s/%s/vpc/%s", azDb.ControllerUrl, orgId, projectId, res.Subnet.Spec.Vpc)
-	if err := ctrlutils.GetFromAZ(ctx, azDb, url, &vpc); err != nil {
+	endpoint = fmt.Sprintf("%s/%s/%s/vpc/%s", azDb.ControllerUrl, orgId, projectId, url.PathEscape(res.Subnet.Spec.Vpc))
+	if err := ctrlutils.GetFromAZ(ctx, azDb, endpoint, &vpc); err != nil {
 		return argodbaas.Subnet{}, err
 	}
 	if vpc.ID == "" {
