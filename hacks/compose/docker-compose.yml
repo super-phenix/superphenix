@@ -71,7 +71,9 @@ services:
     networks:
       - intranet
   permify:
-    image: ghcr.io/permify/permify:latest
+    # Keep aligned with the app version of the permify chart in superphenix-system/values.yaml.
+    # From v1.5.0, TenantDeleteResponse is incompatible with the client in pkg/permify-wrapper.
+    image: ghcr.io/permify/permify:v1.1.3
     ports:
       - "${PERMIFY_PORT:-3478}:3478"
     command: serve
