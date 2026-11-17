@@ -322,7 +322,7 @@ func (r *Reconciler) runHelmUpgradeInstall(ctx context.Context, actionConfig *ac
 	} else {
 		log.Info("Helm release found, performing upgrade", "release", releaseName)
 	}
-	
+
 	clientUpgrade := action.NewUpgrade(actionConfig)
 	clientUpgrade.Namespace = r.OperatorNamespace
 	clientUpgrade.Wait = false

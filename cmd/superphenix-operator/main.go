@@ -222,10 +222,8 @@ func main() {
 	}
 
 	// Restrict the ArgoCD Application informer to Applications the operator manages:
-	// root cluster Apps, superphenix-system child Apps, and management stack Apps. All three
-	// cohorts carry the operator.superphenix.net/managed=true label and live in the
-	// operator's namespace. Without this filter the informer LIST/WATCHes every
-	// Application in the cluster.
+	// root/child cluster Apps (operator namespace), management stack Apps, and Project
+	// GitOps Apps (per-project namespaces). All carry operator.superphenix.net/managed=true.
 	argoApp := &unstructured.Unstructured{}
 	argoApp.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "argoproj.io",
@@ -237,7 +235,7 @@ func main() {
 		setupLog.Error(err, "Failed to parse managed label selector")
 		os.Exit(1)
 	}
-	argoAppByObject := cache.ByObject{Label: managedSel}
+	argoAppByObject := argoApplicationCacheOptions(managedSel)
 
 	// On a brand new cluster the ArgoCD CRDs are not yet installed, so we cannot
 	// register a ByObject filter for Applications (controller-runtime would fail
@@ -258,18 +256,14 @@ func main() {
 	}
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                 scheme,
-		Metrics:                metricsServerOptions,
-		WebhookServer:          webhookServer,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "d19ca498.superphenix.net",
-		Cache:                  cacheOpts,
-		// Secret Gets bypass the informer cache and hit the API server. The
-		// informer still watches non-Helm Secrets cluster-wide for reconcile triggers.
-		Client: client.Options{
-			Cache: &client.CacheOptions{DisableFor: []client.Object{&corev1.Secret{}}},
-		},
+		Scheme:                        scheme,
+		Metrics:                       metricsServerOptions,
+		WebhookServer:                 webhookServer,
+		HealthProbeBindAddress:        probeAddr,
+		LeaderElection:                enableLeaderElection,
+		LeaderElectionID:              "d19ca498.superphenix.net",
+		Cache:                         cacheOpts,
+		Client:                        managerClientOptions(),
 		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
@@ -380,8 +374,10 @@ func main() {
 // included, which costs gigabytes of memory without producing any log line.
 //
 // Secrets stay cluster-wide (minus Helm releases) so connection Secret updates
-// outside the operator namespace still enqueue Cluster reconciles. ConfigMaps are
-// limited to the operator namespace, which is where the operator ConfigMaps live.
+// outside the operator namespace still enqueue Cluster reconciles. The Secret
+// transform drops .Data/.StringData because the Cluster controller watches
+// PartialObjectMetadata and Secret Gets use DisableFor (live API reads).
+// ConfigMaps are limited to the operator namespace.
 func coreCacheOptions(operatorNamespace string) (cache.Options, error) {
 	notHelmRelease, err := labels.Parse("owner!=helm")
 	if err != nil {
@@ -396,10 +392,105 @@ func coreCacheOptions(operatorNamespace string) (cache.Options, error) {
 	return cache.Options{
 		DefaultTransform: cache.TransformStripManagedFields(),
 		ByObject: map[client.Object]cache.ByObject{
-			&corev1.Secret{}:    {Label: notHelmRelease},
+			&corev1.Secret{}: {
+				Label:     notHelmRelease,
+				Transform: transformStripSecretData,
+			},
 			&corev1.ConfigMap{}: configMaps,
 		},
 	}, nil
+}
+
+// managerClientOptions configures which reads the manager client serves from
+// the informer cache.
+//
+// Secret reads bypass the cache: the Secret informer only holds metadata.
+//
+// Unstructured reads (Applications, AppProjects, TalosMachines, …) stay
+// uncached, which is the controller-runtime default. The Application informer
+// is label-filtered and status-stripped, so reading from it would hide existing
+// unlabeled Applications (Create then fails with AlreadyExists) and turn
+// read-modify-write updates into PUTs of the stripped object. The Application
+// CRD has no status subresource, so such a PUT overwrites Argo CD's status.
+func managerClientOptions() client.Options {
+	return client.Options{
+		Cache: &client.CacheOptions{
+			DisableFor: []client.Object{&corev1.Secret{}},
+		},
+	}
+}
+
+// argoApplicationCacheOptions limits the Application informer to managed Apps
+// and drops bulky status fields (resources, history, syncResult, …). The
+// informer only feeds watch events (owner-based enqueues); Application reads
+// and writes go to the API server, see managerClientOptions. Namespace is
+// intentionally unrestricted: cluster child Apps live in the operator
+// namespace, but Project GitOps Apps are created in per-project namespaces.
+func argoApplicationCacheOptions(managed labels.Selector) cache.ByObject {
+	return cache.ByObject{
+		Label:     managed,
+		Transform: transformStripArgoApplicationStatus,
+	}
+}
+
+// transformStripSecretData removes Secret payloads from the informer cache.
+// The Cluster controller only needs name/namespace for watch mapping; reads of
+// Secret.Data go through the uncached client (DisableFor).
+func transformStripSecretData(in any) (any, error) {
+	if obj, err := meta.Accessor(in); err == nil && obj.GetManagedFields() != nil {
+		obj.SetManagedFields(nil)
+	}
+	if secret, ok := in.(*corev1.Secret); ok {
+		secret.Data = nil
+		secret.StringData = nil
+	}
+	return in, nil
+}
+
+// transformStripArgoApplicationStatus keeps only small Application status fields
+// (health/sync status, reconcile timestamps, operation phase) and drops the large
+// resource lists and sync results that dominate memory. Cached Applications must
+// never be written back: see managerClientOptions.
+func transformStripArgoApplicationStatus(in any) (any, error) {
+	if obj, err := meta.Accessor(in); err == nil && obj.GetManagedFields() != nil {
+		obj.SetManagedFields(nil)
+	}
+	u, ok := in.(*unstructured.Unstructured)
+	if !ok {
+		return in, nil
+	}
+	status, found, err := unstructured.NestedMap(u.Object, "status")
+	if err != nil || !found {
+		return in, nil
+	}
+
+	slim := map[string]interface{}{}
+	if health, ok := status["health"].(map[string]interface{}); ok {
+		if s, ok := health["status"]; ok {
+			slim["health"] = map[string]interface{}{"status": s}
+		}
+	}
+	if sync, ok := status["sync"].(map[string]interface{}); ok {
+		if s, ok := sync["status"]; ok {
+			slim["sync"] = map[string]interface{}{"status": s}
+		}
+	}
+	if v, ok := status["reconciledAt"]; ok {
+		slim["reconciledAt"] = v
+	}
+	if op, ok := status["operationState"].(map[string]interface{}); ok {
+		slimOp := map[string]interface{}{}
+		for _, key := range []string{"phase", "startedAt", "finishedAt"} {
+			if v, ok := op[key]; ok {
+				slimOp[key] = v
+			}
+		}
+		if len(slimOp) > 0 {
+			slim["operationState"] = slimOp
+		}
+	}
+	_ = unstructured.SetNestedMap(u.Object, slim, "status")
+	return in, nil
 }
 
 // argoCDCRDsPresent reports whether the ArgoCD Application and AppProject CRDs

@@ -167,9 +167,10 @@ func (r *Reconciler) syncInProgress(ctx context.Context, cluster *operatorv1alph
 
 // abortInProgressSyncs requests ArgoCD to terminate any Running operation on the cluster's
 // Applications and clears the .operation field so a fresh sync can be installed in the same
-// reconcile. The Terminating phase is written via the status subresource, matching what
-// `argocd app terminate-op` does. Per-application errors are logged but do not stop processing
-// of the remaining Applications.
+// reconcile. The Terminating phase is written to .status.operationState.phase, matching what
+// `argocd app terminate-op` does. The Application CRD has no status subresource, so status is
+// patched on the main resource (Status().Patch would return NotFound). Per-application errors
+// are logged but do not stop processing of the remaining Applications.
 func (r *Reconciler) abortInProgressSyncs(ctx context.Context, cluster *operatorv1alpha1.Cluster) error {
 	log := logf.FromContext(ctx)
 	apps, err := r.listAllApplications(ctx, cluster)
@@ -183,12 +184,15 @@ func (r *Reconciler) abortInProgressSyncs(ctx context.Context, cluster *operator
 			continue
 		}
 
-		statusPatch := client.MergeFrom(apps[i].DeepCopy())
+		// The optimistic lock makes the patch fail with a conflict if Argo CD updated the
+		// Application since it was listed (e.g. the operation just finished), instead of
+		// overwriting a newer phase with Terminating.
+		statusPatch := client.MergeFromWithOptions(apps[i].DeepCopy(), client.MergeFromWithOptimisticLock{})
 		if err := unstructured.SetNestedField(apps[i].Object, operationPhaseTerminating, "status", "operationState", "phase"); err != nil {
 			log.Error(err, "Failed to build terminate status patch", "name", apps[i].GetName())
 			continue
 		}
-		if err := r.Status().Patch(ctx, &apps[i], statusPatch); err != nil {
+		if err := r.Patch(ctx, &apps[i], statusPatch); err != nil {
 			log.Error(err, "Failed to terminate sync via status", "name", apps[i].GetName())
 			continue
 		}
