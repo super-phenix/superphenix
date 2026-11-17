@@ -245,24 +245,31 @@ func main() {
 	// filter for now; a background goroutine polls for the CRDs and exits the
 	// process when they appear so Kubernetes restarts us with the filter applied.
 	cfg := ctrl.GetConfigOrDie()
-	cacheOpts := cache.Options{}
+	cacheOpts, err := coreCacheOptions(operatorNamespace)
+	if err != nil {
+		setupLog.Error(err, "Failed to build cache options")
+		os.Exit(1)
+	}
 	if argoCDCRDsPresent(cfg) {
-		cacheOpts.ByObject = map[client.Object]cache.ByObject{
-			argoApp: argoAppByObject,
-		}
+		cacheOpts.ByObject[argoApp] = argoAppByObject
 	} else {
 		setupLog.Info("ArgoCD CRDs not yet installed; starting without the ArgoCD Application cache filter. The operator will restart once the CRDs are available.")
 		go waitForArgoCDCRDsThenExit(cfg)
 	}
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:                        scheme,
-		Metrics:                       metricsServerOptions,
-		WebhookServer:                 webhookServer,
-		HealthProbeBindAddress:        probeAddr,
-		LeaderElection:                enableLeaderElection,
-		LeaderElectionID:              "d19ca498.superphenix.net",
-		Cache:                         cacheOpts,
+		Scheme:                 scheme,
+		Metrics:                metricsServerOptions,
+		WebhookServer:          webhookServer,
+		HealthProbeBindAddress: probeAddr,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "d19ca498.superphenix.net",
+		Cache:                  cacheOpts,
+		// Secret Gets bypass the informer cache and hit the API server. The
+		// informer still watches non-Helm Secrets cluster-wide for reconcile triggers.
+		Client: client.Options{
+			Cache: &client.CacheOptions{DisableFor: []client.Object{&corev1.Secret{}}},
+		},
 		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
@@ -364,6 +371,35 @@ func main() {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
 	}
+}
+
+// coreCacheOptions scopes the Secret and ConfigMap informers.
+//
+// Watch predicates only filter events: without these settings the informers
+// LIST/WATCH every Secret and ConfigMap in the cluster, Helm release Secrets
+// included, which costs gigabytes of memory without producing any log line.
+//
+// Secrets stay cluster-wide (minus Helm releases) so connection Secret updates
+// outside the operator namespace still enqueue Cluster reconciles. ConfigMaps are
+// limited to the operator namespace, which is where the operator ConfigMaps live.
+func coreCacheOptions(operatorNamespace string) (cache.Options, error) {
+	notHelmRelease, err := labels.Parse("owner!=helm")
+	if err != nil {
+		return cache.Options{}, err
+	}
+
+	configMaps := cache.ByObject{}
+	if operatorNamespace != "" {
+		configMaps.Namespaces = map[string]cache.Config{operatorNamespace: {}}
+	}
+
+	return cache.Options{
+		DefaultTransform: cache.TransformStripManagedFields(),
+		ByObject: map[client.Object]cache.ByObject{
+			&corev1.Secret{}:    {Label: notHelmRelease},
+			&corev1.ConfigMap{}: configMaps,
+		},
+	}, nil
 }
 
 // argoCDCRDsPresent reports whether the ArgoCD Application and AppProject CRDs
