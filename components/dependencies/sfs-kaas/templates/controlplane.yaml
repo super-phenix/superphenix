@@ -53,7 +53,7 @@ spec:
   scheduler:
     resources:
       limits:
-        cpu: {{ ((($controlPlane.scheduler).resources).limits).cpu | default "5m" }}
+        cpu: {{ ((($controlPlane.scheduler).resources).limits).cpu | default "50m" }}
         memory: {{ ((($controlPlane.scheduler).resources).limits).memory | default "256Mi" }}
       requests:
         cpu: {{ ((($controlPlane.scheduler).resources).requests).cpu | default "20m" }}

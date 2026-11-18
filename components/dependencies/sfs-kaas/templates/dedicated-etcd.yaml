@@ -59,8 +59,8 @@ spec:
       cpu: {{ (($dataStore.resources).limits).cpu | default "400m" }}
       memory: {{ (($dataStore.resources).limits).memory | default "1Gi" }}
     requests:
-      cpu: {{ (($dataStore.resources).limits).cpu | default "200m" }}
-      memory: {{ (($dataStore.resources).limits).memory | default "512Mi" }}
+      cpu: {{ (($dataStore.resources).requests).cpu | default "200m" }}
+      memory: {{ (($dataStore.resources).requests).memory | default "512Mi" }}
   options:
     autoCompactionMode: periodic
     autoCompactionRetention: 5m
