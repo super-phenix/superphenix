@@ -4,8 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     api-approved.kubernetes.io: "https://github.com/kubernetes-csi/external-snapshotter/pull/814"
-    controller-gen.kubebuilder.io/version: v0.12.0
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.15.0
   name: volumesnapshotclasses.snapshot.storage.k8s.io
 spec:
   group: snapshot.storage.k8s.io
@@ -34,44 +33,98 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: VolumeSnapshotClass specifies parameters that a underlying storage
-          system uses when creating a volume snapshot. A specific VolumeSnapshotClass
-          is used by specifying its name in a VolumeSnapshot object. VolumeSnapshotClasses
-          are non-namespaced
+        description: |-
+          VolumeSnapshotClass specifies parameters that a underlying storage system uses when
+          creating a volume snapshot. A specific VolumeSnapshotClass is used by specifying its
+          name in a VolumeSnapshot object.
+          VolumeSnapshotClasses are non-namespaced
         properties:
+          allowedTopologies:
+            description: |-
+              allowedTopologies restricts the node topologies where snapshots created
+              using this class are usable from. A snapshot is usable from a location
+              if volumes created from that snapshot are guaranteed to be accessible
+              from that location. Each volume plugin defines its own supported
+              topology specifications. An empty list means there is no topology
+              restriction. This is passed to the CSI driver as
+              AccessibilityRequirements in the CreateSnapshotRequest.
+              This is an alpha field tied to the VolumeSnapshotTopology feature gate
+              (KEP-5943).
+            items:
+              description: |-
+                A topology selector term represents the result of label queries. A null
+                or empty topology selector term matches no objects. The requirements of
+                them are ANDed. It provides a subset of functionality as NodeSelectorTerm.
+                This is an alpha feature and may change in the future.
+              properties:
+                matchLabelExpressions:
+                  description: A list of topology selector requirements by labels.
+                  items:
+                    description: |-
+                      A topology selector requirement is a selector that matches given label.
+                      This is an alpha feature and may change in the future.
+                    properties:
+                      key:
+                        description: The label key that the selector applies to.
+                        type: string
+                      values:
+                        description: |-
+                          An array of string values. One value must match the label to be selected.
+                          Each entry in Values is ORed.
+                        items:
+                          type: string
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    required:
+                    - key
+                    - values
+                    type: object
+                  type: array
+                  x-kubernetes-list-type: atomic
+              type: object
+              x-kubernetes-map-type: atomic
+            type: array
+            x-kubernetes-list-type: atomic
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
             type: string
           deletionPolicy:
-            description: deletionPolicy determines whether a VolumeSnapshotContent
-              created through the VolumeSnapshotClass should be deleted when its bound
-              VolumeSnapshot is deleted. Supported values are "Retain" and "Delete".
-              "Retain" means that the VolumeSnapshotContent and its physical snapshot
-              on underlying storage system are kept. "Delete" means that the VolumeSnapshotContent
-              and its physical snapshot on underlying storage system are deleted.
+            description: |-
+              deletionPolicy determines whether a VolumeSnapshotContent created through
+              the VolumeSnapshotClass should be deleted when its bound VolumeSnapshot is deleted.
+              Supported values are "Retain" and "Delete".
+              "Retain" means that the VolumeSnapshotContent and its physical snapshot on underlying storage system are kept.
+              "Delete" means that the VolumeSnapshotContent and its physical snapshot on underlying storage system are deleted.
               Required.
             enum:
             - Delete
             - Retain
             type: string
           driver:
-            description: driver is the name of the storage driver that handles this
-              VolumeSnapshotClass. Required.
+            description: |-
+              driver is the name of the storage driver that handles this VolumeSnapshotClass.
+              Required.
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
             type: string
           metadata:
             type: object
           parameters:
             additionalProperties:
               type: string
-            description: parameters is a key-value map with storage driver specific
-              parameters for creating snapshots. These values are opaque to Kubernetes.
+            description: |-
+              parameters is a key-value map with storage driver specific parameters for creating snapshots.
+              These values are opaque to Kubernetes.
             type: object
         required:
         - deletionPolicy

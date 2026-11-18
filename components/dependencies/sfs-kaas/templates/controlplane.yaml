@@ -32,6 +32,10 @@ spec:
       {{- . | toYaml | nindent 6 }}
     {{- end }}
   {{- end }}
+  controllerManager:
+    extraArgs:
+      # Needed because we set a /96 as pod cidrBlock
+      - --node-cidr-mask-size-ipv6=112
   {{- if ne $dataStoreName "" }}
   dataStoreName: {{ $dataStoreName | quote }}
   {{- end }}
