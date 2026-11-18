@@ -135,6 +135,13 @@ spec:
         - name: post-install-job
           image: "alpine/helm:3.19"
           command: ["/job/script/essentials.sh"]
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 40m
+              memory: 64Mi
           volumeMounts:
             - name: script
               mountPath: /job/script
