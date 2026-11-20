@@ -118,8 +118,8 @@ func ContainsNet(net1, net2 *net.IPNet) bool {
 }
 
 // IsIPInCIDR returns true if the given IP address is within the given CIDR range.
-// cidr can be a single CIDR (e.g. "10.10.0.0/16") or a comma-separated list of
-// CIDRs (e.g. "10.10.0.0/16,fd00:10:10::/64"). The function returns true if the
+// cidr can be a single CIDR (e.g. "10.16.0.0/16") or a comma-separated list of
+// CIDRs (e.g. "10.16.0.0/16,fd00:10:16::/64"). The function returns true if the
 // IP is contained in at least one of the CIDRs.
 func IsIPInCIDR(cidr, ip string) (bool, error) {
 	ipAddr := net.ParseIP(ip)

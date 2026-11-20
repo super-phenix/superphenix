@@ -90,7 +90,7 @@ vpcs:
 # @section -- Subnets
 # @default -- See the default Subnet for the syntax to define a new Subnet
 subnets: {}
-#  default-subnet:
+  #  default-subnet:
   #  # -- User-friendly name of the default subnet
   #  # @section -- Default Subnet
   #  name: "default"
@@ -111,12 +111,12 @@ subnets: {}
   #  # -- CIDR for this Subnet
   #  # If Dual protocol is set, the IPv4/IPV6 subnets are separated by a comma
   #  # @section -- Default Subnet
-  #  cidrBlock: "10.10.0.0/16,fd00:10:10::/64"
+  #  cidrBlock: "10.16.0.0/16,fd00:10:16::/64"
   #
   #  # -- Gateway for this Subnet, if unspecified, defaults to first address in every CIDR block
   #  # If Dual protocol is set, the IPv4/IPV6 gateways are separated by a comma
   #  # @section -- Default Subnet
-  #  gateway: "10.10.0.1,fd00:10:10::1"
+  #  gateway: "10.16.0.1,fd00:10:16::1"
   #
   #  # -- DHCP options
   #  dhcp:
@@ -152,7 +152,7 @@ subnets: {}
   #
   #    # -- IP of the gateway in the LAN of the default subnet
   #    # @section -- Default Subnet's NAT gateway
-  #    lanIP: "10.10.255.254"
+  #    lanIP: "10.16.255.254"
   #
   #    # -- BGP speaker settings if the NAT gateway is in BGP mode
   #    # Scope: ADMIN
@@ -344,11 +344,11 @@ vms:
 #
 #            # -- IPv4 of the interface, ignored if protocol is "IPv6"
 #            # The IP must be part of the subnet
-#            ipv4: "10.10.0.10"
+#            ipv4: "10.16.0.10"
 #
 #            # -- IPv6 of the interface, ignored if protocol is "IPv4"
 #            # The IP must be part of the subnet
-#            ipv6: "fd00:10:10::10"
+#            ipv6: "fd00:10:16::10"
 #        - subnet: "test"
 #          static:
 #            enabled: false
@@ -479,13 +479,13 @@ eips:
 #   # If omitted, SNAT/DNAT must be provided to use the EIP by filling `.internalCIDR`.
 #   # Mutually exclusive with `.internalCIDR`.
 #   # @section -- Elastic IPs
-#   internalIP: "10.10.0.10"
+#   internalIP: "10.16.0.10"
 #   # -- DNATs between EIPs and internal CIDRs
 #   # @section -- Elastic IPs
 #   snats:
 #   # my-snat:
 #       # -- Internal CIDR that will be SNATed using this EIP
-#       internalCIDR: "10.10.0.0/24"
+#       internalCIDR: "10.16.0.0/24"
 #   # -- DNATs between EIPs and internal IPs
 #   # @section -- Elastic IPs
 #   dnats:
@@ -498,7 +498,7 @@ eips:
 #       internalPort: "8080"
 #       # -- Internal IP on which to send the traffic
 #       # @section -- Elastic IPs
-#       internalIP: "10.10.0.10"
+#       internalIP: "10.16.0.10"
 #       # -- Protocol on which we expect the traffic (TCP/UDP)
 #       # @section -- Elastic IPs
 #       protocol: "tcp"
@@ -531,8 +531,8 @@ loadbalancers:
 #      - label:value
 #    # -- Static endpoints to target, mutually exclusive with `selector`
 #    endpoints:
-#      - 10.10.10.10
-#      - 10.10.10.11
+#      - 10.16.10.10
+#      - 10.16.10.11
 #    # -- Ports to target on the endpoints
 #    # @section -- Load balancers
 #    ports:
