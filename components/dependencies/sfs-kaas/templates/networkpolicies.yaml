@@ -4,22 +4,24 @@
 {{- $projectID := $.Values.projectID -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) }}
 {{- $controlPlaneDefaults := $.Values.clusterDefaults.controlPlane -}}
-{{- $cpNetPol := (($cluster.controlPlane).network).defaultPolicies | default "default" }}
-{{- if and (ne $cpNetPol "default") (ne $cpNetPol "none") }}
-{{- fail "controlPlane.network.defaultPolicies must be one of [default, none]." }}
+
+{{- $workersIngressNetPol := (($cluster.workers.network).policies).ingress | default "default" }}
+{{- if and (ne $workersIngressNetPol "strict") (ne $workersIngressNetPol "default") (ne $workersIngressNetPol "none") }}
+{{- fail "workers.network.policies.ingress must be one of [default, strict, none]." }}
 {{- end }}
-{{- $workersNetPol := ($cluster.workers.network).defaultPolicies | default "default" }}
-{{- if and (ne $workersNetPol "strict") (ne $workersNetPol "default") (ne $workersNetPol "none") }}
-{{- fail "workers.network.defaultPolicies must be one of [default, strict, none]." }}
+
+{{- $workersEgressNetPol := (($cluster.workers.network).policies).egress | default "default" }}
+{{- if and (ne $workersEgressNetPol "strict") (ne $workersEgressNetPol "default") (ne $workersEgressNetPol "none") }}
+{{- fail "workers.network.policies.egress must be one of [default, strict, none]." }}
 {{- end }}
 
 {{- $dataStore := ($cluster.controlPlane).dataStore | default dict }}
-{{- $netpolLocalID := printf "controlplane-internal.%s" $cluster.name }}
+{{- $netpolLocalID := printf "controlplane.%s" $cluster.name }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: cp-internal-{{ $clusterID }}
+  name: controlplane-{{ $clusterID }}
   annotations:
     ovn.kubernetes.io/network_policy_enforcement: lax
   labels:
@@ -37,6 +39,8 @@ spec:
   - Ingress
   - Egress
   ingress:
+  # Make controlplanes accessible from anywhere
+  # Public IP restrictions need to be handled by the ingress controller
   - from:
     - ipBlock:
         cidr: 0.0.0.0/0
@@ -47,7 +51,11 @@ spec:
     - port: 10259
     - port: 8133
     - port: 8134
+    - port: {{ $controlPlaneDefaults.network.konnectivity.port }}
+    - port: {{ $controlPlaneDefaults.network.apiServer.port }}
+    - port: {{ $controlPlaneDefaults.network.apiServer.proxyPort }}
   egress:
+  # Allow controlplane pods to talk to each other, datastores and coredns
   - to:
     - podSelector:
         matchLabels:
@@ -64,13 +72,12 @@ spec:
         matchLabels:
           kubernetes.io/metadata.name: kaas-datastore-system
 
-{{- if eq $cpNetPol "default" }}
-{{- $netpolLocalID := printf "controlplane.%s" $cluster.name }}
+{{- $netpolLocalID := printf "workers.%s" $cluster.name }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: cp-{{ $clusterID }}
+  name: workers-{{ $clusterID }}
   annotations:
     ovn.kubernetes.io/network_policy_enforcement: lax
   labels:
@@ -82,12 +89,52 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
-      superphenix.net/workloadClass: kaas-tenant-api-server
+      cluster.x-k8s.io/cluster-name: {{ $clusterID | quote }}
   policyTypes:
   - Ingress
+  - Egress
   ingress:
+  # Allow workers to talk to each other
   - from:
+    - podSelector:
+        matchLabels:
+          cluster.x-k8s.io/cluster-name: {{ $clusterID | quote }}
+  {{- if eq $workersIngressNetPol "default" }}
+  # Make workers accessible from anywhere
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: "::/0"
+  {{- end }}
+  {{- if eq $workersIngressNetPol "strict" }}
+  # Make workers accessible from anywhere on HTTP/S ports only
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: "::/0"
+    ports:
+    - port: 80
+    - port: 443
+  {{- end }}
+  egress:
+  # Allow workers to talk to each other
+  - to:
+    - podSelector:
+        matchLabels:
+          cluster.x-k8s.io/cluster-name: {{ $clusterID | quote }}
+  {{- if eq $workersEgressNetPol "default" }}
+  # Allow workers internet access
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    - ipBlock:
+        cidr: "::/0"
+  {{- end }}
+  {{- if eq $workersEgressNetPol "strict" }}
+  # Allow workers to talk to controlplane and WWW on DNS and HTTP/S ports only
+  - to:
     - ipBlock:
         cidr: 0.0.0.0/0
     - ipBlock:
@@ -96,78 +143,12 @@ spec:
     - port: {{ $controlPlaneDefaults.network.konnectivity.port }}
     - port: {{ $controlPlaneDefaults.network.apiServer.port }}
     - port: {{ $controlPlaneDefaults.network.apiServer.proxyPort }}
-{{- end }}
-
-{{- if eq $workersNetPol "default" }}
-{{- $netpolLocalID := printf "workers.%s" $cluster.name }}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-{{ $clusterID }}
-  annotations:
-    ovn.kubernetes.io/network_policy_enforcement: lax
-  labels:
-    {{- include "sfs-kaas.labels" $ | nindent 4 }}
-    superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
-    superphenix.net/resourceLocalID: {{ $netpolLocalID | quote }}
-    superphenix.net/resourceName: {{ $netpolLocalID | quote }}
-    superphenix.net/generated: "true"
-spec:
-  podSelector:
-    matchLabels:
-      cluster.x-k8s.io/cluster-name: {{ $clusterID | quote }}
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: "::/0"
-  egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: "::/0"
-{{- end }}
-
-{{- if eq $workersNetPol "strict" }}
-{{- $netpolLocalID := printf "workers.%s" $cluster.name }}
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: workers-{{ $clusterID }}
-  annotations:
-    ovn.kubernetes.io/network_policy_enforcement: lax
-  labels:
-    {{- include "sfs-kaas.labels" $ | nindent 4 }}
-    superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
-    superphenix.net/resourceLocalID: {{ $netpolLocalID | quote }}
-    superphenix.net/resourceName: {{ $netpolLocalID | quote }}
-    superphenix.net/generated: "true"
-spec:
-  podSelector:
-    matchLabels:
-      cluster.x-k8s.io/cluster-name: {{ $clusterID | quote }}
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          cluster.x-k8s.io/cluster-name: {{ $clusterID | quote }}
-  egress:
-  - to:
-    - ipBlock:
-        cidr: 0.0.0.0/0
-    - ipBlock:
-        cidr: "::/0"
-{{- end }}
+    - port: 80
+    - port: 443
+    - port: 53
+    - port: 53
+      protocol: UDP
+  {{- end }}
 
 {{- end }}
 {{- end }}
