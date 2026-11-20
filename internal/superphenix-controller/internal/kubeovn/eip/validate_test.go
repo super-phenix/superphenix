@@ -22,7 +22,7 @@ const (
 	ownSubnet      = "spx-aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 	otherSubnet    = "spx-bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 	sharedSubnet   = "spx-cccccccc-cccc-cccc-cccc-cccccccccccc"
-	subnetCIDR     = "10.10.0.0/24,fd00:10:10::/64"
+	subnetCIDR     = "10.32.0.0/24,fd00:10:32::/64"
 )
 
 func subnetObj(name, projectID string, annotations map[string]string) *v1.Subnet {
@@ -88,15 +88,15 @@ func TestValidateInternalTargets(t *testing.T) {
 		dnat       []dnat.InfoDNAT
 		wantErr    bool
 	}{
-		{name: "FIP inside subnet", internalIP: "10.10.0.5"},
-		{name: "FIP with spaces inside subnet", internalIP: " 10.10.0.5 "},
-		{name: "IPv6 FIP inside subnet", internalIP: "fd00:10:10::5"},
-		{name: "SNAT on the whole subnet", snat: []string{"10.10.0.0/24"}},
-		{name: "SNAT on a smaller range", snat: []string{"10.10.0.128/25"}},
-		{name: "SNAT on a single IP", snat: []string{"10.10.0.7"}},
-		{name: "DNAT inside subnet", snat: []string{"10.10.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "10.10.0.9"}}},
+		{name: "FIP inside subnet", internalIP: "10.32.0.5"},
+		{name: "FIP with spaces inside subnet", internalIP: " 10.32.0.5 "},
+		{name: "IPv6 FIP inside subnet", internalIP: "fd00:10:32::5"},
+		{name: "SNAT on the whole subnet", snat: []string{"10.32.0.0/24"}},
+		{name: "SNAT on a smaller range", snat: []string{"10.32.0.128/25"}},
+		{name: "SNAT on a single IP", snat: []string{"10.32.0.7"}},
+		{name: "DNAT inside subnet", snat: []string{"10.32.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "10.32.0.9"}}},
 		{name: "FIP to a load balancer VIP", internalIP: "198.18.0.1"},
-		{name: "DNAT to a load balancer VIP", snat: []string{"10.10.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "198.18.0.1"}}},
+		{name: "DNAT to a load balancer VIP", snat: []string{"10.32.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "198.18.0.1"}}},
 
 		{name: "FIP to another tenant IP", internalIP: "10.20.0.5", wantErr: true},
 		{name: "FIP to a node or service IP", internalIP: "192.168.1.10", wantErr: true},
@@ -105,11 +105,11 @@ func TestValidateInternalTargets(t *testing.T) {
 		{name: "SNAT on a load balancer VIP", snat: []string{"198.18.0.1"}, wantErr: true},
 		{name: "SNAT on the load balancer range", snat: []string{"198.18.0.0/16"}, wantErr: true},
 		{name: "SNAT on everything", snat: []string{"0.0.0.0/0"}, wantErr: true},
-		{name: "SNAT on a larger range", snat: []string{"10.10.0.0/16"}, wantErr: true},
+		{name: "SNAT on a larger range", snat: []string{"10.32.0.0/16"}, wantErr: true},
 		{name: "SNAT on another range", snat: []string{"10.20.0.0/24"}, wantErr: true},
-		{name: "SNAT invalid CIDR", snat: []string{"10.10.0.0/99"}, wantErr: true},
-		{name: "DNAT to another tenant IP", snat: []string{"10.10.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "10.20.0.9"}}, wantErr: true},
-		{name: "one bad DNAT among good ones", snat: []string{"10.10.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "10.10.0.9"}, {InternalIP: "8.8.8.8"}}, wantErr: true},
+		{name: "SNAT invalid CIDR", snat: []string{"10.32.0.0/99"}, wantErr: true},
+		{name: "DNAT to another tenant IP", snat: []string{"10.32.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "10.20.0.9"}}, wantErr: true},
+		{name: "one bad DNAT among good ones", snat: []string{"10.32.0.0/24"}, dnat: []dnat.InfoDNAT{{InternalIP: "10.32.0.9"}, {InternalIP: "8.8.8.8"}}, wantErr: true},
 	}
 
 	for _, tt := range tests {
@@ -144,7 +144,7 @@ func TestCreateEip_Refused(t *testing.T) {
 		internalIP   string
 		wantNotFound bool
 	}{
-		{name: "NAT gateway of another project", subnet: otherSubnet, internalIP: "10.10.0.5", wantNotFound: true},
+		{name: "NAT gateway of another project", subnet: otherSubnet, internalIP: "10.32.0.5", wantNotFound: true},
 		{name: "internal IP outside own subnet", subnet: ownSubnet, internalIP: "10.20.0.5"},
 	}
 
@@ -214,7 +214,7 @@ func TestCreateEip_ValidatesOnlyTheAppliedMode(t *testing.T) {
 	t.Run("FIP mode ignores out-of-subnet SNAT and DNAT", func(t *testing.T) {
 		fakeSubnets()
 
-		info := newCreateInfo(ownSubnet, "10.10.0.5")
+		info := newCreateInfo(ownSubnet, "10.32.0.5")
 		info.Spec.SNAT = []string{"0.0.0.0/0"}
 		info.Spec.DNAT = append(info.Spec.DNAT, badDNAT)
 
@@ -232,7 +232,7 @@ func TestCreateEip_ValidatesOnlyTheAppliedMode(t *testing.T) {
 		fakeSubnets()
 
 		info := newCreateInfo(ownSubnet, "")
-		info.Spec.SNAT = []string{"10.10.0.0/24"}
+		info.Spec.SNAT = []string{"10.32.0.0/24"}
 		info.Spec.DNAT = append(info.Spec.DNAT, badDNAT)
 
 		if err := info.CreateEip(context.Background()); !apierrors.IsBadRequest(err) {
