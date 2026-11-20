@@ -123,17 +123,17 @@ data:
     {{- $classes := list }}
     {{- with $cluster.kaasEssentials }}
     {{- range $key, $class := .storageClasses }}
-    {{- $classes = append $classes (get $.Values.storageClassMapping $class.infraClass) }}
+    {{- $classes = append $classes (get $.Values.storageClassMapping ($class.infraClass | default $key)) }}
     {{- end }}
     {{- if .snapshotClasses }}
     storageSnapshotMapping:
     - storageClasses:
       {{- range $key, $class := .storageClasses }}
-        - {{ get $.Values.storageClassMapping $class.infraClass }}
+        - {{ get $.Values.storageClassMapping ($class.infraClass | default $key) }}
       {{- end }}
       volumeSnapshotClasses:
       {{- range $key, $class := .snapshotClasses }}
-        - {{ get $.Values.storageClassMapping $class.infraClass }}
+        - {{ get $.Values.storageClassMapping ($class.infraClass | default $key) }}
       {{- end }}
     {{- end }}
     {{- end }}
