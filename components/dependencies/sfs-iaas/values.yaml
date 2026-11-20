@@ -90,7 +90,7 @@ vpcs:
 # @section -- Subnets
 # @default -- See the default Subnet for the syntax to define a new Subnet
 subnets: {}
-  #  default-subnet:
+#  default-subnet:
   #  # -- User-friendly name of the default subnet
   #  # @section -- Default Subnet
   #  name: "default"
