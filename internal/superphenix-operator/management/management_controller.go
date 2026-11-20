@@ -1,6 +1,7 @@
 package management
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/registry"
+	"helm.sh/helm/v3/pkg/release"
 	"helm.sh/helm/v3/pkg/storage/driver"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -46,6 +48,10 @@ const (
 
 	// ConfigMapKeyArgoCD is the key in the management ConfigMap holding ArgoCD Helm values.
 	ConfigMapKeyArgoCD = "argocd"
+
+	// argoCDHelmMaxHistory is the number of ArgoCD Helm release Secrets kept.
+	// The Helm SDK defaults to unlimited history.
+	argoCDHelmMaxHistory = 3
 )
 
 // Reconciler handles the reconciliation of management components.
@@ -75,7 +81,8 @@ type Reconciler struct {
 	InstallWithoutCNI bool
 }
 
-// SetupWithManager registers the controller with the Manager, watching only the management values ConfigMap.
+// SetupWithManager registers the controller with the Manager, reconciling only the management values ConfigMap.
+// The predicate filters events, not the informer: the ConfigMap cache is scoped to the operator namespace in main.
 func (r *Reconciler) SetupWithManager(manager ctrl.Manager) error {
 	return builder.ControllerManagedBy(manager).
 		Named(ControllerName).
@@ -276,10 +283,9 @@ func locateAndLoadArgoCDChart(chartName string, chartPathOptions *action.ChartPa
 func (r *Reconciler) runHelmUpgradeInstall(ctx context.Context, actionConfig *action.Configuration, releaseName string, ch *chart.Chart, vals map[string]interface{}) error {
 	log := logf.FromContext(ctx)
 
-	// Check if the release already exists to decide between Install and Upgrade.
-	histClient := action.NewHistory(actionConfig)
-	histClient.Max = 1
-	_, err := histClient.Run(releaseName)
+	actionConfig.Releases.MaxHistory = argoCDHelmMaxHistory
+
+	current, err := action.NewGet(actionConfig).Run(releaseName)
 	if err != nil && (errors.Is(err, driver.ErrReleaseNotFound) || strings.Contains(err.Error(), "not found")) {
 		log.Info("Helm release not found, performing initial install", "release", releaseName)
 		clientInstall := action.NewInstall(actionConfig)
@@ -298,19 +304,76 @@ func (r *Reconciler) runHelmUpgradeInstall(ctx context.Context, actionConfig *ac
 		}
 		return nil
 	} else if err != nil {
-		return fmt.Errorf("failed to check Helm release history: %w", err)
+		return fmt.Errorf("failed to get Helm release: %w", err)
 	}
 
-	log.Info("Helm release found, performing upgrade", "release", releaseName)
+	if helmReleaseMatches(current, ch, vals) {
+		present, err := helmReleaseResourcesPresent(actionConfig, current)
+		if err != nil {
+			return fmt.Errorf("failed to verify Helm release resources: %w", err)
+		}
+		if present {
+			log.Info("Helm release chart and values unchanged, skipping upgrade", "release", releaseName)
+			return nil
+		}
+		// Chart and values match, but objects from the release were deleted.
+		// Fall through to upgrade so Helm recreates them.
+		log.Info("Helm release resources missing, upgrading to recreate them", "release", releaseName)
+	} else {
+		log.Info("Helm release found, performing upgrade", "release", releaseName)
+	}
+	
 	clientUpgrade := action.NewUpgrade(actionConfig)
 	clientUpgrade.Namespace = r.OperatorNamespace
 	clientUpgrade.Wait = false
+	clientUpgrade.MaxHistory = argoCDHelmMaxHistory
 
 	if _, err := clientUpgrade.Run(releaseName, ch, vals); err != nil {
 		return fmt.Errorf("failed to upgrade initial ArgoCD Helm chart: %w", err)
 	}
 
 	return nil
+}
+
+// helmReleaseMatches reports whether the release is successfully deployed with the given chart and values.
+func helmReleaseMatches(rel *release.Release, ch *chart.Chart, vals map[string]interface{}) bool {
+	if rel == nil || rel.Info == nil || rel.Info.Status != release.StatusDeployed {
+		return false
+	}
+	if rel.Chart == nil || rel.Chart.Metadata == nil || ch == nil || ch.Metadata == nil {
+		return false
+	}
+	if rel.Chart.Metadata.Name != ch.Metadata.Name || rel.Chart.Metadata.Version != ch.Metadata.Version {
+		return false
+	}
+	return reflect.DeepEqual(normalizeHelmValues(rel.Config), normalizeHelmValues(vals))
+}
+
+func normalizeHelmValues(vals map[string]interface{}) map[string]interface{} {
+	if vals == nil {
+		return map[string]interface{}{}
+	}
+	return vals
+}
+
+// helmReleaseResourcesPresent reports whether every object in the release manifest still exists.
+func helmReleaseResourcesPresent(cfg *action.Configuration, rel *release.Release) (bool, error) {
+	if rel == nil || strings.TrimSpace(rel.Manifest) == "" {
+		return true, nil
+	}
+	resources, err := cfg.KubeClient.Build(bytes.NewBufferString(rel.Manifest), false)
+	if err != nil {
+		return false, err
+	}
+	for _, info := range resources {
+		if err := info.Get(); err != nil {
+			if apierrors.IsNotFound(err) {
+				return false, nil
+			}
+			return false, err
+		}
+	}
+	return true, nil
 }
 
 // ensureInitialHelmInstall performs a default Helm upgrade+install of ArgoCD.
@@ -325,11 +388,13 @@ func (r *Reconciler) ensureInitialHelmInstall(ctx context.Context) error {
 		Version: "v1alpha1",
 		Kind:    "Application",
 	})
+
 	err := r.Get(ctx, types.NamespacedName{Name: ArgoCDApp, Namespace: r.OperatorNamespace}, app)
 	if err == nil && !r.InstallWithoutCNI {
 		log.Info("ArgoCD is already self-managed (Application exists), skipping initial Helm install")
 		return nil
 	}
+
 	if !apierrors.IsNotFound(err) {
 		log.Info("Could not verify if ArgoCD Application exists, proceeding with Helm install anyway", "error", err)
 	}

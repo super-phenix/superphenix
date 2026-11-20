@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -83,7 +82,12 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 		})).
 		Watches(
-			&corev1.Secret{},
+			&metav1.PartialObjectMetadata{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+			},
 			handler.EnqueueRequestsFromMapFunc(r.findClustersForSecret),
 		).
 		Named("cluster").

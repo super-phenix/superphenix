@@ -78,6 +78,11 @@ data:
               hs = {}
               hs.status = "Healthy"
               return hs
+          ceph.rook.io/CephCluster:
+            health.lua: |
+              hs = {}
+              hs.status = "Healthy"
+              return hs
 
       cmp:
         create: true
