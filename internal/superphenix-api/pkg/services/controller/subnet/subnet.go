@@ -168,7 +168,7 @@ func (h *Service) GetSubnet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeSubnet.Name) {
 		return
 	}
 
@@ -416,7 +416,7 @@ func (h *Service) DeleteSubnet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeSubnet.Name) {
 		return
 	}
 

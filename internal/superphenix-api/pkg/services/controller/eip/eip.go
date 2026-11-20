@@ -167,7 +167,7 @@ func (h *Service) GetEip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeEIP.Name) {
 		return
 	}
 
@@ -386,7 +386,7 @@ func (h *Service) DeleteEip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeEIP.Name) {
 		return
 	}
 
@@ -444,8 +444,8 @@ func combineListResult(concatResults map[string][]interface{}, resources []model
 				}
 			}
 
-			// If only gitops
-			if !found {
+			// If only gitops, resources rendered for another product are left out
+			if !found && !ctrlutils.IsGenerated(mapResult, "eip") {
 				combineResults = append(combineResults, EipFullResponse{
 					ProductResponse: ProductResponse{
 						ID:          mapResult["id"].(string),

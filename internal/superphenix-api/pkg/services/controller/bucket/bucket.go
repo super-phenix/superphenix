@@ -226,7 +226,7 @@ func (h *Service) GetBucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeBucket.Name) {
 		return
 	}
 
@@ -441,7 +441,7 @@ func (h *Service) DeleteBucket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeBucket.Name) {
 		return
 	}
 
@@ -496,7 +496,7 @@ func (h *Service) GetBucketCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeBucket.Name) {
 		return
 	}
 

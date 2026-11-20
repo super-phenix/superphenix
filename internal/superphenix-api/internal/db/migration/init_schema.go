@@ -61,6 +61,7 @@ func initSchema(tx *gorm.DB) error {
 		{ID: "securityGroup", Name: "Security Group"},
 		{ID: "kaas", Name: "KaaS"},
 		{ID: "baas", Name: "BaaS"},
+		{ID: "dbaas", Name: "DBaaS"},
 	}
 
 	if err := tx.CreateInBatches(productTypes, 10).Error; err != nil {

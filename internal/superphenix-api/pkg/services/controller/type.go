@@ -102,3 +102,15 @@ type AppSpecFullResponse struct {
 	ProductResponse `json:",inline"`
 	Spec            interface{} `json:"spec"`
 }
+
+type DBaaSFullResponse struct {
+	ProductResponse `json:",inline"`
+	Cluster         interface{}          `json:"cluster"`
+	Endpoints       interface{}          `json:"endpoints"`
+	ExternalAccess  *DBaaSExternalAccess `json:"externalAccess,omitempty"`
+}
+
+// DBaaSExternalAccess identifies the EIP exposing a database outside of its VPC.
+type DBaaSExternalAccess struct {
+	EipEId string `json:"eipEId"`
+}

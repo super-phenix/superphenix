@@ -18,7 +18,7 @@ const (
 
 // PredefinedCatalogVersion must be bumped on every change to PredefinedGroups or to
 // schema/schema_default.perm. Organizations below this version are re-synchronized.
-const PredefinedCatalogVersion = 3
+const PredefinedCatalogVersion = 4
 
 // Keys linking a persisted group to its catalog entry. Never user-visible, never change.
 const (
@@ -128,6 +128,7 @@ var (
 		permissionSet.ProjectBaaSFullAccess,
 		permissionSet.ProjectBucketFullAccess,
 		permissionSet.ProjectAZQuotaFullAccess,
+		permissionSet.ProjectDBaaSFullAccess,
 		permissionSet.ProjectArgoCdAccess,
 	}
 
@@ -156,6 +157,7 @@ var (
 		permissionSet.ProjectBaaSFullAccess,
 		permissionSet.ProjectBucketFullAccess,
 		permissionSet.ProjectAZQuotaReadOnly,
+		permissionSet.ProjectDBaaSFullAccess,
 		permissionSet.ProjectArgoCdAccess,
 	}
 )
