@@ -228,17 +228,17 @@ func TestIsIPInCIDR(t *testing.T) {
 		},
 		{
 			name: "Dual-stack CIDR, IPv4 in range",
-			args: args{cidr: "10.16.0.0/16,fd00:10:16::/64", ip: "10.16.1.5"},
+			args: args{cidr: "10.32.0.0/16,fd00:10:32::/64", ip: "10.32.1.5"},
 			want: true,
 		},
 		{
 			name: "Dual-stack CIDR, IPv6 in range",
-			args: args{cidr: "10.16.0.0/16,fd00:10:16::/64", ip: "fd00:10:16::1"},
+			args: args{cidr: "10.32.0.0/16,fd00:10:32::/64", ip: "fd00:10:32::1"},
 			want: true,
 		},
 		{
 			name: "Dual-stack CIDR, IP out of both ranges",
-			args: args{cidr: "10.16.0.0/16,fd00:10:16::/64", ip: "192.168.1.1"},
+			args: args{cidr: "10.32.0.0/16,fd00:10:32::/64", ip: "192.168.1.1"},
 			want: false,
 		},
 	}

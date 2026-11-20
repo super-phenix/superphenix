@@ -386,8 +386,8 @@ productsConfig:
   defaultSubnet:
     productName: "default"
     protocol: "Dual"
-    ipv4: "10.16.0.0/16"
-    ipv6: "fd00:10:16::/64"
+    ipv4: "10.32.0.0/16"
+    ipv6: "fd00:10:32::/64"
     natGatewayEnabled: false
     private: false
     dnsV4: "1.1.1.1"
