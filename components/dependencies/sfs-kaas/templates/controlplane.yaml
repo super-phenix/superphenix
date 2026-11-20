@@ -25,17 +25,39 @@ metadata:
     superphenix.net/resourceLocalID: {{ $preID | quote }}
     superphenix.net/resourceName: {{ $cluster.name | quote }}
 spec:
-  {{- with $controlPlane.apiServer }}
   apiServer:
+    resources:
+      limits:
+        cpu: {{ ((($controlPlane.apiServer).resources).limits).cpu | default "1000m" }}
+        memory: {{ ((($controlPlane.apiServer).resources).limits).memory | default "4Gi" }}
+      requests:
+        cpu: {{ ((($controlPlane.apiServer).resources).requests).cpu | default "300m" }}
+        memory: {{ ((($controlPlane.apiServer).resources).requests).memory | default "1Gi" }}
+    {{- with $controlPlane.apiServer }}
     {{- with .extraArgs }}
     extraArgs:
       {{- . | toYaml | nindent 6 }}
     {{- end }}
-  {{- end }}
+    {{- end }}
   controllerManager:
     extraArgs:
       # Needed because we set a /96 as pod cidrBlock
       - --node-cidr-mask-size-ipv6=112
+    resources:
+      limits:
+        cpu: {{ ((($controlPlane.controllerManager).resources).limits).cpu | default "300m" }}
+        memory: {{ ((($controlPlane.controllerManager).resources).limits).memory | default "512Mi" }}
+      requests:
+        cpu: {{ ((($controlPlane.controllerManager).resources).requests).cpu | default "30m" }}
+        memory: {{ ((($controlPlane.controllerManager).resources).requests).memory | default "128Mi" }}
+  scheduler:
+    resources:
+      limits:
+        cpu: {{ ((($controlPlane.scheduler).resources).limits).cpu | default "50m" }}
+        memory: {{ ((($controlPlane.scheduler).resources).limits).memory | default "256Mi" }}
+      requests:
+        cpu: {{ ((($controlPlane.scheduler).resources).requests).cpu | default "20m" }}
+        memory: {{ ((($controlPlane.scheduler).resources).requests).memory | default "128Mi" }}
   {{- if ne $dataStoreName "" }}
   dataStoreName: {{ $dataStoreName | quote }}
   {{- end }}
@@ -44,6 +66,13 @@ spec:
     konnectivity:
       server:
         port: {{ $controlPlaneDefaults.network.konnectivity.port }}
+        resources:
+          limits:
+            cpu: {{ (((($controlPlane.konnectivity).server).resources).limits).cpu | default "300m" }}
+            memory: {{ (((($controlPlane.konnectivity).server).resources).limits).memory | default "256Mi" }}
+          requests:
+            cpu: {{ (((($controlPlane.konnectivity).server).resources).requests).cpu | default "30m" }}
+            memory: {{ (((($controlPlane.konnectivity).server).resources).requests).memory | default "128Mi" }}
       agent:
         tolerations:
           - operator: Exists
