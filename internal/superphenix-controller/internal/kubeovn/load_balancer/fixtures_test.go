@@ -83,7 +83,7 @@ func setup(t *testing.T, f fixture) *testhelper.FakeKubeOvnClientset {
 
 	client := testhelper.NewFakeKubeOvnClientset()
 	subnets := []*v1.Subnet{
-		subnetObj(subnetA, project, vpcA, "10.10.0.0/16,fd00:10:10::/64", nil),
+		subnetObj(subnetA, project, vpcA, "10.32.0.0/16,fd00:10:32::/64", nil),
 		subnetObj(subnetA2, project, vpcA, "10.11.0.0/16", nil),
 		subnetObj(subnetShared, otherProject, vpcB, "10.20.0.0/16",
 			map[string]string{spxId.SpxAnnotationAllowedProjects: project}),
