@@ -405,6 +405,12 @@ apps:
       hubble:
         enabled: false
 
+      # Expose agent metrics (port 9962) for the Cilium Grafana dashboard. The chart's
+      # ServiceMonitor stays disabled: Cilium syncs before kube-prometheus-stack installs
+      # the monitoring CRDs.
+      prometheus:
+        enabled: true
+
   # Metrics-server -- Pod metrics aggregator for HPA/VPA
   metrics-server:
     enabled: true
@@ -564,6 +570,75 @@ apps:
             secureJsonData:
               httpHeaderValue1: '1'
         adminPassword: ""
+        # Dashboards are downloaded by an init container at startup. Keep certificate
+        # validation on (the chart default "-skf" disables it).
+        defaultCurlOptions: "-sf"
+        sidecar:
+          dashboards:
+            enabled: true
+            searchNamespace: ALL
+        dashboardProviders:
+          dashboardproviders.yaml:
+            apiVersion: 1
+            providers:
+              - name: 'default'
+                orgId: 1
+                folder: ''
+                type: file
+                disableDeletion: false
+                editable: true
+                options:
+                  path: /var/lib/grafana/dashboards/default
+        # Every dashboard is pinned to an explicit revision or tag so its content only changes
+        # when bumped here. Bump them together with the component they monitor.
+        # `datasource` replaces `${DS_PROMETHEUS}` with the UID of the default Prometheus datasource.
+        # Dashboards with their own datasource variable need no replacement.
+        dashboards:
+          default:
+            ceph-cluster:
+              gnetId: 2842
+              revision: 18
+              datasource:
+                - name: DS_PROMETHEUS
+                  value: prometheus
+            ceph-osd:
+              gnetId: 5336
+              revision: 9
+              datasource:
+                - name: DS_PROMETHEUS
+                  value: prometheus
+            ceph-pools:
+              gnetId: 5342
+              revision: 9
+              datasource:
+                - name: DS_PROMETHEUS
+                  value: prometheus
+            kubevirt-control-plane:
+              url: https://raw.githubusercontent.com/kubevirt/monitoring/8e5747515aa4584e6cb7a83701798a55b7db2e1c/dashboards/grafana/kubevirt-control-plane.json
+            kubevirt-vm:
+              gnetId: 25834
+              revision: 1
+              datasource:
+                - name: DS_PROMETHEUS
+                  value: prometheus
+                - name: VAR_DEFAULT_CPU_FREQUENCY_MEGA_HERTZ
+                  value: "3000"
+            cert-manager:
+              gnetId: 20842
+              revision: 3
+            velero:
+              gnetId: 16829
+              revision: 5
+            cilium-agent:
+              url: https://raw.githubusercontent.com/cilium/cilium/v1.20.4/install/kubernetes/cilium/files/cilium-agent/dashboards/cilium-dashboard.json
+              datasource:
+                - name: DS_PROMETHEUS
+                  value: prometheus
+            cilium-operator:
+              url: https://raw.githubusercontent.com/cilium/cilium/v1.20.4/install/kubernetes/cilium/files/cilium-operator/dashboards/cilium-operator-dashboard.json
+              datasource:
+                - name: DS_PROMETHEUS
+                  value: prometheus
 
       prometheus:
         prometheusSpec:

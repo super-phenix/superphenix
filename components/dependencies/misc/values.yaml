@@ -3,19 +3,10 @@
 effectiveMode: ""
 
 # -- Map of object names to a list of modes.
-# If an object's name is in this map, it will only be deployed if the
-# effectiveMode is in the list.
+# An object mapped to a non-empty list is only deployed if the effectiveMode is in the list.
+# An object that is not in this map, or is mapped to an empty list, is deployed in every mode.
 modes: {}
 
-# -- Arbitrary YAML objects to be deployed.
-# The objects are templated before being applied.
-# Example:
-# objects:
-#   my-configmap:
-#     apiVersion: v1
-#     kind: ConfigMap
-#     metadata:
-#       name: my-configmap
-#     data:
-#       key: '{{ .Release.Name }}'
+# -- Arbitrary YAML objects to be deployed, keyed by name.
+# The objects are templated before being applied. See the example below.
 objects: {}
