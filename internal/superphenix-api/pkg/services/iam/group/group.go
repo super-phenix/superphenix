@@ -2,6 +2,7 @@ package group
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	groupDb "github.com/super-phenix/superphenix/internal/superphenix-api/internal/db/crud/group"
@@ -141,6 +142,9 @@ func (h *Service) CreateOrUpdateOrganizationGroup(w http.ResponseWriter, r *http
 		return
 	}
 
+	// Project ids the group already holds, tolerated when no longer valid.
+	var currentProjectIds []string
+
 	// If we have an ID, then do some check
 	if body.ID != uuid.Nil {
 		audit.SetResource(r.Context(), body.ID.String())
@@ -150,6 +154,7 @@ func (h *Service) CreateOrUpdateOrganizationGroup(w http.ResponseWriter, r *http
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
+		currentProjectIds = group.ProjectIds
 
 		// Predefined groups are realigned on the catalog, so an edit here would be reverted on the
 		// next reconciliation. Duplicate the group instead.
@@ -181,6 +186,19 @@ func (h *Service) CreateOrUpdateOrganizationGroup(w http.ResponseWriter, r *http
 			return
 		}
 	}
+	projectIds, err := resolveGroupProjectIds(orgaUuid, body.ProjectIds, currentProjectIds)
+	if errors.Is(err, errProjectsNotInOrga) {
+		log.Warn().Err(err).Str("orgaId", orgaId).Msg("Group refused: project outside the organization")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to check group projects")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	body.ProjectIds = projectIds
+
 	// No problem found !
 	var cast model.Group
 	if err := utils.Cast(body, &cast); err != nil {
@@ -341,12 +359,20 @@ func (h *Service) DuplicateOrganizationGroup(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Only copy the projects that still belong to the organization.
+	projectIds, err := resolveGroupProjectIds(orgaUuid, source.ProjectIds, source.ProjectIds)
+	if err != nil {
+		log.Error().Err(err).Str("groupId", groupId).Msg("Failed to check group projects")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	// PredefinedKey left nil: the copy is custom.
 	group, err := SaveGroup(r.Context(), model.Group{
 		Name:           body.Name,
 		OrgaId:         orgaUuid,
 		AllProjects:    source.AllProjects,
-		ProjectIds:     source.ProjectIds,
+		ProjectIds:     projectIds,
 		PermissionSets: source.PermissionSets,
 	})
 	if err != nil {

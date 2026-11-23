@@ -76,6 +76,20 @@ func FindByIdAndOrgaId(projectId, orgaId uuid.UUID) (model.Project, error) {
 	return p, err
 }
 
+// FindIdsInOrga returns, among projectIds, the ones that belong to the given
+// organization. Unknown ids and ids of another organization are left out.
+func FindIdsInOrga(projectIds []uuid.UUID, orgaId uuid.UUID) ([]uuid.UUID, error) {
+	found := []uuid.UUID{}
+	if len(projectIds) == 0 {
+		return found, nil
+	}
+	err := db.Client.
+		Model(&model.Project{}).
+		Where("orga_id = ? AND id IN ?", orgaId, projectIds).
+		Pluck("id", &found).Error
+	return found, err
+}
+
 // CreateProject create a new project into the database
 //
 // DO NOT USE OUTSIDE OF PROJECT INITIALIZATION - data.InitializeProject
