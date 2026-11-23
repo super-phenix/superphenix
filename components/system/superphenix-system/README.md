@@ -84,6 +84,61 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "targetRevision": "0.1.0",
     "wave": "5"
   },
+  "ceph-csi-drivers": {
+    "automation": {
+      "cleanupOnDeletion": false,
+      "enabled": true,
+      "prune": true,
+      "selfHeal": true,
+      "syncOptions": {}
+    },
+    "enabled": false,
+    "helm": {
+      "chart": "ceph-csi-drivers",
+      "releaseName": "ceph-csi-drivers"
+    },
+    "modes": [
+      "Hyperconverged",
+      "DecoupledStorage",
+      "DecoupledWorkload"
+    ],
+    "namespace": "rook-system",
+    "repoURL": "https://ceph.github.io/ceph-csi-operator",
+    "targetRevision": "1.1.0",
+    "values": {
+      "drivers": {
+        "cephfs": {
+          "enabled": false
+        },
+        "nfs": {
+          "enabled": false
+        },
+        "nvmeof": {
+          "enabled": false
+        },
+        "rbd": {
+          "controllerPlugin": {
+            "hostNetwork": true,
+            "priorityClassName": "system-cluster-critical"
+          },
+          "deployCsiAddons": true,
+          "enabled": true,
+          "generateOMapInfo": true,
+          "imageSet": {
+            "name": "rook-csi-operator-image-set-configmap"
+          },
+          "name": "rook-system.rbd.csi.ceph.com",
+          "nodePlugin": {
+            "priorityClassName": "system-node-critical"
+          }
+        }
+      },
+      "operatorConfig": {
+        "namespace": "rook-system"
+      }
+    },
+    "wave": "-4"
+  },
   "cert-manager": {
     "automation": {
       "cleanupOnDeletion": false,
@@ -104,7 +159,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "cert-manager-system",
     "repoURL": "https://charts.jetstack.io",
-    "targetRevision": "1.21.1",
+    "targetRevision": "1.21.3",
     "values": {
       "crds": {
         "enabled": true
@@ -170,6 +225,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "k8sServiceHost": "localhost",
       "k8sServicePort": 7445,
       "kubeProxyReplacement": true,
+      "prometheus": {
+        "enabled": true
+      },
       "securityContext": {
         "capabilities": {
           "ciliumAgent": [
@@ -214,21 +272,21 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "capi-operator-system",
     "repoURL": "https://kubernetes-sigs.github.io/cluster-api-operator",
-    "targetRevision": "0.28.0",
+    "targetRevision": "0.29.0",
     "values": {
       "bootstrap": {
         "kubeadm": {
-          "version": "v1.12.10"
+          "version": "v1.13.8"
         }
       },
       "controlPlane": {
         "kamaji": {
-          "version": "v0.20.0"
+          "version": "v0.21.0"
         }
       },
       "core": {
         "cluster-api": {
-          "version": "v1.12.10"
+          "version": "v1.13.8"
         }
       },
       "infrastructure": {
@@ -283,7 +341,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "coredns-system",
     "repoURL": "https://coredns.github.io/helm",
-    "targetRevision": "1.47.0",
+    "targetRevision": "1.50.4",
     "values": {
       "prometheus": {
         "monitor": {
@@ -320,7 +378,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "modes": [
       "Hyperconverged",
-      "DecoupledWorkload"
+      "DecoupledWorkload",
+      "DecoupledStorage"
     ],
     "namespace": "csi-addons-system",
     "path": ".",
@@ -343,7 +402,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     },
     "modes": [
       "Hyperconverged",
-      "DecoupledWorkload"
+      "DecoupledWorkload",
+      "DecoupledStorage"
     ],
     "namespace": "csi-snapshotter-system",
     "path": ".",
@@ -495,8 +555,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "DecoupledWorkload"
     ],
     "namespace": "kamaji-system",
-    "repoURL": "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm",
-    "targetRevision": "26.7.22",
+    "repoURL": "harbor.agoracalyce.net/spx-helm",
+    "targetRevision": "26.9.30",
     "values": {
       "affinity": {
         "podAntiAffinity": {
@@ -520,12 +580,11 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "--certificate-expiration-deadline=336h"
       ],
       "image": {
-        "tag": "26.7.3-edge"
+        "tag": "26.9.5-edge"
       },
       "kamaji-etcd": {
         "deploy": false
       },
-      "replicaCount": 3,
       "resources": {
         "limits": {
           "cpu": "1000m",
@@ -946,7 +1005,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
               "BlockVolume",
               "ExpandDisks",
               "Snapshot",
-              "HotplugVolumes"
+              "HotplugVolumes",
+              "GPU",
+              "DisableMDEVConfiguration"
             ],
             "memoryOvercommit": 200
           },
@@ -972,8 +1033,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             }
           },
           "virtualMachineInstancesPerNode": 100,
-          "vmRolloutStrategy": "LiveUpdate",
-          "vmStateStorageClass": "spx-storage.spx-rbd-3x"
+          "vmRolloutStrategy": "LiveUpdate"
         },
         "imagePullPolicy": "IfNotPresent",
         "monitorAccount": "prometheus-kube-prometheus-prometheus",
@@ -1177,7 +1237,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "metrics-server-system",
     "repoURL": "https://kubernetes-sigs.github.io/metrics-server/",
-    "targetRevision": "3.13.1",
+    "targetRevision": "3.14.0",
     "values": {
       "defaultArgs": [
         "--cert-dir=/tmp",
@@ -1308,7 +1368,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "Management"
     ],
     "repoURL": "https://permify.github.io/helm-charts",
-    "targetRevision": "0.3.*",
+    "targetRevision": "0.3.9",
     "values": {
       "app": {
         "database": {
@@ -1405,7 +1465,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "pod-security.kubernetes.io/enforce": "privileged"
     },
     "repoURL": "https://prometheus-community.github.io/helm-charts",
-    "targetRevision": "88.2.0",
+    "targetRevision": "93.1.1",
     "values": {
       "alertmanager": {
         "enabled": false
@@ -1429,6 +1489,102 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           }
         ],
         "adminPassword": "",
+        "dashboardProviders": {
+          "dashboardproviders.yaml": {
+            "apiVersion": 1,
+            "providers": [
+              {
+                "disableDeletion": false,
+                "editable": true,
+                "folder": "",
+                "name": "default",
+                "options": {
+                  "path": "/var/lib/grafana/dashboards/default"
+                },
+                "orgId": 1,
+                "type": "file"
+              }
+            ]
+          }
+        },
+        "dashboards": {
+          "default": {
+            "ceph-cluster": {
+              "datasource": [
+                {
+                  "name": "DS_PROMETHEUS",
+                  "value": "prometheus"
+                }
+              ],
+              "gnetId": 2842,
+              "revision": 18
+            },
+            "ceph-osd": {
+              "datasource": [
+                {
+                  "name": "DS_PROMETHEUS",
+                  "value": "prometheus"
+                }
+              ],
+              "gnetId": 5336,
+              "revision": 9
+            },
+            "ceph-pools": {
+              "datasource": [
+                {
+                  "name": "DS_PROMETHEUS",
+                  "value": "prometheus"
+                }
+              ],
+              "gnetId": 5342,
+              "revision": 9
+            },
+            "cert-manager": {
+              "gnetId": 20842,
+              "revision": 3
+            },
+            "cilium-agent": {
+              "datasource": [
+                {
+                  "name": "DS_PROMETHEUS",
+                  "value": "prometheus"
+                }
+              ],
+              "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/install/kubernetes/cilium/files/cilium-agent/dashboards/cilium-dashboard.json"
+            },
+            "cilium-operator": {
+              "datasource": [
+                {
+                  "name": "DS_PROMETHEUS",
+                  "value": "prometheus"
+                }
+              ],
+              "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/install/kubernetes/cilium/files/cilium-operator/dashboards/cilium-operator-dashboard.json"
+            },
+            "kubevirt-control-plane": {
+              "url": "https://raw.githubusercontent.com/kubevirt/monitoring/8e5747515aa4584e6cb7a83701798a55b7db2e1c/dashboards/grafana/kubevirt-control-plane.json"
+            },
+            "kubevirt-vm": {
+              "datasource": [
+                {
+                  "name": "DS_PROMETHEUS",
+                  "value": "prometheus"
+                },
+                {
+                  "name": "VAR_DEFAULT_CPU_FREQUENCY_MEGA_HERTZ",
+                  "value": "3000"
+                }
+              ],
+              "gnetId": 25834,
+              "revision": 1
+            },
+            "velero": {
+              "gnetId": 16829,
+              "revision": 5
+            }
+          }
+        },
+        "defaultCurlOptions": "-sf",
         "ingress": {
           "annotations": {
             "cert-manager.io/cluster-issuer": "letsencrypt"
@@ -1445,6 +1601,12 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
               "secretName": "grafana-tls"
             }
           ]
+        },
+        "sidecar": {
+          "dashboards": {
+            "enabled": true,
+            "searchNamespace": "ALL"
+          }
         }
       },
       "kubeControllerManager": {
@@ -1650,7 +1812,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           },
           "storageClass": {
             "allowVolumeExpansion": true,
-            "enabled": "{{- eq $.Values.cluster.deploymentTopology \"DecoupledStorage\" | ternary \"true\" \"\" -}}",
+            "enabled": "{{- eq (include \"superphenix-system.effectiveMode\" $) \"DecoupledStorage\" | ternary \"true\" \"\" -}}",
             "isDefault": true,
             "mountOptions": [
               "discard"
@@ -1692,14 +1854,6 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           "prometheusEndpoint": "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090",
           "prometheusEndpointSSLVerify": false,
           "ssl": false
-        },
-        "mgr": {
-          "modules": [
-            {
-              "enabled": true,
-              "name": "rook"
-            }
-          ]
         },
         "network": {
           "ipFamily": "IPv4",
@@ -1770,6 +1924,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "csiAddons": {
           "enabled": true
         },
+        "enableCSIHostNetwork": true,
         "enableCephfsDriver": false,
         "enableOMAPGenerator": true,
         "rookUseCsiOperator": true,
@@ -1778,7 +1933,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         }
       },
       "discoveryDaemonInterval": "5m",
-      "enableDiscoveryDaemon": true,
+      "enableDiscoveryDaemon": "{{- has (include \"superphenix-system.effectiveMode\" $) (list \"Hyperconverged\" \"DecoupledStorage\") | ternary \"true\" \"false\" -}}",
       "enforceHostNetwork": true,
       "monitoring": {
         "enabled": true
@@ -1807,7 +1962,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     ],
     "namespace": "snapscheduler-system",
     "repoURL": "https://backube.github.io/helm-charts/",
-    "targetRevision": "*",
+    "targetRevision": "3.5.0",
     "values": {
       "enableOwnerReferences": true,
       "replicaCount": 2
@@ -2271,7 +2426,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "pod-security.kubernetes.io/enforce": "privileged"
     },
     "repoURL": "https://vmware-tanzu.github.io/helm-charts",
-    "targetRevision": "12.0.0",
+    "targetRevision": "12.2.4",
     "values": {
       "configuration": {
         "backupStorageLocation": [],
@@ -2408,6 +2563,69 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
 			<td>Containerized Data Importer (CDI) for KubeVirt. Provisions VM disks from images, PVCs or uploads.</td>
 		</tr>
 		<tr>
+			<td>apps.ceph-csi-drivers</td>
+			<td>object</td>
+			<td><pre lang="json">
+{
+  "automation": {
+    "cleanupOnDeletion": false,
+    "enabled": true,
+    "prune": true,
+    "selfHeal": true,
+    "syncOptions": {}
+  },
+  "enabled": false,
+  "helm": {
+    "chart": "ceph-csi-drivers",
+    "releaseName": "ceph-csi-drivers"
+  },
+  "modes": [
+    "Hyperconverged",
+    "DecoupledStorage",
+    "DecoupledWorkload"
+  ],
+  "namespace": "rook-system",
+  "repoURL": "https://ceph.github.io/ceph-csi-operator",
+  "targetRevision": "1.1.0",
+  "values": {
+    "drivers": {
+      "cephfs": {
+        "enabled": false
+      },
+      "nfs": {
+        "enabled": false
+      },
+      "nvmeof": {
+        "enabled": false
+      },
+      "rbd": {
+        "controllerPlugin": {
+          "hostNetwork": true,
+          "priorityClassName": "system-cluster-critical"
+        },
+        "deployCsiAddons": true,
+        "enabled": true,
+        "generateOMapInfo": true,
+        "imageSet": {
+          "name": "rook-csi-operator-image-set-configmap"
+        },
+        "name": "rook-system.rbd.csi.ceph.com",
+        "nodePlugin": {
+          "priorityClassName": "system-node-critical"
+        }
+      }
+    },
+    "operatorConfig": {
+      "namespace": "rook-system"
+    }
+  },
+  "wave": "-4"
+}
+</pre>
+</td>
+			<td>The Ceph CSI driver, used to consume Ceph storage. Do NOT enable this while `rook-operator` is still reconciling its own Driver/OperatorConfig CRs, or the two controllers will fight over the same objects. The driver name below is kept identical to what Rook generates today (`<operator-namespace>.rbd.csi.ceph.com`), so existing StorageClasses, the VolumeReplicationClass and PVs are unaffected if this is ever enabled in Rook's place.  Known gaps versus `rook-operator.values.csi` (this chart has no equivalent setting):   - `csiAddonsRBDProvisionerPort: 9071`, our workaround for the host-network port clash.   - `serviceMonitor.enabled` (CSI metrics ServiceMonitor) has no counterpart here.   - `enableCSIHostNetwork`: the `Driver` CR only exposes `hostNetwork` on the     controller plugin (set below); the node plugin DaemonSets have no equivalent field     in this chart and always run on the pod network.</td>
+		</tr>
+		<tr>
 			<td>apps.cert-manager</td>
 			<td>object</td>
 			<td><pre lang="json">
@@ -2431,7 +2649,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "cert-manager-system",
   "repoURL": "https://charts.jetstack.io",
-  "targetRevision": "1.21.1",
+  "targetRevision": "1.21.3",
   "values": {
     "crds": {
       "enabled": true
@@ -2505,6 +2723,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "k8sServiceHost": "localhost",
     "k8sServicePort": 7445,
     "kubeProxyReplacement": true,
+    "prometheus": {
+      "enabled": true
+    },
     "securityContext": {
       "capabilities": {
         "ciliumAgent": [
@@ -2557,21 +2778,21 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "capi-operator-system",
   "repoURL": "https://kubernetes-sigs.github.io/cluster-api-operator",
-  "targetRevision": "0.28.0",
+  "targetRevision": "0.29.0",
   "values": {
     "bootstrap": {
       "kubeadm": {
-        "version": "v1.12.10"
+        "version": "v1.13.8"
       }
     },
     "controlPlane": {
       "kamaji": {
-        "version": "v0.20.0"
+        "version": "v0.21.0"
       }
     },
     "core": {
       "cluster-api": {
-        "version": "v1.12.10"
+        "version": "v1.13.8"
       }
     },
     "infrastructure": {
@@ -2642,7 +2863,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "coredns-system",
   "repoURL": "https://coredns.github.io/helm",
-  "targetRevision": "1.47.0",
+  "targetRevision": "1.50.4",
   "values": {
     "prometheus": {
       "monitor": {
@@ -2687,7 +2908,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledWorkload",
+    "DecoupledStorage"
   ],
   "namespace": "csi-addons-system",
   "path": ".",
@@ -2718,7 +2940,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "modes": [
     "Hyperconverged",
-    "DecoupledWorkload"
+    "DecoupledWorkload",
+    "DecoupledStorage"
   ],
   "namespace": "csi-snapshotter-system",
   "path": ".",
@@ -2918,8 +3141,8 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "DecoupledWorkload"
   ],
   "namespace": "kamaji-system",
-  "repoURL": "harbor.agc.dpk-agc-cl04.agoracalyce.net/spx-helm",
-  "targetRevision": "26.7.22",
+  "repoURL": "harbor.agoracalyce.net/spx-helm",
+  "targetRevision": "26.9.30",
   "values": {
     "affinity": {
       "podAntiAffinity": {
@@ -2943,12 +3166,11 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "--certificate-expiration-deadline=336h"
     ],
     "image": {
-      "tag": "26.7.3-edge"
+      "tag": "26.9.5-edge"
     },
     "kamaji-etcd": {
       "deploy": false
     },
-    "replicaCount": 3,
     "resources": {
       "limits": {
         "cpu": "1000m",
@@ -3637,7 +3859,9 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             "BlockVolume",
             "ExpandDisks",
             "Snapshot",
-            "HotplugVolumes"
+            "HotplugVolumes",
+            "GPU",
+            "DisableMDEVConfiguration"
           ],
           "memoryOvercommit": 200
         },
@@ -3663,8 +3887,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
           }
         },
         "virtualMachineInstancesPerNode": 100,
-        "vmRolloutStrategy": "LiveUpdate",
-        "vmStateStorageClass": "spx-storage.spx-rbd-3x"
+        "vmRolloutStrategy": "LiveUpdate"
       },
       "imagePullPolicy": "IfNotPresent",
       "monitorAccount": "prometheus-kube-prometheus-prometheus",
@@ -4025,7 +4248,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "Management"
   ],
   "repoURL": "https://permify.github.io/helm-charts",
-  "targetRevision": "0.3.*",
+  "targetRevision": "0.3.9",
   "values": {
     "app": {
       "database": {
@@ -4220,7 +4443,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "pod-security.kubernetes.io/enforce": "privileged"
   },
   "repoURL": "https://prometheus-community.github.io/helm-charts",
-  "targetRevision": "88.2.0",
+  "targetRevision": "93.1.1",
   "values": {
     "alertmanager": {
       "enabled": false
@@ -4244,6 +4467,102 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         }
       ],
       "adminPassword": "",
+      "dashboardProviders": {
+        "dashboardproviders.yaml": {
+          "apiVersion": 1,
+          "providers": [
+            {
+              "disableDeletion": false,
+              "editable": true,
+              "folder": "",
+              "name": "default",
+              "options": {
+                "path": "/var/lib/grafana/dashboards/default"
+              },
+              "orgId": 1,
+              "type": "file"
+            }
+          ]
+        }
+      },
+      "dashboards": {
+        "default": {
+          "ceph-cluster": {
+            "datasource": [
+              {
+                "name": "DS_PROMETHEUS",
+                "value": "prometheus"
+              }
+            ],
+            "gnetId": 2842,
+            "revision": 18
+          },
+          "ceph-osd": {
+            "datasource": [
+              {
+                "name": "DS_PROMETHEUS",
+                "value": "prometheus"
+              }
+            ],
+            "gnetId": 5336,
+            "revision": 9
+          },
+          "ceph-pools": {
+            "datasource": [
+              {
+                "name": "DS_PROMETHEUS",
+                "value": "prometheus"
+              }
+            ],
+            "gnetId": 5342,
+            "revision": 9
+          },
+          "cert-manager": {
+            "gnetId": 20842,
+            "revision": 3
+          },
+          "cilium-agent": {
+            "datasource": [
+              {
+                "name": "DS_PROMETHEUS",
+                "value": "prometheus"
+              }
+            ],
+            "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/install/kubernetes/cilium/files/cilium-agent/dashboards/cilium-dashboard.json"
+          },
+          "cilium-operator": {
+            "datasource": [
+              {
+                "name": "DS_PROMETHEUS",
+                "value": "prometheus"
+              }
+            ],
+            "url": "https://raw.githubusercontent.com/cilium/cilium/v1.20.4/install/kubernetes/cilium/files/cilium-operator/dashboards/cilium-operator-dashboard.json"
+          },
+          "kubevirt-control-plane": {
+            "url": "https://raw.githubusercontent.com/kubevirt/monitoring/8e5747515aa4584e6cb7a83701798a55b7db2e1c/dashboards/grafana/kubevirt-control-plane.json"
+          },
+          "kubevirt-vm": {
+            "datasource": [
+              {
+                "name": "DS_PROMETHEUS",
+                "value": "prometheus"
+              },
+              {
+                "name": "VAR_DEFAULT_CPU_FREQUENCY_MEGA_HERTZ",
+                "value": "3000"
+              }
+            ],
+            "gnetId": 25834,
+            "revision": 1
+          },
+          "velero": {
+            "gnetId": 16829,
+            "revision": 5
+          }
+        }
+      },
+      "defaultCurlOptions": "-sf",
       "ingress": {
         "annotations": {
           "cert-manager.io/cluster-issuer": "letsencrypt"
@@ -4260,6 +4579,12 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
             "secretName": "grafana-tls"
           }
         ]
+      },
+      "sidecar": {
+        "dashboards": {
+          "enabled": true,
+          "searchNamespace": "ALL"
+        }
       }
     },
     "kubeControllerManager": {
@@ -4414,7 +4739,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   },
   "path": ".",
   "repoURL": "oci://ghcr.io/super-phenix/charts/spx-rook-connection",
-  "targetRevision": "0.3.0",
+  "targetRevision": "",
   "values": {
     "clusters": [
       {
@@ -4520,7 +4845,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         },
         "storageClass": {
           "allowVolumeExpansion": true,
-          "enabled": "{{- eq $.Values.cluster.deploymentTopology \"DecoupledStorage\" | ternary \"true\" \"\" -}}",
+          "enabled": "{{- eq (include \"superphenix-system.effectiveMode\" $) \"DecoupledStorage\" | ternary \"true\" \"\" -}}",
           "isDefault": true,
           "mountOptions": [
             "discard"
@@ -4562,14 +4887,6 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
         "prometheusEndpoint": "http://prometheus-kube-prometheus-prometheus.prometheus-system:9090",
         "prometheusEndpointSSLVerify": false,
         "ssl": false
-      },
-      "mgr": {
-        "modules": [
-          {
-            "enabled": true,
-            "name": "rook"
-          }
-        ]
       },
       "network": {
         "ipFamily": "IPv4",
@@ -4648,6 +4965,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       "csiAddons": {
         "enabled": true
       },
+      "enableCSIHostNetwork": true,
       "enableCephfsDriver": false,
       "enableOMAPGenerator": true,
       "rookUseCsiOperator": true,
@@ -4656,7 +4974,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
       }
     },
     "discoveryDaemonInterval": "5m",
-    "enableDiscoveryDaemon": true,
+    "enableDiscoveryDaemon": "{{- has (include \"superphenix-system.effectiveMode\" $) (list \"Hyperconverged\" \"DecoupledStorage\") | ternary \"true\" \"false\" -}}",
     "enforceHostNetwork": true,
     "monitoring": {
       "enabled": true
@@ -4693,7 +5011,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
   ],
   "namespace": "snapscheduler-system",
   "repoURL": "https://backube.github.io/helm-charts/",
-  "targetRevision": "*",
+  "targetRevision": "3.5.0",
   "values": {
     "enableOwnerReferences": true,
     "replicaCount": 2
@@ -5288,7 +5606,7 @@ Applications that omit `targetRevision` (or set it to `""`) inherit `Chart.AppVe
     "pod-security.kubernetes.io/enforce": "privileged"
   },
   "repoURL": "https://vmware-tanzu.github.io/helm-charts",
-  "targetRevision": "12.0.0",
+  "targetRevision": "12.2.4",
   "values": {
     "configuration": {
       "backupStorageLocation": [],

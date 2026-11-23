@@ -1,0 +1,29 @@
+# {{ template "chart.name" . }}
+
+{{ template "chart.versionBadge" . }} {{ template "chart.typeBadge" . }} {{ template "chart.appVersionBadge" . }}
+
+A helm chart to deploy arbitrary YAML objects.
+
+Objects are rendered as Helm templates before being applied.
+
+Objects not listed in `modes`, or mapped to an empty list, are deployed in every effective mode. A non-empty list restricts an object to modes matching the `effectiveMode` value.
+
+{{ template "chart.valuesSectionHtml" . }}
+
+## Example
+
+```yaml
+objects:
+  my-configmap:
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: my-configmap
+    data:
+      cluster: '{{ "{{" }} .Release.Name {{ "}}" }}'
+modes:
+  my-configmap:
+    - DecoupledStorage
+```
+
+{{ template "helm-docs.versionFooter" . }}
