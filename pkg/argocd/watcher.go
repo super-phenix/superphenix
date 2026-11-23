@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -52,15 +52,8 @@ func (w *Watcher) EnsureWatch(ctx context.Context, owner client.Object) {
 		return
 	}
 
-	app := &unstructured.Unstructured{}
-	app.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "argoproj.io",
-		Version: "v1alpha1",
-		Kind:    "Application",
-	})
-
 	err := w.Controller.Watch(
-		source.Kind(w.Cache, app, handler.TypedEnqueueRequestForOwner[*unstructured.Unstructured](
+		source.Kind(w.Cache, ApplicationMetadata(), handler.TypedEnqueueRequestForOwner[*metav1.PartialObjectMetadata](
 			w.Scheme, w.RestMapper, owner,
 		)),
 	)
@@ -71,6 +64,14 @@ func (w *Watcher) EnsureWatch(ctx context.Context, owner client.Object) {
 
 	w.watchStarted.Store(true)
 	log.Info("Successfully started ArgoCD Application watch")
+}
+
+// ApplicationMetadata returns an empty metadata-only ArgoCD Application. Owner-based
+// watches only need metadata, so the informer does not store spec or status.
+func ApplicationMetadata() *metav1.PartialObjectMetadata {
+	app := &metav1.PartialObjectMetadata{}
+	app.SetGroupVersionKind(schema.GroupVersionKind{Group: "argoproj.io", Version: "v1alpha1", Kind: "Application"})
+	return app
 }
 
 // CheckCRDs verifies if the required ArgoCD CRDs are installed in the cluster.
