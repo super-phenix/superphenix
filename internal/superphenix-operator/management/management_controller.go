@@ -46,6 +46,9 @@ const (
 
 	// ConfigMapKeyArgoCD is the key in the management ConfigMap holding ArgoCD Helm values.
 	ConfigMapKeyArgoCD = "argocd"
+
+	// argoCDHelmMaxHistory is the number of ArgoCD Helm releases kept (the Helm SDK keeps all of them).
+	argoCDHelmMaxHistory = 3
 )
 
 // Reconciler handles the reconciliation of management components.
@@ -71,7 +74,7 @@ type Reconciler struct {
 	ArgoCDDefaultConfig string
 	ArgoCDHAConfig      string
 
-	// InstallWithoutCNI indicates whether to install without a CNI (enables hostNetwork for redis).
+	// InstallWithoutCNI indicates whether to install the management without a CNI.
 	InstallWithoutCNI bool
 }
 
@@ -305,6 +308,7 @@ func (r *Reconciler) runHelmUpgradeInstall(ctx context.Context, actionConfig *ac
 	clientUpgrade := action.NewUpgrade(actionConfig)
 	clientUpgrade.Namespace = r.OperatorNamespace
 	clientUpgrade.Wait = false
+	clientUpgrade.MaxHistory = argoCDHelmMaxHistory
 
 	if _, err := clientUpgrade.Run(releaseName, ch, vals); err != nil {
 		return fmt.Errorf("failed to upgrade initial ArgoCD Helm chart: %w", err)

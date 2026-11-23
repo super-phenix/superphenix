@@ -14,10 +14,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -52,7 +50,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(operatorv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(argov1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
@@ -115,7 +112,7 @@ func main() {
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	flag.StringVar(&argocdChartURL, "argocd-chart-url", "https://argoproj.github.io/argo-helm", "The URL of the ArgoCD chart repository")
-	flag.StringVar(&argocdChartVersion, "argocd-chart-version", "10.10.3", "The version of the ArgoCD chart")
+	flag.StringVar(&argocdChartVersion, "argocd-chart-version", "10.18.0", "The version of the ArgoCD chart")
 	flag.StringVar(&valuesConfigMapName, "values-configmap-name", "superphenix-mgmt-values", "The name of the general management ConfigMap holding Helm values for each component under dedicated sub-keys")
 	flag.StringVar(&clustersConfigMapName, "clusters-configmap-name", "superphenix-clusters-config", "The name of the ConfigMap where all clusters will append their configuration")
 	flag.StringVar(&argocdDefaultConfig, "argocd-default-config", "/etc/superphenix/argocd/default/values.yaml", "Path to the default ArgoCD configuration file")
@@ -186,10 +183,6 @@ func main() {
 
 	webhookServer := webhook.NewServer(webhookServerOptions)
 
-	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
-	// More info:
-	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.23.1/pkg/metrics/server
-	// - https://book.kubebuilder.io/reference/metrics.html
 	metricsServerOptions := metricsserver.Options{
 		BindAddress:   metricsAddr,
 		SecureServing: secureMetrics,
@@ -221,38 +214,21 @@ func main() {
 		metricsServerOptions.KeyName = metricsCertKey
 	}
 
-	// Restrict the ArgoCD Application informer to Applications the operator manages:
-	// root cluster Apps, superphenix-system child Apps, and management stack Apps. All three
-	// cohorts carry the operator.superphenix.net/managed=true label and live in the
-	// operator's namespace. Without this filter the informer LIST/WATCHes every
-	// Application in the cluster.
-	argoApp := &unstructured.Unstructured{}
-	argoApp.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "argoproj.io",
-		Version: "v1alpha1",
-		Kind:    "Application",
-	})
-	managedSel, err := labels.Parse("operator.superphenix.net/managed=true")
-	if err != nil {
-		setupLog.Error(err, "Failed to parse managed label selector")
-		os.Exit(1)
-	}
-	argoAppByObject := cache.ByObject{Label: managedSel}
-
 	// On a brand new cluster the ArgoCD CRDs are not yet installed, so we cannot
 	// register a ByObject filter for Applications (controller-runtime would fail
 	// to look up the type's REST scope during manager construction). Skip the
 	// filter for now; a background goroutine polls for the CRDs and exits the
 	// process when they appear so Kubernetes restarts us with the filter applied.
 	cfg := ctrl.GetConfigOrDie()
-	cacheOpts := cache.Options{}
-	if argoCDCRDsPresent(cfg) {
-		cacheOpts.ByObject = map[client.Object]cache.ByObject{
-			argoApp: argoAppByObject,
-		}
-	} else {
+	argoCDCRDs := argoCDCRDsPresent(cfg)
+	if !argoCDCRDs {
 		setupLog.Info("ArgoCD CRDs not yet installed; starting without the ArgoCD Application cache filter. The operator will restart once the CRDs are available.")
 		go waitForArgoCDCRDsThenExit(cfg)
+	}
+	cacheOpts, err := cacheOptions(operatorNamespace, argoCDCRDs)
+	if err != nil {
+		setupLog.Error(err, "Failed to build cache options")
+		os.Exit(1)
 	}
 
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -263,6 +239,7 @@ func main() {
 		LeaderElection:                enableLeaderElection,
 		LeaderElectionID:              "d19ca498.superphenix.net",
 		Cache:                         cacheOpts,
+		Client:                        managerClientOptions(),
 		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
@@ -363,6 +340,53 @@ func main() {
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "Failed to run manager")
 		os.Exit(1)
+	}
+}
+
+// cacheOptions scopes the informers. Watch predicates only filter events: without
+// these settings each informer LIST/WATCHes its type cluster-wide, Helm release
+// Secrets included, which costs gigabytes of memory.
+//   - Secrets: Helm release Secrets excluded. Only watched as metadata.
+//   - ConfigMaps: operator namespace only.
+//   - Applications: only those labelled managed, in any namespace (Project GitOps
+//     Apps live in per-project namespaces). Only watched as metadata.
+func cacheOptions(operatorNamespace string, withApplications bool) (cache.Options, error) {
+	notHelmRelease, err := labels.Parse("owner!=helm")
+	if err != nil {
+		return cache.Options{}, err
+	}
+	managed, err := labels.Parse(version.ManagedLabel + "=true")
+	if err != nil {
+		return cache.Options{}, err
+	}
+
+	configMaps := cache.ByObject{}
+	if operatorNamespace != "" {
+		configMaps.Namespaces = map[string]cache.Config{operatorNamespace: {}}
+	}
+
+	opts := cache.Options{
+		DefaultTransform: cache.TransformStripManagedFields(),
+		ByObject: map[client.Object]cache.ByObject{
+			&corev1.Secret{}:    {Label: notHelmRelease},
+			&corev1.ConfigMap{}: configMaps,
+		},
+	}
+	if withApplications {
+		opts.ByObject[argocd.ApplicationMetadata()] = cache.ByObject{Label: managed}
+	}
+	return opts, nil
+}
+
+// managerClientOptions sends Secret and unstructured reads (Applications, AppProjects,
+// TalosMachines, …) to the API server. The Secret and Application informers are
+// metadata-only and label-filtered, so cached reads would miss data and objects;
+// other unstructured kinds would each get an extra cluster-wide informer.
+func managerClientOptions() client.Options {
+	return client.Options{
+		Cache: &client.CacheOptions{
+			DisableFor: []client.Object{&corev1.Secret{}},
+		},
 	}
 }
 

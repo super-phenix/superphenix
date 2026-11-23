@@ -117,12 +117,13 @@ build: manifests generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./cmd/superphenix-operator/main.go
 
-# If you wish to build the manager image targeting other platforms you can use the --platform flag.
-# (i.e. docker build --platform linux/arm64). However, you must enable docker buildKit for it.
-# More info: https://docs.docker.com/develop/develop-images/build_enhancements/
+# PLATFORM is the target platform of the manager image. Defaults to linux/amd64 (production nodes);
+# override it for local clusters on other architectures (i.e. make docker-build PLATFORM=linux/arm64).
+# Requires docker BuildKit. More info: https://docs.docker.com/develop/develop-images/build_enhancements/
+PLATFORM ?= linux/amd64
 .PHONY: docker-build
 docker-build: ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build --build-arg VERSION=$(VERSION) -t ${IMG} -f components/system/superphenix-operator/docker/Dockerfile .
+	$(CONTAINER_TOOL) build --platform $(PLATFORM) --build-arg VERSION=$(VERSION) -t ${IMG} -f components/system/superphenix-operator/docker/Dockerfile .
 
 .PHONY: docker-build-superphenix-operator
 docker-build-superphenix-operator: docker-build ## Specific target for superphenix-operator image build.

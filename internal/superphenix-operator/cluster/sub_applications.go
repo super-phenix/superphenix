@@ -15,25 +15,21 @@ import (
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/version"
 )
 
+// ArgoCD OperationPhase values (status.operationState.phase).
 const (
-	// operationPhaseRunning is the ArgoCD OperationPhase value indicating an in-flight sync.
-	operationPhaseRunning = "Running"
-	// operationPhaseTerminating is the ArgoCD OperationPhase value used to request termination
-	// of an in-flight operation. Writing this to status.operationState.phase is the same signal
-	// the argocd CLI sends via `argocd app terminate-op`.
+	operationPhaseRunning     = "Running"
 	operationPhaseTerminating = "Terminating"
 )
 
-// runPeriodicSync evaluates whether a sub-application sync should be triggered now and triggers
-// it. The decision honours:
-//   - SyncPeriod: a sync triggered less than SyncPeriod ago short-circuits the run.
-//   - In-progress detection: if any Application (root or sub) is already in the Running phase,
-//     the run is skipped to avoid queuing duplicate operations.
-//   - SyncTimeout: if the in-flight sync has been running longer than SyncTimeout it is assumed
-//     to be stuck. ArgoCD is asked to terminate it and a fresh sync is started in the same
-//     reconcile, bypassing the per-application "skip if Running" guard.
+// runPeriodicSync triggers a sync on the root Application and every child Application of the
+// cluster, at most once per SyncPeriod, so drift is corrected without relying on ArgoCD's own polling.
 //
-// Returns true if a fresh sync was triggered so the caller can persist LastSync.
+// Nothing is triggered while an operation is in progress. An operation Running for longer than
+// SyncTimeout is asked to terminate; the fresh sync starts on a later reconcile, once ArgoCD has
+// finished terminating it. Writing a new operation earlier would be discarded: ArgoCD clears
+// .operation when the terminated operation completes.
+//
+// Returns true if a sync was triggered so the caller can persist LastSync.
 func (r *Reconciler) runPeriodicSync(ctx context.Context, cluster *operatorv1alpha1.Cluster) bool {
 	log := logf.FromContext(ctx)
 
@@ -43,167 +39,77 @@ func (r *Reconciler) runPeriodicSync(ctx context.Context, cluster *operatorv1alp
 		return false
 	}
 
-	inProgress, oldestStart, err := r.syncInProgress(ctx, cluster)
+	apps, err := r.listAllApplications(ctx, cluster)
 	if err != nil {
-		log.Error(err, "Failed to check sync state, skipping periodic sync")
+		log.Error(err, "Failed to list Applications, skipping periodic sync")
 		return false
 	}
 
-	force := false
-	if inProgress {
-		if time.Since(oldestStart) < r.SyncTimeout {
-			log.Info("Sync already in progress, skipping",
-				"startedAt", oldestStart, "syncTimeout", r.SyncTimeout)
-			return false
+	busy := false
+	var stuck []*unstructured.Unstructured
+	for i := range apps {
+		phase, _, _ := unstructured.NestedString(apps[i].Object, "status", "operationState", "phase")
+		switch phase {
+		case operationPhaseTerminating:
+			busy = true
+		case operationPhaseRunning:
+			busy = true
+			// An unparseable startedAt is treated as "just started" to avoid spurious aborts.
+			startedAtStr, _, _ := unstructured.NestedString(apps[i].Object, "status", "operationState", "startedAt")
+			if startedAt, err := time.Parse(time.RFC3339, startedAtStr); err == nil && time.Since(startedAt) >= r.SyncTimeout {
+				stuck = append(stuck, &apps[i])
+			}
 		}
-		log.Info("Sync exceeded timeout, aborting and restarting",
-			"startedAt", oldestStart, "syncTimeout", r.SyncTimeout)
-		if err := r.abortInProgressSyncs(ctx, cluster); err != nil {
-			log.Error(err, "Failed to abort stale syncs, will retry on next reconcile")
-			return false
+	}
+
+	for _, app := range stuck {
+		if err := r.terminateOperation(ctx, app); err != nil {
+			log.Error(err, "Failed to terminate stale sync", "name", app.GetName())
+			continue
 		}
-		// After abort the cached Application objects may still show phase=Running for a short
-		// window before ArgoCD updates them. Force the triggers so the restart is not blocked.
-		force = true
+		log.Info("Requested termination of stale sync", "name", app.GetName(), "syncTimeout", r.SyncTimeout)
 	}
-
-	r.syncSubApplications(ctx, cluster, force)
-	return true
-}
-
-// syncSubApplications triggers an ArgoCD sync on the root Application and on every child
-// Application that belongs to the cluster.
-//
-// In the app of apps pattern, the root Application deploys a Helm chart that in turn contains
-// ArgoCD Application manifests. ArgoCD applies those manifests, creating child Applications that
-// each manage a specific component of the Superphenix stack. This function ensures the entire
-// Application tree is periodically synced so that drift is corrected without relying solely on
-// ArgoCD's own internal polling interval.
-//
-// The mechanism is to set the operation.sync field directly on each Application object, which
-// is the programmatic equivalent of running `argocd app sync`. Because operation is a top-level
-// field (not under spec), patching it does not change the object's generation, so the
-// GenerationChangedPredicate on the Application watch is not triggered and no reconcile loop occurs.
-// Failures are non-fatal; individual errors are logged and the function continues with remaining Applications.
-func (r *Reconciler) syncSubApplications(ctx context.Context, cluster *operatorv1alpha1.Cluster, force bool) {
-	log := logf.FromContext(ctx)
-
-	// Also sync the root Application itself so it re-evaluates the chart and propagates
-	// any changes down to the sub-applications on the same cycle.
-	rootApp, err := r.fetchApplication(ctx, cluster.Name)
-	if err != nil {
-		log.Error(err, "Failed to fetch root Application for sync")
-	} else if err := r.triggerApplicationSync(ctx, rootApp, force); err != nil {
-		log.Error(err, "Failed to sync root Application")
-	}
-
-	subApps, err := r.listSubApplications(ctx, cluster)
-	if err != nil {
-		log.Error(err, "Failed to list sub-applications, skipping periodic sync")
-		return
-	}
-
-	if len(subApps) == 0 {
-		log.Info("No sub-applications found for cluster", "cluster", cluster.Name)
-		return
+	if busy {
+		log.Info("Sync in progress, skipping periodic sync", "cluster", cluster.Name)
+		return false
 	}
 
 	synced := 0
-	for i := range subApps {
-		if err := r.triggerApplicationSync(ctx, &subApps[i], force); err != nil {
-			log.Error(err, "Failed to sync sub-application", "name", subApps[i].GetName())
+	for i := range apps {
+		if err := r.triggerApplicationSync(ctx, &apps[i]); err != nil {
+			log.Error(err, "Failed to trigger sync", "name", apps[i].GetName())
 			continue
 		}
 		synced++
 	}
-
-	log.Info("Periodic sync triggered", "cluster", cluster.Name, "appsSynced", synced, "appsTotal", len(subApps))
+	log.Info("Periodic sync triggered", "cluster", cluster.Name, "appsSynced", synced, "appsTotal", len(apps))
+	return true
 }
 
-// listAllApplications returns the root Application appended to the list of sub-applications for
-// the cluster. A missing root Application is non-fatal so callers can still operate on whatever
-// sub-applications already exist.
+// listAllApplications returns the root Application followed by the cluster's child Applications.
+// A missing root Application is non-fatal.
 func (r *Reconciler) listAllApplications(ctx context.Context, cluster *operatorv1alpha1.Cluster) ([]unstructured.Unstructured, error) {
-	apps, err := r.listSubApplications(ctx, cluster)
+	subApps, err := r.listSubApplications(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
-	if rootApp, err := r.fetchApplication(ctx, cluster.Name); err == nil {
-		apps = append(apps, *rootApp)
+	rootApp, err := r.fetchApplication(ctx, cluster.Name)
+	if err != nil {
+		return subApps, nil
 	}
-	return apps, nil
+	return append([]unstructured.Unstructured{*rootApp}, subApps...), nil
 }
 
-// syncInProgress reports whether any Application owned by the cluster currently has a Running
-// operation, and the oldest startedAt timestamp across those operations so the caller can
-// compare it against SyncTimeout. An unparseable startedAt is treated as "just started" so a
-// missing timestamp never causes a spurious abort.
-func (r *Reconciler) syncInProgress(ctx context.Context, cluster *operatorv1alpha1.Cluster) (bool, time.Time, error) {
-	apps, err := r.listAllApplications(ctx, cluster)
-	if err != nil {
-		return false, time.Time{}, err
-	}
-
-	inProgress := false
-	var oldest time.Time
-	for i := range apps {
-		phase, _, _ := unstructured.NestedString(apps[i].Object, "status", "operationState", "phase")
-		if phase != operationPhaseRunning {
-			continue
-		}
-		inProgress = true
-
-		startedAtStr, _, _ := unstructured.NestedString(apps[i].Object, "status", "operationState", "startedAt")
-		startedAt, parseErr := time.Parse(time.RFC3339, startedAtStr)
-		if parseErr != nil {
-			startedAt = time.Now()
-		}
-		if oldest.IsZero() || startedAt.Before(oldest) {
-			oldest = startedAt
-		}
-	}
-	return inProgress, oldest, nil
-}
-
-// abortInProgressSyncs requests ArgoCD to terminate any Running operation on the cluster's
-// Applications and clears the .operation field so a fresh sync can be installed in the same
-// reconcile. The Terminating phase is written via the status subresource, matching what
-// `argocd app terminate-op` does. Per-application errors are logged but do not stop processing
-// of the remaining Applications.
-func (r *Reconciler) abortInProgressSyncs(ctx context.Context, cluster *operatorv1alpha1.Cluster) error {
-	log := logf.FromContext(ctx)
-	apps, err := r.listAllApplications(ctx, cluster)
-	if err != nil {
+// terminateOperation sets status.operationState.phase to Terminating, as `argocd app terminate-op`
+// does. .operation is kept: ArgoCD terminates the operation and clears it itself. The Application
+// CRD has no status subresource, so status is patched on the main resource. The optimistic lock
+// fails the patch if ArgoCD updated the Application since it was listed (e.g. the operation finished).
+func (r *Reconciler) terminateOperation(ctx context.Context, app *unstructured.Unstructured) error {
+	patch := client.MergeFromWithOptions(app.DeepCopy(), client.MergeFromWithOptimisticLock{})
+	if err := unstructured.SetNestedField(app.Object, operationPhaseTerminating, "status", "operationState", "phase"); err != nil {
 		return err
 	}
-
-	for i := range apps {
-		phase, _, _ := unstructured.NestedString(apps[i].Object, "status", "operationState", "phase")
-		if phase != operationPhaseRunning {
-			continue
-		}
-
-		statusPatch := client.MergeFrom(apps[i].DeepCopy())
-		if err := unstructured.SetNestedField(apps[i].Object, operationPhaseTerminating, "status", "operationState", "phase"); err != nil {
-			log.Error(err, "Failed to build terminate status patch", "name", apps[i].GetName())
-			continue
-		}
-		if err := r.Status().Patch(ctx, &apps[i], statusPatch); err != nil {
-			log.Error(err, "Failed to terminate sync via status", "name", apps[i].GetName())
-			continue
-		}
-
-		// Clear .operation so the subsequent triggerApplicationSync installs a new operation
-		// rather than no-oping against the stuck one. JSON merge patch removes fields set to null.
-		clearPatch := client.RawPatch(types.MergePatchType, []byte(`{"operation":null}`))
-		if err := r.Patch(ctx, &apps[i], clearPatch); err != nil {
-			log.Error(err, "Failed to clear operation field", "name", apps[i].GetName())
-			continue
-		}
-
-		log.Info("Aborted stale sync operation", "name", apps[i].GetName())
-	}
-	return nil
+	return r.Patch(ctx, app, patch)
 }
 
 // fetchApplication retrieves a single ArgoCD Application by name from the operator namespace.
@@ -244,35 +150,18 @@ func (r *Reconciler) listSubApplications(ctx context.Context, cluster *operatorv
 	return appList.Items, nil
 }
 
-// triggerApplicationSync triggers an immediate sync on the given ArgoCD Application by setting
-// the operation.sync field, which is the programmatic equivalent of `argocd app sync`.
-// ArgoCD detects the field, executes the sync, then clears it.
-// A sync is skipped if an operation is already in progress to avoid queue buildup, unless force
-// is true: callers that have just aborted a stuck sync use force=true so the cached Running
-// phase does not block the restart.
-func (r *Reconciler) triggerApplicationSync(ctx context.Context, app *unstructured.Unstructured, force bool) error {
-	log := logf.FromContext(ctx)
-
-	if !force {
-		phase, _, _ := unstructured.NestedString(app.Object, "status", "operationState", "phase")
-		if phase == operationPhaseRunning {
-			log.Info("Application already syncing, skipping trigger", "name", app.GetName())
-			return nil
-		}
-	}
-
+// triggerApplicationSync sets .operation.sync on the Application, the programmatic equivalent of
+// `argocd app sync`. ArgoCD runs the sync and clears the field. .operation is outside .spec, so the
+// patch does not bump the generation.
+func (r *Reconciler) triggerApplicationSync(ctx context.Context, app *unstructured.Unstructured) error {
 	patch := client.MergeFrom(app.DeepCopy())
-
 	if err := unstructured.SetNestedMap(app.Object, map[string]interface{}{
 		"sync": map[string]interface{}{},
 	}, "operation"); err != nil {
 		return fmt.Errorf("failed to build sync operation for Application %s: %w", app.GetName(), err)
 	}
-
 	if err := r.Patch(ctx, app, patch); err != nil {
 		return fmt.Errorf("failed to trigger sync on Application %s: %w", app.GetName(), err)
 	}
-
-	log.Info("Sync operation triggered on Application", "name", app.GetName())
 	return nil
 }
