@@ -142,3 +142,30 @@ func TestDeleteById(t *testing.T) {
 		})
 	}
 }
+
+func TestFindIdsInOrga(t *testing.T) {
+	const query = `SELECT "id" FROM "projects" WHERE (orga_id = $1 AND id IN ($2,$3)) AND "projects"."deleted_at" IS NULL`
+
+	orgaID := uuid.New()
+	own := uuid.New()
+	foreign := uuid.New()
+
+	mock := setupMockDB(t)
+	mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(orgaID, own, foreign).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(own))
+
+	found, err := FindIdsInOrga([]uuid.UUID{own, foreign}, orgaID)
+	assert.NoError(t, err)
+	assert.Equal(t, []uuid.UUID{own}, found)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestFindIdsInOrgaEmpty(t *testing.T) {
+	mock := setupMockDB(t)
+
+	found, err := FindIdsInOrga(nil, uuid.New())
+	assert.NoError(t, err)
+	assert.Empty(t, found)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
