@@ -186,18 +186,23 @@ func (h *Service) CreateOrUpdateOrganizationGroup(w http.ResponseWriter, r *http
 			return
 		}
 	}
-	projectIds, err := resolveGroupProjectIds(orgaUuid, body.ProjectIds, currentProjectIds)
-	if errors.Is(err, errProjectsNotInOrga) {
-		log.Warn().Err(err).Str("orgaId", orgaId).Msg("Group refused: project outside the organization")
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	if body.AllProjects {
+		// The list is ignored when the group covers every project, so it is neither checked nor kept.
+		body.ProjectIds = nil
+	} else {
+		projectIds, err := resolveGroupProjectIds(orgaUuid, body.ProjectIds, currentProjectIds)
+		if errors.Is(err, errProjectsNotInOrga) {
+			log.Warn().Err(err).Str("orgaId", orgaId).Msg("Group refused: project outside the organization")
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if err != nil {
+			log.Error().Err(err).Msg("Failed to check group projects")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		body.ProjectIds = projectIds
 	}
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to check group projects")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	body.ProjectIds = projectIds
 
 	// No problem found !
 	var cast model.Group
@@ -359,12 +364,16 @@ func (h *Service) DuplicateOrganizationGroup(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Only copy the projects that still belong to the organization.
-	projectIds, err := resolveGroupProjectIds(orgaUuid, source.ProjectIds, source.ProjectIds)
-	if err != nil {
-		log.Error().Err(err).Str("groupId", groupId).Msg("Failed to check group projects")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	// Only copy the projects that still belong to the organization. The list is ignored, and
+	// not copied, when the group covers every project.
+	projectIds := []string{}
+	if !source.AllProjects {
+		projectIds, err = resolveGroupProjectIds(orgaUuid, source.ProjectIds, source.ProjectIds)
+		if err != nil {
+			log.Error().Err(err).Str("groupId", groupId).Msg("Failed to check group projects")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	// PredefinedKey left nil: the copy is custom.

@@ -3,6 +3,7 @@ package group
 import (
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -63,6 +64,17 @@ func TestResolveGroupProjectIds(t *testing.T) {
 		got, err := resolveGroupProjectIds(orgaId, current, current)
 		assert.NoError(t, err)
 		assert.Equal(t, []string{own1.String()}, got)
+	})
+
+	t.Run("stale ids held in another textual form are dropped", func(t *testing.T) {
+		current := []string{"urn:uuid:" + foreign.String(), "{" + foreign.String() + "}", strings.ToUpper(foreign.String())}
+		got, err := resolveGroupProjectIds(orgaId, current, current)
+		assert.NoError(t, err)
+		assert.Empty(t, got)
+
+		got, err = resolveGroupProjectIds(orgaId, []string{foreign.String()}, []string{"urn:uuid:" + foreign.String()})
+		assert.NoError(t, err)
+		assert.Empty(t, got)
 	})
 
 	t.Run("lookup error", func(t *testing.T) {

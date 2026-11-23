@@ -27,6 +27,15 @@ var findIdsInOrga = project.FindIdsInOrga
 // (current) that is no longer valid, such as a deleted project, is dropped so
 // that editing the group keeps working.
 func resolveGroupProjectIds(orgaId uuid.UUID, requested, current []string) ([]string, error) {
+	// Held ids are compared as UUIDs when they parse, so another textual form of the same
+	// UUID (URN, braces, upper case) still counts as held. Malformed ones are compared raw.
+	heldIds := make([]uuid.UUID, 0, len(current))
+	for _, id := range current {
+		if parsed, err := uuid.Parse(id); err == nil {
+			heldIds = append(heldIds, parsed)
+		}
+	}
+
 	candidates := make([]uuid.UUID, 0, len(requested))
 	var refused []string
 	for _, id := range requested {
@@ -52,7 +61,7 @@ func resolveGroupProjectIds(orgaId uuid.UUID, requested, current []string) ([]st
 			if !slices.Contains(resolved, id.String()) {
 				resolved = append(resolved, id.String())
 			}
-		case !slices.Contains(current, id.String()):
+		case !slices.Contains(heldIds, id):
 			refused = append(refused, id.String())
 		}
 	}
