@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 )
 
 // NewControllerModule builds a controller route module with the shared mount,
@@ -39,14 +41,53 @@ func NewControllerModule(name string, routes []router.Route, groups ...router.Gr
 }
 
 // SharedMiddlewares is the chain applied to every controller route: auth, user-id
-// propagation, the baseline organization-read check and the refusal of deactivated projects.
+// propagation, the baseline organization-read check, the check that the project belongs
+// to the organization and the refusal of deactivated projects.
 func SharedMiddlewares() []router.Middleware {
 	return []router.Middleware{
 		authentication.Authenticate(jwt.JwtBearerAuth, apiToken.ApiTokenAuth),
 		proxy.AddUserIdToRequestHeader,
 		Perm(pwPermission.OrganizationRead),
+		CheckProjectInOrganization,
 		CheckProjectActive,
 	}
+}
+
+// CheckProjectInOrganization rejects the request when the {projectId} of the
+// route does not belong to the {orgaId}. Permify checks run in the tenant of
+// the organization of the URL, and the controller derives the namespace from
+// the project alone, so without this check a relation written in one
+// organization could reach a project of another one. Routes without a
+// {projectId} are left untouched.
+func CheckProjectInOrganization(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		projectId := chi.URLParam(r, "projectId")
+		if projectId == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		orgaUuid, errOrga := uuid.Parse(chi.URLParam(r, "orgaId"))
+		projectUuid, errProject := uuid.Parse(projectId)
+		if errOrga != nil || errProject != nil || orgaUuid == uuid.Nil || projectUuid == uuid.Nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		if _, err := project.FindByIdAndOrgaId(projectUuid, orgaUuid); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				log.Warn().Str("orgaId", orgaUuid.String()).Str("projectId", projectUuid.String()).
+					Msg("Project does not belong to the organization")
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			log.Error().Err(err).Msg("Failed to check project organization")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func Perm(permission string) router.Middleware { return permify.CheckPermission(permission) }
