@@ -134,3 +134,84 @@ func TestResolveSubnet(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckExternalAccess(t *testing.T) {
+	tests := []struct {
+		name        string
+		spec        argodbaas.DBaaSSpec
+		subnet      string
+		subnetCode  int
+		want        bool
+		wantCode    int
+		wantRequest bool
+	}{
+		{
+			name:     "external access off skips the check",
+			spec:     argodbaas.DBaaSSpec{SubnetEId: "spx-subnet"},
+			want:     true,
+			wantCode: http.StatusOK,
+		},
+		{
+			name:        "subnet with a NAT gateway",
+			spec:        argodbaas.DBaaSSpec{SubnetEId: "spx-subnet", ExternalAccess: true},
+			subnet:      `{"id":"my-subnet","natGateway":{"metadata":{"name":"spx-subnet"}}}`,
+			want:        true,
+			wantCode:    http.StatusOK,
+			wantRequest: true,
+		},
+		{
+			name:        "subnet without a NAT gateway",
+			spec:        argodbaas.DBaaSSpec{SubnetEId: "spx-subnet", ExternalAccess: true},
+			subnet:      `{"id":"my-subnet"}`,
+			wantCode:    http.StatusBadRequest,
+			wantRequest: true,
+		},
+		{
+			name:        "null NAT gateway",
+			spec:        argodbaas.DBaaSSpec{SubnetEId: "spx-subnet", ExternalAccess: true},
+			subnet:      `{"id":"my-subnet","natGateway":null}`,
+			wantCode:    http.StatusBadRequest,
+			wantRequest: true,
+		},
+		{
+			name:        "AZ failure",
+			spec:        argodbaas.DBaaSSpec{SubnetEId: "spx-subnet", ExternalAccess: true},
+			subnetCode:  http.StatusInternalServerError,
+			wantCode:    http.StatusInternalServerError,
+			wantRequest: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			requested := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.EscapedPath() != "/org/project/subnet/spx-subnet" {
+					w.WriteHeader(http.StatusNotFound)
+					return
+				}
+				requested = true
+				if tt.subnetCode != 0 {
+					w.WriteHeader(tt.subnetCode)
+					return
+				}
+				_, _ = w.Write([]byte(tt.subnet))
+			}))
+			defer srv.Close()
+
+			azDb := config.AZConfig{Code: "az1", ControllerUrl: srv.URL}
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/", nil)
+			got := checkExternalAccess(rec, req, azDb, "org", "project", tt.spec)
+			if got != tt.want {
+				t.Errorf("checkExternalAccess() = %v, want %v", got, tt.want)
+			}
+			if rec.Code != tt.wantCode {
+				t.Errorf("status = %d, want %d", rec.Code, tt.wantCode)
+			}
+			if requested != tt.wantRequest {
+				t.Errorf("subnet requested = %v, want %v", requested, tt.wantRequest)
+			}
+		})
+	}
+}

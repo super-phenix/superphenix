@@ -304,6 +304,10 @@ func (h *Service) CreateDBaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !checkExternalAccess(w, r, azDb, orgDb.ID.String(), projectDb.ID.String(), body.Spec) {
+		return
+	}
+
 	dbaasDb, m, err := controller.CreateIntoDb(r.Context(), body.General.ProductName, model.ProductTypeDBaaS.Name, azDb.Code, orgDb.ID, projectDb.ID)
 	if err != nil {
 		log.Err(err).Msg("Failed to save product into database")
@@ -409,6 +413,13 @@ func (h *Service) UpdateDBaaS(w http.ResponseWriter, r *http.Request) {
 	if !supported {
 		log.Error().Str("version", body.Spec.Version).Msg("PostgreSQL version not supported")
 		httpError.Http(w, r, http.StatusBadRequest).Msg("PostgreSQL version not supported")
+		return
+	}
+
+	// The subnet cannot change after creation: check the one the database runs on.
+	accessSpec := body.Spec
+	accessSpec.SubnetEId = app.Spec.SubnetEId
+	if !checkExternalAccess(w, r, azDb, orgDb.ID.String(), projectDb.ID.String(), accessSpec) {
 		return
 	}
 
@@ -607,6 +618,31 @@ func checkVIP(w http.ResponseWriter, r *http.Request, azDb config.AZConfig, orgI
 	}
 	if !vipFree {
 		httpError.Http(w, r, http.StatusBadRequest).Msgf("vip %q is already used by another load balancer", spec.VIP)
+		return false
+	}
+	return true
+}
+
+// checkExternalAccess answers the request and returns false when the spec enables external access
+// on a subnet without a NAT gateway, which holds the EIP of the database.
+func checkExternalAccess(w http.ResponseWriter, r *http.Request, azDb config.AZConfig, orgId, projectId string,
+	spec argodbaas.DBaaSSpec) bool {
+	if !spec.ExternalAccess {
+		return true
+	}
+
+	var res struct {
+		NatGateway json.RawMessage `json:"natGateway"`
+	}
+	endpoint := fmt.Sprintf("%s/%s/%s/subnet/%s", azDb.ControllerUrl, orgId, projectId, url.PathEscape(spec.SubnetEId))
+	if err := ctrlutils.GetFromAZ(r.Context(), azDb, endpoint, &res); err != nil {
+		log := logger.GetLogger(r.Context())
+		log.Err(err).Str("subnet", spec.SubnetEId).Msg("Failed to read the NAT gateway of the subnet")
+		httpError.Http(w, r, consts.SpxProxyToAZFailureCode).Msg(consts.SpxProxyToAZFailure)
+		return false
+	}
+	if len(res.NatGateway) == 0 || string(res.NatGateway) == "null" {
+		httpError.Http(w, r, http.StatusBadRequest).Msg("external access needs a NAT gateway on the subnet")
 		return false
 	}
 	return true
