@@ -11,6 +11,7 @@ import (
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -35,7 +36,7 @@ func newTestReconciler(t *testing.T, objects ...client.Object) *Reconciler {
 	}
 
 	return &Reconciler{
-		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).Build(),
+		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).WithStatusSubresource(&operatorv1alpha1.Project{}).Build(),
 		Scheme: scheme,
 	}
 }
@@ -404,4 +405,120 @@ func containsFinalizer(finalizers []string, name string) bool {
 		}
 	}
 	return false
+}
+
+func storedCondition(t *testing.T, r *Reconciler, project *operatorv1alpha1.Project, condType string) *metav1.Condition {
+	t.Helper()
+	stored := &operatorv1alpha1.Project{}
+	if err := r.Get(context.Background(), types.NamespacedName{Name: project.Name, Namespace: project.Namespace}, stored); err != nil {
+		t.Fatal(err)
+	}
+	return meta.FindStatusCondition(stored.Status.Conditions, condType)
+}
+
+func TestProjectDeletionReportsApplicationDeletionError(t *testing.T) {
+	ctx := context.Background()
+	project := newTestProject()
+	project.Finalizers = []string{FinalizerName}
+	now := metav1.NewTime(time.Now())
+	project.DeletionTimestamp = &now
+	projectSPXID := spxId.ToSPXID(project.Spec.ProjectID)
+	app := &argov1alpha1.Application{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:              "gitops-" + projectSPXID,
+			Namespace:         projectSPXID,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{argocdResourcesFinalizer},
+		},
+		Status: argov1alpha1.ApplicationStatus{
+			Conditions: []argov1alpha1.ApplicationCondition{
+				{Type: argov1alpha1.ApplicationConditionDeletionError, Message: "forbidden: cannot delete pods"},
+			},
+		},
+	}
+	r := newTestReconciler(t, project, app)
+
+	if _, _, err := r.reconcileFinalizers(ctx, project); err != nil {
+		t.Fatal(err)
+	}
+	deleting := storedCondition(t, r, project, operatorv1alpha1.ConditionTypeDeleting)
+	if deleting == nil || deleting.Status != metav1.ConditionTrue || deleting.Reason != operatorv1alpha1.ReasonWaitingForApplication {
+		t.Fatalf("unexpected Deleting condition: %#v", deleting)
+	}
+	if !strings.Contains(deleting.Message, "forbidden: cannot delete pods") {
+		t.Fatalf("expected Argo CD deletion error in message, got %q", deleting.Message)
+	}
+	gitops := storedCondition(t, r, project, operatorv1alpha1.ConditionTypeGitOpsReady)
+	if gitops == nil || gitops.Status != metav1.ConditionFalse || gitops.Reason != operatorv1alpha1.ReasonGitOpsProjectDeleting {
+		t.Fatalf("unexpected GitOpsReady condition: %#v", gitops)
+	}
+}
+
+func TestProjectDeletionReportsBlockedRepositorySecret(t *testing.T) {
+	ctx := context.Background()
+	project := newTestProject()
+	project.Finalizers = []string{FinalizerName}
+	now := metav1.NewTime(time.Now())
+	project.DeletionTimestamp = &now
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       repositorySecretName(project),
+			Namespace:  project.Namespace,
+			Finalizers: []string{FinalizerName, "example.com/other"},
+		},
+	}
+	r := newTestReconciler(t, project, secret)
+
+	for range 2 {
+		stop, result, err := r.reconcileFinalizers(ctx, project)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !stop || result.RequeueAfter == 0 {
+			t.Fatalf("expected deletion to wait on the blocked Secret, got stop=%t result=%#v", stop, result)
+		}
+	}
+	deleting := storedCondition(t, r, project, operatorv1alpha1.ConditionTypeDeleting)
+	if deleting == nil || deleting.Reason != operatorv1alpha1.ReasonWaitingForRepositorySecret {
+		t.Fatalf("unexpected Deleting condition: %#v", deleting)
+	}
+	if !strings.Contains(deleting.Message, "example.com/other") || strings.Contains(deleting.Message, FinalizerName) {
+		t.Fatalf("expected only the foreign finalizer in message, got %q", deleting.Message)
+	}
+}
+
+func TestReconcileGitOpsSetsGitOpsReady(t *testing.T) {
+	ctx := context.Background()
+	project := newTestProject()
+	project.Spec.OrganizationRef.Name = "org"
+	project.Spec.GitOps = &operatorv1alpha1.ProjectGitOpsSpec{
+		ValuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{RepoURL: "https://example.test/values.git"},
+	}
+
+	// Missing Organization: reason reported, error returned.
+	r := newTestReconciler(t, project)
+	if err := r.reconcileGitOps(ctx, project); err == nil {
+		t.Fatal("expected an error without Organization")
+	}
+	cond := meta.FindStatusCondition(project.Status.Conditions, operatorv1alpha1.ConditionTypeGitOpsReady)
+	if cond == nil || cond.Status != metav1.ConditionFalse || cond.Reason != operatorv1alpha1.ReasonOrganizationFetchFailed {
+		t.Fatalf("unexpected GitOpsReady condition: %#v", cond)
+	}
+
+	// Organization present: Application and Secret created.
+	org := &operatorv1alpha1.Organization{
+		ObjectMeta: metav1.ObjectMeta{Name: "org", Namespace: project.Namespace},
+		Spec:       operatorv1alpha1.OrganizationSpec{OrganizationID: "6ba7b811-9dad-41d1-80b4-00c04fd430c8"},
+	}
+	r = newTestReconciler(t, project, org)
+	if err := r.reconcileGitOps(ctx, project); err != nil {
+		t.Fatal(err)
+	}
+	cond = meta.FindStatusCondition(project.Status.Conditions, operatorv1alpha1.ConditionTypeGitOpsReady)
+	if cond == nil || cond.Status != metav1.ConditionTrue || cond.Reason != operatorv1alpha1.ReasonGitOpsReconciled {
+		t.Fatalf("unexpected GitOpsReady condition: %#v", cond)
+	}
+	if !strings.Contains(cond.Message, repositorySecretName(project)) {
+		t.Fatalf("expected repository Secret in message, got %q", cond.Message)
+	}
 }

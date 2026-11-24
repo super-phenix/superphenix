@@ -121,6 +121,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	boundCond := meta.FindStatusCondition(proj.Status.Conditions, operatorv1alpha1.ConditionTypeBound)
 	if boundCond == nil || boundCond.Status != metav1.ConditionTrue {
 		log.Info("Project is not bound to the database, skipping business logic", "name", proj.Name)
+		setGitOpsReady(proj, metav1.ConditionFalse, operatorv1alpha1.ReasonGitOpsProjectNotBound, "Project is not bound to the Superphenix Database")
 		proj.Status.ObservedGeneration = proj.Generation
 		proj.Status.DisplayName = proj.Name
 		if proj.Spec.Name != "" {
@@ -135,6 +136,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Reconcile GitOps
 	if err := r.reconcileGitOps(ctx, proj); err != nil {
 		log.Error(err, "Failed to reconcile GitOps")
+		// Surface the failure reason set by reconcileGitOps.
+		if statusErr := r.Status().Update(ctx, proj); statusErr != nil {
+			log.Error(statusErr, "Failed to update Project status")
+		}
 		return ctrl.Result{}, err
 	}
 
@@ -154,41 +159,35 @@ func (r *Reconciler) reconcileFinalizers(ctx context.Context, proj *operatorv1al
 	log := logf.FromContext(ctx)
 
 	if !proj.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.ContainsFinalizer(proj, FinalizerName) {
-			// Clean up the ArgoCD Application and Namespace if they were created by the operator.
-			projectSPXID := spxId.ToSPXID(proj.Spec.ProjectID)
-			appName := fmt.Sprintf("gitops-%s", projectSPXID)
+		if !controllerutil.ContainsFinalizer(proj, FinalizerName) {
+			return true, ctrl.Result{}, nil
+		}
 
-			app := &argov1alpha1.Application{}
-			err := r.Get(ctx, types.NamespacedName{Name: appName, Namespace: projectSPXID}, app)
-			if err == nil {
-				if app.DeletionTimestamp.IsZero() {
-					log.Info("Deleting ArgoCD Application", "name", appName)
-					if err := r.Delete(ctx, app); err != nil {
-						return true, ctrl.Result{}, err
-					}
+		reason, message, err := r.cleanupGitOps(ctx, proj)
+		if reason != "" {
+			log.Info("Project deletion pending", "reason", reason, "message", message)
+			changed := setGitOpsReady(proj, metav1.ConditionFalse, operatorv1alpha1.ReasonGitOpsProjectDeleting, "Project is being deleted")
+			changed = meta.SetStatusCondition(&proj.Status.Conditions, metav1.Condition{
+				Type:               operatorv1alpha1.ConditionTypeDeleting,
+				Status:             metav1.ConditionTrue,
+				Reason:             reason,
+				Message:            message,
+				ObservedGeneration: proj.Generation,
+			}) || changed
+			if changed {
+				if statusErr := r.Status().Update(ctx, proj); statusErr != nil {
+					log.Error(statusErr, "Failed to update Project status")
 				}
-				log.Info("Waiting for ArgoCD Application to be deleted", "name", appName)
-				return true, ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-			} else if !apierrors.IsNotFound(err) {
-				log.Error(err, "Failed to check ArgoCD Application existence", "name", appName)
-				return true, ctrl.Result{}, err
 			}
-
-			// Only release the repository Secret once the Application is gone.
-			gone, err := r.deleteRepositorySecret(ctx, proj)
 			if err != nil {
 				return true, ctrl.Result{}, err
 			}
-			if !gone {
-				log.Info("Waiting for repository Secret to be deleted", "name", repositorySecretName(proj))
-				return true, ctrl.Result{RequeueAfter: 10 * time.Second}, nil
-			}
+			return true, ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+		}
 
-			controllerutil.RemoveFinalizer(proj, FinalizerName)
-			if err := r.Update(ctx, proj); err != nil {
-				return true, ctrl.Result{}, err
-			}
+		controllerutil.RemoveFinalizer(proj, FinalizerName)
+		if err := r.Update(ctx, proj); err != nil {
+			return true, ctrl.Result{}, err
 		}
 		return true, ctrl.Result{}, nil
 	}
@@ -202,6 +201,59 @@ func (r *Reconciler) reconcileFinalizers(ctx context.Context, proj *operatorv1al
 	}
 
 	return false, ctrl.Result{}, nil
+}
+
+// cleanupGitOps deletes the project's ArgoCD Application, then, once it is gone, its repository Secret.
+// It returns an empty reason once both are confirmed gone; otherwise the Deleting condition reason and
+// message describing what deletion is waiting on, and the error if a step failed.
+func (r *Reconciler) cleanupGitOps(ctx context.Context, proj *operatorv1alpha1.Project) (string, string, error) {
+	projectSPXID := spxId.ToSPXID(proj.Spec.ProjectID)
+	appKey := types.NamespacedName{Name: fmt.Sprintf("gitops-%s", projectSPXID), Namespace: projectSPXID}
+
+	app := &argov1alpha1.Application{}
+	if err := r.Get(ctx, appKey, app); err == nil {
+		if app.DeletionTimestamp.IsZero() {
+			if err := r.Delete(ctx, app); client.IgnoreNotFound(err) != nil {
+				return operatorv1alpha1.ReasonApplicationDeletionFailed,
+					fmt.Sprintf("Failed to delete ArgoCD Application %s: %v", appKey, err), err
+			}
+		}
+		message := fmt.Sprintf("Waiting for ArgoCD Application %s to be deleted", appKey)
+		for _, cond := range app.Status.Conditions {
+			if cond.Type == argov1alpha1.ApplicationConditionDeletionError {
+				message += ": " + cond.Message
+			}
+		}
+		return operatorv1alpha1.ReasonWaitingForApplication, message, nil
+	} else if !apierrors.IsNotFound(err) {
+		return operatorv1alpha1.ReasonApplicationDeletionFailed,
+			fmt.Sprintf("Failed to get ArgoCD Application %s: %v", appKey, err), err
+	}
+
+	// Only release the repository Secret once the Application is gone.
+	remaining, err := r.deleteRepositorySecret(ctx, proj)
+	if err != nil {
+		return operatorv1alpha1.ReasonRepositorySecretDeletionFailed, err.Error(), err
+	}
+	if remaining != nil {
+		message := fmt.Sprintf("Waiting for repository Secret %s/%s to be deleted", remaining.Namespace, remaining.Name)
+		if len(remaining.Finalizers) > 0 {
+			message += fmt.Sprintf(" (blocked by finalizers: %s)", strings.Join(remaining.Finalizers, ", "))
+		}
+		return operatorv1alpha1.ReasonWaitingForRepositorySecret, message, nil
+	}
+	return "", "", nil
+}
+
+// setGitOpsReady sets the GitOpsReady condition and reports whether it changed.
+func setGitOpsReady(proj *operatorv1alpha1.Project, status metav1.ConditionStatus, reason, message string) bool {
+	return meta.SetStatusCondition(&proj.Status.Conditions, metav1.Condition{
+		Type:               operatorv1alpha1.ConditionTypeGitOpsReady,
+		Status:             status,
+		Reason:             reason,
+		Message:            message,
+		ObservedGeneration: proj.Generation,
+	})
 }
 
 func (r *Reconciler) reconcileOrganization(ctx context.Context, proj *operatorv1alpha1.Project) (bool, ctrl.Result, error) {
@@ -221,6 +273,7 @@ func (r *Reconciler) reconcileOrganization(ctx context.Context, proj *operatorv1
 				Message:            "Referenced Organization not found",
 				ObservedGeneration: proj.Generation,
 			})
+			setGitOpsReady(proj, metav1.ConditionFalse, operatorv1alpha1.ReasonGitOpsProjectNotBound, "Referenced Organization not found")
 			proj.Status.DisplayName = proj.Name
 			if proj.Spec.Name != "" {
 				proj.Status.DisplayName = proj.Spec.Name
@@ -244,6 +297,7 @@ func (r *Reconciler) reconcileOrganization(ctx context.Context, proj *operatorv1
 			Message:            "Referenced Organization is not bound to the database",
 			ObservedGeneration: proj.Generation,
 		})
+		setGitOpsReady(proj, metav1.ConditionFalse, operatorv1alpha1.ReasonGitOpsProjectNotBound, "Referenced Organization is not bound to the database")
 		proj.Status.DisplayName = proj.Name
 		if proj.Spec.Name != "" {
 			proj.Status.DisplayName = proj.Spec.Name
@@ -366,15 +420,22 @@ func (r *Reconciler) reconcileDatabaseBinding(ctx context.Context, proj *operato
 	return nil
 }
 
+// reconcileGitOps ensures the project namespace, repository Secret and ArgoCD Application,
+// recording the outcome in the GitOpsReady condition. The caller persists the status.
 func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1.Project) error {
 	projectSPXID := spxId.ToSPXID(proj.Spec.ProjectID)
 	namespaceName := projectSPXID
 	appName := fmt.Sprintf("gitops-%s", projectSPXID)
 
+	fail := func(reason string, err error) error {
+		setGitOpsReady(proj, metav1.ConditionFalse, reason, err.Error())
+		return err
+	}
+
 	// Fetch referenced Organization to get names and IDs
 	org, err := r.fetchOrganizationForProject(ctx, proj)
 	if err != nil {
-		return err
+		return fail(operatorv1alpha1.ReasonOrganizationFetchFailed, err)
 	}
 
 	organizationName := org.Spec.Name
@@ -389,14 +450,14 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 
 	// Ensure Namespace exists
 	if err := r.ensureNamespace(ctx, namespaceName, org.Spec.OrganizationID, proj.Spec.ProjectID); err != nil {
-		return err
+		return fail(operatorv1alpha1.ReasonNamespaceReconcileFailed, err)
 	}
 
 	// The repository Secret must exist before the Application references it.
 	valuesLocation := getValuesLocation(proj)
 	if valuesLocation != nil {
 		if err := r.ensureRepositorySecret(ctx, proj, valuesLocation); err != nil {
-			return err
+			return fail(operatorv1alpha1.ReasonRepositorySecretReconcileFailed, err)
 		}
 	}
 
@@ -406,20 +467,22 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 	// Build Helm values
 	helmValues, err := r.buildHelmValues(proj, org, organizationName, projectName)
 	if err != nil {
-		return fmt.Errorf("failed to build helm values: %w", err)
+		return fail(operatorv1alpha1.ReasonHelmValuesFailed, fmt.Errorf("failed to build helm values: %w", err))
 	}
 
 	// Ensure ArgoCD Application exists
 	if err := r.ensureArgoApplication(ctx, proj, namespaceName, appName, repoURL, path, targetRevision, helmValues); err != nil {
-		return err
+		return fail(operatorv1alpha1.ReasonApplicationReconcileFailed, err)
 	}
 
-	// The values repository was removed: the Application no longer references it, drop its credentials.
-	if valuesLocation == nil {
-		if _, err := r.deleteRepositorySecret(ctx, proj); err != nil {
-			return err
-		}
+	message := fmt.Sprintf("ArgoCD Application %s/%s is configured", namespaceName, appName)
+	if valuesLocation != nil {
+		message += fmt.Sprintf(" with values repository Secret %s/%s", proj.Namespace, repositorySecretName(proj))
+	} else if _, err := r.deleteRepositorySecret(ctx, proj); err != nil {
+		// The values repository was removed: the Application no longer references it, drop its credentials.
+		return fail(operatorv1alpha1.ReasonRepositorySecretReconcileFailed, err)
 	}
+	setGitOpsReady(proj, metav1.ConditionTrue, operatorv1alpha1.ReasonGitOpsReconciled, message)
 	return nil
 }
 
@@ -500,24 +563,27 @@ func (r *Reconciler) ensureRepositorySecret(ctx context.Context, proj *operatorv
 }
 
 // deleteRepositorySecret releases and deletes the project's repository Secret.
-// It returns true once the Secret is confirmed gone.
-func (r *Reconciler) deleteRepositorySecret(ctx context.Context, proj *operatorv1alpha1.Project) (bool, error) {
+// It returns nil once the Secret is confirmed gone, otherwise the Secret as last seen
+// (gone-ness is confirmed on the next pass).
+func (r *Reconciler) deleteRepositorySecret(ctx context.Context, proj *operatorv1alpha1.Project) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 	key := types.NamespacedName{Name: repositorySecretName(proj), Namespace: proj.Namespace}
 	if err := r.Get(ctx, key, secret); err != nil {
-		return apierrors.IsNotFound(err), client.IgnoreNotFound(err)
+		if apierrors.IsNotFound(err) {
+			return nil, nil
+		}
+		return secret, fmt.Errorf("failed to get repository Secret %s: %w", key, err)
 	}
 
 	if controllerutil.RemoveFinalizer(secret, FinalizerName) {
-		if err := r.Update(ctx, secret); err != nil {
-			return false, client.IgnoreNotFound(err)
+		if err := r.Update(ctx, secret); client.IgnoreNotFound(err) != nil {
+			return secret, fmt.Errorf("failed to release repository Secret %s: %w", key, err)
 		}
 	}
 	if err := r.Delete(ctx, secret); client.IgnoreNotFound(err) != nil {
-		return false, fmt.Errorf("failed to delete repository Secret %s: %w", key, err)
+		return secret, fmt.Errorf("failed to delete repository Secret %s: %w", key, err)
 	}
-	// Confirmed on the next pass.
-	return false, nil
+	return secret, nil
 }
 
 func (r *Reconciler) fetchOrganizationForProject(ctx context.Context, proj *operatorv1alpha1.Project) (*operatorv1alpha1.Organization, error) {

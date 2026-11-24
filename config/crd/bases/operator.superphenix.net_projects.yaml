@@ -27,6 +27,9 @@ spec:
     - jsonPath: .status.conditions[?(@.type=="Bound")].status
       name: Bound
       type: string
+    - jsonPath: .status.conditions[?(@.type=="GitOpsReady")].reason
+      name: GitOps
+      type: string
     - jsonPath: .status.availableAZsCount
       name: Available AZs
       type: integer

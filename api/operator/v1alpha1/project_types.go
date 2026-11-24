@@ -22,6 +22,38 @@ const (
 	ReasonAvailabilityZonesValid = "Valid"
 	// ReasonAvailabilityZonesInvalid is used when one or more availability zones are invalid.
 	ReasonAvailabilityZonesInvalid = "Invalid"
+
+	// ConditionTypeGitOpsReady represents whether the project's GitOps ArgoCD Application
+	// (and its values repository Secret, if any) is created and up to date.
+	ConditionTypeGitOpsReady = "GitOpsReady"
+
+	// ReasonGitOpsReconciled is used when the GitOps Application and repository Secret are reconciled.
+	ReasonGitOpsReconciled = "Reconciled"
+	// ReasonGitOpsProjectNotBound is used when GitOps is skipped because the project is not bound.
+	ReasonGitOpsProjectNotBound = "ProjectNotBound"
+	// ReasonGitOpsProjectDeleting is used when the project is being deleted.
+	ReasonGitOpsProjectDeleting = "ProjectDeleting"
+	// ReasonOrganizationFetchFailed is used when the project's Organization cannot be read.
+	ReasonOrganizationFetchFailed = "OrganizationFetchFailed"
+	// ReasonNamespaceReconcileFailed is used when the project namespace reconciliation fails.
+	ReasonNamespaceReconcileFailed = "NamespaceReconcileFailed"
+	// ReasonRepositorySecretReconcileFailed is used when the values repository Secret reconciliation fails.
+	ReasonRepositorySecretReconcileFailed = "RepositorySecretReconcileFailed"
+	// ReasonHelmValuesFailed is used when the GitOps Application Helm values cannot be built.
+	ReasonHelmValuesFailed = "HelmValuesFailed"
+	// ReasonApplicationReconcileFailed (shared with Cluster) is used when the ArgoCD Application reconciliation fails.
+
+	// ConditionTypeDeleting represents the progress of the project deletion. Only set while the project is being deleted.
+	ConditionTypeDeleting = "Deleting"
+
+	// ReasonWaitingForApplication is used while waiting for ArgoCD to delete the GitOps Application and its resources.
+	ReasonWaitingForApplication = "WaitingForApplication"
+	// ReasonApplicationDeletionFailed is used when the GitOps Application cannot be read or deleted.
+	ReasonApplicationDeletionFailed = "ApplicationDeletionFailed"
+	// ReasonWaitingForRepositorySecret is used while waiting for the values repository Secret to disappear.
+	ReasonWaitingForRepositorySecret = "WaitingForRepositorySecret"
+	// ReasonRepositorySecretDeletionFailed is used when the values repository Secret cannot be read or deleted.
+	ReasonRepositorySecretDeletionFailed = "RepositorySecretDeletionFailed"
 )
 
 // ProjectSpec defines the desired state of Project.
@@ -186,6 +218,7 @@ type AvailableZoneStatus struct {
 // +kubebuilder:printcolumn:name="ProjectID",type=string,JSONPath=`.spec.projectID`
 // +kubebuilder:printcolumn:name="Display Name",type=string,JSONPath=`.status.displayName`
 // +kubebuilder:printcolumn:name="Bound",type=string,JSONPath=`.status.conditions[?(@.type=="Bound")].status`
+// +kubebuilder:printcolumn:name="GitOps",type=string,JSONPath=`.status.conditions[?(@.type=="GitOpsReady")].reason`
 // +kubebuilder:printcolumn:name="Available AZs",type=integer,JSONPath=`.status.availableAZsCount`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
