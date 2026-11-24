@@ -1,4 +1,4 @@
-# SFS-DBAAS
+# SFS-DBAAS-POSTGRESQL
 
 ![Version: 0.0.0](https://img.shields.io/badge/Version-0.0.0-informational?style=flat-square)
 

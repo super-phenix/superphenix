@@ -3,8 +3,8 @@
 
 {{- $projectID := $.Values.projectID -}}
 {{- $defaults := $.Values.databaseDefaults -}}
-{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
-{{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
+{{- $dbID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $roles := splitList "," (include "sfs-dbaas-postgresql.roles" $db) }}
 {{- $disabledServices := list }}
 {{- range $role := list "ro" "r" }}
 {{- if not (has $role $roles) }}
@@ -18,7 +18,7 @@
 {{- if lt $maxConnections 1 }}
 {{- fail (printf "Database %s maxConnections must be at least 1" $localID) }}
 {{- end }}
-{{- $memoryMi := include "sfs-dbaas.memoryMi" (required "Must provide a memory amount" $db.memory) | int }}
+{{- $memoryMi := include "sfs-dbaas-postgresql.memoryMi" (required "Must provide a memory amount" $db.memory) | int }}
 {{- $version := required "Must provide a PostgreSQL version" $db.version }}
 {{- if not (kindIs "string" $version) }}
 {{- fail (printf "Database %s version must be quoted, %v is parsed as a number" $localID $version) }}
@@ -30,7 +30,7 @@ kind: Cluster
 metadata:
   name: {{ $dbID | quote }}
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
     superphenix.net/resourceLocalID: {{ $localID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}
@@ -71,7 +71,7 @@ spec:
   inheritedMetadata:
     labels:
       # No selector labels, every database of the release shares them
-      {{- include "sfs-dbaas.spxLabels" $ | nindent 6 }}
+      {{- include "sfs-dbaas-postgresql.spxLabels" $ | nindent 6 }}
       superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
       superphenix.net/resourceLocalID: {{ $localID | quote }}
       superphenix.net/resourceName: {{ $db.name | quote }}

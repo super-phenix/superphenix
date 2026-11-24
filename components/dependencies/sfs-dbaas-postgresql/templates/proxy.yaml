@@ -5,14 +5,14 @@
 {{- $defaults := $.Values.databaseDefaults -}}
 {{- $proxy := $defaults.proxy -}}
 {{- $apiNetwork := $proxy.apiNetwork -}}
-{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
-{{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
-{{- $subnetID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
+{{- $dbID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $roles := splitList "," (include "sfs-dbaas-postgresql.roles" $db) }}
+{{- $subnetID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
 {{- $proxyLocalID := printf "proxy.%s" $localID }}
-{{- $proxyID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $proxyLocalID) }}
+{{- $proxyID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" $proxyLocalID) }}
 {{- $apiProvider := printf "%s.%s.ovn" $apiNetwork.name $apiNetwork.namespace }}
 
-{{- $config := include "sfs-dbaas.proxyConfig" (dict "root" $ "dbID" $dbID "roles" $roles "maxConnections" ($db.maxConnections | default 100)) }}
+{{- $config := include "sfs-dbaas-postgresql.proxyConfig" (dict "root" $ "dbID" $dbID "roles" $roles "maxConnections" ($db.maxConnections | default 100)) }}
 
 ---
 apiVersion: v1
@@ -20,7 +20,7 @@ kind: ConfigMap
 metadata:
   name: {{ $proxyID | quote }}
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $proxyID | quote }}
     superphenix.net/resourceLocalID: {{ $proxyLocalID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}
@@ -35,7 +35,7 @@ kind: Deployment
 metadata:
   name: {{ $proxyID | quote }}
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $proxyID | quote }}
     superphenix.net/resourceLocalID: {{ $proxyLocalID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}
@@ -50,7 +50,7 @@ spec:
     metadata:
       labels:
         # No selector labels, every database of the release shares them
-        {{- include "sfs-dbaas.spxLabels" $ | nindent 8 }}
+        {{- include "sfs-dbaas-postgresql.spxLabels" $ | nindent 8 }}
         superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
         superphenix.net/resourceLocalID: {{ $localID | quote }}
         superphenix.net/resourceName: {{ $db.name | quote }}
@@ -116,7 +116,7 @@ kind: PodDisruptionBudget
 metadata:
   name: {{ $proxyID | quote }}
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $proxyID | quote }}
     superphenix.net/resourceLocalID: {{ $proxyLocalID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}

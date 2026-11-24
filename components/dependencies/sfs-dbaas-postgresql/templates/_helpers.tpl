@@ -1,32 +1,32 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "sfs-dbaas.name" -}}
+{{- define "sfs-dbaas-postgresql.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "sfs-dbaas.chart" -}}
+{{- define "sfs-dbaas-postgresql.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "sfs-dbaas.labels" -}}
-helm.sh/chart: {{ include "sfs-dbaas.chart" . }}
-{{ include "sfs-dbaas.selectorLabels" . }}
+{{- define "sfs-dbaas-postgresql.labels" -}}
+helm.sh/chart: {{ include "sfs-dbaas-postgresql.chart" . }}
+{{ include "sfs-dbaas-postgresql.selectorLabels" . }}
 app.kubernetes.io/version: {{ .Chart.Version | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{ include "sfs-dbaas.spxLabels" . }}
+{{ include "sfs-dbaas-postgresql.spxLabels" . }}
 {{- end }}
 
 {{/*
 SPX labels
 */}}
-{{- define "sfs-dbaas.spxLabels" -}}
+{{- define "sfs-dbaas-postgresql.spxLabels" -}}
 superphenix.net/gitops: {{ .Values.gitops | quote }}
 superphenix.net/organizationID: spx-{{ .Values.organizationID }}
 superphenix.net/projectID: spx-{{ .Values.projectID }}
@@ -39,22 +39,22 @@ superphenix.net/projectName: {{ .Values.projectName | quote }}
 {{/*
 Selector labels
 */}}
-{{- define "sfs-dbaas.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "sfs-dbaas.name" . }}
+{{- define "sfs-dbaas-postgresql.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "sfs-dbaas-postgresql.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Returns the SPX effective ID of a resource
 */}}
-{{- define "sfs-dbaas.spxEID" -}}
-{{- printf "spx-%s" (include "sfs-dbaas.getUUIDv5" (dict "NS" .project "NAME" .localID)) }}
+{{- define "sfs-dbaas-postgresql.spxEID" -}}
+{{- printf "spx-%s" (include "sfs-dbaas-postgresql.getUUIDv5" (dict "NS" .project "NAME" .localID)) }}
 {{- end }}
 
 {{/*
 Generate UUIDv5 through external templating
 */}}
-{{- define "sfs-dbaas.getUUIDv5" -}}
+{{- define "sfs-dbaas-postgresql.getUUIDv5" -}}
 {{- printf "<spx-uuidv5 %s %s>" .NS .NAME }}
 {{- end }}
 
@@ -62,7 +62,7 @@ Generate UUIDv5 through external templating
 CloudNative-PG services exposed for a database, comma-separated: rw, ro with more than one
 instance, and r
 */}}
-{{- define "sfs-dbaas.roles" -}}
+{{- define "sfs-dbaas-postgresql.roles" -}}
 {{- $roles := list "rw" }}
 {{- if gt (int (.instances | default 1)) 1 }}
 {{- $roles = append $roles "ro" }}
@@ -74,7 +74,7 @@ instance, and r
 {{/*
 Memory of an instance in MiB, from a Mi, Gi or Ti quantity
 */}}
-{{- define "sfs-dbaas.memoryMi" -}}
+{{- define "sfs-dbaas-postgresql.memoryMi" -}}
 {{- $memory := toString . }}
 {{- $factors := dict "Mi" 1 "Gi" 1024 "Ti" 1048576 }}
 {{- if not (regexMatch "^[0-9]+(\\.[0-9]+)?(Mi|Gi|Ti)$" $memory) }}
@@ -91,7 +91,7 @@ Memory of an instance in MiB, from a Mi, Gi or Ti quantity
 {{/*
 HAProxy configuration forwarding each proxy port to its CloudNative-PG service
 */}}
-{{- define "sfs-dbaas.proxyConfig" -}}
+{{- define "sfs-dbaas-postgresql.proxyConfig" -}}
 {{- $ := .root }}
 {{- $dbID := .dbID }}
 {{- $defaults := $.Values.databaseDefaults -}}

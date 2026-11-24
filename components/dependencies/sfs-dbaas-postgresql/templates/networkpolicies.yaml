@@ -3,7 +3,7 @@
 
 {{- $projectID := $.Values.projectID -}}
 {{- $defaults := $.Values.databaseDefaults -}}
-{{- $dbID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $localID) }}
+{{- $dbID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" $localID) }}
 {{- $netpolLocalID := printf "internal.%s" $localID }}
 
 ---
@@ -14,7 +14,7 @@ metadata:
   annotations:
     ovn.kubernetes.io/network_policy_enforcement: lax
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
     superphenix.net/resourceLocalID: {{ $netpolLocalID | quote }}
     superphenix.net/resourceName: {{ $netpolLocalID | quote }}
@@ -60,7 +60,7 @@ metadata:
   annotations:
     ovn.kubernetes.io/network_policy_enforcement: lax
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $dbID | quote }}
     superphenix.net/resourceLocalID: {{ $proxyNetpolLocalID | quote }}
     superphenix.net/resourceName: {{ $proxyNetpolLocalID | quote }}

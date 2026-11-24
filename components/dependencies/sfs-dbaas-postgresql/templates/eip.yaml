@@ -4,9 +4,9 @@
 {{- $projectID := $.Values.projectID -}}
 {{- $defaults := $.Values.databaseDefaults -}}
 {{- $eipLocalID := printf "eip.%s" $localID }}
-{{- $eipID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $eipLocalID) }}
-{{- $natGwID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
-{{- $roles := splitList "," (include "sfs-dbaas.roles" $db) }}
+{{- $eipID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" $eipLocalID) }}
+{{- $natGwID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" (required "Must provide a subnet" $db.subnet)) }}
+{{- $roles := splitList "," (include "sfs-dbaas-postgresql.roles" $db) }}
 
 ---
 apiVersion: kubeovn.io/v1
@@ -16,7 +16,7 @@ metadata:
   annotations:
     ovn.kubernetes.io/bgp: "true"
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $eipID | quote }}
     superphenix.net/resourceLocalID: {{ $eipLocalID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}
@@ -29,7 +29,7 @@ spec:
 {{- range $role := $roles }}
 {{- $port := get $defaults.proxy.ports $role }}
 {{- $dnatLocalID := printf "dnat.%s.%s" $role $localID }}
-{{- $dnatID := include "sfs-dbaas.spxEID" (dict "project" $projectID "localID" $dnatLocalID) }}
+{{- $dnatID := include "sfs-dbaas-postgresql.spxEID" (dict "project" $projectID "localID" $dnatLocalID) }}
 
 ---
 apiVersion: kubeovn.io/v1
@@ -37,7 +37,7 @@ kind: IptablesDnatRule
 metadata:
   name: {{ $dnatID | quote }}
   labels:
-    {{- include "sfs-dbaas.labels" $ | nindent 4 }}
+    {{- include "sfs-dbaas-postgresql.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $dnatID | quote }}
     superphenix.net/resourceLocalID: {{ $dnatLocalID | quote }}
     superphenix.net/resourceName: {{ $db.name | quote }}
