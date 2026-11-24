@@ -373,9 +373,7 @@ func CreateArgoApp(
 					Name: "uuidv5",
 					Env: v1alpha1.Env{
 						{Name: "RELEASE", Value: appName},
-						{Name: "REPO", Value: ""},
 						{Name: "HELM_PARAMS", Value: helmParams.String()},
-						{Name: "HELM_VALUEFILES", Value: ""},
 						{Name: "HELM_VALUES", Value: values},
 					},
 				},

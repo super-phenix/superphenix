@@ -2,6 +2,7 @@ package project
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -29,7 +30,10 @@ import (
 
 const (
 	// FinalizerName is the name of the finalizer used to clean up the project when it is deleted.
-	FinalizerName = "operator.superphenix.net/finalizer"
+	// It is also set on the project's repository Secret so the Secret outlives the ArgoCD Application.
+	FinalizerName             = "operator.superphenix.net/finalizer"
+	repositorySecretTypeLabel = "argocd.argoproj.io/secret-type"
+	argocdResourcesFinalizer  = "resources-finalizer.argocd.argoproj.io"
 )
 
 // +kubebuilder:rbac:groups=operator.superphenix.net,resources=projects,verbs=get;list;watch;create;update;patch;delete
@@ -39,6 +43,7 @@ const (
 // +kubebuilder:rbac:groups=operator.superphenix.net,resources=clusters,verbs=get;list;watch
 // +kubebuilder:rbac:groups=argoproj.io,resources=applications,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconciler reconciles a Project object.
 type Reconciler struct {
@@ -168,6 +173,16 @@ func (r *Reconciler) reconcileFinalizers(ctx context.Context, proj *operatorv1al
 			} else if !apierrors.IsNotFound(err) {
 				log.Error(err, "Failed to check ArgoCD Application existence", "name", appName)
 				return true, ctrl.Result{}, err
+			}
+
+			// Only release the repository Secret once the Application is gone.
+			gone, err := r.deleteRepositorySecret(ctx, proj)
+			if err != nil {
+				return true, ctrl.Result{}, err
+			}
+			if !gone {
+				log.Info("Waiting for repository Secret to be deleted", "name", repositorySecretName(proj))
+				return true, ctrl.Result{RequeueAfter: 10 * time.Second}, nil
 			}
 
 			controllerutil.RemoveFinalizer(proj, FinalizerName)
@@ -377,6 +392,14 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 		return err
 	}
 
+	// The repository Secret must exist before the Application references it.
+	valuesLocation := getValuesLocation(proj)
+	if valuesLocation != nil {
+		if err := r.ensureRepositorySecret(ctx, proj, valuesLocation); err != nil {
+			return err
+		}
+	}
+
 	// Determine GitOps parameters
 	repoURL, path, targetRevision := r.resolveManifestLocation(proj)
 
@@ -387,7 +410,114 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 	}
 
 	// Ensure ArgoCD Application exists
-	return r.ensureArgoApplication(ctx, proj, namespaceName, appName, repoURL, path, targetRevision, helmValues)
+	if err := r.ensureArgoApplication(ctx, proj, namespaceName, appName, repoURL, path, targetRevision, helmValues); err != nil {
+		return err
+	}
+
+	// The values repository was removed: the Application no longer references it, drop its credentials.
+	if valuesLocation == nil {
+		if _, err := r.deleteRepositorySecret(ctx, proj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// getValuesLocation returns the project's values repository, or nil if none is configured.
+func getValuesLocation(proj *operatorv1alpha1.Project) *operatorv1alpha1.ProjectValuesLocationSpec {
+	if proj.Spec.GitOps == nil || proj.Spec.GitOps.ValuesLocation == nil || proj.Spec.GitOps.ValuesLocation.RepoURL == "" {
+		return nil
+	}
+	return proj.Spec.GitOps.ValuesLocation
+}
+
+var errRepositorySecretTerminating = errors.New("repository Secret is being deleted")
+
+func repositorySecretName(proj *operatorv1alpha1.Project) string {
+	return fmt.Sprintf("repository-%s", proj.Spec.ProjectID)
+}
+
+func (r *Reconciler) ensureRepositorySecret(ctx context.Context, proj *operatorv1alpha1.Project, valuesLocation *operatorv1alpha1.ProjectValuesLocationSpec) error {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      repositorySecretName(proj),
+			Namespace: proj.Namespace,
+		},
+	}
+
+	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, secret, func() error {
+		if !secret.DeletionTimestamp.IsZero() {
+			return errRepositorySecretTerminating
+		}
+		if secret.Labels == nil {
+			secret.Labels = make(map[string]string)
+		}
+		secret.Labels[repositorySecretTypeLabel] = "repository"
+		controllerutil.AddFinalizer(secret, FinalizerName)
+		if err := controllerutil.SetControllerReference(proj, secret, r.Scheme); err != nil {
+			return err
+		}
+
+		secret.Type = corev1.SecretTypeOpaque
+		secret.Data = map[string][]byte{
+			"name": []byte(secret.Name),
+			"type": []byte("git"),
+			"url":  []byte(valuesLocation.RepoURL),
+		}
+		if credentials := valuesLocation.Credentials; credentials != nil {
+			if credentials.Username != "" {
+				secret.Data["username"] = []byte(credentials.Username)
+			}
+			if credentials.Password != "" {
+				secret.Data["password"] = []byte(credentials.Password)
+			}
+			if credentials.Insecure {
+				secret.Data["insecure"] = []byte("true")
+			}
+			if credentials.ForceHttpBasicAuth {
+				secret.Data["forceHttpBasicAuth"] = []byte("true")
+			}
+			if credentials.EnableLfs {
+				secret.Data["enableLfs"] = []byte("true")
+			}
+			if credentials.SshPrivateKey != "" {
+				secret.Data["sshPrivateKey"] = []byte(credentials.SshPrivateKey)
+			}
+		}
+		return nil
+	})
+	if errors.Is(err, errRepositorySecretTerminating) {
+		// Deleted out of band while the project is alive: release it so the
+		// returned error requeues and the next reconcile recreates it.
+		if _, delErr := r.deleteRepositorySecret(ctx, proj); delErr != nil {
+			return delErr
+		}
+	}
+	if err != nil {
+		return fmt.Errorf("failed to reconcile repository secret %s/%s: %w", secret.Namespace, secret.Name, err)
+	}
+	return nil
+}
+
+// deleteRepositorySecret releases and deletes the project's repository Secret.
+// It returns true once the Secret is confirmed gone.
+func (r *Reconciler) deleteRepositorySecret(ctx context.Context, proj *operatorv1alpha1.Project) (bool, error) {
+	secret := &corev1.Secret{}
+	key := types.NamespacedName{Name: repositorySecretName(proj), Namespace: proj.Namespace}
+	if err := r.Get(ctx, key, secret); err != nil {
+		return apierrors.IsNotFound(err), client.IgnoreNotFound(err)
+	}
+
+	if controllerutil.RemoveFinalizer(secret, FinalizerName) {
+		if err := r.Update(ctx, secret); err != nil {
+			return false, client.IgnoreNotFound(err)
+		}
+	}
+	if err := r.Delete(ctx, secret); client.IgnoreNotFound(err) != nil {
+		return false, fmt.Errorf("failed to delete repository Secret %s: %w", key, err)
+	}
+	// Confirmed on the next pass.
+	return false, nil
 }
 
 func (r *Reconciler) fetchOrganizationForProject(ctx context.Context, proj *operatorv1alpha1.Project) (*operatorv1alpha1.Organization, error) {
@@ -448,31 +578,10 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 		Cluster string `yaml:"cluster"`
 	}
 
-	type credentialsValues struct {
-		Username           string `yaml:"username,omitempty"`
-		Password           string `yaml:"password,omitempty"`
-		Insecure           bool   `yaml:"insecure,omitempty"`
-		ForceHttpBasicAuth bool   `yaml:"forceHttpBasicAuth,omitempty"`
-		EnableLfs          bool   `yaml:"enableLfs,omitempty"`
-		SshPrivateKey      string `yaml:"sshPrivateKey,omitempty"`
-	}
-
-	type valuesLocationValues struct {
-		RepoURL        string            `yaml:"repoURL"`
-		Path           string            `yaml:"path"`
-		TargetRevision string            `yaml:"targetRevision"`
-		Credentials    credentialsValues `yaml:"credentials"`
-	}
-
-	type gitopsValues struct {
-		ValuesLocation valuesLocationValues `yaml:"valuesLocation"`
-	}
-
 	type projectValues struct {
-		ProjectID         string       `yaml:"projectID"`
-		Name              string       `yaml:"name"`
-		AvailabilityZones []azValue    `yaml:"availabilityZones"`
-		GitOps            gitopsValues `yaml:"gitops"`
+		ProjectID         string    `yaml:"projectID"`
+		Name              string    `yaml:"name"`
+		AvailabilityZones []azValue `yaml:"availabilityZones"`
 	}
 
 	type organizationValues struct {
@@ -494,25 +603,6 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 		})
 	}
 
-	// GitOps parameters
-	valuesLoc := valuesLocationValues{}
-	if proj.Spec.GitOps != nil && proj.Spec.GitOps.ValuesLocation != nil {
-		vl := proj.Spec.GitOps.ValuesLocation
-		valuesLoc.RepoURL = vl.RepoURL
-		valuesLoc.Path = vl.Path
-		valuesLoc.TargetRevision = vl.TargetRevision
-		if vl.Credentials != nil {
-			valuesLoc.Credentials = credentialsValues{
-				Username:           vl.Credentials.Username,
-				Password:           vl.Credentials.Password,
-				Insecure:           vl.Credentials.Insecure,
-				ForceHttpBasicAuth: vl.Credentials.ForceHttpBasicAuth,
-				EnableLfs:          vl.Credentials.EnableLfs,
-				SshPrivateKey:      vl.Credentials.SshPrivateKey,
-			}
-		}
-	}
-
 	values := helmValues{
 		Organization: organizationValues{
 			OrganizationID: org.Spec.OrganizationID,
@@ -522,9 +612,6 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 			ProjectID:         proj.Spec.ProjectID,
 			Name:              projectName,
 			AvailabilityZones: azs,
-			GitOps: gitopsValues{
-				ValuesLocation: valuesLoc,
-			},
 		},
 	}
 
@@ -549,17 +636,39 @@ func (r *Reconciler) ensureArgoApplication(ctx context.Context, proj *operatorv1
 		}
 		app.Labels["operator.superphenix.net/managed"] = "true"
 
-		// Add ArgoCD resources finalizer to ensure child resources are cleaned up
-		// Unsure if we want to do it for now, this can end up being dangerous
-		// controllerutil.AddFinalizer(app, "resources-finalizer.argocd.argoproj.io")
+		controllerutil.AddFinalizer(app, argocdResourcesFinalizer)
 
-		app.Spec.Source = &argov1alpha1.ApplicationSource{
+		source := argov1alpha1.ApplicationSource{
 			RepoURL:        repoURL,
 			Path:           path,
 			TargetRevision: targetRevision,
 			Helm: &argov1alpha1.ApplicationSourceHelm{
 				Values: helmValues,
 			},
+		}
+
+		valuesLocation := getValuesLocation(proj)
+		if valuesLocation != nil {
+			source.Helm.ValueFiles = []string{"$values/**/*.yaml", "$values/**/*.yml"}
+			source.Helm.IgnoreMissingValueFiles = true
+
+			valuesTargetRevision := valuesLocation.TargetRevision
+			if valuesTargetRevision == "" {
+				valuesTargetRevision = "HEAD"
+			}
+
+			app.Spec.Source = nil
+			app.Spec.Sources = []argov1alpha1.ApplicationSource{
+				source,
+				{
+					RepoURL:        valuesLocation.RepoURL,
+					TargetRevision: valuesTargetRevision,
+					Ref:            "values",
+				},
+			}
+		} else {
+			app.Spec.Source = &source
+			app.Spec.Sources = nil
 		}
 
 		app.Spec.Destination = argov1alpha1.ApplicationDestination{
