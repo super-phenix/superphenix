@@ -14,7 +14,7 @@ const (
 	EIPLocalIDPrefix = "eip."
 )
 
-// proxyPortRoles maps the sfs-dbaas proxy ports to the CloudNative-PG service they serve.
+// proxyPortRoles maps the sfs-dbaas-postgresql proxy ports to the CloudNative-PG service they serve.
 var proxyPortRoles = map[int64]string{
 	5432: "rw",
 	5433: "ro",

@@ -64,7 +64,7 @@ func TestRestart(t *testing.T) {
 			if _, err := time.Parse(time.RFC3339, restartedAt); err != nil {
 				t.Errorf("annotation %s = %q, want an RFC3339 time", RestartAnnotation, restartedAt)
 			}
-			if cluster.GetLabels()["app.kubernetes.io/name"] != "sfs-dbaas" {
+			if cluster.GetLabels()["app.kubernetes.io/name"] != "sfs-dbaas-postgresql" {
 				t.Errorf("labels changed by the patch: %v", cluster.GetLabels())
 			}
 		})

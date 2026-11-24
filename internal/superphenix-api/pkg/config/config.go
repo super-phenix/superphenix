@@ -410,7 +410,7 @@ productsConfig:
     dbaas:
       repo:
         repoURL: "ghcr.io/super-phenix/charts"
-        chart: "sfs-dbaas"
+        chart: "sfs-dbaas-postgresql"
         targetRevision: "0.1.0"
       postgresVersions:
         - version: "18.4"

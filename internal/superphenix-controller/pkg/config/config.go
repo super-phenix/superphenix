@@ -226,7 +226,7 @@ disableEditionForResourcesByLabels:
   - key: "app.kubernetes.io/name"
     value: "sfs-kaas"
   - key: "app.kubernetes.io/name"
-    value: "sfs-dbaas"
+    value: "sfs-dbaas-postgresql"
 garbageCollection:
   interval: 15m
   timeout: 10m

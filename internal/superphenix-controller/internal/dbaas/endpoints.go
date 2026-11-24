@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// listEndpoints returns the addresses of the SwitchLBRule the sfs-dbaas chart renders for a database,
+// listEndpoints returns the addresses of the SwitchLBRule the sfs-dbaas-postgresql chart renders for a database,
 // followed by the ones on its EIP when external access is enabled.
 func listEndpoints(ctx context.Context, namespace, localId string) []view.DBaaSEndpoint {
 	lb := findRendered(ctx, informers.SwitchLBRules, namespace, LBLocalIDPrefix+localId)

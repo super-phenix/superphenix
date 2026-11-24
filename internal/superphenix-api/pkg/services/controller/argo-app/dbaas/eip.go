@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// EipEffectiveID returns the effective ID of the EIP the sfs-dbaas chart renders for a database.
+// EipEffectiveID returns the effective ID of the EIP the sfs-dbaas-postgresql chart renders for a database.
 func EipEffectiveID(projectId, localId string) (string, error) {
 	return effectiveID(projectId, eipLocalIDPrefix+localId)
 }

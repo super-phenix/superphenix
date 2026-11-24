@@ -146,7 +146,7 @@ func TestCreateArgoApp(t *testing.T) {
 			spec.ExternalAccess = tt.externalAccess
 			cfg := DBaaSConfig{StorageClasses: classes, ExternalSubnet: tt.externalSubnet}
 			m := testMetadata(t)
-			info, err := CreateArgoApp(context.Background(), "db-1", az, spec, Subnet{LocalID: "s", CIDR: "10.0.0.0/24"}, m, cfg, nil, config.RepoArgoAppConfig{Chart: "sfs-dbaas"})
+			info, err := CreateArgoApp(context.Background(), "db-1", az, spec, Subnet{LocalID: "s", CIDR: "10.0.0.0/24"}, m, cfg, nil, config.RepoArgoAppConfig{Chart: "sfs-dbaas-postgresql"})
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("CreateArgoApp() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -167,13 +167,13 @@ func TestCreateArgoApp(t *testing.T) {
 }
 
 func TestChartForUpdate(t *testing.T) {
-	override := config.RepoArgoAppConfig{Chart: "sfs-dbaas", TargetRevision: "0.2.0"}
+	override := config.RepoArgoAppConfig{Chart: "sfs-dbaas-postgresql", TargetRevision: "0.2.0"}
 	d := &config.Global.ProductsConfig.ArgoApp.DBaaS
 	prevRepo, prevVersions := d.Repo, d.PostgresVersions
 	t.Cleanup(func() { d.Repo, d.PostgresVersions = prevRepo, prevVersions })
-	d.Repo = config.RepoArgoAppConfig{Chart: "sfs-dbaas", TargetRevision: "0.1.0"}
+	d.Repo = config.RepoArgoAppConfig{Chart: "sfs-dbaas-postgresql", TargetRevision: "0.1.0"}
 	d.PostgresVersions = []config.PostgresVersionConfig{{Version: "17.6"}, {Version: "17.7", Repo: &override}}
-	current := config.RepoArgoAppConfig{Chart: "sfs-dbaas", TargetRevision: "0.0.9"}
+	current := config.RepoArgoAppConfig{Chart: "sfs-dbaas-postgresql", TargetRevision: "0.0.9"}
 
 	tests := []struct {
 		name       string

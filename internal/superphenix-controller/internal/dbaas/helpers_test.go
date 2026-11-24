@@ -89,7 +89,7 @@ func clearWatcher(t *testing.T, resource string) {
 	t.Cleanup(func() { informers.WatcherSet[resource] = old })
 }
 
-// newCluster builds a Cluster as the sfs-dbaas chart renders it, labelled for projectId,
+// newCluster builds a Cluster as the sfs-dbaas-postgresql chart renders it, labelled for projectId,
 // in the namespace of the test project.
 func newCluster(t *testing.T, projectId string) *unstructured.Unstructured {
 	t.Helper()
@@ -138,7 +138,7 @@ func newCluster(t *testing.T, projectId string) *unstructured.Unstructured {
 
 	labels := m.GetLabels()
 	labels[spxId.SpxLabelResourceName] = "orders"
-	labels["app.kubernetes.io/name"] = "sfs-dbaas"
+	labels["app.kubernetes.io/name"] = "sfs-dbaas-postgresql"
 	cluster.SetLabels(labels)
 
 	return cluster

@@ -19,7 +19,7 @@ import (
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 )
 
-// CreateAppValues generates the sfs-dbaas values of a database. oldSpec is nil on creation.
+// CreateAppValues generates the sfs-dbaas-postgresql values of a database. oldSpec is nil on creation.
 func CreateAppValues(ctx context.Context, localId, location string, spec DBaaSSpec, subnet Subnet, oldSpec *DBaaSSpec) (string, error) {
 	log := logger.GetLogger(ctx)
 	spec = withImmutable(spec, oldSpec)
@@ -60,7 +60,7 @@ func CreateAppValues(ctx context.Context, localId, location string, spec DBaaSSp
 	return string(valuesBytes), nil
 }
 
-// CreateArgoApp builds the Application rendering a database with the sfs-dbaas chart.
+// CreateArgoApp builds the Application rendering a database with the sfs-dbaas-postgresql chart.
 func CreateArgoApp(
 	ctx context.Context, localId string, az config.AZConfig, spec DBaaSSpec, subnet Subnet, metadata spxId.Metadata,
 	dbaasConfig DBaaSConfig, oldSpec *DBaaSSpec, chart config.RepoArgoAppConfig,

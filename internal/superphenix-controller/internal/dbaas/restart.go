@@ -13,7 +13,7 @@ import (
 )
 
 // Restart rolls the instances of the Cluster, replicas first then the primary.
-// The Cluster carries the sfs-dbaas edit-blocking label, so only ownership is checked.
+// The Cluster carries the sfs-dbaas-postgresql edit-blocking label, so only ownership is checked.
 func Restart(ctx context.Context, namespace, effectiveId string) error {
 	log := logger.GetLogger(ctx)
 

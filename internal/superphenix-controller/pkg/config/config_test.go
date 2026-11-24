@@ -37,7 +37,7 @@ func TestConfigCaseSensitiveKeys(t *testing.T) {
 	}
 	defaultLabels := KeyValueList{
 		{Key: "app.kubernetes.io/name", Value: "sfs-kaas"},
-		{Key: "app.kubernetes.io/name", Value: "sfs-dbaas"},
+		{Key: "app.kubernetes.io/name", Value: "sfs-dbaas-postgresql"},
 	}
 
 	tests := []struct {
