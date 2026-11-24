@@ -20,8 +20,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 	"github.com/super-phenix/superphenix/internal/superphenix-operator/db"
@@ -30,8 +32,8 @@ import (
 
 const (
 	// FinalizerName is the name of the finalizer used to clean up the project when it is deleted.
-	// It is also set on the project's repository Secret so the Secret outlives the ArgoCD Application.
 	FinalizerName             = "operator.superphenix.net/finalizer"
+	repositorySecretPrefix    = "repository-"
 	repositorySecretTypeLabel = "argocd.argoproj.io/secret-type"
 	argocdResourcesFinalizer  = "resources-finalizer.argocd.argoproj.io"
 )
@@ -73,8 +75,36 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return e.ObjectOld.GetGeneration() != e.ObjectNew.GetGeneration()
 			},
 		})).
+		// Restore the repository Secret if it is modified or deleted out of band. Metadata-only
+		// so it shares the operator's existing Secret informer instead of caching Secret data.
+		Watches(
+			&metav1.PartialObjectMetadata{TypeMeta: metav1.TypeMeta{APIVersion: "v1", Kind: "Secret"}},
+			handler.EnqueueRequestsFromMapFunc(r.findProjectsForSecret),
+		).
 		Named("project").
 		Complete(r)
+}
+
+// findProjectsForSecret maps a repository Secret to the Project it belongs to.
+func (r *Reconciler) findProjectsForSecret(ctx context.Context, obj client.Object) []reconcile.Request {
+	if !strings.HasPrefix(obj.GetName(), repositorySecretPrefix) {
+		return nil
+	}
+	if obj.GetNamespace() != r.OperatorNamespace {
+		return nil
+	}
+
+	projects := &operatorv1alpha1.ProjectList{}
+	if err := r.List(ctx, projects, client.InNamespace(obj.GetNamespace())); err != nil {
+		logf.FromContext(ctx).Error(err, "Failed to list Projects for repository Secret", "secret", obj.GetName())
+		return nil
+	}
+	for i := range projects.Items {
+		if repositorySecretName(&projects.Items[i]) == obj.GetName() {
+			return []reconcile.Request{{NamespacedName: client.ObjectKeyFromObject(&projects.Items[i])}}
+		}
+	}
+	return nil
 }
 
 // Reconcile reconciles the state of a Project resource.
@@ -224,13 +254,19 @@ func (r *Reconciler) cleanupGitOps(ctx context.Context, proj *operatorv1alpha1.P
 				message += ": " + cond.Message
 			}
 		}
+		// Keep the repository Secret around (recreating it if lost) until the Application is gone.
+		if valuesLocation := getValuesLocation(proj); valuesLocation != nil {
+			if err := r.ensureRepositorySecret(ctx, proj, valuesLocation); err != nil {
+				return operatorv1alpha1.ReasonRepositorySecretReconcileFailed, err.Error(), err
+			}
+		}
 		return operatorv1alpha1.ReasonWaitingForApplication, message, nil
 	} else if !apierrors.IsNotFound(err) {
 		return operatorv1alpha1.ReasonApplicationDeletionFailed,
 			fmt.Sprintf("Failed to get ArgoCD Application %s: %v", appKey, err), err
 	}
 
-	// Only release the repository Secret once the Application is gone.
+	// Only delete the repository Secret once the Application is gone.
 	remaining, err := r.deleteRepositorySecret(ctx, proj)
 	if err != nil {
 		return operatorv1alpha1.ReasonRepositorySecretDeletionFailed, err.Error(), err
@@ -477,7 +513,7 @@ func (r *Reconciler) reconcileGitOps(ctx context.Context, proj *operatorv1alpha1
 
 	message := fmt.Sprintf("ArgoCD Application %s/%s is configured", namespaceName, appName)
 	if valuesLocation != nil {
-		message += fmt.Sprintf(" with values repository Secret %s/%s", proj.Namespace, repositorySecretName(proj))
+		message += fmt.Sprintf(" with values repository Secret %s", r.repositorySecretKey(proj))
 	} else if _, err := r.deleteRepositorySecret(ctx, proj); err != nil {
 		// The values repository was removed: the Application no longer references it, drop its credentials.
 		return fail(operatorv1alpha1.ReasonRepositorySecretReconcileFailed, err)
@@ -494,32 +530,31 @@ func getValuesLocation(proj *operatorv1alpha1.Project) *operatorv1alpha1.Project
 	return proj.Spec.GitOps.ValuesLocation
 }
 
-var errRepositorySecretTerminating = errors.New("repository Secret is being deleted")
-
 func repositorySecretName(proj *operatorv1alpha1.Project) string {
-	return fmt.Sprintf("repository-%s", proj.Spec.ProjectID)
+	return repositorySecretPrefix + proj.Spec.ProjectID
 }
 
+// repositorySecretKey locates the project's repository Secret. It always lives in the
+// operator namespace, the only one where ArgoCD reads repository Secrets.
+func (r *Reconciler) repositorySecretKey(proj *operatorv1alpha1.Project) types.NamespacedName {
+	return types.NamespacedName{Name: repositorySecretName(proj), Namespace: r.OperatorNamespace}
+}
+
+// ensureRepositorySecret creates or restores the ArgoCD repository Secret for the values repository.
+// It deliberately has no owner reference nor finalizer: only the operator deletes it, after the
+// Application is gone, and the Secret watch recreates it if it is lost or modified meanwhile.
 func (r *Reconciler) ensureRepositorySecret(ctx context.Context, proj *operatorv1alpha1.Project, valuesLocation *operatorv1alpha1.ProjectValuesLocationSpec) error {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      repositorySecretName(proj),
-			Namespace: proj.Namespace,
-		},
+	if r.OperatorNamespace == "" {
+		return errors.New("operator namespace is not configured, cannot create the repository Secret")
 	}
+	key := r.repositorySecretKey(proj)
+	secret := &corev1.Secret{ObjectMeta: metav1.ObjectMeta{Name: key.Name, Namespace: key.Namespace}}
 
 	_, err := controllerutil.CreateOrUpdate(ctx, r.Client, secret, func() error {
-		if !secret.DeletionTimestamp.IsZero() {
-			return errRepositorySecretTerminating
-		}
 		if secret.Labels == nil {
 			secret.Labels = make(map[string]string)
 		}
 		secret.Labels[repositorySecretTypeLabel] = "repository"
-		controllerutil.AddFinalizer(secret, FinalizerName)
-		if err := controllerutil.SetControllerReference(proj, secret, r.Scheme); err != nil {
-			return err
-		}
 
 		secret.Type = corev1.SecretTypeOpaque
 		secret.Data = map[string][]byte{
@@ -549,25 +584,21 @@ func (r *Reconciler) ensureRepositorySecret(ctx context.Context, proj *operatorv
 		}
 		return nil
 	})
-	if errors.Is(err, errRepositorySecretTerminating) {
-		// Deleted out of band while the project is alive: release it so the
-		// returned error requeues and the next reconcile recreates it.
-		if _, delErr := r.deleteRepositorySecret(ctx, proj); delErr != nil {
-			return delErr
-		}
-	}
 	if err != nil {
 		return fmt.Errorf("failed to reconcile repository secret %s/%s: %w", secret.Namespace, secret.Name, err)
 	}
 	return nil
 }
 
-// deleteRepositorySecret releases and deletes the project's repository Secret.
-// It returns nil once the Secret is confirmed gone, otherwise the Secret as last seen
-// (gone-ness is confirmed on the next pass).
+// deleteRepositorySecret deletes the project's repository Secret. It returns nil once the
+// Secret is confirmed gone, otherwise the Secret as last seen (confirmed on the next pass).
 func (r *Reconciler) deleteRepositorySecret(ctx context.Context, proj *operatorv1alpha1.Project) (*corev1.Secret, error) {
+	if r.OperatorNamespace == "" {
+		// The Secret is never created without an operator namespace.
+		return nil, nil
+	}
 	secret := &corev1.Secret{}
-	key := types.NamespacedName{Name: repositorySecretName(proj), Namespace: proj.Namespace}
+	key := r.repositorySecretKey(proj)
 	if err := r.Get(ctx, key, secret); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
@@ -575,11 +606,6 @@ func (r *Reconciler) deleteRepositorySecret(ctx context.Context, proj *operatorv
 		return secret, fmt.Errorf("failed to get repository Secret %s: %w", key, err)
 	}
 
-	if controllerutil.RemoveFinalizer(secret, FinalizerName) {
-		if err := r.Update(ctx, secret); client.IgnoreNotFound(err) != nil {
-			return secret, fmt.Errorf("failed to release repository Secret %s: %w", key, err)
-		}
-	}
 	if err := r.Delete(ctx, secret); client.IgnoreNotFound(err) != nil {
 		return secret, fmt.Errorf("failed to delete repository Secret %s: %w", key, err)
 	}
@@ -715,7 +741,12 @@ func (r *Reconciler) ensureArgoApplication(ctx context.Context, proj *operatorv1
 
 		valuesLocation := getValuesLocation(proj)
 		if valuesLocation != nil {
-			source.Helm.ValueFiles = []string{"$values/**/*.yaml", "$values/**/*.yml"}
+			// $values resolves to the values repository root, so scope the globs to the configured path.
+			valuesRoot := "$values"
+			if valuesPath := strings.Trim(valuesLocation.Path, "/"); valuesPath != "" && valuesPath != "." {
+				valuesRoot += "/" + valuesPath
+			}
+			source.Helm.ValueFiles = []string{valuesRoot + "/**/*.yaml", valuesRoot + "/**/*.yml"}
 			source.Helm.IgnoreMissingValueFiles = true
 
 			valuesTargetRevision := valuesLocation.TargetRevision

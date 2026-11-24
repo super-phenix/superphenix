@@ -38,6 +38,8 @@ func newTestReconciler(t *testing.T, objects ...client.Object) *Reconciler {
 	return &Reconciler{
 		Client: fake.NewClientBuilder().WithScheme(scheme).WithObjects(objects...).WithStatusSubresource(&operatorv1alpha1.Project{}).Build(),
 		Scheme: scheme,
+		// Same namespace as newTestProject, as in production.
+		OperatorNamespace: "spx",
 	}
 }
 
@@ -71,11 +73,13 @@ func TestEnsureRepositorySecretAndCredentialRotation(t *testing.T) {
 		},
 	}
 	r := newTestReconciler(t)
+	r.OperatorNamespace = "superphenix-operator"
 
 	if err := r.ensureRepositorySecret(ctx, project, project.Spec.GitOps.ValuesLocation); err != nil {
 		t.Fatal(err)
 	}
-	key := types.NamespacedName{Name: "repository-" + project.Spec.ProjectID, Namespace: project.Namespace}
+	// ArgoCD only reads repository Secrets from its own (the operator) namespace.
+	key := types.NamespacedName{Name: "repository-" + project.Spec.ProjectID, Namespace: r.OperatorNamespace}
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, key, secret); err != nil {
 		t.Fatal(err)
@@ -83,14 +87,9 @@ func TestEnsureRepositorySecretAndCredentialRotation(t *testing.T) {
 	if secret.Labels[repositorySecretTypeLabel] != "repository" {
 		t.Fatalf("expected repository type label, got %q", secret.Labels[repositorySecretTypeLabel])
 	}
-	if !containsFinalizer(secret.Finalizers, FinalizerName) {
-		t.Fatalf("expected secret finalizer %q", FinalizerName)
-	}
-	if len(secret.OwnerReferences) != 1 || secret.OwnerReferences[0].UID != project.UID || secret.OwnerReferences[0].Kind != "Project" {
-		t.Fatalf("expected Project owner reference, got %#v", secret.OwnerReferences)
-	}
-	if secret.Namespace != project.Namespace {
-		t.Fatalf("repository secret namespace = %q, want project namespace %q", secret.Namespace, project.Namespace)
+	// Only the operator deletes it: no finalizer to get stuck on, no owner reference for GC to act on.
+	if len(secret.Finalizers) != 0 || len(secret.OwnerReferences) != 0 {
+		t.Fatalf("expected no finalizers nor owner references, got %v / %#v", secret.Finalizers, secret.OwnerReferences)
 	}
 	for key, want := range map[string]string{
 		"url":                "https://example.test/values.git",
@@ -129,17 +128,29 @@ func TestEnsureArgoApplicationSources(t *testing.T) {
 		wantMultiSource bool
 		wantSourceCount int
 		wantTargetRev   string
+		wantValuesRoot  string
 	}{
 		{
 			name: "with values repository",
 			valuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{
 				RepoURL:        "https://example.test/values.git",
-				Path:           "ignored/path",
+				Path:           "/projects/prod/",
 				TargetRevision: "release-1",
 			},
 			wantMultiSource: true,
 			wantSourceCount: 2,
 			wantTargetRev:   "release-1",
+			wantValuesRoot:  "$values/projects/prod",
+		},
+		{
+			name: "with values repository at its root",
+			valuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{
+				RepoURL: "https://example.test/values.git",
+			},
+			wantMultiSource: true,
+			wantSourceCount: 2,
+			wantTargetRev:   "HEAD",
+			wantValuesRoot:  "$values",
 		},
 		{
 			name:            "without values repository",
@@ -172,7 +183,7 @@ func TestEnsureArgoApplicationSources(t *testing.T) {
 					t.Fatalf("expected %d sources and no singular source, got source=%#v sources=%#v", tt.wantSourceCount, app.Spec.Source, app.Spec.Sources)
 				}
 				helm := app.Spec.Sources[0].Helm
-				if helm == nil || !helm.IgnoreMissingValueFiles || len(helm.ValueFiles) != 2 || helm.ValueFiles[0] != "$values/**/*.yaml" || helm.ValueFiles[1] != "$values/**/*.yml" {
+				if helm == nil || !helm.IgnoreMissingValueFiles || len(helm.ValueFiles) != 2 || helm.ValueFiles[0] != tt.wantValuesRoot+"/**/*.yaml" || helm.ValueFiles[1] != tt.wantValuesRoot+"/**/*.yml" {
 					t.Fatalf("unexpected Helm values configuration: %#v", helm)
 				}
 				if app.Spec.Sources[1].Ref != "values" || app.Spec.Sources[1].TargetRevision != tt.wantTargetRev {
@@ -210,9 +221,8 @@ func TestProjectDeletionWaitsForGitOpsApplication(t *testing.T) {
 			}
 			secret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:       repositorySecretName(project),
-					Namespace:  project.Namespace,
-					Finalizers: []string{FinalizerName},
+					Name:      repositorySecretName(project),
+					Namespace: project.Namespace,
 				},
 				Data: map[string][]byte{"url": []byte("https://example.test/values.git")},
 			}
@@ -244,9 +254,8 @@ func TestProjectDeletionDeletesSecretAfterGitOpsApplicationIsGone(t *testing.T) 
 	project.DeletionTimestamp = &deletionTimestamp
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       repositorySecretName(project),
-			Namespace:  project.Namespace,
-			Finalizers: []string{FinalizerName},
+			Name:      repositorySecretName(project),
+			Namespace: project.Namespace,
 		},
 		Data: map[string][]byte{"url": []byte("https://example.test/values.git")},
 	}
@@ -280,67 +289,85 @@ func TestProjectDeletionDeletesSecretAfterGitOpsApplicationIsGone(t *testing.T) 
 	}
 }
 
-func TestEnsureRepositorySecretReleasesTerminatingSecret(t *testing.T) {
-	ctx := context.Background()
-	project := newTestProject()
-	project.Spec.GitOps = &operatorv1alpha1.ProjectGitOpsSpec{
-		ValuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{RepoURL: "https://example.test/values.git"},
-	}
-	now := metav1.NewTime(time.Now())
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:              repositorySecretName(project),
-			Namespace:         project.Namespace,
-			DeletionTimestamp: &now,
-			Finalizers:        []string{FinalizerName},
-		},
-	}
-	r := newTestReconciler(t, project, secret)
-
-	if err := r.ensureRepositorySecret(ctx, project, project.Spec.GitOps.ValuesLocation); err == nil {
-		t.Fatal("expected an error to requeue while the terminating Secret is released")
-	}
-	if err := r.ensureRepositorySecret(ctx, project, project.Spec.GitOps.ValuesLocation); err != nil {
-		t.Fatalf("expected Secret to be recreated, got %v", err)
-	}
-	stored := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, stored); err != nil {
-		t.Fatal(err)
-	}
-	if !stored.DeletionTimestamp.IsZero() || !containsFinalizer(stored.Finalizers, FinalizerName) {
-		t.Fatalf("expected a fresh protected Secret, got %#v", stored.ObjectMeta)
-	}
-}
-
-func TestCleanupRepositorySecretReleasesFinalizer(t *testing.T) {
+func TestProjectDeletionRecreatesLostSecretWhileApplicationExists(t *testing.T) {
 	ctx := context.Background()
 	project := newTestProject()
 	project.Finalizers = []string{FinalizerName}
-	project.DeletionTimestamp = func() *metav1.Time { now := metav1.NewTime(time.Now()); return &now }()
-	secret := &corev1.Secret{
+	now := metav1.NewTime(time.Now())
+	project.DeletionTimestamp = &now
+	project.Spec.GitOps = &operatorv1alpha1.ProjectGitOpsSpec{
+		ValuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{RepoURL: "https://example.test/values.git"},
+	}
+	projectSPXID := spxId.ToSPXID(project.Spec.ProjectID)
+	app := &argov1alpha1.Application{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:              repositorySecretName(project),
-			Namespace:         project.Namespace,
-			DeletionTimestamp: project.DeletionTimestamp,
-			Finalizers:        []string{FinalizerName},
+			Name:              "gitops-" + projectSPXID,
+			Namespace:         projectSPXID,
+			DeletionTimestamp: &now,
+			Finalizers:        []string{argocdResourcesFinalizer},
 		},
 	}
-	r := newTestReconciler(t, project, secret)
+	r := newTestReconciler(t, project, app)
 
-	stop, result, err := r.reconcileFinalizers(ctx, project)
-	if err != nil {
+	if _, _, err := r.reconcileFinalizers(ctx, project); err != nil {
 		t.Fatal(err)
-	}
-	if !stop || result.RequeueAfter == 0 {
-		t.Fatalf("expected project deletion to wait for Secret finalization, got stop=%t result=%#v", stop, result)
 	}
 	stored := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: secret.Name, Namespace: secret.Namespace}, stored)
-	if err == nil && containsFinalizer(stored.Finalizers, FinalizerName) {
-		t.Fatalf("expected repository Secret finalizer to be removed, got %v", stored.Finalizers)
+	if err := r.Get(ctx, types.NamespacedName{Name: repositorySecretName(project), Namespace: project.Namespace}, stored); err != nil {
+		t.Fatalf("expected lost repository Secret to be recreated while the Application exists: %v", err)
 	}
-	if err != nil && !strings.Contains(err.Error(), "not found") {
+	if got := string(stored.Data["url"]); got != "https://example.test/values.git" {
+		t.Fatalf("recreated Secret url = %q", got)
+	}
+}
+
+func TestFindProjectsForSecret(t *testing.T) {
+	project := newTestProject()
+	other := newTestProject()
+	other.Name = "other-project"
+	other.Spec.ProjectID = "6ba7b812-9dad-41d1-80b4-00c04fd430c8"
+	r := newTestReconciler(t, project, other)
+	r.OperatorNamespace = project.Namespace
+
+	secretMeta := func(name, namespace string) client.Object {
+		return &metav1.PartialObjectMetadata{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace}}
+	}
+
+	requests := r.findProjectsForSecret(context.Background(), secretMeta(repositorySecretName(project), project.Namespace))
+	if len(requests) != 1 || requests[0].Name != project.Name || requests[0].Namespace != project.Namespace {
+		t.Fatalf("expected a request for %s, got %v", project.Name, requests)
+	}
+	for _, obj := range []client.Object{
+		secretMeta("unrelated", project.Namespace),
+		secretMeta(repositorySecretName(project), "spx-elsewhere"),
+		secretMeta("repository-unknown", project.Namespace),
+	} {
+		if requests := r.findProjectsForSecret(context.Background(), obj); len(requests) != 0 {
+			t.Fatalf("expected no request for %s/%s, got %v", obj.GetNamespace(), obj.GetName(), requests)
+		}
+	}
+}
+
+func TestRepositorySecretRequiresOperatorNamespace(t *testing.T) {
+	ctx := context.Background()
+	project := newTestProject()
+	valuesLocation := &operatorv1alpha1.ProjectValuesLocationSpec{RepoURL: "https://example.test/values.git"}
+	r := newTestReconciler(t, project)
+	r.OperatorNamespace = ""
+
+	if err := r.ensureRepositorySecret(ctx, project, valuesLocation); err == nil {
+		t.Fatal("expected an error without an operator namespace")
+	}
+	secrets := &corev1.SecretList{}
+	if err := r.List(ctx, secrets); err != nil {
 		t.Fatal(err)
+	}
+	if len(secrets.Items) != 0 {
+		t.Fatalf("expected no Secret to be created outside the operator namespace, got %d", len(secrets.Items))
+	}
+	// Nothing can have been created, so deletion must not block.
+	if remaining, err := r.deleteRepositorySecret(ctx, project); remaining != nil || err != nil {
+		t.Fatalf("expected deletion to be a no-op, got remaining=%v err=%v", remaining, err)
 	}
 }
 
@@ -464,7 +491,7 @@ func TestProjectDeletionReportsBlockedRepositorySecret(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:       repositorySecretName(project),
 			Namespace:  project.Namespace,
-			Finalizers: []string{FinalizerName, "example.com/other"},
+			Finalizers: []string{"example.com/other"},
 		},
 	}
 	r := newTestReconciler(t, project, secret)
@@ -482,8 +509,8 @@ func TestProjectDeletionReportsBlockedRepositorySecret(t *testing.T) {
 	if deleting == nil || deleting.Reason != operatorv1alpha1.ReasonWaitingForRepositorySecret {
 		t.Fatalf("unexpected Deleting condition: %#v", deleting)
 	}
-	if !strings.Contains(deleting.Message, "example.com/other") || strings.Contains(deleting.Message, FinalizerName) {
-		t.Fatalf("expected only the foreign finalizer in message, got %q", deleting.Message)
+	if !strings.Contains(deleting.Message, "example.com/other") {
+		t.Fatalf("expected the blocking finalizer in message, got %q", deleting.Message)
 	}
 }
 
