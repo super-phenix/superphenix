@@ -69,13 +69,22 @@ To deploy your resource in a specific AZ, simply use the code in the `.location`
 			<td>BGP speaker configuration for this AZ. The value is passed as an escape JSON and must be decoded in the template This parameter cannot be overriden by the user.</td>
 		</tr>
 		<tr>
+			<td>deviceMapping</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Mapping between user-friendly names of devices and their real names. The mapping is specified for the current AZ, meaning that each AZ can have a different mapping. This parameter cannot be overriden by the user.</td>
+		</tr>
+		<tr>
 			<td>gitops</td>
 			<td>bool</td>
 			<td><pre lang="json">
 false
 </pre>
 </td>
-			<td>Wether this chart is deployed through GitOps or not. This parameter cannot be overriden by the user.</td>
+			<td>Whether this chart is deployed through GitOps or not. This parameter cannot be overriden by the user.</td>
 		</tr>
 		<tr>
 			<td>location</td>
@@ -85,6 +94,24 @@ false
 </pre>
 </td>
 			<td>AZ in which we're deploying this chart. This parameter cannot be overriden by the user.</td>
+		</tr>
+		<tr>
+			<td>mtu</td>
+			<td>int</td>
+			<td><pre lang="json">
+1500
+</pre>
+</td>
+			<td>MTU of the subnets in this AZ, only applied when `mtuAutodetection` is disabled. A subnet's own `mtu` takes precedence over it. This parameter cannot be overriden by the user.</td>
+		</tr>
+		<tr>
+			<td>mtuAutodetection</td>
+			<td>bool</td>
+			<td><pre lang="json">
+true
+</pre>
+</td>
+			<td>Let Kube-OVN autodetect the MTU of the subnets in this AZ. When disabled, `mtu` is used. A subnet's own `mtu` takes precedence over it. This parameter cannot be overriden by the user.</td>
 		</tr>
 		<tr>
 			<td>organizationID</td>
@@ -290,6 +317,26 @@ null
 </pre>
 </td>
 			<td>Network policies (firewalling rules) to block/allow traffic in and out of the project</td>
+		</tr>
+	</tbody>
+</table>
+<h3>Quotas</h3>
+<table>
+	<thead>
+		<th>Key</th>
+		<th>Type</th>
+		<th>Default</th>
+		<th>Description</th>
+	</thead>
+	<tbody>
+		<tr>
+			<td>quota</td>
+			<td>object</td>
+			<td><pre lang="json">
+{}
+</pre>
+</td>
+			<td>Optional ResourceQuota of the project namespace: every entry is rendered as is in `spec.hard`.</td>
 		</tr>
 	</tbody>
 </table>
