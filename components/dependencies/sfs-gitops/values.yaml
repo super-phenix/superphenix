@@ -19,31 +19,15 @@ global:
       # - name: fr01-agc01    # minimized name (region-az)
       #   cluster: cluster-1  # full cluster name
 
-    # -- GitOps configuration
-    gitops:
-      # -- Values location configuration
-      valuesLocation:
-        repoURL: ""
-        # path and targetRevision are not used by the secret template, but good to have for completeness
-        # path: ""
-        targetRevision: ""
-        # -- Credentials for the values repository
-        credentials:
-          username: ""
-          password: ""
-          insecure: false
-          forceHttpBasicAuth: false
-          enableLfs: false
-          sshPrivateKey: ""
-
-  # -- KAAS global configuration
-  kaas: {}
-
-  # -- BAAS global configuration
-  baas: {}
-
   # -- Storage class mapping
   storageClassMapping: {}
+
+  # -- Product-specific global configuration
+  products:
+    # -- Kubernetes product global configuration
+    kubernetes: {}
+    # -- Backups product global configuration
+    backups: {}
 
 # -- Kubernetes clusters configuration
 kubernetes: {}
