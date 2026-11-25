@@ -49,8 +49,11 @@ spec:
 
   # Router Advertisement enabled, we bypass Kubevirt and send replies to requests directly
   enableIPv6RA: true
-  {{- with $subnet.mtu }}
-  mtu: {{ . }}
+  {{- /* The user's MTU takes precedence over the AZ MTU */}}
+  {{- if $subnet.mtu }}
+  mtu: {{ $subnet.mtu | int }}
+  {{- else if not $.Values.mtuAutodetection }}
+  mtu: {{ $.Values.mtu | int }}
   {{- end }}
   # Subnets must be isolated, do not use the IP of the hypervisors when trying to go out
   natOutgoing: false
