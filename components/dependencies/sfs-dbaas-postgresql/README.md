@@ -45,6 +45,10 @@ The following values can be changed on an existing database:
 > [!note]
 > The chart doesn't compare `.storage` with the current volume size. If you lower it, the CloudNative-PG webhook rejects the cluster update and the ArgoCD sync fails.
 
+### Backups
+
+Databases are backed up by `sfs-baas` backups of type `All`: the CloudNative-PG cluster, its volumes and secrets, the proxies and the network resources. Backups of type `VM` don't restore them.
+
 ---
 
 ## Values
