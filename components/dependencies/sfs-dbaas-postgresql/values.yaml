@@ -51,6 +51,8 @@ databaseDefaults:
   port: 5432
   # -- Port of the CloudNative-PG instance manager
   statusPort: 8000
+  # -- Connections reserved for superusers, keeps the CloudNative-PG instance manager able to connect
+  superuserReservedConnections: 3
   # -- Cluster domain used to resolve the CloudNative-PG services
   clusterDomain: "cluster.local"
   # -- TCP proxies exposing the database on the customer subnet
@@ -121,7 +123,7 @@ databases: {}
   #   # @section -- Database
   #   storageClassName: default
 
-  #   # -- Maximum client connections to PostgreSQL, enforced by PostgreSQL
+  #   # -- Maximum connections to PostgreSQL, including the ones reserved for superusers
   #   # @section -- Database
   #   # @default -- 100
   #   maxConnections: 100

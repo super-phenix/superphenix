@@ -14,9 +14,10 @@
 
 {{- $class := (required "Must provide a storage class" $db.storageClassName) }}
 {{- $storageClass := get $.Values.storageClassMapping $class }}
+{{- $superuserReserved := int $defaults.superuserReservedConnections }}
 {{- $maxConnections := int ($db.maxConnections | default 100) }}
-{{- if lt $maxConnections 1 }}
-{{- fail (printf "Database %s maxConnections must be at least 1" $localID) }}
+{{- if le $maxConnections $superuserReserved }}
+{{- fail (printf "Database %s maxConnections must be greater than %d, the connections reserved for superusers" $localID $superuserReserved) }}
 {{- end }}
 {{- $memoryMi := include "sfs-dbaas-postgresql.memoryMi" (required "Must provide a memory amount" $db.memory) | int }}
 {{- $version := required "Must provide a PostgreSQL version" $db.version }}
@@ -56,6 +57,7 @@ spec:
   postgresql:
     parameters:
       max_connections: {{ $maxConnections | toString | quote }}
+      superuser_reserved_connections: {{ $superuserReserved | toString | quote }}
       # A quarter of the memory for PostgreSQL buffers, the rest left to the OS cache
       shared_buffers: {{ printf "%dMB" (div $memoryMi 4) | quote }}
       effective_cache_size: {{ printf "%dMB" (div (mul $memoryMi 3) 4) | quote }}
