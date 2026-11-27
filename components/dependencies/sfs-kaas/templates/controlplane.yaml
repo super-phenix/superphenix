@@ -28,7 +28,7 @@ spec:
   apiServer:
     resources:
       limits:
-        cpu: {{ ((($controlPlane.apiServer).resources).limits).cpu | default "1000m" }}
+        cpu: {{ ((($controlPlane.apiServer).resources).limits).cpu | default "1" }}
         memory: {{ ((($controlPlane.apiServer).resources).limits).memory | default "5Gi" }}
       requests:
         cpu: {{ ((($controlPlane.apiServer).resources).requests).cpu | default "300m" }}
