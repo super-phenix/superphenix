@@ -128,6 +128,16 @@ func TestLoadConfigDefaultCloudInit(t *testing.T) {
 authentication:
   jwtIssuer: superphenix-api
   jwtSecret: 0123456789abcdef0123456789abcdef
+operator:
+  namespace: superphenix-system
+productsConfig:
+  argoApp:
+    kubernetes:
+      versions:
+        "0.0.0":
+          repo: {repoURL: ghcr.io/super-phenix/charts, chart: sfs-kaas, targetRevision: "0.6.3"}
+          kubeVersions:
+            - version: v1.36.3
 azs:
   az1:
     name: AZ 1
