@@ -368,7 +368,7 @@ productsConfig:
       repo:
         repoURL: "ghcr.io/super-phenix/charts"
         chart: "sfs-kaas"
-        targetRevision: "0.10.0"
+        targetRevision: "0.11.0"
       kubeVersions:
         - version: "v1.37.2"
         - version: "v1.36.3"
