@@ -246,8 +246,8 @@ spec:
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
             limits:
-              cpu: 20m
-              memory: 128Mi
+              cpu: 30m
+              memory: 256Mi
             requests:
               cpu: 10m
               memory: 64Mi
@@ -293,8 +293,8 @@ spec:
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
             limits:
-              cpu: 20m
-              memory: 128Mi
+              cpu: 30m
+              memory: 256Mi
             requests:
               cpu: 10m
               memory: 64Mi
@@ -331,8 +331,8 @@ spec:
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
             limits:
-              cpu: 20m
-              memory: 128Mi
+              cpu: 30m
+              memory: 265Mi
             requests:
               cpu: 10m
               memory: 64Mi
@@ -351,8 +351,8 @@ spec:
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
             limits:
-              cpu: 20m
-              memory: 128Mi
+              cpu: 30m
+              memory: 256Mi
             requests:
               cpu: 10m
               memory: 64Mi

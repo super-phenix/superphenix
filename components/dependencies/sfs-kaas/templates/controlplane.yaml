@@ -29,10 +29,10 @@ spec:
     resources:
       limits:
         cpu: {{ ((($controlPlane.apiServer).resources).limits).cpu | default "1000m" }}
-        memory: {{ ((($controlPlane.apiServer).resources).limits).memory | default "4Gi" }}
+        memory: {{ ((($controlPlane.apiServer).resources).limits).memory | default "5Gi" }}
       requests:
         cpu: {{ ((($controlPlane.apiServer).resources).requests).cpu | default "300m" }}
-        memory: {{ ((($controlPlane.apiServer).resources).requests).memory | default "1Gi" }}
+        memory: {{ ((($controlPlane.apiServer).resources).requests).memory | default "2Gi" }}
     {{- with $controlPlane.apiServer }}
     {{- with .extraArgs }}
     extraArgs:
@@ -53,11 +53,11 @@ spec:
   scheduler:
     resources:
       limits:
-        cpu: {{ ((($controlPlane.scheduler).resources).limits).cpu | default "50m" }}
+        cpu: {{ ((($controlPlane.scheduler).resources).limits).cpu | default "40m" }}
         memory: {{ ((($controlPlane.scheduler).resources).limits).memory | default "256Mi" }}
       requests:
-        cpu: {{ ((($controlPlane.scheduler).resources).requests).cpu | default "20m" }}
-        memory: {{ ((($controlPlane.scheduler).resources).requests).memory | default "128Mi" }}
+        cpu: {{ ((($controlPlane.scheduler).resources).requests).cpu | default "10m" }}
+        memory: {{ ((($controlPlane.scheduler).resources).requests).memory | default "64Mi" }}
   {{- if ne $dataStoreName "" }}
   dataStoreName: {{ $dataStoreName | quote }}
   {{- end }}
@@ -72,7 +72,7 @@ spec:
             memory: {{ (((($controlPlane.konnectivity).server).resources).limits).memory | default "256Mi" }}
           requests:
             cpu: {{ (((($controlPlane.konnectivity).server).resources).requests).cpu | default "30m" }}
-            memory: {{ (((($controlPlane.konnectivity).server).resources).requests).memory | default "128Mi" }}
+            memory: {{ (((($controlPlane.konnectivity).server).resources).requests).memory | default "64Mi" }}
       agent:
         tolerations:
           - operator: Exists

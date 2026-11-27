@@ -117,10 +117,10 @@ clusters: {}
   #       resources:
   #         limits:
   #           cpu: 1000m
-  #           memory: 4Gi
+  #           memory: 5Gi
   #         requests:
   #           cpu: 300m
-  #           memory: 1Gi
+  #           memory: 2Gi
 
   #     # -- ControllerManager configuration
   #     controllerManager:
@@ -144,18 +144,18 @@ clusters: {}
   #             memory: 256Mi
   #           requests:
   #             cpu: 30m
-  #             memory: 128Mi
+  #             memory: 64Mi
 
   #     # -- Scheduler configuration
   #     scheduler:
   #       # -- Specify scheduler resource limits and requests
   #       resources:
   #         limits:
-  #           cpu: 50m
+  #           cpu: 40m
   #           memory: 256Mi
   #         requests:
-  #           cpu: 20m
-  #           memory: 128Mi
+  #           cpu: 10m
+  #           memory: 64Mi
 
   #     # -- Defines the controlplane's datastore.
   #     # @section -- Controlplane
@@ -186,8 +186,8 @@ clusters: {}
   #       # @section -- Datastore
   #       resources:
   #         limits:
-  #           cpu: 400m
-  #           memory: 1Gi
+  #           cpu: 500m
+  #           memory: 2Gi
   #         requests:
   #           cpu: 200m
   #           memory: 512Mi

@@ -56,8 +56,8 @@ spec:
   replicas: {{ $replicas }}
   resources:
     limits:
-      cpu: {{ (($dataStore.resources).limits).cpu | default "400m" }}
-      memory: {{ (($dataStore.resources).limits).memory | default "1Gi" }}
+      cpu: {{ (($dataStore.resources).limits).cpu | default "500m" }}
+      memory: {{ (($dataStore.resources).limits).memory | default "2Gi" }}
     requests:
       cpu: {{ (($dataStore.resources).requests).cpu | default "200m" }}
       memory: {{ (($dataStore.resources).requests).memory | default "512Mi" }}
