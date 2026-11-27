@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/super-phenix/superphenix/internal/superphenix-api/pkg/config"
 )
 
 func TestQuantityToGiB(t *testing.T) {
@@ -69,7 +68,6 @@ func TestQuantityToBinary(t *testing.T) {
 }
 
 func TestConvertAppToUpdateKaaSSpec_InvalidQuantity(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}

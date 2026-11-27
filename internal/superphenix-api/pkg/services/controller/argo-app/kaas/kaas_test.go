@@ -17,7 +17,6 @@ import (
 )
 
 func TestCreateKaaSAppValues_Comparison(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.24.0"}}
 	ctx := context.Background()
 	localId := "test-cluster"
 	location := "test-loc"
@@ -554,7 +553,6 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 }
 
 func TestCreateKaaSAppValues_DataStore(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.34.0"}, {Version: "v1.34.5"}, {Version: "1.35.0"}, {Version: "v1.35.5"}}
 	ctx := context.Background()
 	localId := "test-cluster"
 	location := "test-loc"
@@ -740,7 +738,6 @@ func appViewWithHelmValues(values string) view.AppView {
 }
 
 func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	ctx := context.Background()
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
@@ -800,7 +797,6 @@ func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 }
 
 func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	t.Cleanup(func() { config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains = nil })
 	ctx := context.Background()
 	localId := "test-cluster"
@@ -894,7 +890,6 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 // TestConvertAppToUpdateKaaSSpec_AzDomains checks the azDomains key in the
 // helm values never breaks the update re-parse path.
 func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	t.Cleanup(func() { config.Global.ProductsConfig.ArgoApp.Kubernetes.AzDomains = nil })
 	ctx := context.Background()
 	kaasConfig := KaaSConfig{
@@ -956,7 +951,6 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 }
 
 func TestCreateArgoApp_HelmParams(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	group := Group{
 		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
 		StorageClass: "default", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
@@ -1048,9 +1042,6 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 		Path:           "components/dependencies/sfs-kaas",
 	}
 
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.Repo = configured
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "v1.35.5"}}
-
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}
@@ -1091,45 +1082,6 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 	}
 }
 
-// TestCreateKaaSAppValues_KubeVersionSupport checks the kube version is only
-// validated against config on create and on a version change.
-func TestCreateKaaSAppValues_KubeVersionSupport(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "v1.36.3"}}
-	kaasConfig := KaaSConfig{
-		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
-	}
-	group := Group{
-		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
-		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
-	}
-	specFor := func(version string) KaaSSpec {
-		return KaaSSpec{KubeVersion: version, CPNetPol: "default", WorkersNetPol: "default", Groups: []Group{group}}
-	}
-	removed := specFor("v1.33.4")
-
-	tests := []struct {
-		name    string
-		spec    KaaSSpec
-		oldSpec *KaaSSpec
-		wantErr bool
-	}{
-		{name: "create with supported version", spec: specFor("v1.36.3"), oldSpec: nil, wantErr: false},
-		{name: "create with removed version", spec: specFor("v1.33.4"), oldSpec: nil, wantErr: true},
-		{name: "update keeping removed version", spec: specFor("v1.33.4"), oldSpec: &removed, wantErr: false},
-		{name: "update to supported version", spec: specFor("v1.36.3"), oldSpec: &removed, wantErr: false},
-		{name: "update to unsupported version", spec: specFor("v1.34.1"), oldSpec: &removed, wantErr: true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := CreateKaaSAppValues(context.Background(), "test-cluster", "test-loc", tt.spec, kaasConfig, tt.oldSpec)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CreateKaaSAppValues() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 // nodeRoleGroup is a valid group with a legacy-style mixed-case name.
 func nodeRoleGroup(role string, version int) Group {
 	return Group{
@@ -1155,7 +1107,6 @@ func nodeRoleSpec(g Group) KaaSSpec {
 }
 
 func TestCreateKaaSAppValues_NodeRole(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	localId := "test-cluster"
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
@@ -1221,7 +1172,6 @@ func TestCreateKaaSAppValues_NodeRole(t *testing.T) {
 }
 
 func TestConvertAppToUpdateKaaSSpec_NodeRole(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}
@@ -1255,7 +1205,6 @@ func TestConvertAppToUpdateKaaSSpec_NodeRole(t *testing.T) {
 }
 
 func TestCreateKaaSAppValues_NodeGroupName(t *testing.T) {
-	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	kaasConfig := KaaSConfig{
 		StorageClasses: []ClassMapping{{Shortname: "sc1", Fullname: "storage-class-1"}},
 	}
