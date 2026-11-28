@@ -27,7 +27,7 @@ func TestCreateKaaSAppValues_ClusterFriendlyName(t *testing.T) {
 				Memory:       "4Gi",
 				BootDiskSize: 20,
 				StorageClass: "sc1",
-				Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+				Subnets:      []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 			}},
 			KaasEssentials: essentials,
 		}

@@ -67,6 +67,19 @@ Returns the FQDN of a cluster
 {{/*
 Returns the SPX effective ID of a resource
 */}}
+{{/*
+Validate a subnet reference of a node group before it is rendered into a
+manifest (annotation key, multus network name). Only a local ID made of
+letters, digits, ".", "_" and "-" is accepted.
+*/}}
+{{- define "sfs-kaas.subnetLocalID" -}}
+{{- $id := toString . -}}
+{{- if not (regexMatch "^[A-Za-z0-9._-]{1,253}$" $id) -}}
+{{- fail (printf "invalid subnet reference %q: only letters, digits, '.', '_' and '-' are allowed" $id) -}}
+{{- end -}}
+{{- $id -}}
+{{- end }}
+
 {{- define "sfs-kaas.spxEID" -}}
 {{- printf "spx-%s" (include "sfs-kaas.getUUIDv5" (dict "NS" .project "NAME" .localID)) }}
 {{- end }}

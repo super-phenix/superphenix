@@ -20,11 +20,24 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
+	"github.com/google/uuid"
 	"k8s.io/apimachinery/pkg/api/resource"
 	k8svalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
 var nodeGroupNameRegex = regexp.MustCompile("^[a-zA-Z0-9]([-a-zA-Z0-9]*[a-zA-Z0-9])?$")
+
+// parseSubnetId validates the subnet reference of a node group. It is the
+// subnet local ID, a UUID, and it ends up in the rendered VM manifests
+// (annotation key and multus network name), so anything else is refused.
+// The canonical form is returned.
+func parseSubnetId(id string) (string, error) {
+	parsed, err := uuid.Parse(id)
+	if err != nil || parsed == uuid.Nil || len(id) != 36 {
+		return "", fmt.Errorf("invalid subnet id %q: a subnet local ID (UUID) is expected", id)
+	}
+	return parsed.String(), nil
+}
 
 // azDomainValues returns the configured azDomains map, or nil when empty.
 func azDomainValues(cfg map[string]any) map[string]any {
@@ -124,7 +137,12 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 			return subnets[i].Order < subnets[j].Order
 		})
 		for _, subnet := range subnets {
-			interfaces = append(interfaces, Interface{Subnet: subnet.Id})
+			subnetId, err := parseSubnetId(subnet.Id)
+			if err != nil {
+				log.Error().Err(err).Str("group", group.Name).Msg("Invalid node group subnet")
+				return "", nil, err
+			}
+			interfaces = append(interfaces, Interface{Subnet: subnetId})
 		}
 
 		err = parseNodeGroup(instances, group, interfaces)

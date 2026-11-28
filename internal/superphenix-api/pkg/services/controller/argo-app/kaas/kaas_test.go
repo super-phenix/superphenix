@@ -36,7 +36,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 		StorageClass: "sc1",
 		Version:      1,
 		Subnets: []GroupSubnet{
-			{Order: 1, Id: "subnet-1"},
+			{Order: 1, Id: "00000000-0000-4000-8000-000000000001"},
 		},
 	}
 
@@ -92,7 +92,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 			spec: func() KaaSSpec {
 				s := spec
 				s.Groups = []Group{group1}
-				s.Groups[0].Subnets = []GroupSubnet{{Order: 2, Id: "subnet-2"}}
+				s.Groups[0].Subnets = []GroupSubnet{{Order: 2, Id: "00000000-0000-4000-8000-000000000002"}}
 				return s
 			}(),
 			oldSpec: &spec,
@@ -137,8 +137,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -146,8 +146,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
-					{Name: "group-2", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 1},
+					{Name: "group-2", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 1},
 				},
 			},
 			wantErr: false,
@@ -164,8 +164,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
-					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -173,8 +173,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
-					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 2},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 1},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Replicas: 3, Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 2},
 				},
 			},
 			wantErr: false,
@@ -190,8 +190,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -199,7 +199,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 1},
 				},
 			},
 			wantErr: false,
@@ -214,7 +214,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-0", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -222,8 +222,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
-					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 1},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 1},
+					{Name: "group-1", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 1},
 				},
 			},
 			wantErr: false,
@@ -313,7 +313,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 0, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 0, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -326,7 +326,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 100, Cpu: 8, Memory: "24Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 100, Cpu: 8, Memory: "24Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -344,7 +344,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 999999, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 999999, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec:         nil,
@@ -358,7 +358,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1000000, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1000000, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -371,7 +371,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 1000000, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 1000000, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -384,7 +384,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1000000Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1000000Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -397,7 +397,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 999999, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 999999, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec:         nil,
@@ -411,7 +411,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 1000000, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 1000000, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -424,7 +424,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: math.MaxInt64, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: math.MaxInt64, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -437,7 +437,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1.5Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1.5Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec:         nil,
@@ -451,7 +451,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "127Mi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "127Mi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -464,7 +464,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "abc", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "abc", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: nil,
@@ -477,7 +477,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1.5Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+					{Name: "group-1", Replicas: 1, Cpu: 2, Memory: "1.5Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -485,7 +485,7 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Cpu: 2, Memory: "1536Mi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 3},
+					{Name: "group-1", Cpu: 2, Memory: "1536Mi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 3},
 				},
 			},
 			wantErr:         false,
@@ -509,9 +509,9 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-1", Replicas: 1, Cpu: 1, Memory: "1Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // Same as old[1] -> version 4
-					{Name: "group-0", Replicas: 1, Cpu: 4, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // Changed from old[0] -> version 3
-					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}}, // New -> version 1
+					{Name: "group-1", Replicas: 1, Cpu: 1, Memory: "1Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}}, // Same as old[1] -> version 4
+					{Name: "group-0", Replicas: 1, Cpu: 4, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}}, // Changed from old[0] -> version 3
+					{Name: "group-2", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}}, // New -> version 1
 				},
 			},
 			oldSpec: &KaaSSpec{
@@ -519,8 +519,8 @@ func TestCreateKaaSAppValues_Comparison(t *testing.T) {
 				CPNetPol:      "default",
 				WorkersNetPol: "default",
 				Groups: []Group{
-					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 2},
-					{Name: "group-1", Cpu: 1, Memory: "1Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}, Version: 4},
+					{Name: "group-0", Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 2},
+					{Name: "group-1", Cpu: 1, Memory: "1Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}, Version: 4},
 				},
 			},
 			wantErr: false,
@@ -568,7 +568,7 @@ func TestCreateKaaSAppValues_DataStore(t *testing.T) {
 		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
-		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		Subnets:      []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 	}
 	specWith := func(version string, ds DataStoreSpec) KaaSSpec {
 		return KaaSSpec{
@@ -752,7 +752,7 @@ func TestConvertAppToUpdateKaaSSpec_DataStore(t *testing.T) {
 		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
-		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		Subnets:      []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 	}
 
 	tests := []struct {
@@ -812,7 +812,7 @@ func TestCreateKaaSAppValues_AzDomains(t *testing.T) {
 		CPNetPol:      "default",
 		WorkersNetPol: "default",
 		Groups: []Group{
-			{Name: "group-1", Replicas: 3, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+			{Name: "group-1", Replicas: 3, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 		},
 	}
 
@@ -907,7 +907,7 @@ func TestConvertAppToUpdateKaaSSpec_AzDomains(t *testing.T) {
 		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
-		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		Subnets:      []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 	}
 
 	tests := []struct {
@@ -959,7 +959,7 @@ func TestCreateArgoApp_HelmParams(t *testing.T) {
 	config.Global.ProductsConfig.ArgoApp.Kubernetes.KubeVersions = []config.KubeVersionConfig{{Version: "1.35.0"}}
 	group := Group{
 		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
-		StorageClass: "default", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		StorageClass: "default", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 	}
 	az := config.AZConfig{Code: "az01", Destination: "dest1"}
 	metadata := spxId.Metadata{OrgId: "org", ProjectId: "proj", ResourceEffectiveId: "cluster"}
@@ -1056,7 +1056,7 @@ func TestCreateArgoApp_Repo(t *testing.T) {
 	}
 	group := Group{
 		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
-		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 	}
 	az := config.AZConfig{Code: "az1", Destination: "dest1"}
 	metadata := spxId.Metadata{OrgId: "org", ProjectId: "proj", ResourceEffectiveId: "cluster"}
@@ -1100,7 +1100,7 @@ func TestCreateKaaSAppValues_KubeVersionSupport(t *testing.T) {
 	}
 	group := Group{
 		Name: "group-1", Replicas: 1, Cpu: 2, Memory: "4Gi", BootDiskSize: 20,
-		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		StorageClass: "sc1", Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 	}
 	specFor := func(version string) KaaSSpec {
 		return KaaSSpec{KubeVersion: version, CPNetPol: "default", WorkersNetPol: "default", Groups: []Group{group}}
@@ -1140,7 +1140,7 @@ func nodeRoleGroup(role string, version int) Group {
 		Memory:       "4Gi",
 		BootDiskSize: 20,
 		StorageClass: "sc1",
-		Subnets:      []GroupSubnet{{Order: 1, Id: "subnet-1"}},
+		Subnets:      []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}},
 		Version:      version,
 	}
 }
