@@ -153,6 +153,13 @@ Resources to backup, grouped by type of resource
 - machine.cluster.x-k8s.io
 {{- end }}
 
+{{- define "sfs-baas.dbaasResourceNamespaced" }}
+- cluster.postgresql.cnpg.io
+- poddisruptionbudget.policy
+- deployment.apps
+- configmap
+{{- end }}
+
 {{/*
 Resources to backup for each backup type
 */}}
@@ -175,6 +182,7 @@ Resources to backup for each backup type
 {{- include "sfs-baas.networkResourceNamespaced" . }}
 {{- include "sfs-baas.storageResourceNamespaced" . }}
 {{- include "sfs-baas.kaasResourceNamespaced" . }}
+{{- include "sfs-baas.dbaasResourceNamespaced" . }}
 {{- else if eq .backupType "vm" }}
 {{- include "sfs-baas.vmResourceNamespaced" . }}
 {{- end }}
