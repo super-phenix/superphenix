@@ -113,6 +113,21 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		}
 		group.Memory = memory.String()
 
+		// Subnet references end up in the rendered manifests: only canonical subnet local IDs
+		// are accepted. Normalizing them here also keeps the comparison with oldSpec below
+		// independent of how the UUID is written.
+		subnets := make([]GroupSubnet, len(group.Subnets))
+		for i, subnet := range group.Subnets {
+			subnetId, err := parseSubnetId(subnet.Id)
+			if err != nil {
+				log.Error().Err(err).Str("group", group.Name).Msg("Invalid node group subnet")
+				return "", nil, err
+			}
+			subnet.Id = subnetId
+			subnets[i] = subnet
+		}
+		group.Subnets = subnets
+
 		// Groups have a version starting at 1. When updating, each group is matched by name
 		// against oldSpec: if unchanged the version is kept, otherwise it is incremented.
 		// Unmatched groups in oldSpec are tracked in mapGroupToRemove for cleanup.
@@ -132,17 +147,11 @@ func CreateKaaSAppValues(ctx context.Context, localId, location string, spec Kaa
 		}
 
 		var interfaces []Interface
-		subnets := group.Subnets
 		sort.Slice(subnets, func(i, j int) bool {
 			return subnets[i].Order < subnets[j].Order
 		})
 		for _, subnet := range subnets {
-			subnetId, err := parseSubnetId(subnet.Id)
-			if err != nil {
-				log.Error().Err(err).Str("group", group.Name).Msg("Invalid node group subnet")
-				return "", nil, err
-			}
-			interfaces = append(interfaces, Interface{Subnet: subnetId})
+			interfaces = append(interfaces, Interface{Subnet: subnet.Id})
 		}
 
 		err = parseNodeGroup(instances, group, interfaces)
@@ -506,8 +515,10 @@ func isSameGroup(g1, g2 Group) bool {
 }
 
 // isSameGroupSubnet checks if two GroupSubnet objects have the same ID and Order.
+// IDs are UUIDs, compared without case: a spec stored before they were normalized
+// may hold an upper case form.
 func isSameGroupSubnet(s1, s2 GroupSubnet) bool {
-	return s1.Id == s2.Id && s1.Order == s2.Order
+	return strings.EqualFold(s1.Id, s2.Id) && s1.Order == s2.Order
 }
 
 // kubeVersionAtLeast checks if version is >= minMajor.minMinor.
