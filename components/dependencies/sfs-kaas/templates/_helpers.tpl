@@ -58,6 +58,64 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Returns the FQDN of a cluster
 */}}
+{{/*
+Validate a user-provided control plane FQDN (DNS name, lowercase).
+*/}}
+{{- define "sfs-kaas.validFqdn" -}}
+{{- $v := toString . -}}
+{{- if not (regexMatch `^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$` $v) -}}
+{{- fail (printf "invalid controlPlane.network.fqdn %q: must be a lowercase DNS name" $v) -}}
+{{- end -}}
+{{- $v -}}
+{{- end }}
+
+{{/*
+Validate a cluster name (letters, digits, ".", "_" and "-", up to 63 characters).
+*/}}
+{{- define "sfs-kaas.validName" -}}
+{{- $v := toString . -}}
+{{- if not (regexMatch "^[a-zA-Z0-9]([a-zA-Z0-9._-]{0,61}[a-zA-Z0-9])?$" $v) -}}
+{{- fail (printf "invalid cluster name %q: only letters, digits, '.', '_' and '-' are allowed" $v) -}}
+{{- end -}}
+{{- $v -}}
+{{- end }}
+
+{{/*
+Validate a chart or Kubernetes version (semantic version, optional "v" prefix).
+*/}}
+{{- define "sfs-kaas.validVersion" -}}
+{{- $v := toString . -}}
+{{- if not (regexMatch `^v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$` $v) -}}
+{{- fail (printf "invalid version %q: must be a semantic version" $v) -}}
+{{- end -}}
+{{- $v -}}
+{{- end }}
+
+{{/*
+Control plane FQDN of a cluster: the validated user-provided one, or the AZ default.
+Expects a dict with "root", "cluster" and "clusterID".
+*/}}
+{{- define "sfs-kaas.controlPlaneFqdn" -}}
+{{- $userFqdn := ((.cluster.controlPlane).network).fqdn -}}
+{{- if $userFqdn -}}
+{{- include "sfs-kaas.validFqdn" $userFqdn -}}
+{{- else -}}
+{{- include "sfs-kaas.fqdn" (dict "root" .root "name" .clusterID) -}}
+{{- end -}}
+{{- end }}
+
+{{/*
+Validate a chart reference used as a helm argument: an oci:// or https:// URL.
+A value starting with "-" would otherwise be read by helm as an option.
+*/}}
+{{- define "sfs-kaas.validChartUrl" -}}
+{{- $v := toString . -}}
+{{- if not (regexMatch `^(oci|https)://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$` $v) -}}
+{{- fail (printf "invalid kaas-essentials chart URL %q: must be an oci:// or https:// URL" $v) -}}
+{{- end -}}
+{{- $v -}}
+{{- end }}
+
 {{- define "sfs-kaas.fqdn" -}}
 {{- $ := .root }}
 {{- $baseUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").external | required "Missing `external` key for this AZ under `.azDomains.<AZ>`" }}

@@ -5,9 +5,11 @@
 {{- $controlPlane := $cluster.controlPlane -}}
 {{- $controlPlaneDefaults := $.Values.clusterDefaults.controlPlane -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) }}
-{{- $kubeVersion := $cluster.kubeVersion }}
+{{- $kubeVersion := include "sfs-kaas.validVersion" $cluster.kubeVersion }}
+{{- $clusterName := "" }}
+{{- with $cluster.name }}{{ $clusterName = include "sfs-kaas.validName" . }}{{ end }}
 {{- $kubeMinor := substr 1 5 $kubeVersion -}}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
+{{- $fqdn := include "sfs-kaas.controlPlaneFqdn" (dict "root" $ "cluster" $cluster "clusterID" $clusterID) }}
 {{- $controlplaneUrl := printf "https://%s:%d" $fqdn (int $controlPlaneDefaults.network.apiServer.port) }}
 {{- $repoUrl := $cluster.kaasEssentials.repoUrl | default $.Values.clusterDefaults.kaasEssentials.chartUrl }}
 
@@ -27,29 +29,32 @@ data:
     # This script installs essential components on tenant cluster:
     # Cilium, KubeApiServerProxy, kubevirt-csi
     
-    sed "s/10.96.0.1/{{ $fqdn }}/" /job/kubeconfig > /var/run/kubeconfig
-    
-    echo -e "[+] Target cluster:\n\tID: {{ $clusterID }}\n\tName: {{ $cluster.name }}"
+    # Cluster values are passed through environment variables and always
+    # quoted: they are never interpolated into the script itself.
+    kubeconfig="$(cat /job/kubeconfig)"
+    printf '%s\n' "${kubeconfig//10.96.0.1/$KAAS_FQDN}" > /var/run/kubeconfig
+
+    printf '[+] Target cluster:\n\tID: %s\n\tName: %s\n' "$KAAS_CLUSTER_ID" "$KAAS_CLUSTER_NAME"
     echo "[+] Checking if TCP is ready."
-    curl -kf {{ $controlplaneUrl }}/version -o /dev/null
+    curl -kf "$KAAS_CONTROLPLANE_URL/version" -o /dev/null
     while [ $? != 0 ]
     do
       echo "[+] Waiting 120s for TCP to be ready."
       sleep 120
       echo "[+] Checking if TCP is ready."
-      curl -kf {{ $controlplaneUrl }}/version -o /dev/null
+      curl -kf "$KAAS_CONTROLPLANE_URL/version" -o /dev/null
     done
 
     echo "[+] Running helm upgrade."
-    helm upgrade --install kaas-essentials {{ $repoUrl }} \
-      --version {{ $cluster.kaasEssentials.chartVersion | default $.Chart.Version }} \
+    helm upgrade --install kaas-essentials "$KAAS_ESSENTIALS_CHART" \
+      --version "$KAAS_ESSENTIALS_VERSION" \
       --namespace kube-system \
       --kubeconfig /var/run/kubeconfig \
-      --set controlPlane.fqdn={{ $fqdn | quote }} \
-      --set controlPlane.network.apiServer.port={{ $controlPlaneDefaults.network.apiServer.port | quote }} \
-      --set controlPlane.network.apiServer.proxyPort={{ $controlPlaneDefaults.network.apiServer.proxyPort | quote }} \
+      --set-string controlPlane.fqdn="$KAAS_FQDN" \
+      --set controlPlane.network.apiServer.port={{ $controlPlaneDefaults.network.apiServer.port | int }} \
+      --set controlPlane.network.apiServer.proxyPort={{ $controlPlaneDefaults.network.apiServer.proxyPort | int }} \
       --set cilium.k8sServiceHost=10.96.0.1 \
-      --set cilium.k8sServicePort={{ $controlPlaneDefaults.network.apiServer.port | quote }} \
+      --set cilium.k8sServicePort={{ $controlPlaneDefaults.network.apiServer.port | int }} \
       -f /job/values/values.yaml
     if [ $? -eq 0 ]; then
       echo "[+] Helm upgrade successful."
@@ -68,18 +73,18 @@ data:
       {{- if hasKey $cluster.kaasEssentials "storageClasses" }}
       storageClasses:
         {{- range $key, $class := .storageClasses }}
-        {{ $key }}:
+        {{ $key | quote }}:
           isDefaultClass: {{ $class.isDefaultClass | default false }}
-          tenantClass: {{ $class.tenantClass }}
+          tenantClass: {{ $class.tenantClass | quote }}
           infraClass: {{ get $.Values.storageClassMapping $class.infraClass }}
         {{- end }}
       {{- end }}
       {{- if hasKey $cluster.kaasEssentials "snapshotClasses" }}
       snapshotClasses:
         {{- range $key, $class := .snapshotClasses }}
-        {{ $key }}:
+        {{ $key | quote }}:
           isDefaultClass: {{ $class.isDefaultClass | default false }}
-          tenantClass: {{ $class.tenantClass }}
+          tenantClass: {{ $class.tenantClass | quote }}
           infraClass: {{ get $.Values.storageClassMapping $class.infraClass }}
         {{- end }}
       {{- end }}
@@ -88,14 +93,14 @@ data:
 
     # Cluster information to be written in the spx-cluster-info configmap
     cluster:
-      clusterID: {{ $clusterID }}
+      clusterID: {{ $clusterID | quote }}
       friendlyName: {{ $cluster.kaasEssentials.clusterFriendlyName | default $cluster.name | quote }}
       name: {{ $cluster.name | quote }}
-      kubeVersion: {{ $kubeVersion }}
-      controlplaneUrl: {{ $controlplaneUrl }}
-      organizationID: spx-{{ $.Values.organizationID }}
-      projectID: spx-{{ $projectID }}
-      location: {{ $.Values.location }}
+      kubeVersion: {{ $kubeVersion | quote }}
+      controlplaneUrl: {{ $controlplaneUrl | quote }}
+      organizationID: {{ printf "spx-%s" (toString $.Values.organizationID) | quote }}
+      projectID: {{ printf "spx-%s" (toString $projectID) | quote }}
+      location: {{ $.Values.location | quote }}
 
     # Values from clusters.<cluster>.kaasEssentials.values are imported here
     {{- if hasKey $cluster.kaasEssentials "values" }}
@@ -107,7 +112,7 @@ data:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: essentials-{{ $cluster.kaasEssentials.revision | default 1 }}-{{ $clusterID }}
+  name: essentials-{{ ($cluster.kaasEssentials).revision | default 1 | int }}-{{ $clusterID }}
   labels:
     {{- include "sfs-kaas.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
@@ -142,6 +147,19 @@ spec:
             requests:
               cpu: 40m
               memory: 64Mi
+          env:
+            - name: KAAS_FQDN
+              value: {{ $fqdn | quote }}
+            - name: KAAS_CLUSTER_ID
+              value: {{ $clusterID | quote }}
+            - name: KAAS_CLUSTER_NAME
+              value: {{ $clusterName | quote }}
+            - name: KAAS_CONTROLPLANE_URL
+              value: {{ $controlplaneUrl | quote }}
+            - name: KAAS_ESSENTIALS_CHART
+              value: {{ include "sfs-kaas.validChartUrl" $repoUrl | quote }}
+            - name: KAAS_ESSENTIALS_VERSION
+              value: {{ include "sfs-kaas.validVersion" (($cluster.kaasEssentials).chartVersion | default $.Chart.Version) | quote }}
           volumeMounts:
             - name: script
               mountPath: /job/script
