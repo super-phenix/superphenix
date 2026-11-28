@@ -79,7 +79,7 @@ func TestConvertAppToUpdateKaaSSpec_InvalidQuantity(t *testing.T) {
 		WorkersNetPol: "default",
 		Groups: []Group{
 			{Name: "group-1", Replicas: 3, Cpu: 2, Memory: "4Gi", BootDiskSize: 20, StorageClass: "sc1",
-				Subnets: []GroupSubnet{{Order: 1, Id: "subnet-1"}}},
+				Subnets: []GroupSubnet{{Order: 1, Id: "00000000-0000-4000-8000-000000000001"}}},
 		},
 		ControlPlane: ControlPlaneSpec{DataStore: DataStoreSpec{Dedicated: true, StorageClassName: "encrypted", Storage: 3}},
 	}

@@ -173,7 +173,7 @@ spec:
               annotations:
                 kubevirt.io/allow-pod-bridge-network-live-migration: "true"
                 {{- range $template.interfaces }}
-                {{- $subnetID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" .subnet) }}
+                {{- $subnetID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" (include "sfs-kaas.subnetLocalID" .subnet)) }}
                 {{ printf "%s.%s.ovn.kubernetes.io/allow_live_migration: 'true'" $subnetID $.Release.Namespace }}
                 {{- end }}
               labels:
@@ -247,13 +247,13 @@ spec:
               {{- end }}
               networks:
               {{- range $i, $if := $template.interfaces }}
-              {{- $subnetID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $if.subnet) }}
+              {{- $subnetID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" (include "sfs-kaas.subnetLocalID" $if.subnet)) }}
                 - name: {{ printf "interface-%d" $i }}
                   multus:
                     {{- if eq $i 0 }}
                     default: true
                     {{- end }}
-                    networkName: {{ $.Release.Namespace }}/{{ $subnetID }}
+                    networkName: {{ printf "%s/%s" $.Release.Namespace $subnetID | quote }}
               {{- end }}
               evictionStrategy: External # required for capk
           dataVolumeTemplates:
