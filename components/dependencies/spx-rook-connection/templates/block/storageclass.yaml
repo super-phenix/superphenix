@@ -24,6 +24,8 @@ parameters:
   csi.storage.k8s.io/node-stage-secret-namespace: {{ $csi.secretNamespace | default $cluster }}
   csi.storage.k8s.io/controller-expand-secret-name: {{ $csi.rbdProvisionerSecretName | default $cluster }}
   csi.storage.k8s.io/controller-expand-secret-namespace: {{ $csi.secretNamespace | default $cluster }}
+  csi.storage.k8s.io/controller-publish-secret-name: {{ $csi.rbdProvisionerSecretName | default $cluster }}
+  csi.storage.k8s.io/controller-publish-secret-namespace: {{ $csi.secretNamespace | default $cluster }}
   csi.storage.k8s.io/provisioner-secret-name: {{ $csi.rbdProvisionerSecretName | default $cluster }}
   csi.storage.k8s.io/provisioner-secret-namespace: {{ $csi.secretNamespace | default $cluster }}
   imageFeatures: {{ .features | default "layering,fast-diff,object-map,deep-flatten,exclusive-lock" }}
