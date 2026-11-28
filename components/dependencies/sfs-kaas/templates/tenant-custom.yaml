@@ -77,7 +77,7 @@ data:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: post-install-{{ $cluster.postInstallChart.revision | default 1 | int }}-{{ $clusterID }}
+  name: post-install-{{ include "sfs-kaas.validRevision" $cluster.postInstallChart.revision }}-{{ $clusterID }}
   labels:
     {{- include "sfs-kaas.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}

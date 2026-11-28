@@ -283,7 +283,7 @@ spec:
                   storageClassName: {{ required "No storageclass found" $storageClass | quote }}
                 source:
                   registry:
-                    url: {{ printf "%s:%s" $imageUrl $imageTag | quote }}
+                    url: {{ printf "%s:%s" (toString $imageUrl) (toString $imageTag) | quote }}
           # additional disks defined by user
           {{- range $preID, $disk := $additionalDisks }}
             {{- $class := (required "Must provide a storage class" $disk.storageClassName) }}

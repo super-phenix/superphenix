@@ -85,10 +85,22 @@ Validate a chart or Kubernetes version (semantic version, optional "v" prefix).
 */}}
 {{- define "sfs-kaas.validVersion" -}}
 {{- $v := toString . -}}
-{{- if not (regexMatch `^v?[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$` $v) -}}
+{{- if not (regexMatch `^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$` $v) -}}
 {{- fail (printf "invalid version %q: must be a semantic version" $v) -}}
 {{- end -}}
 {{- $v -}}
+{{- end }}
+
+{{/*
+Validate a job revision (a non-negative integer, 1 when unset) and return it as an integer.
+"int" alone would turn an invalid value into 0 without failing.
+*/}}
+{{- define "sfs-kaas.validRevision" -}}
+{{- $v := toString (. | default 1) -}}
+{{- if not (regexMatch `^[0-9]{1,9}$` $v) -}}
+{{- fail (printf "invalid revision %q: must be a non-negative integer" $v) -}}
+{{- end -}}
+{{- $v | int -}}
 {{- end }}
 
 {{/*

@@ -112,7 +112,7 @@ data:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: essentials-{{ ($cluster.kaasEssentials).revision | default 1 | int }}-{{ $clusterID }}
+  name: essentials-{{ include "sfs-kaas.validRevision" ($cluster.kaasEssentials).revision }}-{{ $clusterID }}
   labels:
     {{- include "sfs-kaas.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
