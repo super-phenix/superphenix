@@ -7,7 +7,7 @@
 {{- $kvcsiLocalID := printf "%s-kubevirt-csi" $cluster.name }}
 {{- $kubeMinor := substr 0 5 $cluster.kubeVersion }}
 {{- $csiVersions := index $.Values.kubevirtCsi $kubeMinor }}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
+{{- $fqdn := include "sfs-kaas.controlPlaneFqdn" (dict "root" $ "cluster" $cluster "clusterID" $clusterID) }}
 {{- $internalFqdn := printf "%s.spx-%s.svc.cluster.local" $clusterID $projectID }}
 
 ---

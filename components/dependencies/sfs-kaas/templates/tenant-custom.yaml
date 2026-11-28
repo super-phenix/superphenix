@@ -7,7 +7,9 @@
 {{- $controlPlane := $cluster.controlPlane -}}
 {{- $controlPlaneDefaults := $.Values.clusterDefaults.controlPlane -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) }}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
+{{- $clusterName := "" }}
+{{- with $cluster.name }}{{ $clusterName = include "sfs-kaas.validName" . }}{{ end }}
+{{- $fqdn := include "sfs-kaas.controlPlaneFqdn" (dict "root" $ "cluster" $cluster "clusterID" $clusterID) }}
 
 ---
 apiVersion: v1
@@ -24,17 +26,20 @@ data:
     #!/bin/bash
     # This script installs a user-defined chart in the tenant cluster
 
-    sed "s/10.96.0.1/{{ $fqdn }}/" /job/kubeconfig > /var/run/kubeconfig
+    # Cluster values are passed through environment variables and always
+    # quoted: they are never interpolated into the script itself.
+    kubeconfig="$(cat /job/kubeconfig)"
+    printf '%s\n' "${kubeconfig//10.96.0.1/$KAAS_FQDN}" > /var/run/kubeconfig
 
-    echo -e "[+] Target cluster:\n\tID: {{ $clusterID }}\n\tName: {{ $cluster.name }}"
+    printf '[+] Target cluster:\n\tID: %s\n\tName: %s\n' "$KAAS_CLUSTER_ID" "$KAAS_CLUSTER_NAME"
     echo "[+] Checking if TCP is ready."
-    curl -kf https://{{ $fqdn }}:{{ $controlPlaneDefaults.network.apiServer.port }}/version -o /dev/null
+    curl -kf "$KAAS_CONTROLPLANE_URL/version" -o /dev/null
     while [ $? != 0 ]
     do
       echo "[+] Waiting 120s for TCP to be ready."
       sleep 120
       echo "[+] Checking if TCP is ready."
-      curl -kf https://{{ $fqdn }}:{{ $controlPlaneDefaults.network.apiServer.port }}/version -o /dev/null
+      curl -kf "$KAAS_CONTROLPLANE_URL/version" -o /dev/null
     done
 
     echo "[+] Running helm upgrade."
@@ -72,7 +77,7 @@ data:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: post-install-{{ $cluster.postInstallChart.revision | default 1 }}-{{ $clusterID }}
+  name: post-install-{{ include "sfs-kaas.validRevision" $cluster.postInstallChart.revision }}-{{ $clusterID }}
   labels:
     {{- include "sfs-kaas.labels" $ | nindent 4 }}
     superphenix.net/resourceEffectiveID: {{ $clusterID | quote }}
@@ -108,6 +113,14 @@ spec:
               cpu: 40m
               memory: 64Mi
           env:
+            - name: KAAS_FQDN
+              value: {{ $fqdn | quote }}
+            - name: KAAS_CLUSTER_ID
+              value: {{ $clusterID | quote }}
+            - name: KAAS_CLUSTER_NAME
+              value: {{ $clusterName | quote }}
+            - name: KAAS_CONTROLPLANE_URL
+              value: {{ printf "https://%s:%d" $fqdn (int $controlPlaneDefaults.network.apiServer.port) | quote }}
             - name: PIC_CHART_NAME
               value: {{ $cluster.postInstallChart.chartName | toString | quote }}
             - name: PIC_CHART_VERSION

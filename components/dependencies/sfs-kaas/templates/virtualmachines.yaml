@@ -6,7 +6,7 @@
 {{- $controlPlaneDefaults := $.Values.clusterDefaults.controlPlane -}}
 {{- $workers := $cluster.workers -}}
 {{- $clusterID := include "sfs-kaas.spxEID" (dict "project" $projectID "localID" $preID) -}}
-{{- $fqdn := ($controlPlane.network).fqdn | default (include "sfs-kaas.fqdn" (dict "root" $ "name" $clusterID)) }}
+{{- $fqdn := include "sfs-kaas.controlPlaneFqdn" (dict "root" $ "cluster" $cluster "clusterID" $clusterID) }}
 {{- $azCount := $.Values.azCount }}
 {{- $azListUrl := (get $.Values.azDomains $.Values.location | required "Missing value for this AZ under `.azDomains`").internal | required "Missing `internal` key for this AZ under `.azDomains.<AZ>`" }}
 
@@ -283,7 +283,7 @@ spec:
                   storageClassName: {{ required "No storageclass found" $storageClass | quote }}
                 source:
                   registry:
-                    url: "{{ $imageUrl }}:{{ $imageTag }}"
+                    url: {{ printf "%s:%s" (toString $imageUrl) (toString $imageTag) | quote }}
           # additional disks defined by user
           {{- range $preID, $disk := $additionalDisks }}
             {{- $class := (required "Must provide a storage class" $disk.storageClassName) }}
