@@ -54,6 +54,13 @@ spec:
             topologyKey: kubernetes.io/hostname
           weight: 1
   replicas: {{ $replicas }}
+  resources:
+    limits:
+      cpu: {{ (($dataStore.resources).limits).cpu | default "500m" | quote }}
+      memory: {{ (($dataStore.resources).limits).memory | default "2Gi" }}
+    requests:
+      cpu: {{ (($dataStore.resources).requests).cpu | default "200m" | quote }}
+      memory: {{ (($dataStore.resources).requests).memory | default "512Mi" }}
   options:
     autoCompactionMode: periodic
     autoCompactionRetention: 5m
