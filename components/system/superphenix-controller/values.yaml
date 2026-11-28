@@ -25,18 +25,33 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
+# -- Pod-level security context. The image runs as the non-root user 1000.
 podSecurityContext:
-  {}
-  # fsGroup: 2000
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
 
+# -- Container-level security context.
 securityContext:
-  {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+    - ALL
+
+admissionPolicy:
+  # -- Deny writes by the controller service account outside the project
+  # namespaces (`spx-*`), namespaces not named `spx-*`, and pod changes other than
+  # metadata (requires Kubernetes 1.30+). The `spx` prefix follows `config.spxPrefix`.
+  enabled: true
+  # -- Namespaces, besides `spx-*`, where the controller may write
+  # (velero-system: BaaS DeleteBackupRequests).
+  allowedNamespaces:
+    - velero-system
+  # -- Actions on violation. Use [Warn, Audit] to validate the policy first.
+  validationActions: [Deny]
 
 service:
   type: ClusterIP
