@@ -690,9 +690,10 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 	}
 
 	type projectValues struct {
-		ProjectID         string    `yaml:"projectID"`
-		Name              string    `yaml:"name"`
-		AvailabilityZones []azValue `yaml:"availabilityZones"`
+		ProjectID         string       `yaml:"projectID"`
+		Name              string       `yaml:"name"`
+		AvailabilityZones []azValue    `yaml:"availabilityZones"`
+		GitOps            gitopsValues `yaml:"gitops"`
 	}
 
 	type organizationValues struct {
@@ -741,6 +742,7 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 			ProjectID:         proj.Spec.ProjectID,
 			Name:              projectName,
 			AvailabilityZones: azs,
+			GitOps:            gitopsValues{ValuesLocation: valuesLoc},
 		},
 	}
 
@@ -778,12 +780,7 @@ func (r *Reconciler) ensureArgoApplication(ctx context.Context, proj *operatorv1
 
 		valuesLocation := getValuesLocation(proj)
 		if valuesLocation != nil {
-			// $values resolves to the values repository root, so scope the globs to the configured path.
-			valuesRoot := "$values"
-			if valuesPath := strings.Trim(valuesLocation.Path, "/"); valuesPath != "" && valuesPath != "." {
-				valuesRoot += "/" + valuesPath
-			}
-			source.Helm.ValueFiles = []string{valuesRoot + "/**/*.yaml", valuesRoot + "/**/*.yml"}
+			source.Helm.ValueFiles = []string{"$values/**/*.yaml", "$values/**/*.yml"}
 			source.Helm.IgnoreMissingValueFiles = true
 
 			valuesTargetRevision := valuesLocation.TargetRevision
