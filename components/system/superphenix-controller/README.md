@@ -8,6 +8,9 @@ Helm chart to deploy the Superphenix AZ controller
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| admissionPolicy.allowedNamespaces | list | `["velero-system"]` | Namespaces, besides `spx-*`, where the controller may write (velero-system: BaaS DeleteBackupRequests). |
+| admissionPolicy.enabled | bool | `true` | Deny writes by the controller service account outside the project namespaces (`spx-*`), namespaces not named `spx-*`, and pod changes other than metadata (requires Kubernetes 1.30+). The `spx` prefix follows `config.spxPrefix`. |
+| admissionPolicy.validationActions | list | `["Deny"]` | Actions on violation. Use [Warn, Audit] to validate the policy first. |
 | affinity | object | `{}` |  |
 | config | object | `{}` |  |
 | fullnameOverride | string | `""` |  |
@@ -27,13 +30,13 @@ Helm chart to deploy the Superphenix AZ controller
 | nodeSelector | object | `{}` |  |
 | podAnnotations | object | `{}` |  |
 | podLabels | object | `{}` |  |
-| podSecurityContext | object | `{}` |  |
+| podSecurityContext | object | `{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000,"seccompProfile":{"type":"RuntimeDefault"}}` | Pod-level security context. The image runs as the non-root user 1000. |
 | readinessProbe.httpGet.path | string | `"/health"` |  |
 | readinessProbe.httpGet.port | string | `"http"` |  |
 | replicaCount | int | `1` |  |
 | resources | object | `{}` |  |
 | revisionHistoryLimit | int | `3` |  |
-| securityContext | object | `{}` |  |
+| securityContext | object | `{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"readOnlyRootFilesystem":true}` | Container-level security context. |
 | service.port | int | `8080` |  |
 | service.type | string | `"ClusterIP"` |  |
 | serviceAccount.annotations | object | `{}` |  |

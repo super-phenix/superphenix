@@ -1,0 +1,53 @@
+{{- if .Values.admissionPolicy.enabled }}
+{{- $spxPrefix := (get (.Values.config | default dict) "spxPrefix") | default "spx" }}
+{{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $spxPrefix) }}
+{{- fail "config.spxPrefix must be a lowercase DNS label" }}
+{{- end }}
+{{- $prefix := printf "%s-" $spxPrefix }}
+---
+# The controller needs cluster-wide rights: project namespaces are created on
+# the fly and Kube-OVN objects are cluster-scoped. This policy confines what it
+# may change with them, so that a compromised controller cannot alter system
+# workloads: namespaced writes stay in the project namespaces, only project
+# namespaces (config.spxPrefix, "spx" by default) can be created or deleted, and pod updates cannot touch the spec.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "superphenix-controller.fullname" . }}-scope
+  labels:
+    {{- include "superphenix-controller.labels" . | nindent 4 }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["*"]
+        apiVersions: ["*"]
+        operations: ["CREATE", "UPDATE", "DELETE"]
+        resources: ["*"]
+        scope: "*"
+  matchConditions:
+    - name: controller-service-account
+      expression: 'request.userInfo.username == "system:serviceaccount:{{ .Release.Namespace }}:{{ include "superphenix-controller.serviceAccountName" . }}"'
+  variables:
+    - name: allowedNamespaces
+      expression: {{ .Values.admissionPolicy.allowedNamespaces | default list | toJson | quote }}
+    - name: isNamespace
+      expression: 'request.resource.group == "" && request.resource.resource == "namespaces"'
+  validations:
+    - expression: 'request.namespace == "" || request.namespace.startsWith("{{ $prefix }}") || request.namespace in variables.allowedNamespaces'
+      messageExpression: '"superphenix-controller may not change objects in namespace " + request.namespace'
+    - expression: '!variables.isNamespace || request.name.startsWith("{{ $prefix }}")'
+      messageExpression: '"superphenix-controller may not change namespace " + request.name'
+    - expression: 'request.resource.group != "" || request.resource.resource != "pods" || request.operation != "UPDATE" || object.spec == oldObject.spec'
+      message: "superphenix-controller may only change pod metadata"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ include "superphenix-controller.fullname" . }}-scope
+  labels:
+    {{- include "superphenix-controller.labels" . | nindent 4 }}
+spec:
+  policyName: {{ include "superphenix-controller.fullname" . }}-scope
+  validationActions: {{ .Values.admissionPolicy.validationActions | toJson }}
+{{- end }}
