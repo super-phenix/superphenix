@@ -43,6 +43,13 @@ global:
   # -- Storage class mapping
   storageClassMapping: {}
 
+  # -- Product-specific global configuration
+  products:
+    # -- Kubernetes product global configuration
+    kubernetes: {}
+    # -- Backups product global configuration
+    backups: {}
+
 # -- Kubernetes clusters configuration
 kubernetes: {}
 

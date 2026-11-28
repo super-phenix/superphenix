@@ -44,13 +44,17 @@ deviceMapping: {}
 # @section -- Organization parameters
 bgpSpeaker: ""
 
-# -- Optional ResourceQuota of the project namespace: every entry is rendered as is in `spec.hard`.
-# @section -- Quotas
-quota: {}
-  # requests.cpu: "16"
-  # limits.memory: "64Gi"
-  # pods: "50"
-  # count/virtualmachines.kubevirt.io: "20"
+# -- MTU of the subnets in this AZ, only applied when `mtuAutodetection` is disabled.
+# A subnet's own `mtu` takes precedence over it.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+mtu: 1500
+
+# -- Autodetect the MTU of the subnets in this AZ. When disabled, `mtu` is used.
+# A subnet's own `mtu` takes precedence over it.
+# This parameter cannot be overriden by the user.
+# @section -- Organization parameters
+mtuAutodetection: true
 
 # @section -- Global overrides
 global:
@@ -58,6 +62,14 @@ global:
   # This parameter cannot be overriden by the user.
   # @section -- Global values
   labels: {}
+
+# -- Optional ResourceQuota of the project namespace: every entry is rendered as is in `spec.hard`.
+# @section -- Quotas
+quota: {}
+  # requests.cpu: "16"
+  # limits.memory: "64Gi"
+  # pods: "50"
+  # count/virtualmachines.kubevirt.io: "20"
 
 # -- Each key defines a new VPC, each key should be unique.
 # See the default VPC for the syntax to define a new VPC.
@@ -125,7 +137,8 @@ subnets: {}
   #    # -- DNS propagated through DHCPv6
   #    dnsv6: 2606:4700:4700::1111
   #
-  #  # -- MTU, if nothing is specified, the MTU is autodetected
+  #  # -- MTU, takes precedence over the MTU of the AZ.
+  #  # If nothing is specified, the MTU of the AZ is used (autodetected by default).
   #  mtu: 1500
   #
   #  # -- IPs that should be excluded from the IPAM, gateways are automatically added to this list

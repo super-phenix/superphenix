@@ -108,10 +108,54 @@ clusters: {}
   #   # @section -- Cluster
   #   # @default -- {}
   #   controlPlane:
-  #     # -- Advanced API server configuration
+  #     # -- API server configuration
   #     apiServer:
   #       # -- Specify additional arguments
   #       extraArgs: []
+
+  #       # -- Specify apiServer resource limits and requests
+  #       resources:
+  #         limits:
+  #           cpu: "1"
+  #           memory: 5Gi
+  #         requests:
+  #           cpu: 300m
+  #           memory: 2Gi
+
+  #     # -- ControllerManager configuration
+  #     controllerManager:
+  #       # -- Specify controllerManager resource limits and requests
+  #       resources:
+  #         limits:
+  #           cpu: 300m
+  #           memory: 512Mi
+  #         requests:
+  #           cpu: 30m
+  #           memory: 128Mi
+
+  #     # -- Konnectivity configuration
+  #     konnectivity:
+  #        # -- Konnectivity server configuration
+  #       server:
+  #         # -- Specify konnectivity server resource limits and requests
+  #         resources:
+  #           limits:
+  #             cpu: 300m
+  #             memory: 256Mi
+  #           requests:
+  #             cpu: 30m
+  #             memory: 64Mi
+
+  #     # -- Scheduler configuration
+  #     scheduler:
+  #       # -- Specify scheduler resource limits and requests
+  #       resources:
+  #         limits:
+  #           cpu: 40m
+  #           memory: 256Mi
+  #         requests:
+  #           cpu: 10m
+  #           memory: 64Mi
 
   #     # -- Defines the controlplane's datastore.
   #     # @section -- Controlplane
@@ -137,7 +181,17 @@ clusters: {}
   #       # -- Version tag of the etcd image when 'dedicated = true'
   #       # @section -- Datastore
   #       version: v3.6.7
-    
+  
+  #       # -- Specify etcd members resource limits and requests
+  #       # @section -- Datastore
+  #       resources:
+  #         limits:
+  #           cpu: 500m
+  #           memory: 2Gi
+  #         requests:
+  #           cpu: 200m
+  #           memory: 512Mi
+  
   #     # -- Whether to put the controlplane in sleeping state
   #     # (scale to 0 but keep all controlplane data)
   #     # @section -- Controlplane

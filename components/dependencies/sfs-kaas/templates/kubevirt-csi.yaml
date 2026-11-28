@@ -184,6 +184,13 @@ spec:
           image: busybox:1.37 # https://hub.docker.com/_/busybox/tags
           imagePullPolicy: IfNotPresent
           command: ['sh', '-c', 'sed "s/10.96.0.1/{{ $internalFqdn }}/" /var/run/secrets/tenant-secret/admin.conf > /var/run/tenant-kubeconfig/kubeconfig']
+          resources:
+            limits:
+              cpu: 20m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
           securityContext:
             capabilities:
               drop:
@@ -238,9 +245,12 @@ spec:
             - name: tenant-kubeconfig
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
+            limits:
+              cpu: 30m
+              memory: 256Mi
             requests:
-              memory: 50Mi
               cpu: 10m
+              memory: 64Mi
         - name: csi-provisioner
           image: registry.k8s.io/sig-storage/csi-provisioner:{{ $csiVersions.csiProvisionerVersion }}
           args:
@@ -258,6 +268,13 @@ spec:
               mountPath: /var/lib/csi/sockets/pluginproxy/
             - name: tenant-kubeconfig
               mountPath: "/var/run/tenant-kubeconfig"
+          resources:
+            limits:
+              cpu: 30m
+              memory: 256Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
         - name: csi-attacher
           image: registry.k8s.io/sig-storage/csi-attacher:{{ $csiVersions.csiAttacherVersion }}
           args:
@@ -275,9 +292,12 @@ spec:
             - name: tenant-kubeconfig
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
+            limits:
+              cpu: 30m
+              memory: 256Mi
             requests:
-              memory: 50Mi
               cpu: 10m
+              memory: 64Mi
         - name: csi-liveness-probe
           image: registry.k8s.io/sig-storage/livenessprobe:{{ $csiVersions.csiLivenessprobeVersion }}
           args:
@@ -288,9 +308,12 @@ spec:
             - name: socket-dir
               mountPath: /csi
           resources:
+            limits:
+              cpu: 20m
+              memory: 64Mi
             requests:
-              memory: 50Mi
               cpu: 10m
+              memory: 32Mi
         - name: csi-snapshotter
           args:
           - "--v=5"
@@ -307,9 +330,12 @@ spec:
             - name: tenant-kubeconfig
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
+            limits:
+              cpu: 30m
+              memory: 265Mi
             requests:
-              memory: 20Mi
               cpu: 10m
+              memory: 64Mi
         - name: csi-resizer
           image: registry.k8s.io/sig-storage/csi-resizer:{{ $csiVersions.csiResizerVersion }}
           args:
@@ -324,9 +350,12 @@ spec:
             - name: tenant-kubeconfig
               mountPath: "/var/run/tenant-kubeconfig"
           resources:
+            limits:
+              cpu: 30m
+              memory: 256Mi
             requests:
               cpu: 10m
-              memory: 20Mi
+              memory: 64Mi
           securityContext:
             capabilities:
               drop:
