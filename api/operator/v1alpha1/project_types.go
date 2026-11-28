@@ -58,7 +58,7 @@ type ProjectGitOpsSpec struct {
 	// +optional
 	ManifestLocation *ProjectManifestLocationSpec `json:"manifestLocation,omitempty"`
 
-	// ValuesLocation defines where the GitOps values are located.
+	// ValuesLocation defines the Git repository containing GitOps values.
 	// +optional
 	ValuesLocation *ProjectValuesLocationSpec `json:"valuesLocation,omitempty"`
 }
@@ -78,15 +78,11 @@ type ProjectManifestLocationSpec struct {
 	TargetRevision string `json:"targetRevision,omitempty"`
 }
 
-// ProjectValuesLocationSpec defines the location of GitOps values.
+// ProjectValuesLocationSpec defines the Git repository for GitOps values.
 type ProjectValuesLocationSpec struct {
 	// RepoURL overrides the default repository URL for values.
 	// +optional
 	RepoURL string `json:"repoURL,omitempty"`
-
-	// Path overrides the default path for values.
-	// +optional
-	Path string `json:"path,omitempty"`
 
 	// TargetRevision overrides the default target revision for values.
 	// +optional

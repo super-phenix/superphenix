@@ -459,7 +459,6 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 
 	type valuesLocationValues struct {
 		RepoURL        string            `yaml:"repoURL"`
-		Path           string            `yaml:"path"`
 		TargetRevision string            `yaml:"targetRevision"`
 		Credentials    credentialsValues `yaml:"credentials"`
 	}
@@ -499,7 +498,6 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 	if proj.Spec.GitOps != nil && proj.Spec.GitOps.ValuesLocation != nil {
 		vl := proj.Spec.GitOps.ValuesLocation
 		valuesLoc.RepoURL = vl.RepoURL
-		valuesLoc.Path = vl.Path
 		valuesLoc.TargetRevision = vl.TargetRevision
 		if vl.Credentials != nil {
 			valuesLoc.Credentials = credentialsValues{

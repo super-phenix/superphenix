@@ -95,8 +95,8 @@ spec:
                         type: string
                     type: object
                   valuesLocation:
-                    description: ValuesLocation defines where the GitOps values are
-                      located.
+                    description: ValuesLocation defines the Git repository containing
+                      GitOps values.
                     properties:
                       credentials:
                         description: Credentials defines the Git credentials for the
@@ -122,9 +122,6 @@ spec:
                             description: Username for Git authentication.
                             type: string
                         type: object
-                      path:
-                        description: Path overrides the default path for values.
-                        type: string
                       repoURL:
                         description: RepoURL overrides the default repository URL
                           for values.
