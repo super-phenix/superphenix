@@ -1,4 +1,11 @@
 {{- if .Values.rbac.create -}}
+{{- $config := .Values.config | default dict }}
+{{- $appProjectNamespace := .Values.rbac.appProjectNamespace | default (dig "argoController" "appProjectNamespace" "" $config) | default .Release.Namespace }}
+{{- $spxPrefix := (get $config "spxPrefix") | default "spx" }}
+{{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $spxPrefix) }}
+{{- fail "config.spxPrefix must be a lowercase DNS label" }}
+{{- end }}
+{{- $prefix := printf "%s-" $spxPrefix }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -8,16 +15,17 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 rules:
-  # Manage the Argo CD Applications and AppProjects backing KaaS/BaaS products.
+  # Manage the Argo CD Applications backing KaaS/BaaS products. Applications
+  # live in the per-project namespaces, and the garbage collector lists them
+  # across namespaces, so this is cluster-wide: the admission policy below
+  # confines writes to the spx-* namespaces.
   - apiGroups:
       - argoproj.io
     resources:
       - applications
-      - appprojects
     verbs:
       - get
       - list
-      - watch
       - create
       - update
       - patch
@@ -29,46 +37,6 @@ rules:
       - namespaces
     verbs:
       - create
-      - get
-      - list
-      - watch
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: {{ include "superphenix-api.fullname" . }}-secrets
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
-  labels:
-    {{- include "superphenix-api.labels" . | nindent 4 }}
-rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - create
-      - patch
-      - update
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: {{ include "superphenix-api.fullname" . }}-secrets
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
-  labels:
-    {{- include "superphenix-api.labels" . | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: {{ include "superphenix-api.fullname" . }}-secrets
-subjects:
-  - kind: ServiceAccount
-    name: {{ include "superphenix-api.serviceAccountName" . }}
-    namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -86,4 +54,92 @@ roleRef:
   kind: ClusterRole
   name: {{ include "superphenix-api.fullname" . }}
   apiGroup: rbac.authorization.k8s.io
+---
+# The per-project AppProjects all live in one namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "superphenix-api.fullname" . }}-appprojects
+  namespace: {{ $appProjectNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - appprojects
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "superphenix-api.fullname" . }}-appprojects
+  namespace: {{ $appProjectNamespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "superphenix-api.fullname" . }}-appprojects
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "superphenix-api.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- if .Values.rbac.admissionPolicy.enabled }}
+---
+# Confine the API service account to the per-project objects: Applications in
+# spx-* namespaces that use their own project, AppProjects named spx-*, and
+# spx-* namespaces. Applies to this service account only.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ include "superphenix-api.fullname" . }}-scope
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["argoproj.io"]
+        apiVersions: ["*"]
+        operations: ["CREATE", "UPDATE", "DELETE"]
+        resources: ["applications", "appprojects"]
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["namespaces"]
+  matchConditions:
+    - name: api-service-account
+      expression: 'request.userInfo.username == "system:serviceaccount:{{ .Release.Namespace }}:{{ include "superphenix-api.serviceAccountName" . }}"'
+  validations:
+    - expression: 'request.resource.resource != "applications" || request.namespace.startsWith("{{ $prefix }}")'
+      message: "superphenix-api may only manage Applications in spx-* namespaces"
+    - expression: 'request.resource.resource != "applications" || request.operation != "CREATE" || object.spec.project == request.namespace'
+      message: "superphenix-api may only create Applications that use the AppProject of their namespace"
+    - expression: 'request.resource.resource != "applications" || request.operation != "UPDATE" || object.spec.project == oldObject.spec.project'
+      message: "superphenix-api may not change the AppProject of an Application"
+    - expression: 'request.resource.resource != "appprojects" || (request.namespace == "{{ $appProjectNamespace }}" && request.name.startsWith("{{ $prefix }}"))'
+      message: "superphenix-api may only manage AppProjects named spx-*"
+    - expression: 'request.resource.resource != "namespaces" || object.metadata.name.startsWith("{{ $prefix }}")'
+      message: "superphenix-api may only create spx-* namespaces"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ include "superphenix-api.fullname" . }}-scope
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+spec:
+  policyName: {{ include "superphenix-api.fullname" . }}-scope
+  validationActions: [Deny]
+{{- end }}
 {{- end }}

@@ -12,10 +12,18 @@ nameOverride: ""
 fullnameOverride: ""
 
 rbac:
-  # ClusterRole/Binding letting superphenix-api manage the Argo CD Applications
+  # -- Create the RBAC letting superphenix-api manage the Argo CD Applications
   # and AppProjects backing KaaS/BaaS, and create per-project namespaces.
   # Required unless the argoController features are unused.
   create: true
+  # -- Namespace holding the per-project AppProjects. Empty means
+  # `config.argoController.appProjectNamespace`, else the release namespace.
+  appProjectNamespace: ""
+  admissionPolicy:
+    # -- Deny any Application, AppProject or namespace change by the API service
+    # account outside the per-project `spx-*` objects (prefix from
+  # `config.spxPrefix`; requires Kubernetes 1.30+).
+    enabled: true
 
 serviceAccount:
   # Specifies whether a service account should be created

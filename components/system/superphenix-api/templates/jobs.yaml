@@ -1,9 +1,67 @@
 {{- if .Values.jwtSecret.generate -}}
 {{- $secretName := .Values.jwtSecret.secretName | default (printf "%s-jwt" (include "superphenix-api.fullname" .)) -}}
+{{- $jobName := printf "%s-jwt-gen" (include "superphenix-api.fullname" .) -}}
+# The generator runs under its own service account, so the API service account
+# never needs access to Secrets. The Job has a new name (it was
+# <fullname>-jwt-generator) because a Job's pod template is immutable.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $jobName }}
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+automountServiceAccountToken: true
+{{- if .Values.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $jobName }}
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+rules:
+  # Read only the JWT secret. "create" cannot be limited by name.
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    resourceNames:
+      - {{ $secretName }}
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $jobName }}
+  labels:
+    {{- include "superphenix-api.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $jobName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $jobName }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "superphenix-api.fullname" . }}-jwt-generator
+  name: {{ $jobName }}
   labels:
     {{- include "superphenix-api.labels" . | nindent 4 }}
   annotations:
@@ -14,7 +72,7 @@ spec:
       labels:
         {{- include "superphenix-api.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "superphenix-api.serviceAccountName" . }}
+      serviceAccountName: {{ $jobName }}
       restartPolicy: OnFailure
       containers:
         - name: jwt-generator
