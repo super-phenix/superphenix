@@ -35,7 +35,7 @@ spec:
     # Check that the namespace is the ProjectID
     - expression: |
         variables.testMissingLabel in object.metadata.labels ||
-        variables.namespaces[0].matches(variables.projectID)
+        variables.namespaces == [variables.projectID]
       messageExpression: |
         "##### " + object.kind + " has an incorrect namespace (" +
         variables.namespaces.map(k,k).join(", ") + "), must be the ProjectID. #####"
