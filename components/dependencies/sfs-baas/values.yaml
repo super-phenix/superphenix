@@ -65,6 +65,6 @@ backups: {}
   #
   #  # -- Backup type
   #  # What will be backed up by this policy.
-  #  # Available values: "All", "VM"
+  #  # Available values: "All" (every product: VMs, network, KaaS, DBaaS), "VM"
   #  # @section -- Backups
   #  type: "All"

@@ -156,11 +156,12 @@ func CheckPathParams(r *http.Request) (config.AZConfig, model.Organization, http
 
 // CheckProductBelongsToProject is the API-side tenancy pre-flight. It only
 // rejects requests that target a DB row owned by a different project or AZ —
-// the original cross-tenant attack. When no DB row exists at all (shared
-// subnets reached from the consumer project, gitops/argo-managed objects,
-// or out-of-band desync) it defers the decision to the AZ controller, which
-// runs CheckProjectLabel (and, for subnets, isAllowedSharedSubnet).
-func CheckProductBelongsToProject(w http.ResponseWriter, r *http.Request, projectUuid uuid.UUID, azCode string) bool {
+// the original cross-tenant attack — or a DB row of another product type.
+// When no DB row exists at all (shared subnets reached from the consumer
+// project, gitops/argo-managed objects, or out-of-band desync) it defers the
+// decision to the AZ controller, which runs CheckProjectLabel (and, for
+// subnets, isAllowedSharedSubnet).
+func CheckProductBelongsToProject(w http.ResponseWriter, r *http.Request, projectUuid uuid.UUID, azCode, productType string) bool {
 	log := logger.GetLogger(r.Context())
 	productEId := chi.URLParam(r, "effectiveId")
 	dbProduct, err := product.FindByEId(productEId)
@@ -172,8 +173,13 @@ func CheckProductBelongsToProject(w http.ResponseWriter, r *http.Request, projec
 		httpError.Http(w, r, http.StatusInternalServerError).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
 		return false
 	}
-	if dbProduct.ProjectId != projectUuid {
+	if dbProduct.ProjectId != projectUuid || dbProduct.CodeAZ != azCode {
 		log.Warn().Str("effectiveId", productEId).Str("projectId", projectUuid.String()).Str("az", azCode).Msg("Cross-tenant resource access denied")
+		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
+		return false
+	}
+	if dbProduct.ProductTypeId != productType {
+		log.Warn().Str("effectiveId", productEId).Str("productType", dbProduct.ProductTypeId).Str("expected", productType).Msg("Product type mismatch")
 		httpError.Http(w, r, http.StatusNotFound).Str("eid", productEId).Msg(consts.SpxResourceNotFound)
 		return false
 	}

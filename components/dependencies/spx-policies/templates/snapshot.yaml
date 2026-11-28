@@ -24,6 +24,8 @@ spec:
       expression: r{{ include "policies.regex" "bootdisk" }}
     - name: etcddiskRegex
       expression: r{{ include "policies.regex" "etcddisk" }}
+    - name: dbaasdiskRegex
+      expression: r{{ include "policies.regex" "dbaasdisk" }}
   failurePolicy: Fail
   {{- include "policies.matchConditions" $val | nindent 2 }}
   matchConstraints:
@@ -37,17 +39,21 @@ spec:
         resources: ["virtualmachinesnapshots", "volumesnapshots"]
         scope: '*'
   validations:
-    # Check that the source name is an SPXID, a boot-disk or an etcd-disk
+    # Check that the source name is an SPXID, a boot-disk, an etcd-disk or a database disk
     - expression: |
         variables.source.matches(variables.spxidRegex) ||
         (
           object.kind == "VolumeSnapshot" &&
-          (variables.source.matches(variables.bootdiskRegex) || variables.source.matches(variables.etcddiskRegex))
+          (
+            variables.source.matches(variables.bootdiskRegex) ||
+            variables.source.matches(variables.etcddiskRegex) ||
+            variables.source.matches(variables.dbaasdiskRegex)
+          )
         )
       messageExpression: |
         "##### " + object.kind + " source has an incorrect name regex (" +
-        variables.source + "), must be an SPXID, a boot-disk or an etcd-disk. #####"
-      message: "##### Incorrect Snapshot source name regex, must be an SPXID, a boot-disk or an etcd-disk #####"
+        variables.source + "), must be an SPXID, a boot-disk, an etcd-disk or a database disk. #####"
+      message: "##### Incorrect Snapshot source name regex, must be an SPXID, a boot-disk, an etcd-disk or a database disk #####"
 
 ---
 apiVersion: admissionregistration.k8s.io/v1

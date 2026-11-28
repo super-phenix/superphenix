@@ -121,7 +121,7 @@ func (h *Service) GetKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectEntity.ID, azDb.Code, model.ProductTypeKaaS.Name) {
 		return
 	}
 
@@ -257,7 +257,7 @@ func (h *Service) GetForUpdateKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeKaaS.Name) {
 		return
 	}
 
@@ -629,7 +629,7 @@ func (h *Service) DeleteKaaS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code) {
+	if !ctrlutils.CheckProductBelongsToProject(w, r, projectDb.ID, azDb.Code, model.ProductTypeKaaS.Name) {
 		return
 	}
 

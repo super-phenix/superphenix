@@ -147,3 +147,44 @@ func TestCreateLoadBalancer(t *testing.T) {
 		})
 	}
 }
+
+func TestVIPAvailable(t *testing.T) {
+	tests := []struct {
+		name    string
+		fixture fixture
+		vip     string
+		subnet  string
+		want    bool
+		wantErr bool
+	}{
+		{name: "free vip", vip: testVIP, subnet: subnetA, want: true},
+		{
+			name:    "vip used in the VPC",
+			fixture: fixture{rules: []*v1.SwitchLBRule{ruleObj("other", project, testVIP, pinned(vpcA, subnetA2))}},
+			vip:     testVIP,
+			subnet:  subnetA,
+		},
+		{
+			name:    "vip used in another VPC",
+			fixture: fixture{rules: []*v1.SwitchLBRule{ruleObj("other", otherProject, testVIP, pinned(vpcB, subnetOther))}},
+			vip:     testVIP,
+			subnet:  subnetA,
+			want:    true,
+		},
+		{name: "invalid vip", vip: "10.0.0.1", subnet: subnetA, wantErr: true},
+		{name: "subnet of another project", vip: testVIP, subnet: subnetOther, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup(t, tt.fixture)
+			got, err := VIPAvailable(context.Background(), tt.vip, tt.subnet, project)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("VIPAvailable() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if got != tt.want {
+				t.Errorf("VIPAvailable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
