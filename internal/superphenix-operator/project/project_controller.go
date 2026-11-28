@@ -670,10 +670,30 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 		Cluster string `yaml:"cluster"`
 	}
 
+	type credentialsValues struct {
+		Username           string `yaml:"username,omitempty"`
+		Password           string `yaml:"password,omitempty"`
+		Insecure           bool   `yaml:"insecure,omitempty"`
+		ForceHttpBasicAuth bool   `yaml:"forceHttpBasicAuth,omitempty"`
+		EnableLfs          bool   `yaml:"enableLfs,omitempty"`
+		SshPrivateKey      string `yaml:"sshPrivateKey,omitempty"`
+	}
+
+	type valuesLocationValues struct {
+		RepoURL        string            `yaml:"repoURL"`
+		TargetRevision string            `yaml:"targetRevision"`
+		Credentials    credentialsValues `yaml:"credentials"`
+	}
+
+	type gitopsValues struct {
+		ValuesLocation valuesLocationValues `yaml:"valuesLocation"`
+	}
+
 	type projectValues struct {
-		ProjectID         string    `yaml:"projectID"`
-		Name              string    `yaml:"name"`
-		AvailabilityZones []azValue `yaml:"availabilityZones"`
+		ProjectID         string       `yaml:"projectID"`
+		Name              string       `yaml:"name"`
+		AvailabilityZones []azValue    `yaml:"availabilityZones"`
+		GitOps            gitopsValues `yaml:"gitops"`
 	}
 
 	type organizationValues struct {
@@ -695,6 +715,24 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 		})
 	}
 
+	// GitOps parameters
+	valuesLoc := valuesLocationValues{}
+	if proj.Spec.GitOps != nil && proj.Spec.GitOps.ValuesLocation != nil {
+		vl := proj.Spec.GitOps.ValuesLocation
+		valuesLoc.RepoURL = vl.RepoURL
+		valuesLoc.TargetRevision = vl.TargetRevision
+		if vl.Credentials != nil {
+			valuesLoc.Credentials = credentialsValues{
+				Username:           vl.Credentials.Username,
+				Password:           vl.Credentials.Password,
+				Insecure:           vl.Credentials.Insecure,
+				ForceHttpBasicAuth: vl.Credentials.ForceHttpBasicAuth,
+				EnableLfs:          vl.Credentials.EnableLfs,
+				SshPrivateKey:      vl.Credentials.SshPrivateKey,
+			}
+		}
+	}
+
 	values := helmValues{
 		Organization: organizationValues{
 			OrganizationID: org.Spec.OrganizationID,
@@ -704,6 +742,7 @@ func (r *Reconciler) buildHelmValues(proj *operatorv1alpha1.Project, org *operat
 			ProjectID:         proj.Spec.ProjectID,
 			Name:              projectName,
 			AvailabilityZones: azs,
+			GitOps:            gitopsValues{ValuesLocation: valuesLoc},
 		},
 	}
 
@@ -741,12 +780,7 @@ func (r *Reconciler) ensureArgoApplication(ctx context.Context, proj *operatorv1
 
 		valuesLocation := getValuesLocation(proj)
 		if valuesLocation != nil {
-			// $values resolves to the values repository root, so scope the globs to the configured path.
-			valuesRoot := "$values"
-			if valuesPath := strings.Trim(valuesLocation.Path, "/"); valuesPath != "" && valuesPath != "." {
-				valuesRoot += "/" + valuesPath
-			}
-			source.Helm.ValueFiles = []string{valuesRoot + "/**/*.yaml", valuesRoot + "/**/*.yml"}
+			source.Helm.ValueFiles = []string{"$values/**/*.yaml", "$values/**/*.yml"}
 			source.Helm.IgnoreMissingValueFiles = true
 
 			valuesTargetRevision := valuesLocation.TargetRevision

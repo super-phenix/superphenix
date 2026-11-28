@@ -20,7 +20,6 @@ spec:
       targetRevision: main
     valuesLocation:
       repoURL: https://github.com/super-phenix/project-values-sample.git
-      path: ./values
       targetRevision: prod
       credentials:
         username: git-user

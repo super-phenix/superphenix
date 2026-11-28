@@ -2,6 +2,9 @@ package project
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -9,12 +12,18 @@ import (
 	argov1alpha1 "github.com/argoproj/argo-cd/v3/pkg/apis/application/v1alpha1"
 	operatorv1alpha1 "github.com/super-phenix/superphenix/api/operator/v1alpha1"
 	spxId "github.com/super-phenix/superphenix/pkg/superphenix-id"
+	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
+	"helm.sh/helm/v3/pkg/engine"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -134,13 +143,12 @@ func TestEnsureArgoApplicationSources(t *testing.T) {
 			name: "with values repository",
 			valuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{
 				RepoURL:        "https://example.test/values.git",
-				Path:           "/projects/prod/",
 				TargetRevision: "release-1",
 			},
 			wantMultiSource: true,
 			wantSourceCount: 2,
 			wantTargetRev:   "release-1",
-			wantValuesRoot:  "$values/projects/prod",
+			wantValuesRoot:  "$values",
 		},
 		{
 			name: "with values repository at its root",
@@ -186,7 +194,7 @@ func TestEnsureArgoApplicationSources(t *testing.T) {
 				if helm == nil || !helm.IgnoreMissingValueFiles || len(helm.ValueFiles) != 2 || helm.ValueFiles[0] != tt.wantValuesRoot+"/**/*.yaml" || helm.ValueFiles[1] != tt.wantValuesRoot+"/**/*.yml" {
 					t.Fatalf("unexpected Helm values configuration: %#v", helm)
 				}
-				if app.Spec.Sources[1].Ref != "values" || app.Spec.Sources[1].TargetRevision != tt.wantTargetRev {
+				if app.Spec.Sources[1].Ref != "values" || app.Spec.Sources[1].RepoURL != tt.valuesLocation.RepoURL || app.Spec.Sources[1].TargetRevision != tt.wantTargetRev || app.Spec.Sources[1].Path != "" {
 					t.Fatalf("unexpected values source: %#v", app.Spec.Sources[1])
 				}
 			} else if app.Spec.Source == nil || len(app.Spec.Sources) != 0 {
@@ -418,10 +426,34 @@ func TestBuildHelmValuesDoesNotContainRepositoryCredentials(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, forbidden := range []string{"private-user", "private-password", "values.git", "credentials:"} {
-		if strings.Contains(values, forbidden) {
-			t.Errorf("Helm values leaked %q: %s", forbidden, values)
-		}
+	var helmValues map[string]interface{}
+	if err := yaml.Unmarshal([]byte(values), &helmValues); err != nil {
+		t.Fatalf("unmarshal Helm values: %v", err)
+	}
+	projectValues, ok := helmValues["project"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("project Helm values missing: %s", values)
+	}
+	gitops, ok := projectValues["gitops"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("project GitOps values missing: %s", values)
+	}
+	valuesLocation, ok := gitops["valuesLocation"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("values location missing: %s", values)
+	}
+	if got := valuesLocation["repoURL"]; got != "https://example.test/values.git" {
+		t.Errorf("repoURL = %v, want values repository URL", got)
+	}
+	credentials, ok := valuesLocation["credentials"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("credentials missing or malformed: %s", values)
+	}
+	if got := credentials["username"]; got != "private-user" {
+		t.Errorf("credentials.username = %v, want private-user", got)
+	}
+	if got := credentials["password"]; got != "private-password" {
+		t.Errorf("credentials.password = %v, want private-password", got)
 	}
 }
 
@@ -547,5 +579,254 @@ func TestReconcileGitOpsSetsGitOpsReady(t *testing.T) {
 	}
 	if !strings.Contains(cond.Message, repositorySecretName(project)) {
 		t.Fatalf("expected repository Secret in message, got %q", cond.Message)
+	}
+}
+
+func TestBuildHelmValuesIgnoresLegacyValuesPath(t *testing.T) {
+	var proj operatorv1alpha1.Project
+	if err := json.Unmarshal([]byte(`{
+		"spec": {
+			"projectID": "project-id",
+			"gitops": {
+				"valuesLocation": {
+					"repoURL": "https://example.com/values.git",
+					"path": "./untrusted",
+					"targetRevision": "production",
+					"credentials": {
+						"username": "git-user",
+						"password": "git-password"
+					}
+				}
+			}
+		}
+	}`), &proj); err != nil {
+		t.Fatalf("unmarshal project: %v", err)
+	}
+
+	valuesYAML, err := (&Reconciler{}).buildHelmValues(&proj, &operatorv1alpha1.Organization{
+		Spec: operatorv1alpha1.OrganizationSpec{OrganizationID: "organization-id"},
+	}, "organization", "project")
+	if err != nil {
+		t.Fatalf("build Helm values: %v", err)
+	}
+
+	var values map[string]interface{}
+	if err := yaml.Unmarshal([]byte(valuesYAML), &values); err != nil {
+		t.Fatalf("unmarshal Helm values: %v", err)
+	}
+	projectValues, ok := values["project"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("project Helm values missing: %s", valuesYAML)
+	}
+	if got := projectValues["projectID"]; got != "project-id" {
+		t.Errorf("projectID = %v, want project-id", got)
+	}
+	if got := projectValues["name"]; got != "project" {
+		t.Errorf("project name = %v, want project", got)
+	}
+	gitops, ok := projectValues["gitops"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("project GitOps values missing: %s", valuesYAML)
+	}
+	valuesLocation, ok := gitops["valuesLocation"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("values location missing: %s", valuesYAML)
+	}
+	if got := valuesLocation["repoURL"]; got != "https://example.com/values.git" {
+		t.Errorf("repoURL = %v, want values repository URL", got)
+	}
+	if got := valuesLocation["targetRevision"]; got != "production" {
+		t.Errorf("targetRevision = %v, want production", got)
+	}
+	if _, found := valuesLocation["path"]; found {
+		t.Errorf("legacy values repository path must not be forwarded: %s", valuesYAML)
+	}
+	credentials, ok := valuesLocation["credentials"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("credentials missing or malformed: %s", valuesYAML)
+	}
+	if got := credentials["username"]; got != "git-user" {
+		t.Errorf("credentials.username = %v, want git-user", got)
+	}
+	if got := credentials["password"]; got != "git-password" {
+		t.Errorf("credentials.password = %v, want git-password", got)
+	}
+	organization, ok := values["organization"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("organization Helm values missing: %s", valuesYAML)
+	}
+	if got := organization["organizationID"]; got != "organization-id" {
+		t.Errorf("organizationID = %v, want organization-id", got)
+	}
+	if got := organization["name"]; got != "organization" {
+		t.Errorf("organization name = %v, want organization", got)
+	}
+}
+
+func TestBuildHelmValuesHandlesAbsentValuesLocationFields(t *testing.T) {
+	tests := []struct {
+		name   string
+		gitops *operatorv1alpha1.ProjectGitOpsSpec
+	}{
+		{name: "nil GitOps"},
+		{name: "nil values location", gitops: &operatorv1alpha1.ProjectGitOpsSpec{}},
+		{
+			name: "empty URL and revision without credentials",
+			gitops: &operatorv1alpha1.ProjectGitOpsSpec{
+				ValuesLocation: &operatorv1alpha1.ProjectValuesLocationSpec{},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			project := newTestProject()
+			project.Spec.GitOps = tt.gitops
+			valuesYAML, err := (&Reconciler{}).buildHelmValues(project, &operatorv1alpha1.Organization{
+				Spec: operatorv1alpha1.OrganizationSpec{OrganizationID: "organization-id"},
+			}, "organization", "project")
+			if err != nil {
+				t.Fatalf("build Helm values: %v", err)
+			}
+
+			var values map[string]interface{}
+			if err := yaml.Unmarshal([]byte(valuesYAML), &values); err != nil {
+				t.Fatalf("unmarshal Helm values: %v", err)
+			}
+			projectValues, ok := values["project"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("project Helm values missing: %s", valuesYAML)
+			}
+			if got := projectValues["projectID"]; got != testProjectID {
+				t.Errorf("projectID = %v, want %s", got, testProjectID)
+			}
+			if got := projectValues["name"]; got != "project" {
+				t.Errorf("project name = %v, want project", got)
+			}
+			gitops, ok := projectValues["gitops"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("project GitOps values missing: %s", valuesYAML)
+			}
+			valuesLocation, ok := gitops["valuesLocation"].(map[string]interface{})
+			if !ok {
+				t.Fatalf("values location missing: %s", valuesYAML)
+			}
+			if got := valuesLocation["repoURL"]; got != "" {
+				t.Errorf("repoURL = %v, want empty", got)
+			}
+			if got := valuesLocation["targetRevision"]; got != "" {
+				t.Errorf("targetRevision = %v, want empty", got)
+			}
+			if _, ok := valuesLocation["credentials"].(map[string]interface{}); !ok {
+				t.Errorf("empty credentials missing or malformed: %#v", valuesLocation["credentials"])
+			}
+		})
+	}
+}
+
+func TestSfsGitopsApplicationsDoNotSetValuesRepositoryPath(t *testing.T) {
+	chart, err := loader.Load("../../../components/dependencies/sfs-gitops")
+	if err != nil {
+		t.Fatalf("load sfs-gitops chart: %v", err)
+	}
+
+	values := chartutil.Values{
+		"global": map[string]interface{}{
+			"organization": map[string]interface{}{
+				"organizationID": "organization-id",
+				"name":           "organization",
+			},
+			"project": map[string]interface{}{
+				"projectID": "project-id",
+				"name":      "project",
+				"availabilityZones": []interface{}{map[string]interface{}{
+					"name":    "fr01-agc01",
+					"cluster": "cluster-1",
+				}},
+				"gitops": map[string]interface{}{
+					"valuesLocation": map[string]interface{}{
+						"repoURL":        "https://example.com/values.git",
+						"path":           "./untrusted",
+						"targetRevision": "production",
+					},
+				},
+			},
+		},
+		"kubernetes": map[string]interface{}{
+			"cluster-1": map[string]interface{}{
+				"location":    "fr01-agc01",
+				"name":        "cluster-1",
+				"kubeVersion": "1.35.0",
+			},
+		},
+		"backups": map[string]interface{}{
+			"backup-1": map[string]interface{}{
+				"location": "fr01-agc01",
+				"name":     "backup-1",
+			},
+		},
+	}
+	renderValues, err := chartutil.ToRenderValues(chart, values, chartutil.ReleaseOptions{
+		Name:      "values-path-test",
+		Namespace: "default",
+		Revision:  1,
+		IsInstall: true,
+	}, chartutil.DefaultCapabilities)
+	if err != nil {
+		t.Fatalf("prepare chart values: %v", err)
+	}
+
+	renderedTemplates, err := (engine.Engine{}).Render(chart, renderValues)
+	if err != nil {
+		t.Fatalf("render sfs-gitops chart: %v", err)
+	}
+
+	for _, templatePath := range []string{
+		"sfs-gitops/templates/kubernetes/application.yaml",
+		"sfs-gitops/templates/backups/application.yaml",
+	} {
+		template, found := renderedTemplates[templatePath]
+		if !found {
+			t.Fatalf("rendered chart is missing %s", templatePath)
+		}
+		assertValuesSourceHasNoPath(t, template)
+	}
+}
+
+func assertValuesSourceHasNoPath(t *testing.T, rendered string) {
+	t.Helper()
+
+	decoder := utilyaml.NewYAMLOrJSONDecoder(strings.NewReader(rendered), 4096)
+	applicationCount := 0
+	for {
+		application := map[string]interface{}{}
+		err := decoder.Decode(&application)
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			t.Fatalf("decode rendered Application: %v", err)
+		}
+		if application["kind"] != "Application" {
+			continue
+		}
+		applicationCount++
+
+		sources, found, err := unstructured.NestedSlice(application, "spec", "sources")
+		if err != nil || !found || len(sources) == 0 {
+			t.Fatalf("Application sources = %v, found = %t, error = %v; want at least one source", sources, found, err)
+		}
+		for _, source := range sources {
+			sourceMap, ok := source.(map[string]interface{})
+			if !ok {
+				t.Fatalf("source has unexpected type %T", source)
+			}
+			if sourceMap["ref"] == "values" || sourceMap["repoURL"] == "https://example.com/values.git" {
+				t.Errorf("child Application must not render the values repository: %#v", sourceMap)
+			}
+		}
+	}
+	if applicationCount != 1 {
+		t.Errorf("rendered %d Applications, want exactly one", applicationCount)
 	}
 }

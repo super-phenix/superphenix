@@ -19,6 +19,27 @@ global:
       # - name: fr01-agc01    # minimized name (region-az)
       #   cluster: cluster-1  # full cluster name
 
+    # -- GitOps configuration
+    gitops:
+      # -- Values location configuration
+      valuesLocation:
+        repoURL: ""
+        targetRevision: ""
+        # -- Credentials for the values repository
+        credentials:
+          username: ""
+          password: ""
+          insecure: false
+          forceHttpBasicAuth: false
+          enableLfs: false
+          sshPrivateKey: ""
+
+  # -- KAAS global configuration
+  kaas: {}
+
+  # -- BAAS global configuration
+  baas: {}
+
   # -- Storage class mapping
   storageClassMapping: {}
 
